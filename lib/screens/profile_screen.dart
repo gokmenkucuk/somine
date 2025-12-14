@@ -77,7 +77,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                                  colors: [
+                                    Color(0xFF2563EB),
+                                    Color(0xFF06B6D4),
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -117,7 +120,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             const SizedBox(height: 8),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
                               child: Text(
                                 "Dijital dünyayı tasarlayan, minimalizmi seven ve detaylara önem veren bir tasarımcı.",
                                 textAlign: TextAlign.center,
@@ -131,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
 
                       // Stats Row (Archive Focused)
@@ -185,13 +190,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ),
-              
+
               // Persistent Tab Bar
               SliverPersistentHeader(
                 delegate: _SliverAppBarDelegate(
@@ -283,15 +288,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CachedNetworkImage(
                   imageUrl: _userImages[index],
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    height: 200,
-                    color: Colors.grey[100],
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.error),
-                  ),
+                  placeholder:
+                      (context, url) =>
+                          Container(height: 200, color: Colors.grey[100]),
+                  errorWidget:
+                      (context, url, error) => Container(
+                        height: 200,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.error),
+                      ),
                 ),
               ),
             ),
@@ -314,11 +319,12 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.white,
-      child: _tabBar,
-    );
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: Colors.white, child: _tabBar);
   }
 
   @override

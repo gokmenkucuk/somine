@@ -85,7 +85,11 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
                           color: const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.category, color: Colors.black54, size: 20),
+                        child: const Icon(
+                          Icons.category,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Text(
@@ -101,11 +105,19 @@ class _CategoryManagerScreenState extends State<CategoryManagerScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(CupertinoIcons.pencil, size: 20, color: Colors.blue),
+                        icon: const Icon(
+                          CupertinoIcons.pencil,
+                          size: 20,
+                          color: Colors.blue,
+                        ),
                         onPressed: () {},
                       ),
                       IconButton(
-                        icon: const Icon(CupertinoIcons.trash, size: 20, color: Colors.red),
+                        icon: const Icon(
+                          CupertinoIcons.trash,
+                          size: 20,
+                          color: Colors.red,
+                        ),
                         onPressed: () {},
                       ),
                     ],

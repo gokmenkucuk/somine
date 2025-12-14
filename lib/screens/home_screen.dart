@@ -285,155 +285,74 @@ class _HomeScreenState extends State<HomeScreen> {
                               FadeInUp(
                                 delay: const Duration(milliseconds: 600),
                                 child: Container(
-                                  width: double.infinity,
-                                  height:
-                                      80, // Increased height to accommodate padding
-                                  padding: const EdgeInsets.all(
-                                    3,
-                                  ), // Border thickness
+                                  height: 80, // Biraz daha yüksek ve gösterişli
                                   decoration: BoxDecoration(
-                                    // Gradient Border
+                                    // O referans görseldeki tatlı yeşil gradyan
                                     gradient: const LinearGradient(
                                       colors: [
-                                        Color(0xFF2563EB), // Blue 600
-                                        Color(0xFF06B6D4), // Cyan 500
+                                        Color(0xFFE1EDE3),
+                                        Color(0xFFD1E3D6),
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(
-                                      40,
-                                    ), // Larger Radius
+                                      30,
+                                    ), // Daha yuvarlak
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFFD1E3D6,
+                                        ).withValues(alpha: 0.5),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 5),
+                                      ),
+                                    ],
                                   ),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(
-                                      5,
-                                    ), // Inner Padding (Gap)
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(
-                                        37,
-                                      ), // Adjusted radius
-                                    ),
-                                    child: Container(
-                                      // Inner Button Container
-                                      width: double.infinity,
-                                      height: 64,
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Colors
-                                                .white, // Inner White Background
-                                        borderRadius: BorderRadius.circular(32),
-                                        border: Border.all(
-                                          color: const Color(0xFFE5E7EB),
-                                          width: 1,
-                                        ), // Inner Border
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.05,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        // Add content action
+                                      },
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Padding(
+                                            padding: EdgeInsets.only(
+                                              left: 20.0,
                                             ),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
+                                            child: CircleAvatar(
+                                              backgroundColor:
+                                                  Colors
+                                                      .black, // Siyah ikon butonu patlatır
+                                              child: Icon(
+                                                Icons.arrow_forward,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            "Yeni İçerik Ekle",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          const Padding(
+                                            // Sağdaki oklar
+                                            padding: EdgeInsets.only(
+                                              right: 20.0,
+                                            ),
+                                            child: Icon(
+                                              Icons.keyboard_double_arrow_right,
+                                              color: Colors.black54,
+                                            ),
                                           ),
                                         ],
-                                      ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () {},
-                                          borderRadius: BorderRadius.circular(
-                                            32,
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8.0,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                // Circular Arrow Button (Gradient)
-                                                Container(
-                                                  width: 48,
-                                                  height: 48,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        gradient: LinearGradient(
-                                                          colors: [
-                                                            Color(0xFF111827),
-                                                            Color(0xFF374151),
-                                                          ], // Dark Gradient
-                                                          begin:
-                                                              Alignment.topLeft,
-                                                          end:
-                                                              Alignment
-                                                                  .bottomRight,
-                                                        ),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                  child: const Icon(
-                                                    Icons.arrow_forward,
-                                                    color:
-                                                        Colors
-                                                            .white, // White Icon
-                                                    size: 24,
-                                                  ),
-                                                ),
-
-                                                // Text
-                                                Expanded(
-                                                  child: Text(
-                                                    "İçerik Ekle",
-                                                    textAlign: TextAlign.center,
-                                                    style: GoogleFonts.poppins(
-                                                      color: const Color(
-                                                        0xFF111827,
-                                                      ), // Dark Text
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-
-                                                // Arrows Indicator (Dark)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        right: 16.0,
-                                                      ),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons
-                                                            .keyboard_arrow_right,
-                                                        color: Colors.black
-                                                            .withValues(
-                                                              alpha: 0.1,
-                                                            ),
-                                                        size: 20,
-                                                      ),
-                                                      Icon(
-                                                        Icons
-                                                            .keyboard_arrow_right,
-                                                        color: Colors.black
-                                                            .withValues(
-                                                              alpha: 0.3,
-                                                            ),
-                                                        size: 20,
-                                                      ),
-                                                      const Icon(
-                                                        Icons
-                                                            .keyboard_arrow_right,
-                                                        color: Colors.black,
-                                                        size: 20,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
                                       ),
                                     ),
                                   ),

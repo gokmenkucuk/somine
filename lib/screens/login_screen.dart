@@ -57,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     // Beyaz zemin üzerinde durum çubuğu ikonlarının (saat, pil) siyah olması için:
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark, 
+      value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: Colors.white, // Tam beyaz zemin
         body: LoadingOverlay(
@@ -70,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 left: 0,
                 right: 0,
                 child: Opacity(
-                  opacity: 0.3, 
+                  opacity: 0.3,
                   child: Container(
                     height: 350,
                     decoration: BoxDecoration(
@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-      
+
               // Ana İçerik
               SafeArea(
                 child: Padding(
@@ -95,25 +95,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Spacer(flex: 1), 
-                      
+                      const Spacer(flex: 1),
+
                       // Logo
                       Image.asset(
-                        'assets/images/logo_v2.png', 
+                        'assets/images/logo_v2.png',
                         height: 180,
                         fit: BoxFit.contain,
                       ),
-      
-                      const Spacer(flex: 2), 
-                      
+
+                      const Spacer(flex: 2),
+
                       // Slogan
                       const _ShimmerSlogan(),
-      
-                      const SizedBox(height: 48), 
-                      
+
+                      const SizedBox(height: 48),
+
                       // Apple Button (iOS/Mac için)
                       if (Theme.of(context).platform == TargetPlatform.iOS ||
-                          Theme.of(context).platform == TargetPlatform.macOS) ...[
+                          Theme.of(context).platform ==
+                              TargetPlatform.macOS) ...[
                         _SocialButton(
                           onPressed: _signInWithApple,
                           icon: Icons.apple,
@@ -123,8 +124,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: DesignTokens.spacingMD),
                       ],
-      
-                      // Google Button 
+
+                      // Google Button
                       // (Beyaz zemin üstünde beyaz buton olduğu için ince bir border ekledik)
                       _SocialButton(
                         onPressed: _signInWithGoogle,
@@ -135,7 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         hasShadow: true,
                         useBorderOnWhite: true, // Yeni parametre
                       ),
-      
+
                       // Misafir Girişi
                       if (!widget.forceLogin) ...[
                         const SizedBox(height: DesignTokens.spacingLG),
@@ -151,7 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                       ],
-      
+
                       const Spacer(flex: 1),
                     ],
                   ),
@@ -183,7 +184,7 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2500), 
+      duration: const Duration(milliseconds: 2500),
     )..repeat();
   }
 
@@ -198,7 +199,7 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
     final textStyle = GoogleFonts.poppins(
       fontSize: 36,
       fontWeight: FontWeight.bold,
-      color: DesignTokens.textPrimary, 
+      color: DesignTokens.textPrimary,
       height: 1.2,
     );
 
@@ -235,17 +236,14 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
           child: ShaderMask(
             shaderCallback:
                 (bounds) => const LinearGradient(
-                  colors: [
-                    Color(0xFF2563EB), 
-                    Color(0xFF06B6D4), 
-                  ],
+                  colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ).createShader(bounds),
             child: Text(
               'Dijital Dünyanı\nTasarla.',
               textAlign: TextAlign.center,
-              style: textStyle.copyWith(color: Colors.white), 
+              style: textStyle.copyWith(color: Colors.white),
             ),
           ),
         ),
@@ -295,9 +293,10 @@ class _SocialButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
         boxShadow: hasShadow ? DesignTokens.shadowSM : null,
         // Eğer beyaz zemin üstünde beyaz buton ise, çok hafif gri bir sınır çizgisi ekle
-        border: useBorderOnWhite 
-            ? Border.all(color: Colors.grey.shade200) 
-            : Border.all(color: Colors.transparent),
+        border:
+            useBorderOnWhite
+                ? Border.all(color: Colors.grey.shade200)
+                : Border.all(color: Colors.transparent),
       ),
       child: Material(
         color: Colors.transparent,
