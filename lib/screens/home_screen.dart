@@ -1,419 +1,814 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:somine_app/core/design/design_tokens.dart';
-import 'package:somine_app/core/models/category_model.dart';
-import 'package:somine_app/core/providers/auth_providers.dart';
-import 'package:somine_app/core/providers/firestore_providers.dart';
-import 'package:somine_app/screens/capture_screen.dart';
-import 'package:somine_app/screens/item_detail_screen.dart';
-import 'package:somine_app/screens/settings_screen.dart';
-import 'package:somine_app/widgets/brand_logo_text.dart';
-import 'package:somine_app/widgets/item_card.dart'; // Will refactor this later
-import 'package:somine_app/widgets/loading_indicator.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _crossAxisCount = 2; // Default to 2 columns
-  // Scale for pinch gesture
-  double _baseScaleFactor = 1.0;
+class _HomeScreenState extends State<HomeScreen> {
+  // State for Grid/List Toggle & Category Selection
+  bool _isGridMode = true;
+  String _selectedCategory = 'Tümü';
+
+  // Provided Content Data with Categories
+  final List<Map<String, String>> _allContentList = [
+    {
+      'type': 'video',
+      'url':
+          'https://www.instagram.com/reel/DQ7I1OrDMMS/?igsh=NTNsYjJ5NWM2bTlw',
+      'thumbnail': 'https://picsum.photos/seed/insta1/400/600',
+      'title': 'Instagram Reel',
+      'subtitle': 'Videoyu izlemek için tıklayın',
+      'source': 'Instagram',
+      'badge': 'Reel',
+      'category': 'Komik',
+    },
+    {
+      'type': 'image',
+      'url': 'https://www.instagram.com/p/DQpLnkGgnm4/?igsh=eWlwcXhobWxqbmwz',
+      'thumbnail': 'https://picsum.photos/seed/insta2/400/500',
+      'title': 'Instagram Post',
+      'subtitle': 'Gönderiyi incele',
+      'source': 'Instagram',
+      'badge': 'Post',
+      'category': 'Tasarım',
+    },
+    {
+      'type': 'image',
+      'url': 'https://www.instagram.com/p/DSCoEkaAmAX/?igsh=MjhqZ2EzY2poNTZx',
+      'thumbnail': 'https://picsum.photos/seed/insta3/400/450',
+      'title': 'Doğa Yürüyüşü',
+      'subtitle': 'Manzaranın tadını çıkar',
+      'source': 'Instagram',
+      'badge': 'New',
+      'category': 'Seyahat',
+    },
+    {
+      'type': 'video',
+      'url':
+          'https://www.instagram.com/reel/C4BRE6vIFIX/?igsh=enN6cWwzdmpyMHVu',
+      'thumbnail': 'https://picsum.photos/seed/insta4/400/700',
+      'title': 'Eğlenceli Anlar',
+      'subtitle': 'Günün videosu',
+      'source': 'Instagram',
+      'badge': 'Viral',
+      'category': 'Komik',
+    },
+    {
+      'type': 'image',
+      'url':
+          'https://www.instagram.com/p/DQOWXTvgN97/?igsh=MXJuZnM1c3U1ZDA5eQ==',
+      'thumbnail': 'https://picsum.photos/seed/insta5/400/400',
+      'title': 'Sanat Eseri',
+      'subtitle': 'Detaylara göz at',
+      'source': 'Instagram',
+      'badge': 'Art',
+      'category': 'Tasarım',
+    },
+    {
+      'type': 'video',
+      'url': 'https://www.youtube.com/watch?v=D1f2dSi7kG4',
+      'thumbnail': 'https://img.youtube.com/vi/D1f2dSi7kG4/hqdefault.jpg',
+      'title': 'YouTube Video',
+      'subtitle': 'Hemen izle',
+      'source': 'YouTube',
+      'badge': 'HD',
+      'category': 'Müzik',
+    },
+    {
+      'type': 'video',
+      'url': 'https://www.youtube.com/watch?v=hhw90xpY7MI',
+      'thumbnail': 'https://img.youtube.com/vi/hhw90xpY7MI/hqdefault.jpg',
+      'title': 'Müzik Klibi',
+      'subtitle': 'Yeni çıkanlar',
+      'source': 'YouTube',
+      'badge': 'Music',
+      'category': 'Müzik',
+    },
+    {
+      'type': 'video',
+      'url': 'https://www.youtube.com/watch?v=vPg67r76hAA&t=1s',
+      'thumbnail': 'https://img.youtube.com/vi/vPg67r76hAA/hqdefault.jpg',
+      'title': 'Eğitici İçerik',
+      'subtitle': 'Öğrenmeye başla',
+      'source': 'YouTube',
+      'badge': 'Edu',
+      'category': 'Fikir',
+    },
+  ];
+
+  // Category List
+  final List<String> _categories = [
+    "Tümü",
+    "Seyahat",
+    "Spor",
+    "Müzik",
+    "Komik",
+    "Tasarım",
+    "Fikir",
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsync = ref.watch(categoriesProvider);
-    final itemsAsync = ref.watch(itemsProvider);
-    final selectedCategoryId = ref.watch(selectedCategoryIdProvider);
-    final user = ref.watch(currentUserProvider);
+    // Filter content based on selection
+    final filteredContent =
+        _selectedCategory == 'Tümü'
+            ? _allContentList
+            : _allContentList
+                .where((item) => item['category'] == _selectedCategory)
+                .toList();
 
     return Scaffold(
-      backgroundColor: DesignTokens.background,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            // A. Sticky Header with Greeting
-            SliverAppBar(
-              backgroundColor: DesignTokens.background,
-              surfaceTintColor: Colors.transparent,
-              floating: true,
-              pinned: true,
-              expandedHeight: 140, 
-              toolbarHeight: 80, // Taller toolbar for greeting
-              flexibleSpace: FlexibleSpaceBar(
-                background: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      backgroundColor: Colors.white,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter, // Extended gradient down
+            stops: [0.4, 0.8], // Gray stays longer, white starts lower
+            colors: [
+              Color(0xFFF2F1F6), // Soft gray
+              Colors.white, // White
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            SafeArea(
+              bottom: false,
+              child: CustomScrollView(
+                slivers: [
+                  // Header & Categories Section (Box Adapter)
+                  SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Top Row: Greeting & Actions
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded( // Allow text to take space
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
+                        // Header Content with Padding
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0,
+                            vertical: 12.0,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header Row (Menu & Search/Profile)
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'Selam,',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      color: DesignTokens.textSecondary,
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF111827),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.sort,
+                                      color: Colors.white,
+                                      size: 28,
                                     ),
                                   ),
-                                  Text(
-                                    user?.displayName?.split(' ').first ?? 'Misafir',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 28,
-                                      color: DesignTokens.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.1,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          CupertinoIcons.search,
+                                          color: Colors.black,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          CupertinoIcons.person,
+                                          color: Colors.black,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ),
-                            // Profile / Scanner Button (Grouped like reference)
-                            Row(
-                               children: [
-                                   // Scanner Placeholder (Reference has one)
-                                   Container(
-                                     padding: const EdgeInsets.all(10),
-                                     decoration: BoxDecoration(
-                                       color: Colors.white,
-                                       shape: BoxShape.circle,
-                                       boxShadow: DesignTokens.shadowSM,
-                                     ),
-                                     child: const Icon(Icons.qr_code_scanner, color: DesignTokens.primary, size: 20),
-                                   ),
-                                   const SizedBox(width: 12),
-                                   // Profile Pic
-                                   GestureDetector(
-                                     onTap: () {
-                                       Navigator.push(
-                                         context,
-                                         MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                                       );
-                                     },
-                                     child: Container(
-                                       width: 44,
-                                       height: 44,
-                                       decoration: BoxDecoration(
-                                         shape: BoxShape.circle,
-                                         color: DesignTokens.border,
-                                         image: user?.photoURL != null 
-                                           ? DecorationImage(image: NetworkImage(user!.photoURL!))
-                                           : null,
-                                       ),
-                                       child: user?.photoURL == null 
-                                         ? const Icon(Icons.person, color: DesignTokens.textSecondary, size: 24)
-                                         : null,
-                                     ),
-                                   ),
-                               ],
-                            ),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Search Bar (White container)
-                        Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
-                            boxShadow: DesignTokens.shadowSM, // Soft shadow like reference
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.search, color: DesignTokens.primary),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Koleksiyonunda ara...',
-                                  style: GoogleFonts.poppins(color: DesignTokens.textTertiary, fontSize: 14),
+                              const SizedBox(height: 32),
+
+                              // Greeting
+                              Text(
+                                "Merhaba, Gökmen!",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF64748B),
                                 ),
                               ),
-                              // Filter icon maybe?
-                              const Icon(Icons.tune, color: DesignTokens.textTertiary, size: 20),
+                              const SizedBox(height: 12),
+
+                              // Slogan (Full Width)
+                              ShaderMask(
+                                blendMode: BlendMode.srcIn,
+                                shaderCallback:
+                                    (bounds) => const LinearGradient(
+                                      colors: [
+                                        Color(0xFF2563EB), // Blue 600
+                                        Color(0xFF06B6D4), // Cyan 500
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds),
+                                child: Text(
+                                  "Dijital dünyanı\ntasarla.",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 42,
+                                    fontWeight:
+                                        FontWeight
+                                            .bold, // Slightly bolder for gradient
+                                    height: 1.1,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Action Buttons Row
+                              Row(
+                                children: [
+                                  // Button 1: İçerik Ekle (Dark/Gray)
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF1F2937,
+                                        ), // Dark Gray
+                                        borderRadius: BorderRadius.circular(24),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(
+                                              0xFF1F2937,
+                                            ).withValues(alpha: 0.3),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 6),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            CupertinoIcons.add_circled_solid,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "İçerik Ekle",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 16),
+
+                                  // Button 2: Kategori Ekle (White)
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(24),
+                                        border: Border.all(
+                                          color: const Color(0xFFE5E7EB),
+                                          width: 1.5,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            CupertinoIcons.square_grid_2x2_fill,
+                                            color: Color(0xFF1F2937),
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "Kategori Ekle",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF1F2937),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+
+                              // Category Header
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Kategori seç",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF9CA3AF),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap:
+                                        () => setState(
+                                          () => _selectedCategory = "Tümü",
+                                        ),
+                                    child: Text(
+                                      "tümü",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF9CA3AF),
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),
+
+                        // Categories (Horizontal List - Redesigned)
+                        SizedBox(
+                          height:
+                              60, // Adjusted height for slimmer chips (was 80)
+                          child: ListView.builder(
+                            clipBehavior: Clip.none,
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            itemCount: _categories.length,
+                            itemBuilder: (context, index) {
+                              return Center(
+                                child: _buildCategoryChip(_categories[index]),
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 24), // Reduced spacing (was 40)
+                        // Toggle Row (Count + Grid/List Icons)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "${filteredContent.length} İçerik",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1A1E38),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.square_grid_2x2_fill,
+                                      color:
+                                          _isGridMode
+                                              ? const Color(0xFF1A1E38)
+                                              : const Color(0xFF9CA3AF),
+                                      size: 20,
+                                    ),
+                                    onPressed:
+                                        () =>
+                                            setState(() => _isGridMode = true),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      CupertinoIcons.list_bullet,
+                                      color:
+                                          !_isGridMode
+                                              ? const Color(0xFF1A1E38)
+                                              : const Color(0xFF9CA3AF),
+                                      size: 22,
+                                    ),
+                                    onPressed:
+                                        () =>
+                                            setState(() => _isGridMode = false),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
+
+                  // Content Feed (Masonry Grid or List)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    sliver:
+                        _isGridMode
+                            ? SliverMasonryGrid.count(
+                              key: ValueKey(
+                                _selectedCategory,
+                              ), // Forces rebuild for animation
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
+                              childCount: filteredContent.length,
+                              itemBuilder:
+                                  (context, index) => _buildContentCard(
+                                    filteredContent[index],
+                                    index,
+                                    isGrid: true,
+                                  ),
+                            )
+                            : SliverList(
+                              key: ValueKey(
+                                _selectedCategory,
+                              ), // Forces rebuild
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildContentCard(
+                                    filteredContent[index],
+                                    index,
+                                    isGrid: false,
+                                  ),
+                                ),
+                                childCount: filteredContent.length,
+                              ),
+                            ),
+                  ),
+
+                  // Bottom Spacer
+                  const SliverToBoxAdapter(child: SizedBox(height: 140)),
+                ],
+              ),
+            ),
+
+            // Floating Bottom Navigation Bar
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 24,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827), // Deep Black/Navy
+                  borderRadius: BorderRadius.circular(40),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.home,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                    const Icon(
+                      CupertinoIcons.search,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                    // Center ADD Button
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.add,
+                        color: Colors.black,
+                        size: 28,
+                      ),
+                    ),
+                    const Icon(
+                      CupertinoIcons.square_grid_2x2,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                    const Icon(
+                      CupertinoIcons.person,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  ],
                 ),
               ),
             ),
-
-            // B. Category Strip (Horizontal Scroll)
-            SliverToBoxAdapter(
-              child: _buildCategoryStrip(categoriesAsync, selectedCategoryId),
-            ),
-          ];
-        },
-        // C. Dynamic Masonry Grid
-        body: GestureDetector(
-          onScaleStart: (details) => _baseScaleFactor = _baseScaleFactor, 
-          onScaleUpdate: (details) {
-            if (details.scale > 1.5 && _crossAxisCount > 1) {
-              setState(() => _crossAxisCount = 1);
-            } else if (details.scale < 0.7 && _crossAxisCount < 3) {
-              setState(() => _crossAxisCount = 3);
-            }
-          },
-          child: itemsAsync.when(
-            data: (items) {
-              if (items.isEmpty) {
-                return Center(
-                  child: Text(
-                    'Koleksiyonun boş.',
-                    style: GoogleFonts.poppins(color: DesignTokens.textTertiary),
-                  ),
-                );
-              }
-              return MasonryGridView.count(
-                padding: const EdgeInsets.all(16),
-                crossAxisCount: _crossAxisCount, 
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return ItemCard(
-                    item: item,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ItemDetailScreen(item: item),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-            loading: () => const Center(child: LoadingIndicator()),
-            error: (e, _) => Center(child: Text('Hata: $e')),
-          ),
-        ),
-      ),
-      // D. Floating Action Button (Magic Button)
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-           gradient: DesignTokens.floatingButtonGradient,
-           shape: BoxShape.circle,
-           boxShadow: DesignTokens.shadowGlow,
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-             Navigator.push(
-                 context,
-                 MaterialPageRoute(
-                   builder:(_) => const CaptureScreen(url: 'https://example.com'),
-                 ),
-             );
-          },
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: const Icon(Icons.add, color: Colors.white, size: 32),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryStrip(AsyncValue<List<CategoryModel>> categoriesAsync, String? selectedCategoryId) {
-    return SizedBox(
-      height: 140, 
-      child: categoriesAsync.when(
-        data: (categories) {
-          if (categories.isEmpty) return const SizedBox.shrink();
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length + 1, // +1 for "Inbox"
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              // 0 is Inbox
-              if (index == 0) {
-                return _buildVisualCategoryBox(
-                  title: 'Tümü',
-                  subtitle: '${itemsAsync.valueOrNull?.length ?? 0} öğe', // Actual count
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  icon: Icons.all_inclusive,
-                  isSelected: selectedCategoryId == null,
-                  onTap: () {
-                    ref.read(selectedCategoryIdProvider.notifier).state = null;
-                  },
-                );
-              }
-              
-              final category = categories[index - 1]; // Offset index
-              return _buildVisualCategoryBox(
-                title: category.name,
-                subtitle: 'Gözat', // Generic subtitle for now
-                gradient: _getGradientForCategory(index), 
-                icon: Icons.folder_open,
-                isSelected: selectedCategoryId == category.id,
-                onTap: () {
-                  ref.read(selectedCategoryIdProvider.notifier).state = category.id;
-                },
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: LoadingIndicator()),
-        error: (err, stack) => Center(child: Text('Hata: $err')),
-      ),
-    );
-  }
-
-  Widget _buildVisualCategoryBox({
-    required String title,
-    required String subtitle,
-    required Gradient gradient,
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isSelected = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 200, 
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(24),
-          border: isSelected ? Border.all(color: DesignTokens.primary, width: 3) : null,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xff333333).withOpacity(0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 8),
-            ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [ // ... (rest of stack)
-          // 1. Artistic Background Decoration (Big Icon)
-          Positioned(
-            right: -20,
-            bottom: -20,
-            child: Transform.rotate(
-              angle: -0.2, // Slight tilt
-              child: Icon(
-                icon,
-                size: 100, // Huge icon
-                color: Colors.white.withValues(alpha: 0.15),
-              ),
-            ),
-          ),
-          
-          // 2. Artistic Circle Decoration
-          Positioned(
-            top: -30,
-            right: -30,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                 shape: BoxShape.circle,
-                 color: Colors.white.withValues(alpha: 0.1),
-              ),
-            ),
-          ),
+      ),
+    );
+  }
 
-          // 3. Content
-          Padding(
-            padding: const EdgeInsets.all(20),
+  // Redesigned Category Chip
+  Widget _buildCategoryChip(String label) {
+    final bool isSelected = _selectedCategory == label;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 12.0),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedCategory = label;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: 8, // Reduced vertical padding (was 12)
+          ),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            // Gradient for Selected
+            gradient:
+                isSelected
+                    ? const LinearGradient(
+                      colors: [
+                        Color(0xFF3B82F6), // Blue
+                        Color(0xFF2563EB), // Darker Blue for 3D depth
+                        Color(0xFF3B82F6),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      stops: [0.0, 0.5, 1.0], // Wave/3D effect in middle
+                    )
+                    : null,
+            color: isSelected ? null : Colors.white,
+            borderRadius: BorderRadius.circular(30), // Pill Shape
+            border:
+                isSelected
+                    ? null
+                    : Border.all(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      width: 1.5,
+                    ),
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                    : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 15, // Slightly larger font
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Content Card (Refined Style with Fade Animation)
+  Widget _buildContentCard(
+    Map<String, String> item,
+    int index, {
+    required bool isGrid,
+  }) {
+    // Fade-in animation on build
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 200),
+      builder: (context, double value, child) {
+        return Opacity(opacity: value, child: child);
+      },
+      child: GestureDetector(
+        onTap: () async {
+          final url = Uri.parse(item['url']!);
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: const Color(0xFFE5E7EB), // Lighter gray for outer border
+              width: 1.5,
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 // Small Icon Badge
-                 Container(
-                   padding: const EdgeInsets.all(8),
-                   decoration: BoxDecoration(
-                     color: Colors.white.withValues(alpha: 0.25), // Glassy
-                     shape: BoxShape.circle,
-                   ),
-                   child: Icon(icon, color: Colors.white, size: 18),
-                 ),
-                 
-                 const Spacer(), // Pushes text to bottom
-                 
-                 // Title with Auto-sizing logic (using Flexible)
-                 Text(
-                   title,
-                   style: GoogleFonts.poppins(
-                     fontSize: 16, // Slightly smaller base to fit
-                     fontWeight: FontWeight.bold,
-                     color: Colors.white,
-                     height: 1.2,
-                   ),
-                   maxLines: 2, 
-                   overflow: TextOverflow.ellipsis,
-                 ),
-                 
-                 const SizedBox(height: 4),
-                 
-                 Text(
-                   subtitle,
-                   style: GoogleFonts.poppins(
-                     fontSize: 11,
-                     fontWeight: FontWeight.w500,
-                     color: Colors.white.withValues(alpha: 0.8),
-                   ),
-                 ),
+                // Image/Thumbnail
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                        bottom: Radius.circular(0),
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl: item['thumbnail']!,
+                        fit: BoxFit.cover,
+                        height: isGrid ? (index % 2 == 0 ? 180 : 140) : 220,
+                        width: double.infinity,
+                        placeholder:
+                            (context, url) =>
+                                Container(color: Colors.grey[100]),
+                        errorWidget:
+                            (context, url, error) => Container(
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.error),
+                            ),
+                      ),
+                    ),
+                    // Badge Overlay
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          item['badge'] ?? 'New',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Play Icon if Video
+                    if (item['type'] == 'video')
+                      Positioned.fill(
+                        child: Center(
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.play_arrow,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Content Details
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['title']!,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item['subtitle']!,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 11,
+                          color: const Color(0xFF6B7280),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+                      // Action Button
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF111827), // Black Button
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "İncele",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
-  }
-  
-  Gradient _getGradientForCategory(int index) {
-     // More vivid, creative gradients
-     final gradients = [
-       const LinearGradient(
-         colors: [Color(0xFF4facfe), Color(0xFF00f2fe)], // Vivid Blue/Cyan
-         begin: Alignment.topLeft, end: Alignment.bottomRight,
-       ),
-       const LinearGradient(
-         colors: [Color(0xFFf093fb), Color(0xFFf5576c)], // Pink/Red
-         begin: Alignment.topLeft, end: Alignment.bottomRight,
-       ),
-       const LinearGradient(
-         colors: [Color(0xFF84fab0), Color(0xFF8fd3f4)], // Minty
-         begin: Alignment.topLeft, end: Alignment.bottomRight,
-       ),
-       const LinearGradient(
-         colors: [Color(0xFFfa709a), Color(0xFFfee140)], // Sunset
-         begin: Alignment.topLeft, end: Alignment.bottomRight,
-       ),
-       const LinearGradient(
-         colors: [Color(0xFF667eea), Color(0xFF764ba2)], // Deep Purple
-         begin: Alignment.topLeft, end: Alignment.bottomRight,
-       ),
-     ];
-     return gradients[index % gradients.length];
   }
 }
