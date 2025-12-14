@@ -7,6 +7,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:animate_do/animate_do.dart';
 
+import 'package:somine_app/screens/profile_screen.dart';
+
+import 'dart:ui'; // Required for ImageFilter
+
+import 'package:somine_app/screens/category_manager_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -130,17 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter, // Extended gradient down
-            stops: [0.4, 0.8], // Gray stays longer, white starts lower
-            colors: [
-              Color(0xFFF2F1F6), // Soft gray
-              Colors.white, // White
-            ],
-          ),
-        ),
+        color: Colors.white, // FORCE PURE WHITE
         child: Stack(
           children: [
             SafeArea(
@@ -171,9 +167,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Container(
                                       width: 48,
                                       height: 48,
-                                      decoration: const BoxDecoration(
+                                      decoration: BoxDecoration(
                                         color: Colors.white,
                                         shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(0xFFE5E7EB),
+                                          width: 1.5,
+                                        ), // Added Grey Border
                                       ),
                                       child: const Icon(
                                         Icons.sort,
@@ -186,9 +186,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Container(
                                           width: 48,
                                           height: 48,
-                                          decoration: const BoxDecoration(
+                                          decoration: BoxDecoration(
                                             color: Colors.white,
                                             shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(0xFFE5E7EB),
+                                              width: 1.5,
+                                            ), // Added Grey Border
                                           ),
                                           child: const Icon(
                                             CupertinoIcons.search,
@@ -197,21 +201,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 12),
-                                        Container(
-                                          width: 48,
-                                          height: 48,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        const ProfileScreen(),
+                                              ),
+                                            );
+                                          },
+                                          child: Container(
+                                            width: 48,
+                                            height: 48,
+                                            decoration: BoxDecoration(
                                               color: Colors.white,
-                                              width: 2,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: const Color(
+                                                  0xFFE5E7EB,
+                                                ), // Added Grey Border (Existing was white)
+                                                width: 1.5,
+                                              ),
                                             ),
-                                          ),
-                                          child: const Icon(
-                                            CupertinoIcons.person,
-                                            color: Colors.black,
-                                            size: 24,
+                                            child: const Icon(
+                                              CupertinoIcons.person,
+                                              color: Colors.black,
+                                              size: 24,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -263,137 +281,162 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 24),
 
-                              // Action Buttons Row
+                              // Action Button Row (Single Slider Button)
                               FadeInUp(
                                 delay: const Duration(milliseconds: 600),
-                                child: Row(
-                                  children: [
-                                    // Button 1: İçerik Ekle (Gradient)
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.transparent,
+                                child: Container(
+                                  width: double.infinity,
+                                  height:
+                                      80, // Increased height to accommodate padding
+                                  padding: const EdgeInsets.all(
+                                    3,
+                                  ), // Border thickness
+                                  decoration: BoxDecoration(
+                                    // Gradient Border
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF2563EB), // Blue 600
+                                        Color(0xFF06B6D4), // Cyan 500
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      40,
+                                    ), // Larger Radius
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(
+                                      5,
+                                    ), // Inner Padding (Gap)
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                        37,
+                                      ), // Adjusted radius
+                                    ),
+                                    child: Container(
+                                      // Inner Button Container
+                                      width: double.infinity,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors
+                                                .white, // Inner White Background
+                                        borderRadius: BorderRadius.circular(32),
+                                        border: Border.all(
+                                          color: const Color(0xFFE5E7EB),
+                                          width: 1,
+                                        ), // Inner Border
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {},
                                           borderRadius: BorderRadius.circular(
-                                            28,
+                                            32,
                                           ),
-                                          border: Border.all(
-                                            color: const Color(
-                                              0xFFBFDBFE,
-                                            ), // Soft Blue Border
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            // Soft Gradient for Content Add
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFFDBEAFE), // Blue 100
-                                                Color(0xFFEFF6FF), // Blue 50
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0,
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              24,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(
-                                                CupertinoIcons
-                                                    .add_circled_solid,
-                                                color:
-                                                    Colors
-                                                        .black, // Changed to Black
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                "İçerik Ekle",
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color:
-                                                      Colors
-                                                          .black, // Changed to Black
+                                            child: Row(
+                                              children: [
+                                                // Circular Arrow Button (Gradient)
+                                                Container(
+                                                  width: 48,
+                                                  height: 48,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        gradient: LinearGradient(
+                                                          colors: [
+                                                            Color(0xFF111827),
+                                                            Color(0xFF374151),
+                                                          ], // Dark Gradient
+                                                          begin:
+                                                              Alignment.topLeft,
+                                                          end:
+                                                              Alignment
+                                                                  .bottomRight,
+                                                        ),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                  child: const Icon(
+                                                    Icons.arrow_forward,
+                                                    color:
+                                                        Colors
+                                                            .white, // White Icon
+                                                    size: 24,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+
+                                                // Text
+                                                Expanded(
+                                                  child: Text(
+                                                    "İçerik Ekle",
+                                                    textAlign: TextAlign.center,
+                                                    style: GoogleFonts.poppins(
+                                                      color: const Color(
+                                                        0xFF111827,
+                                                      ), // Dark Text
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+
+                                                // Arrows Indicator (Dark)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        right: 16.0,
+                                                      ),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons
+                                                            .keyboard_arrow_right,
+                                                        color: Colors.black
+                                                            .withValues(
+                                                              alpha: 0.1,
+                                                            ),
+                                                        size: 20,
+                                                      ),
+                                                      Icon(
+                                                        Icons
+                                                            .keyboard_arrow_right,
+                                                        color: Colors.black
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
+                                                        size: 20,
+                                                      ),
+                                                      const Icon(
+                                                        Icons
+                                                            .keyboard_arrow_right,
+                                                        color: Colors.black,
+                                                        size: 20,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-
-                                    const SizedBox(width: 16),
-
-                                    // Button 2: Kategori Ekle (Diagonal Gradient)
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.transparent,
-                                          borderRadius: BorderRadius.circular(
-                                            28,
-                                          ),
-                                          border: Border.all(
-                                            color: const Color(0xFFCBD5E1),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            // Diagonal Split Gradient
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFFF1F5F9), // Slate 100
-                                                Colors.white, // White
-                                              ],
-                                              stops: [
-                                                0.5,
-                                                0.5,
-                                              ], // Hard stop in the middle
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              24,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(
-                                                CupertinoIcons
-                                                    .square_grid_2x2_fill,
-                                                color: Colors.black, // Black
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                "Kategori Ekle",
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.black, // Black
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 32),
@@ -414,18 +457,41 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap:
-                                          () => setState(
-                                            () => _selectedCategory = "Tümü",
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    const CategoryManagerScreen(),
                                           ),
-                                      child: Text(
-                                        "tümü",
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: const Color(0xFF9CA3AF),
-                                          decoration: TextDecoration.underline,
+                                        );
+                                      },
+                                      child: Container(
+                                        width: 48, // Same size as top icons
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFFE5E7EB),
+                                            width: 1.5,
+                                          ), // Added Grey Border
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.05,
+                                              ),
+                                              blurRadius: 10, // Softer shadow
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
                                         ),
+                                        child: const Icon(
+                                          CupertinoIcons.slider_horizontal_3,
+                                          size: 24,
+                                          color: Colors.black,
+                                        ), // Better icon
                                       ),
                                     ),
                                   ],
@@ -615,10 +681,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white,
                       size: 26,
                     ),
-                    const Icon(
-                      CupertinoIcons.person,
-                      color: Colors.white,
-                      size: 26,
+                    IconButton(
+                      icon: const Icon(
+                        CupertinoIcons.person,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
