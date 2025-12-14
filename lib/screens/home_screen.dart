@@ -5,6 +5,8 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:animate_do/animate_do.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -160,94 +162,101 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Header Row (Menu & Search/Profile)
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF111827),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.sort,
-                                      color: Colors.white,
-                                      size: 28,
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          CupertinoIcons.search,
-                                          color: Colors.black,
-                                          size: 24,
-                                        ),
+                              FadeInDown(
+                                duration: const Duration(milliseconds: 600),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
                                       ),
-                                      const SizedBox(width: 12),
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
+                                      child: const Icon(
+                                        Icons.sort,
+                                        color: Colors.black,
+                                        size: 28,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 48,
+                                          height: 48,
+                                          decoration: const BoxDecoration(
                                             color: Colors.white,
-                                            width: 2,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            CupertinoIcons.search,
+                                            color: Colors.black,
+                                            size: 24,
                                           ),
                                         ),
-                                        child: const Icon(
-                                          CupertinoIcons.person,
-                                          color: Colors.black,
-                                          size: 24,
+                                        const SizedBox(width: 12),
+                                        Container(
+                                          width: 48,
+                                          height: 48,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            CupertinoIcons.person,
+                                            color: Colors.black,
+                                            size: 24,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 32),
 
                               // Greeting
-                              Text(
-                                "Merhaba, Gökmen!",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF64748B),
+                              FadeInLeft(
+                                delay: const Duration(milliseconds: 200),
+                                child: Text(
+                                  "Merhaba, Gökmen!",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF64748B),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 12),
 
                               // Slogan (Full Width)
-                              ShaderMask(
-                                blendMode: BlendMode.srcIn,
-                                shaderCallback:
-                                    (bounds) => const LinearGradient(
-                                      colors: [
-                                        Color(0xFF2563EB), // Blue 600
-                                        Color(0xFF06B6D4), // Cyan 500
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ).createShader(bounds),
-                                child: Text(
-                                  "Dijital dünyanı\ntasarla.",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 42,
-                                    fontWeight:
-                                        FontWeight
-                                            .bold, // Slightly bolder for gradient
-                                    height: 1.1,
-                                    letterSpacing: -0.5,
+                              FadeInLeft(
+                                delay: const Duration(milliseconds: 400),
+                                child: ShaderMask(
+                                  blendMode: BlendMode.srcIn,
+                                  shaderCallback:
+                                      (bounds) => const LinearGradient(
+                                        colors: [
+                                          Color(0xFF2563EB), // Blue 600
+                                          Color(0xFF06B6D4), // Cyan 500
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ).createShader(bounds),
+                                  child: Text(
+                                    "Dijital dünyanı\ntasarla.",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.1,
+                                      letterSpacing: -0.5,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -255,132 +264,172 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 24),
 
                               // Action Buttons Row
-                              Row(
-                                children: [
-                                  // Button 1: İçerik Ekle (Dark/Gray)
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(
-                                          0xFF1F2937,
-                                        ), // Dark Gray
-                                        borderRadius: BorderRadius.circular(24),
-                                        boxShadow: [
-                                          BoxShadow(
+                              FadeInUp(
+                                delay: const Duration(milliseconds: 600),
+                                child: Row(
+                                  children: [
+                                    // Button 1: İçerik Ekle (Gradient)
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.circular(
+                                            28,
+                                          ),
+                                          border: Border.all(
                                             color: const Color(
-                                              0xFF1F2937,
-                                            ).withValues(alpha: 0.3),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 6),
+                                              0xFFBFDBFE,
+                                            ), // Soft Blue Border
+                                            width: 1.5,
                                           ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                            CupertinoIcons.add_circled_solid,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            "İçerik Ekle",
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 16),
-
-                                  // Button 2: Kategori Ekle (White)
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(24),
-                                        border: Border.all(
-                                          color: const Color(0xFFE5E7EB),
-                                          width: 1.5,
                                         ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.05,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            // Soft Gradient for Content Add
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFFDBEAFE), // Blue 100
+                                                Color(0xFFEFF6FF), // Blue 50
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                            CupertinoIcons.square_grid_2x2_fill,
-                                            color: Color(0xFF1F2937),
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            "Kategori Ekle",
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF1F2937),
+                                            borderRadius: BorderRadius.circular(
+                                              24,
                                             ),
                                           ),
-                                        ],
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                CupertinoIcons
+                                                    .add_circled_solid,
+                                                color:
+                                                    Colors
+                                                        .black, // Changed to Black
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                "İçerik Ekle",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  color:
+                                                      Colors
+                                                          .black, // Changed to Black
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+
+                                    const SizedBox(width: 16),
+
+                                    // Button 2: Kategori Ekle (Diagonal Gradient)
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.circular(
+                                            28,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFFCBD5E1),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            // Diagonal Split Gradient
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFFF1F5F9), // Slate 100
+                                                Colors.white, // White
+                                              ],
+                                              stops: [
+                                                0.5,
+                                                0.5,
+                                              ], // Hard stop in the middle
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              24,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                CupertinoIcons
+                                                    .square_grid_2x2_fill,
+                                                color: Colors.black, // Black
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                "Kategori Ekle",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black, // Black
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 32),
 
                               // Category Header
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Kategori seç",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF9CA3AF),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap:
-                                        () => setState(
-                                          () => _selectedCategory = "Tümü",
-                                        ),
-                                    child: Text(
-                                      "tümü",
+                              FadeInUp(
+                                delay: const Duration(milliseconds: 800),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Kategori seç",
                                       style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
                                         color: const Color(0xFF9CA3AF),
-                                        decoration: TextDecoration.underline,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    GestureDetector(
+                                      onTap:
+                                          () => setState(
+                                            () => _selectedCategory = "Tümü",
+                                          ),
+                                      child: Text(
+                                        "tümü",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFF9CA3AF),
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 16),
                             ],
@@ -388,68 +437,79 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
 
                         // Categories (Horizontal List - Redesigned)
-                        SizedBox(
-                          height:
-                              60, // Adjusted height for slimmer chips (was 80)
-                          child: ListView.builder(
-                            clipBehavior: Clip.none,
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: _categories.length,
-                            itemBuilder: (context, index) {
-                              return Center(
-                                child: _buildCategoryChip(_categories[index]),
-                              );
-                            },
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 1000),
+                          child: SizedBox(
+                            height: 60,
+                            child: ListView.builder(
+                              clipBehavior: Clip.none,
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              itemCount: _categories.length,
+                              itemBuilder: (context, index) {
+                                return Center(
+                                  child: _buildCategoryChip(_categories[index]),
+                                );
+                              },
+                            ),
                           ),
                         ),
 
-                        const SizedBox(height: 24), // Reduced spacing (was 40)
-                        // Toggle Row (Count + Grid/List Icons)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "${filteredContent.length} İçerik",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1A1E38),
+                        const SizedBox(height: 24),
+                        // Toggle Row
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 1200),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "${filteredContent.length} İçerik",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF1A1E38),
+                                  ),
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      CupertinoIcons.square_grid_2x2_fill,
-                                      color:
-                                          _isGridMode
-                                              ? const Color(0xFF1A1E38)
-                                              : const Color(0xFF9CA3AF),
-                                      size: 20,
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        CupertinoIcons.square_grid_2x2_fill,
+                                        color:
+                                            _isGridMode
+                                                ? const Color(0xFF1A1E38)
+                                                : const Color(0xFF9CA3AF),
+                                        size: 20,
+                                      ),
+                                      onPressed:
+                                          () => setState(
+                                            () => _isGridMode = true,
+                                          ),
                                     ),
-                                    onPressed:
-                                        () =>
-                                            setState(() => _isGridMode = true),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      CupertinoIcons.list_bullet,
-                                      color:
-                                          !_isGridMode
-                                              ? const Color(0xFF1A1E38)
-                                              : const Color(0xFF9CA3AF),
-                                      size: 22,
+                                    IconButton(
+                                      icon: Icon(
+                                        CupertinoIcons.list_bullet,
+                                        color:
+                                            !_isGridMode
+                                                ? const Color(0xFF1A1E38)
+                                                : const Color(0xFF9CA3AF),
+                                        size: 22,
+                                      ),
+                                      onPressed:
+                                          () => setState(
+                                            () => _isGridMode = false,
+                                          ),
                                     ),
-                                    onPressed:
-                                        () =>
-                                            setState(() => _isGridMode = false),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
 
