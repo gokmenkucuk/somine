@@ -1,0 +1,136 @@
+PROJECT MASTER PLAN: So Mine (v2.1 Final)
+Vizyon: "Curate Your World." (Dünyanı Tasarla). Konsept: Link ve içerikleri bir depoya değil, dijital bir müzeye dönüştüren; rüzgar esintisi kadar hafif ve akışkan bir kürasyon uygulaması.
+
+1. MARKA KİMLİĞİ & GÖRSEL DİL
+🔹 İsim ve Logo
+İsim: So Mine (Ayrı yazılır).
+
+Logo: "Saran Rüzgar" (The Embracing Wind).
+
+Metafor: Mavi/Turkuaz akışkan bir rüzgar şeridi ('S'), merkezdeki değerli içeriği ('O' veya Kutu) nazikçe sarıp sarmalar.
+
+Font Ailesi: Outfit (Modern, geometrik ama dost canlısı).
+
+Başlıklar: Outfit Bold / SemiBold.
+
+Metinler: Outfit Regular / Medium.
+
+🎨 Renk Paleti (The "Fresh" Palette)
+Uygulama "Soft & White" temasında olacak ancak renkler patlayacak.
+
+Zemin (Background): Ghost White #F8F9FB (Bembeyaz değil, göz yormayan sıcak beyaz).
+
+Metin (Primary Text): Deep Navy #1A1E38 (Siyah yerine asil lacivert).
+
+Metin (Secondary): Soft Grey #89898E.
+
+Ana Marka Rengi (Brand Accent):
+
+Cyan #22D3EE ➔ Royal Blue #0EA5E9 (Canlı Turkuaz-Mavi Gradient).
+
+Kullanım: Butonlar, Aktif İkonlar, Vakum Efekti.
+
+2. ANA SAYFA KURGUSU (The Modular Gallery)
+Ana sayfa statik bir liste değil, kullanıcının yönetebildiği modüler bir **"Dashboard"**dur.
+
+A. Üst Bar (Header)
+Sol: "Merhaba, [İsim] 👋" (Outfit Bold, Lacivert).
+
+Sağ: Vakum Butonu (+). (Turkuaz Gradient, hafif parlayan gölge).
+
+B. Vitrin Alanı (The Showcase)
+Yatay kaydırılabilir (Horizontal Scroll) en üst alan.
+
+İçerik: Kullanıcının en önemli 5-7 kategorisi.
+
+Tasarım: Sıkıcı klasörler değil, özel "Album Art" kapakları.
+
+Renk Skalası (Fresh Gradients):
+
+Inbox: Signature Cyan/Blue (Marka Rengi).
+
+İlham: Lavender Mist (Soft Mor/Lila).
+
+Favoriler: Peach Sorbet (Şeftali/Mercan).
+
+Okunacaklar: Minty Breeze (Ferah Yeşil/Mavi).
+
+Özel: Deep Ocean (Koyu Lacivert).
+
+Sonsuzluk Kartı: Listenin en sonunda "Tümünü Gör / Yönet" kartı (Minimalist border'lı).
+
+C. Modüler Akış (Swimlanes & Density Control)
+Kullanıcının yönettiği yatay içerik satırları.
+
+Yapı: Her satır bir kategoridir (Örn: "Tatil Planlarım", "Instagram Reels").
+
+Kontrol Paneli: Her başlığın yanında [3] [4] [5] butonları ve ⚙️ (Ayar) ikonu bulunur.
+
+Fonksiyon: Kullanıcı o satırda yan yana 3, 4 veya 5 kart görmek istediğini seçebilir.
+
+Kişiselleştirme: ⚙️ ikonuna basarak o satıra hangi kategoriyi getireceğini seçebilir.
+
+Kart Stili: iOS Photos / Netflix tarzı yatay kayan şeritler.
+
+3. "KILLER" ÖZELLİKLER (The Magic) ⚡
+A. Vakum Efekti (The Wormhole Capture) - Home Screen Overlay
+Kullanıcı (+) butonuna bastığında veya "Share" dediğinde yeni sayfa açılmaz.
+
+Aksiyon: Ana sayfanın üzerine yarı şeffaf bir katman iner.
+
+Animasyon: İçerik kartı belirir, "Kaydet" denince büzülerek ve dönerek (Genie Effect) alttaki Pano (Studio) ikonunun içine emilir.
+
+Amaç: Akışı bozmadan hızlıca içeri atmak (Input).
+
+B. Pano Sayfası (The Studio) - Sorting Area
+Alt menüdeki ortadaki butona basınca açılan özel sayfa.
+
+Metafor: Dağınık bir çalışma masası.
+
+İşleyiş: Vakumlanan (henüz kategorize edilmemiş) içerikler burada "İskambil Destesi" gibi üst üste durur.
+
+Gamification: Kullanıcı kartı sürükleyip aşağıdaki kategori balonlarına bırakır.
+
+C. Hızlı Ayrıştırıcı (The Magnetic Tray)
+Hem Share Extension'da hem de Ana Sayfada karta tıklayınca açılan panel.
+
+Arayüz: Üstte havada asılı duran içerik kartı, altta kategori balonları.
+
+Etkileşim:
+
+Sürükle: Kartı tutup kategoriye sürükleyince kategori balonu büyür (Manyetik efekt) ve kartı yutar.
+
+Tıkla: Kategoriye tıklayınca kart oraya uçar.
+
+D. Yükleme Ekranı (The Loading Transition) - Splash Screen Animation 🔥 [YENİ]
+Uygulama açılırken veya veri yüklenirken, statik bir bekleme yerine dinamik bir geçiş efekti kullanılır.
+
+Başlangıç: Ekranın ortasında tamamen Siyah "somine" logosu belirir.
+
+Animasyon: Siyah logo, sanki içeriden bir ışık dalgası geçiyormuş gibi, soldan sağa veya merkezden dışa doğru Marka Rengi Gradienti (Turkuaz -> Mavi) ile dolar.
+
+Hissiyat: Uygulamanın "canlandığı" ve enerji dolduğu izlenimi verilir. Logo tamamen renklenince Ana Sayfa'ya geçiş yapılır.
+
+4. GELİŞMİŞ ARAMA VE KEŞİF (Discovery Hub)
+Sadece arama değil, uygulamanın "Katalog" sayfasıdır.
+
+Omni-Search Bar: Gelişmiş filtreleme özellikli arama çubuğu.
+
+Akıllı Çipler: Arama altında [Videolar], [Linkler], [Görseller] gibi hızlı tip filtreleri.
+
+Kategori Kataloğu: Vitrinde yer bulamayan tüm kategorilerin listelendiği, renkli gradient kutulardan oluşan 2 sütunlu ızgara (Grid).
+
+Empty State: Arama sonucu yoksa; "Boş kutuya bakan üzgün rüzgar" illüstrasyonu.
+
+📝 Yazılımcı İçin Notlar (Technical Handoff)
+Framework: Flutter (Animasyon performansı için kritik).
+
+State Management: Modüler ana sayfa yapısı (Satır değiştirme, yoğunluk ayarı) için sağlam bir yapı (Bloc veya Riverpod) şart.
+
+Haptics: Vakum efekti ve sürükle-bırak işlemlerinde mutlaka titreşim geri bildirimi (Haptic Feedback) olmalı.
+
+Transitions: Sayfa geçişlerinde standart "Slide" yerine "Hero Animation" (Kartın büyüyerek sayfaya dönüşmesi) kullanılmalı.
+
+Splash Screen: Loading animasyonu için bir Lottie dosyası veya Flutter'ın kendi animasyon kütüphanesi kullanılabilir.
+
+Trea'ya Not: "Bu proje bir link deposu değil, bir deneyim tasarımıdır. Renklerin canlılığı, 'Vakum' ve yeni 'Loading' animasyonunun pürüzsüzlüğü, Ana Sayfa'daki 'Modüler' yapı projenin kalbidir. Kodlarken 'Soft & Creative' vizyonundan şaşmayalım." 🚀
