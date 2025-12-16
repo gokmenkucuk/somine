@@ -13,6 +13,8 @@ import 'dart:ui'; // Required for ImageFilter
 
 import 'package:somine_app/screens/category_manager_screen.dart';
 
+import 'package:somine_app/screens/search_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -183,21 +185,38 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     Row(
                                       children: [
-                                        Container(
-                                          width: 48,
-                                          height: 48,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: const Color(0xFFE5E7EB),
-                                              width: 1.5,
-                                            ), // Added Grey Border
-                                          ),
-                                          child: const Icon(
-                                            CupertinoIcons.search,
-                                            color: Colors.black,
-                                            size: 24,
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        const SearchScreen(),
+                                              ),
+                                            );
+                                          },
+                                          child: Hero(
+                                            tag: 'searchField',
+                                            child: Container(
+                                              width: 48,
+                                              height: 48,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFFE5E7EB,
+                                                  ),
+                                                  width: 1.5,
+                                                ), // Added Grey Border
+                                              ),
+                                              child: const Icon(
+                                                CupertinoIcons.search,
+                                                color: Colors.black,
+                                                size: 24,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
@@ -576,10 +595,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white,
                       size: 26,
                     ),
-                    const Icon(
-                      CupertinoIcons.search,
-                      color: Colors.white,
-                      size: 26,
+                    IconButton(
+                      icon: const Icon(
+                        CupertinoIcons.search,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SearchScreen(),
+                          ),
+                        );
+                      },
                     ),
                     // Center ADD Button
                     Container(
