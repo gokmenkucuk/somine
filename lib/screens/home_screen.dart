@@ -9,7 +9,7 @@ import 'package:animate_do/animate_do.dart';
 
 import 'package:somine_app/screens/profile_screen.dart';
 
-import 'dart:ui'; // Required for ImageFilter
+// Required for ImageFilter
 
 import 'package:somine_app/screens/category_manager_screen.dart';
 
