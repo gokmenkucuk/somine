@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:animate_do/animate_do.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 import 'package:somine_app/screens/profile_screen.dart';
 
@@ -275,25 +276,30 @@ class _HomeScreenState extends State<HomeScreen> {
                               // Slogan (Full Width)
                               FadeInLeft(
                                 delay: const Duration(milliseconds: 400),
-                                child: ShaderMask(
-                                  blendMode: BlendMode.srcIn,
-                                  shaderCallback:
-                                      (bounds) => const LinearGradient(
-                                        colors: [
-                                          Color(0xFF2563EB), // Blue 600
-                                          Color(0xFF06B6D4), // Cyan 500
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ).createShader(bounds),
-                                  child: Text(
-                                    "Dijital dünyanı\ntasarla.",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 42,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.1,
-                                      letterSpacing: -0.5,
-                                    ),
+                                child: Text(
+                                  "Dijital dünyanı\ntasarla.",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 42,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.1,
+                                    letterSpacing: -0.5,
+                                    foreground:
+                                        Paint()
+                                          ..shader = const LinearGradient(
+                                            colors: [
+                                              Color(0xFF000000), // Pure Black
+                                              Color(0xFF434343), // Anthracite
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(
+                                            const Rect.fromLTWH(
+                                              0.0,
+                                              0.0,
+                                              300.0,
+                                              100.0,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),
@@ -675,25 +681,26 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            // Gradient for Selected
+            // Gradient for Selected (Aurora Effect)
             gradient:
                 isSelected
                     ? const LinearGradient(
                       colors: [
-                        Color(0xFF3B82F6), // Blue
-                        Color(0xFF2563EB), // Darker Blue for 3D depth
-                        Color(0xFF3B82F6),
+                        Color(0xFFE8E6C9), // Soft Yellow/Cream
+                        Color(0xFFC0D6D8), // Soft Blue/Grey
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      stops: [0.0, 0.5, 1.0], // Wave/3D effect in middle
                     )
                     : null,
             color: isSelected ? null : Colors.white,
             borderRadius: BorderRadius.circular(30), // Pill Shape
             border:
                 isSelected
-                    ? null
+                    ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      width: 1,
+                    ) // Subtle border for active
                     : Border.all(
                       color: Colors.grey.withValues(alpha: 0.2),
                       width: 1.5,
@@ -702,7 +709,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 isSelected
                     ? [
                       BoxShadow(
-                        color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                        color: const Color(
+                          0xFF6B8C96,
+                        ).withValues(alpha: 0.2), // Soft colored shadow
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -718,7 +727,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text(
             label,
             style: GoogleFonts.poppins(
-              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              color:
+                  isSelected
+                      ? const Color(0xFF1A1E38)
+                      : const Color(0xFF4B5563), // Dark text on light gradient
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 15, // Slightly larger font
             ),
