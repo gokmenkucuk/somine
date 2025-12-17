@@ -9,6 +9,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 
 import 'package:somine_app/screens/profile_screen.dart';
+import 'package:somine_app/screens/notifications_screen.dart';
 
 // Required for ImageFilter
 
@@ -228,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               MaterialPageRoute(
                                                 builder:
                                                     (context) =>
-                                                        const ProfileScreen(),
+                                                        const NotificationsScreen(),
                                               ),
                                             );
                                           },
@@ -246,7 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                             ),
                                             child: const Icon(
-                                              CupertinoIcons.person,
+                                              CupertinoIcons
+                                                  .bell, // Changed to Bell Icon
                                               color: Colors.black,
                                               size: 24,
                                             ),
