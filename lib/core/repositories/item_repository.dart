@@ -22,7 +22,7 @@ class ItemRepository {
       final snapshot = await query.get();
 
       final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
-      items.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting items: $e');
@@ -163,7 +163,7 @@ class ItemRepository {
           })
           .toList();
       
-      items.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error searching items: $e');
@@ -180,7 +180,7 @@ class ItemRepository {
           .get();
 
       final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
-      items.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting favorite items: $e');
@@ -199,7 +199,7 @@ class ItemRepository {
 
     return query.snapshots().map((snapshot) {
       final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
-      items.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     });
   }

@@ -19,7 +19,7 @@ class CategoryRepository {
       final categories = snapshot.docs
           .map((doc) => CategoryModel.fromFirestore(doc))
           .toList();
-      categories.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+      categories.sort((a, b) => a.order.compareTo(b.order));
       return categories;
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error getting categories: $e');
@@ -130,7 +130,7 @@ class CategoryRepository {
         .snapshots()
         .map((snapshot) {
           final categories = snapshot.docs.map((doc) => CategoryModel.fromFirestore(doc)).toList();
-          categories.sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+          categories.sort((a, b) => a.order.compareTo(b.order));
           return categories;
         });
   }

@@ -9,12 +9,39 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:somine_app/main.dart';
 
-void main() {
-  testWidgets('Brand logo text renders correctly', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const SoMineApp());
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/screens/login_screen.dart';
+import 'mock.dart';
 
-    // Verify that brand logo text is displayed.
-    expect(find.text('So mine.'), findsOneWidget);
+void main() {
+  setupFirebaseAuthMocks();
+
+  testWidgets('App renders and navigates to LoginScreen', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    // Wrap with ProviderScope as required by the app, overriding auth state to be null (not logged in)
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authStateProvider.overrideWith((ref) => Stream.value(null)),
+        ],
+        child: const SoMineApp(),
+      ),
+    );
+
+    // The app starts with SplashScreen. 
+    // Wait for the splash screen animation/delay to complete.
+    // SplashScreen has a 3-second delay plus animation.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(); // Handle setState in main
+    await tester.pump(); // Handle AuthWrapper/LoginScreen build
+
+    // Verify LoginScreen is present
+    expect(find.byType(LoginScreen), findsOneWidget);
+    
+    // Check for Google login button
+    expect(find.text('Google ile Devam Et'), findsOneWidget);
+    // Note: Depends on platform. On test environment formatted as iOS might show Apple button.
+    // Let's just check for the slogan.
   });
 }
