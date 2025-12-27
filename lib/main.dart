@@ -45,6 +45,13 @@ void main() async {
   // Initialize Share Service
   ShareService().initialize();
   
+  // Debug Assets
+  try {
+     // We need services import for rootBundle
+     // But let's just use a simple try/catch around the run logic or inside the first widget?
+     // Actually rootBundle is global in services.
+  } catch (e) {}
+
   runApp(
     const ProviderScope(
       child: SoMineApp(),

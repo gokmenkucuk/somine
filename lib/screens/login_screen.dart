@@ -65,6 +65,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Stack(
             children: [
               // Arka Plan İllüstrasyonu (En altta, çok hafif opaklık)
+              // Arka Plan İllüstrasyonu (Kaldirildi - Asset eksikliği)
+              /*
               Positioned(
                 bottom: -50,
                 left: 0,
@@ -84,6 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
+              */
 
               // Ana İçerik
               SafeArea(
@@ -95,18 +98,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Spacer(flex: 1),
-
-                      // Logo
-                      Image.asset(
-                        'assets/images/logo_v2.png',
-                        height: 180,
-                        fit: BoxFit.contain,
-                      ),
-
                       const Spacer(flex: 2),
 
-                      // Slogan
+                      // Slogan (Left-aligned, no period)
                       const _ShimmerSlogan(),
 
                       const SizedBox(height: 48),
@@ -196,55 +190,34 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = GoogleFonts.poppins(
-      fontSize: 36,
-      fontWeight: FontWeight.bold,
-      color: DesignTokens.textPrimary,
-      height: 1.2,
-    );
-
-    return Stack(
-      alignment: Alignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Dijital Dünyanı\nTasarla.',
-          textAlign: TextAlign.center,
-          style: textStyle,
+          'Dijital',
+          style: GoogleFonts.poppins(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: DesignTokens.textPrimary,
+            height: 1.2,
+          ),
         ),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return ShaderMask(
-              shaderCallback: (bounds) {
-                return LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: const [
-                    Colors.transparent,
-                    Colors.white,
-                    Colors.white,
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.45, 0.55, 1.0],
-                  transform: _SloganGradientTransform(_controller.value),
-                ).createShader(bounds);
-              },
-              blendMode: BlendMode.dstIn,
-              child: child,
-            );
-          },
-          child: ShaderMask(
-            shaderCallback:
-                (bounds) => const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-            child: Text(
-              'Dijital Dünyanı\nTasarla.',
-              textAlign: TextAlign.center,
-              style: textStyle.copyWith(color: Colors.white),
-            ),
+        Text(
+          'Dünyanı',
+          style: GoogleFonts.poppins(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: DesignTokens.textPrimary,
+            height: 1.2,
+          ),
+        ),
+        Text(
+          'Tasarla',
+          style: GoogleFonts.poppins(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: DesignTokens.textPrimary,
+            height: 1.2,
           ),
         ),
       ],

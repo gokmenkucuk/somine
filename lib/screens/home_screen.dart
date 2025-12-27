@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Riverpod
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -7,219 +7,143 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:animate_do/animate_do.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:somine_app/screens/profile_screen.dart';
-import 'dart:ui' as ui;
 import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/screens/add_content_screen.dart';
-
-import 'package:somine_app/screens/category_manager_screen.dart';
-
 import 'package:somine_app/screens/search_screen.dart';
+import 'package:somine_app/core/design/app_colors.dart';
 
-class HomeScreen extends StatefulWidget {
+// Providers & Models
+import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/models/category_model.dart';
+import 'package:somine_app/core/utils/demo_seeder.dart'; // Import Seeder
+import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
+
+enum ViewMode { square, masonry, feed }
+
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  // State for Grid/List Toggle & Category Selection
-  bool _isGridMode = true;
-  String _selectedCategory = 'Tümü';
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // State for Grid/List Toggle
+  ViewMode _viewMode = ViewMode.square; 
+  // No local _selectedCategory string, we use provider state
 
   // Sharing Intent Subscriptions
   late StreamSubscription _intentDataStreamSubscription;
+  
+  // Pagination Controller
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _setupSharingIntent();
+    
+    // Pagination Listener
+    _scrollController.addListener(_onScroll);
+  }
+  
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final feedState = ref.read(paginatedFeedProvider);
+      if (!feedState.isLoading && feedState.hasMore) {
+        ref.read(paginatedFeedProvider.notifier).loadMore();
+      }
+    }
   }
 
   @override
   void dispose() {
     _intentDataStreamSubscription.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
   // Setup Share Intent Listener
   void _setupSharingIntent() {
-    // For sharing or opening urls/text coming from outside the app while the app is in the memory
-    _intentDataStreamSubscription = ReceiveSharingIntent.instance
+     _intentDataStreamSubscription = ReceiveSharingIntent.instance
         .getMediaStream()
-        .listen(
-          (List<SharedMediaFile> value) {
+        .listen((List<SharedMediaFile> value) {
             if (value.isNotEmpty && value.first.path.isNotEmpty) {
-              if (mounted) {
-                _openAddContentScreen(initialText: value.first.path);
-              }
+              if (mounted) _openAddContentScreen(initialText: value.first.path);
             }
-          },
-          onError: (err) {
-            debugPrint("getMediaStream error: $err");
-          },
-        );
+          }, onError: (err) => debugPrint("getMediaStream error: $err"));
 
-    // For sharing or opening urls/text coming from outside the app while the app is closed
-    ReceiveSharingIntent.instance.getInitialMedia().then((
-      List<SharedMediaFile> value,
-    ) {
+    ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> value) {
       if (value.isNotEmpty && value.first.path.isNotEmpty) {
-        if (mounted) {
-          _openAddContentScreen(initialText: value.first.path);
-        }
+        if (mounted) _openAddContentScreen(initialText: value.first.path);
       }
     });
   }
 
   void _openAddContentScreen({String? initialText}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddContentScreen(initialText: initialText),
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (context, animation, secondaryAnimation) => AddContentScreen(initialText: initialText),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
       ),
     );
   }
 
-  // Platform Color Helper
-  Color _getPlatformColor(String source) {
-    switch (source.toLowerCase()) {
-      case 'instagram':
-        return const Color(0xFFC13584); // Instagram Purple/Pink
-      case 'youtube':
-        return const Color(0xFFFF0000); // YouTube Red
-      case 'twitter':
-      case 'x':
-        return Colors.black; // X Black
-      case 'linkedin':
-        return const Color(0xFF0077B5); // LinkedIn Blue
-      default:
-        return const Color(0xFF1A1E38); // So.Mine Dark Blue
-    }
-  }
-
-  // Provided Content Data with Categories (Updated with Dynamic Ratios)
-  final List<Map<String, String>> _allContentList = [
-    {
-      'type': 'video',
-      'url':
-          'https://www.instagram.com/reel/DQ7I1OrDMMS/?igsh=NTNsYjJ5NWM2bTlw',
-      'thumbnail': 'https://picsum.photos/seed/insta1/400/600', // 2:3
-      'title': 'Instagram Reel',
-      'subtitle': 'Videoyu izlemek için tıklayın',
-      'source': 'Instagram',
-      'badge': 'Seyahat',
-      'category': 'Seyahat',
-    },
-    {
-      'type': 'video',
-      'url': 'https://youtu.be/dummy1',
-      'thumbnail': 'https://picsum.photos/seed/yt1/400/300', // 4:3
-      'title': 'YouTube Eğitim Videosu',
-      'subtitle': 'Flutter ile harikalar yaratın',
-      'source': 'YouTube',
-      'badge': 'Eğitim',
-      'category': 'Eğitim',
-    },
-    {
-      'type': 'link',
-      'url': 'https://twitter.com/dummy',
-      'thumbnail': 'https://picsum.photos/seed/tw1/400/400', // 1:1
-      'title': 'Twitter Thread',
-      'subtitle': 'Yazılım dünyasından haberler',
-      'source': 'Twitter',
-      'badge': 'Teknoloji',
-      'category': 'Teknoloji',
-    },
-    {
-      'type': 'video',
-      'url': 'https://instagram.com/dummy2',
-      'thumbnail': 'https://picsum.photos/seed/insta2/400/500', // 4:5
-      'title': 'Moda Haftası',
-      'subtitle': 'En son trendler',
-      'source': 'Instagram',
-      'badge': 'Moda',
-      'category': 'Moda',
-    },
-    {
-      'type': 'video',
-      'url':
-          'https://www.instagram.com/reel/DQ7I1OrDMMS/?igsh=NTNsYjJ5NWM2bTlw',
-      'thumbnail': 'https://picsum.photos/seed/insta3/400/700', // Tall
-      'title': 'Doğa Yürüyüşü',
-      'subtitle': 'Huzur dolu anlar',
-      'source': 'Instagram',
-      'badge': 'Spor',
-      'category': 'Spor',
-    },
-     {
-      'type': 'video',
-      'url': 'https://youtu.be/dummy2',
-      'thumbnail': 'https://picsum.photos/seed/yt2/400/250', // Wide
-      'title': 'Yemek Tarifi',
-      'subtitle': 'Lezzetli makarnalar',
-      'source': 'YouTube',
-      'badge': 'Yemek',
-      'category': 'Yemek',
-    },
-    {
-      'type': 'link',
-      'url': 'https://example.com',
-      'thumbnail': '', // NO IMAGE -> Triggers Fallback Gradient
-      'title': 'Görselsiz Fikir Notu',
-      'subtitle': 'Sadece metin içeren örnek',
-      'source': 'Linkedin',
-      'badge': 'Fikir',
-      'category': 'Fikir',
-    },
-  ];
-  // Category List
-  final List<String> _categories = [
-    "Tümü",
-    "Seyahat",
-    "Spor",
-    "Müzik",
-    "Komik",
-    "Tasarım",
-    "Fikir",
-  ];
-
   @override
   Widget build(BuildContext context) {
-    // Filter content based on selection
-    final filteredContent =
-        _selectedCategory == 'Tümü'
-            ? _allContentList
-            : _allContentList
-                .where((item) => item['category'] == _selectedCategory)
-                .toList();
+    // Watch Data Providers
+    final userAsync = ref.watch(currentUserModelProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final selCategory = ref.watch(selectedCategoryIdProvider);
+    
+    // Watch Pagination Provider
+    final feedState = ref.watch(paginatedFeedProvider);
+
+    // Derived State
+    final userName = userAsync.value?.displayName?.split(' ').first ?? 'Misafir';
+    final categories = categoriesAsync.value ?? [];
+    
+    // Items come from Pagination State
+    final items = feedState.items;
+
+    // --- FORCE RESEED (Temporary - Remove after first successful run) ---
+    ref.listen<AsyncValue<int>>(itemCountProvider, (previous, next) {
+        // FORCE RESEED: Always reseed to load new content list
+        if (next.hasValue) {
+           DemoSeeder.seed(ref).then((_) {
+              ref.refresh(paginatedFeedProvider); 
+              ref.refresh(categoriesProvider);
+           });
+        }
+    });
+    
+    // Auto-reseed logic removed to prevent infinite loops.
+    // If data is missing (count == 0), the first listener (lines 119-127) handles it.
 
     return Scaffold(
       backgroundColor: Colors.transparent, 
       extendBody: true,
       
-      // Floating Action Button (Center Docked)
+      // Fab Implementation
       floatingActionButton: Container(
         width: 64, 
         height: 64,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFFE8E6C9), // Soft Yellow/Cream
-              Color(0xFFC0D6D8), // Soft Blue/Grey
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: AppColors.accentDark,
           boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFC0D6D8).withOpacity(0.5),
+             BoxShadow(
+              color: AppColors.accentDark.withOpacity(0.3),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -231,11 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => _openAddContentScreen(),
             customBorder: const CircleBorder(),
             splashColor: Colors.white.withOpacity(0.3),
-            child: const Icon(
-              PhosphorIconsLight.plus,
-              color: Color(0xFF1A1E38),
-              size: 28,
-            ),
+            child: const Icon(PhosphorIconsLight.plus, color: Colors.white, size: 28),
           ),
         ),
       ),
@@ -243,177 +163,93 @@ class _HomeScreenState extends State<HomeScreen> {
 
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
-        notchMargin: 6.0, // Compact notch gap
-        color: const Color(0xFF1C1C1C), // Anthracite
+        notchMargin: 6.0,
+        color: AppColors.surfaceWhite,
         elevation: 0,
-        height: 50, // Reduced height for less bottom space
-        padding: const EdgeInsets.only(top: 8), // Push icons down slightly
+        height: 50,
+        padding: const EdgeInsets.only(top: 8),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround, // Equal distribution
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Left Items
             IconButton(
-              onPressed: () {}, // Active Home
-              icon: const Icon(
-                PhosphorIconsLight.house,
-                color: Colors.white,
-                size: 26,
-              ),
+              onPressed: () {}, 
+              icon: const Icon(PhosphorIconsLight.house, color: AppColors.iconActive, size: 26),
             ),
             IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SearchScreen()),
-                );
-              },
-              icon: Icon(
-                PhosphorIconsLight.magnifyingGlass,
-                color: Colors.white.withOpacity(0.6),
-                size: 26,
-              ),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchScreen())),
+              icon: const Icon(PhosphorIconsLight.magnifyingGlass, color: AppColors.iconInactive, size: 26),
             ),
-
-            // Spacer for FAB (Standard gap)
-            const SizedBox(width: 48),
-
-            // Right Items
+            const SizedBox(width: 48), // Spacer for FAB
             IconButton(
               onPressed: () {},
-              icon: Icon(
-                PhosphorIconsLight.squaresFour,
-                color: Colors.white.withOpacity(0.6),
-                size: 26,
-              ),
+              icon: const Icon(PhosphorIconsLight.squaresFour, color: AppColors.iconInactive, size: 26),
             ),
             IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                );
-              },
-              icon: Icon(
-                PhosphorIconsLight.user,
-                color: Colors.white.withOpacity(0.6),
-                size: 26,
-              ),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen())),
+              icon: const Icon(PhosphorIconsLight.user, color: AppColors.iconInactive, size: 26),
             ),
           ],
         ),
       ),
 
       body: Container(
-        color: Colors.white, // Pure White Background
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
+          ),
+        ),
         child: Stack(
           children: [
             SafeArea(
               bottom: false,
               child: CustomScrollView(
+                controller: _scrollController, // Attach controller for pagination
                 slivers: [
-                  // Header & Categories Section (Box Adapter)
+                  // Header Block
                   SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header Content with Padding
+                        // Top Row: User & Actions
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24.0,
-                            vertical: 12.0,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                           child: FadeInDown(
                             duration: const Duration(milliseconds: 600),
                             child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
+                                    // Left: Greeting
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min, // Wrap content height
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          "Merhaba,",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF6B7280), // Gray 
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                        Text(
-                                          "Gökmen",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF111827), // Darker black
-                                            height: 1.2,
-                                          ),
-                                        ),
+                                        Text("Merhaba,", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.hint, height: 1.2)),
+                                        Text(userName, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.headline, height: 1.2)),
                                       ],
                                     ),
+
+                                    // Right: Actions (Search, Notif)
                                     Row(
                                       children: [
+                                        // Search
                                         GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (context) =>
-                                                        const SearchScreen(),
-                                              ),
-                                            );
-                                          },
-                                          child: Hero(
-                                            tag: 'searchField',
-                                            child: Container(
-                                              width: 48,
-                                              height: 48,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(0.6), // Frosted
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 1.5,
-                                                ), 
-                                              ),
-                                              child: Icon(
-                                                PhosphorIconsLight.magnifyingGlass,
-                                                color: Colors.black,
-                                                size: 24,
-                                              ),
-                                            ),
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SearchScreen())),
+                                          child: Container(
+                                            width: 48, height: 48,
+                                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                                            child: const Icon(PhosphorIconsLight.magnifyingGlass, color: AppColors.headline, size: 24),
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        const SizedBox(width: 8),
+                                        // Notifications
                                         GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (context) =>
-                                                        const NotificationsScreen(),
-                                              ),
-                                            );
-                                          },
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
                                           child: Container(
-                                            width: 48,
-                                            height: 48,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.6), // Frosted
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: Colors.white,
-                                                width: 1.5,
-                                              ),
-                                            ),
-                                            child: Icon(
-                                              PhosphorIconsLight.bell, 
-                                              color: Colors.black,
-                                              size: 24,
-                                            ),
+                                            width: 48, height: 48,
+                                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                                            child: const Icon(PhosphorIconsLight.bell, color: AppColors.headline, size: 24),
                                           ),
                                         ),
                                       ],
@@ -423,236 +259,126 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 16),
 
-                        // Slogan (Full Width)
+                        // Slogan
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24.0),
                           child: FadeInLeft(
                             delay: const Duration(milliseconds: 400),
-                            child: Text(
-                              "Dijital dünyanı\ntasarla.",
-                              style: GoogleFonts.poppins(
-                                fontSize: 42,
-                                fontWeight: FontWeight.bold,
-                                height: 1.1,
-                                letterSpacing: -0.5,
-                                foreground: Paint()
-                                  ..shader = const LinearGradient(
-                                    colors: [
-                                      Color(0xFF438E96), // Vibrant Teal (Cool but Colorful)
-                                      Color(0xFFE0CD60), // Vibrant Warm Cream/Gold (Warmth)
-                                    ],
-                                    begin: Alignment.bottomRight, // Reversed Direction
-                                    end: Alignment.topLeft,
-                                  ).createShader(
-                                    const Rect.fromLTWH(0.0, 0.0, 300.0, 100.0),
-                                  ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-
-
-                        // Category Header
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 800),
-                          child: Padding(
-                             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                             child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Koleksiyonlar",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF1F2937), // Darker Grey
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2), // Minimal spacing
-                                  Text(
-                                    "Kaydettiklerinin arasında özgürce gez.",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 13, // Increased size
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const CategoryManagerScreen(),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  width: 48, // Same size as top icons
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.6),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.grey.withOpacity(0.3), // Visible Border
-                                      width: 1.5,
-                                    ), 
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(
-                                          0.05,
-                                        ),
-                                        blurRadius: 10, // Softer shadow
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    PhosphorIconsLight.slidersHorizontal,
-                                    size: 24,
-                                    color: Colors.black,
-                                  ), // Better icon
-                                ),
-                              ),
-                            ],
-                          ),
-                          ),
-                        ),
-                        const SizedBox(height: 16), 
-
-                        // Categories (Horizontal List) ...
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 1000),
-                          child: SizedBox(
-                            height: 48, // Reduced height
-                            child: ListView.builder(
-                              clipBehavior: Clip.none,
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
-                              itemCount: _categories.length,
-                              itemBuilder: (context, index) {
-                                return Center(
-                                  child: _buildCategoryChip(_categories[index]),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 2), // Almost zero spacing
-                        // Toggle Row
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 1200),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "${filteredContent.length} İçerik",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF1A1E38),
+                                  "Hep seninle kalsın.",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w300,
+                                    color: Colors.grey[600],
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        CupertinoIcons.square_grid_2x2_fill,
-                                        color:
-                                            _isGridMode
-                                                ? const Color(0xFF1A1E38)
-                                                : const Color(0xFF9CA3AF),
-                                        size: 20,
-                                      ),
-                                      onPressed:
-                                          () => setState(
-                                            () => _isGridMode = true,
-                                          ),
+                                const SizedBox(height: 6),
+                                RichText(
+                                  text: TextSpan(
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.0,
+                                      height: 1.2,
                                     ),
-                                    IconButton(
-                                      icon: Icon(
-                                        CupertinoIcons.list_bullet,
-                                        color:
-                                            !_isGridMode
-                                                ? const Color(0xFF1A1E38)
-                                                : const Color(0xFF9CA3AF),
-                                        size: 22,
-                                      ),
-                                      onPressed:
-                                          () => setState(
-                                            () => _isGridMode = false,
-                                          ),
-                                    ),
-                                  ],
+                                    children: [
+                                      const TextSpan(text: "Sevdiğin içerikleri ", style: TextStyle(color: Colors.black)),
+                                      TextSpan(text: "kaybetme.", style: TextStyle(color: const Color(0xFFB7BFD2))),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 4), 
+                        const SizedBox(height: 24),
+
+                        // Categories List
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 1000),
+                          child: SizedBox(
+                            height: 48,
+                            child: ListView.builder(
+                              clipBehavior: Clip.none,
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              itemCount: categories.length + 1, 
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  return Center(child: _buildCategoryChip(ref, null, "Tümü", selCategory == null));
+                                }
+                                final cat = categories[index - 1];
+                                return Center(child: _buildCategoryChip(ref, cat, cat.name, selCategory == cat.id));
+                              },
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        
+                        // Controls Row
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 1200),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Text("Tümünü Gör", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.headline)),
+                                      const SizedBox(width: 4),
+                                      const Icon(PhosphorIconsLight.caretRight, size: 14, color: AppColors.iconInactive),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                                  child: Row(
+                                    children: [
+                                      _buildViewModeButton(icon: PhosphorIconsLight.squaresFour, mode: ViewMode.square),
+                                      const SizedBox(width: 4),
+                                      _buildViewModeButton(icon: PhosphorIconsLight.layout, mode: ViewMode.masonry),
+                                      const SizedBox(width: 4),
+                                      _buildViewModeButton(icon: PhosphorIconsLight.list, mode: ViewMode.feed),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8), 
                       ],
                     ),
                   ),
 
-                  // Content Feed (Masonry Grid or List)
+                  // Content Grid
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver:
-                        _isGridMode
-                            ? SliverMasonryGrid.count(
-                              key: ValueKey(
-                                _selectedCategory,
-                              ), // Forces rebuild for animation
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 12, // Reduced to 12px
-                              crossAxisSpacing: 12, // Reduced to 12px
-                              childCount: filteredContent.length,
-                              itemBuilder:
-                                  (context, index) => _buildContentCard(
-                                    filteredContent[index],
-                                    index,
-                                    isGrid: true,
-                                  ),
-                            )
-                            : SliverList(
-                              key: ValueKey(
-                                _selectedCategory,
-                              ), // Forces rebuild
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: _buildContentCard(
-                                    filteredContent[index],
-                                    index,
-                                    isGrid: false,
-                                  ),
-                                ),
-                                childCount: filteredContent.length,
-                              ),
-                            ),
+                    sliver: _buildSliverContent(items, categories, feedState.isLoading),
                   ),
 
-                  // Bottom Spacer
+                  // Bottom Loader for Pagination
+                  if (feedState.isLoading && items.isNotEmpty)
+                     SliverToBoxAdapter(
+                       child: Padding(
+                         padding: const EdgeInsets.all(16.0),
+                         child: Center(
+                             child: CupertinoActivityIndicator(radius: 12),
+                         ),
+                       ),
+                     ),
+
                   const SliverToBoxAdapter(child: SizedBox(height: 140)),
                 ],
               ),
@@ -663,79 +389,66 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Redesigned Category Chip
-  Widget _buildCategoryChip(String label) {
-    final bool isSelected = _selectedCategory == label;
+  // --- Widgets ---
 
+  Widget _buildViewModeButton({required IconData icon, required ViewMode mode}) {
+    final bool isSelected = _viewMode == mode;
+    return GestureDetector(
+      onTap: () => setState(() => _viewMode = mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))] : null,
+        ),
+        child: Icon(icon, size: 20, color: isSelected ? AppColors.primary : AppColors.iconInactive),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(WidgetRef ref, CategoryModel? category, String label, bool isSelected) {
     return Padding(
       padding: const EdgeInsets.only(right: 12.0),
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _selectedCategory = label;
-          });
+          // Update Provider - The Notifier watches this and reloads automatically if we implemented watchers correctly.
+          // In my previous step, I injected 'catId' from ref.watch into the provider via overrides, 
+          // but since I used a simple constructor in StateNotifierProvider.autoDispose that only READS once, 
+          // I need to ensure it rebuilds.
+          // 'PaginatedItemsNotifier' in my defined provider uses:
+          // final catId = ref.watch(selectedCategoryIdProvider);
+          // return PaginatedItemsNotifier(...)
+          // So changing 'selectedCategoryIdProvider' WILL trigger a rebuild of the notifier (resetting state).
+          // This creates "Pagination Reset on Filter" automatically! Perfect.
+          
+          ref.read(selectedCategoryIdProvider.notifier).state = category?.id;
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 28,
-            vertical: 8, // Reduced vertical padding (was 12)
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            // Gradient for Selected (Aurora Effect)
-            gradient:
-                isSelected
-                    ? const LinearGradient(
-                      colors: [
-                        Color(0xFFE8E6C9), // Soft Yellow/Cream
-                        Color(0xFFC0D6D8), // Soft Blue/Grey
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                    : null,
+            gradient: isSelected
+                ? LinearGradient(colors: [AppColors.primary.withOpacity(0.1), AppColors.surfaceWhite], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                : null,
             color: isSelected ? null : Colors.white,
-            borderRadius: BorderRadius.circular(30), // Pill Shape
-            border:
-                isSelected
-                    ? Border.all(
-                      color: Colors.white.withOpacity(0.5),
-                      width: 1,
-                    ) // Subtle border for active
-                    : Border.all(
-                      color: Colors.grey.withOpacity(0.2),
-                      width: 1.5,
-                    ),
-            boxShadow:
-                isSelected
-                    ? [
-                      BoxShadow(
-                        color: const Color(
-                          0xFF6B8C96,
-                        ).withOpacity(0.2), // Soft colored shadow
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                    : [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+            borderRadius: BorderRadius.circular(30),
+            border: isSelected
+                ? Border.all(color: Colors.white.withOpacity(0.5), width: 1)
+                : Border.all(color: Colors.grey.withOpacity(0.2), width: 1.5),
+            boxShadow: isSelected
+                ? [BoxShadow(color: const Color(0xFF6B8C96).withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))]
+                : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
           ),
           child: Text(
-            label,
+            label, // Use label passed (can be "Tümü" or category name)
             style: GoogleFonts.poppins(
-              color:
-                  isSelected
-                      ? const Color(0xFF1A1E38)
-                      : const Color(0xFF4B5563), // Dark text on light gradient
+              color: isSelected ? const Color(0xFF1A1E38) : const Color(0xFF4B5563),
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              fontSize: 15, // Slightly larger font
+              fontSize: 15,
             ),
           ),
         ),
@@ -743,369 +456,513 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Platform Icon Helper
-  IconData _getPlatformIcon(String source) {
-    if (source.toLowerCase() == 'somine' || source.isEmpty) {
-        return PhosphorIconsLight.spiral; // Placeholder, used for logic later
+  Widget _buildSliverContent(List<ItemModel> items, List<CategoryModel> categories, bool isLoading) {
+    if (items.isEmpty && !isLoading) { // Empty state only if NOT loading
+       return SliverToBoxAdapter(
+         child: Padding(
+           padding: const EdgeInsets.only(top: 40),
+           child: Center(child: Text("Henüz içerik yok", style: GoogleFonts.poppins(color: AppColors.hint))),
+         ),
+       );
     }
-    switch (source.toLowerCase()) {
-      case 'instagram':
-        return PhosphorIconsLight.instagramLogo;
-      case 'youtube':
-        return PhosphorIconsLight.youtubeLogo;
-      case 'twitter':
-      case 'x':
-        return PhosphorIconsLight.xLogo;
-      case 'linkedin':
-        return PhosphorIconsLight.linkedinLogo;
-      default:
-        return PhosphorIconsLight.globe; // Generic Web
+    
+    // If loading initial state (completely empty), show skeleton or spinner
+    if (items.isEmpty && isLoading) {
+         return SliverToBoxAdapter(
+         child: Padding(
+           padding: const EdgeInsets.only(top: 100),
+           child: Center(child: CupertinoActivityIndicator()),
+         ),
+       );
     }
-  }
 
-  // Helper to check if it is a major social platform
-  bool _isSocialPlatform(String source) {
-      final s = source.toLowerCase();
-      return ['instagram', 'youtube', 'twitter', 'x', 'linkedin'].contains(s);
-  }
-
-
-  // Aspect Ratio Helper from Picsum URL
-  double _getAspectRatio(String url) {
-    try {
-      if (url.contains('picsum.photos')) {
-        final parts = url.split('/');
-        final height = double.parse(parts.last);
-        final width = double.parse(parts[parts.length - 2]);
-        return width / height;
-      }
-      return 1.0; // Default square
-    } catch (e) {
-      return 1.0;
+    // Helper to find category name for item
+    String getBadge(ItemModel item) {
+       final cat = categories.where((c) => c.id == item.categoryId).firstOrNull;
+       return cat?.name ?? 'Genel';
     }
-  }
 
-  // Platform Gradient Helper
-  LinearGradient? _getPlatformGradient(String source) {
-    switch (source.toLowerCase()) {
-      case 'instagram':
-        return LinearGradient(
-          colors: [
-            const Color(0xFF833AB4).withOpacity(0.8),
-            const Color(0xFFFD1D1D).withOpacity(0.8),
-            const Color(0xFFFCAF45).withOpacity(0.8),
-          ],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
+    switch (_viewMode) {
+      case ViewMode.square:
+        return SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true, forceSquare: true),
+            childCount: items.length,
+          ),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.0,
+          ),
         );
-      case 'youtube':
-        return LinearGradient(
-          colors: [
-            const Color(0xFFFF0000).withOpacity(0.8),
-            const Color(0xFFCC0000).withOpacity(0.8),
-          ],
+      case ViewMode.masonry:
+        return SliverMasonryGrid.count(
+          key: ValueKey(items.length),
+          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childCount: items.length,
+          itemBuilder: (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true),
         );
-      default:
-        // Use single color as gradient for others
-        final color = _getPlatformColor(source).withOpacity(0.8);
-        return LinearGradient(colors: [color, color]);
+      case ViewMode.feed:
+        return SliverList(
+          key: ValueKey(items.length),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: false),
+            ),
+            childCount: items.length,
+          ),
+        );
     }
   }
 
-  // Center Icon Helper
-  Widget? _buildCenterIcon(String type) {
-    IconData icon;
-    switch (type.toLowerCase()) {
-      case 'video':
-        icon = PhosphorIconsLight.playCircle;
-        break;
-      case 'link':
-        icon = PhosphorIconsLight.arrowUpRight; // Changed to UpRight Arrow
-        break;
-      case 'image':
-        icon = PhosphorIconsLight.image;
-        break;
-      default:
-        return null; // No icon for others
+  // --- REFACTORED CARD WITH REAL DATA & FALLBACK LOGIC ---
+
+  Widget _buildContentCard(ItemModel item, String badgeText, {required bool isGrid, bool forceSquare = false}) {
+    // Aspect Ratio Logic
+    double aspectRatio = 1.0;
+    // Basic approximate aspect ratio from image service or random for demo?
+    // Since we don't store aspect ratio in ItemModel yet, we default to 1.0 or random for masonry variation
+    // Real implementation should store AR. For now, random variation for Masonry if not square.
+    if (!forceSquare && isGrid) {
+       // Deterministic "random" based on ID char code. Taller ratio for better fit.
+       aspectRatio = (item.id.codeUnitAt(0) % 2 == 0) ? 0.65 : 1.0; 
     }
 
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.2),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          color: Colors.white.withOpacity(0.9),
-          size: 32,
-        ),
-      ),
-    );
-  }
+    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
+    final source = item.url ?? '';
 
-  // Content Card (Refined Style with Fade Animation - Stack Design)
-  Widget _buildContentCard(
-    Map<String, String> item,
-    int index, {
-    required bool isGrid,
-  }) {
-    final aspectRatio = _getAspectRatio(item['thumbnail']!);
-    final source = item['source'] ?? '';
-    final hasImage =
-        item['thumbnail'] != null && item['thumbnail']!.isNotEmpty;
-
-    // Fade-in animation on build
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 200),
-      builder: (context, double value, child) {
-        return Opacity(opacity: value, child: child);
-      },
+    return FadeIn(
+      duration: const Duration(milliseconds: 500),
       child: AspectRatio(
           aspectRatio: aspectRatio,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16), // Rounded corners
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Material(
-                color: Colors.transparent, // Important for InkWell
+                color: Colors.transparent,
                 child: InkWell(
                   onTap: () async {
-                      final url = item['url'];
-                      if (url != null) {
-                        if (await canLaunchUrl(Uri.parse(url))) {
-                          await launchUrl(Uri.parse(url));
-                        }
+                      if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
+                        await launchUrl(Uri.parse(item.url!));
                       }
                   },
-                  highlightColor: Colors.black.withOpacity(0.1),
-                  splashColor: Colors.black.withOpacity(0.1),
                   child: Stack(
-                fit: StackFit.expand, // Fill the aspect ratio box
+                fit: StackFit.expand,
                 children: [
-                  // Layer 1: Background (Image or Fallback Gradient)
+                  // Layer 1: Image or FALLBACK
                   if (hasImage)
                     CachedNetworkImage(
-                      imageUrl: item['thumbnail']!,
+                      imageUrl: item.displayImage!,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey[100],
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.error),
-                      ),
+                      alignment: Alignment.topCenter, // Align top to avoid cutting heads
+                      placeholder: (context, url) => Container(color: Colors.grey[100]),
+                      errorWidget: (context, url, error) => _buildFallbackView(source),
                     )
                   else
-                    // NO IMAGE STATE - Redesigned
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomLeft,
-                          end: Alignment.topRight,
-                          stops: const [0.0, 0.3, 1.0], // Colors finish lower, more white space
-                          colors: [
-                            const Color(0xFF438E96), // Vibrant Teal
-                            const Color(0xFFF3EAC2), // Pale Cream/Gold (Softer)
-                            Colors.white,            // Clean White
-                          ],
-                        ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                            // Visual Center Icon (Nested Border Style)
-                            Container(
-                              padding: const EdgeInsets.all(12), // Gap between Dark Bg and White Border
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.2), // Standard Dark Glass (Outer)
-                                shape: BoxShape.circle,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(6), // Gap between Border and Icon
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.9), // White Border (Inner)
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  PhosphorIconsLight.arrowRight,
-                                  color: Colors.white,
-                                  size: 16, // Smaller Icon
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                    _buildFallbackView(source),
 
-                  // Layer 1.5: Overlay Gradient (Only if Image exists)
+                  // Layer 1.5: Gradient Overlay (Branded Bottom Fade)
+                  // "Bizim renklerimizden silikleşen" -> Primary Color Gradient
                   if (hasImage)
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
-                          end: const Alignment(0.0, -0.6), // Higher gradient overlay for better visibility
+                          end: Alignment.center,
                           colors: [
-                            const Color(
-                              0xFFC8DCE5,
-                            ).withOpacity(0.95), // Soft Blue/Grey
-                            const Color(
-                              0xFFD6E4CA,
-                            ).withOpacity(0.0), // Sage Green Transparent
+                            AppColors.primary.withOpacity(0.9), // Strong at bottom
+                            AppColors.primary.withOpacity(0.5), 
+                            Colors.transparent // Fade to transparent
                           ],
+                          stops: const [0.0, 0.3, 1.0], 
                         ),
                       ),
                     ),
 
-                  // Layer 2: Center Icon (Only if has image, otherwise watermark handles it)
-                  if (hasImage && _buildCenterIcon(item['type'] ?? '') != null)
-                    _buildCenterIcon(item['type'] ?? '')!,
+                  // Layer 2: Center Icon
+                  if (hasImage) ...[
+                     if (item.type == ItemType.link && source.contains('youtu')) 
+                       _buildCenterIcon(PhosphorIconsLight.playCircle)
+                     else if (item.type == ItemType.link && source.contains('instagram'))
+                       _buildCenterIcon(PhosphorIconsLight.instagramLogo) 
+                  ],
 
-                  // Layer 3: Header Row (Badge Left, Platform/Badge Right)
+                  // Layer 3: Header
                   Positioned(
-                    top: 12,
-                    left: 12,
-                    right: 12,
+                    top: 12, left: 12, right: 12,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Badge (User Category) - Left Top with Blur
+                        // Badge
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: BackdropFilter(
-                            filter: ui.ImageFilter.blur(
-                              sigmaX: 10.0,
-                              sigmaY: 10.0,
-                            ),
+                            filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(
-                                  0.6, // More opaque
-                                ),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.5),
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: Text(
-                                item['badge'] ?? item['category']!,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1A1E38), // Dark Text
-                                ),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), border: Border.all(color: Colors.white.withOpacity(0.5), width: 0.5)),
+                              child: Text(badgeText, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF1A1E38))),
                             ),
                           ),
                         ),
-
-                        // Platform Indicator - Right Top (Complex Logic)
-                        Builder(
-                            builder: (context) {
-                                bool isInternal = source.toLowerCase() == 'somine' || source.isEmpty;
-                                
-                                if (isInternal) {
-                                    // "SO" Badge for Internal Content
-                                    return ClipRRect(
-                                        borderRadius: BorderRadius.circular(12), // Oval/Pill shape
-                                        child: BackdropFilter(
-                                            filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                                            child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                    color: Colors.white.withOpacity(0.3),
-                                                    border: Border.all(color: Colors.white.withOpacity(0.4), width: 0.5),
-                                                ),
-                                                child: Text(
-                                                    "SO",
-                                                    style: GoogleFonts.poppins(
-                                                        fontSize: 10,
-                                                        fontWeight: FontWeight.w900, // Extra Bold
-                                                        color: Colors.black, // Black Text
-                                                    ),
-                                                ),
-                                            ),
-                                        ),
-                                    );
-                                } else {
-                                    // Social or Web Icon
-                                    return Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                            gradient: _getPlatformGradient(source), // Gradient Background
-                                            shape: BoxShape.circle,
-                                            boxShadow: [
-                                            BoxShadow(
-                                                color: Colors.black.withOpacity(0.1),
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                            ),
-                                            ],
-                                        ),
-                                        child: Icon(
-                                            _getPlatformIcon(source),
-                                            color: Colors.white, // White Icon
-                                            size: 16,
-                                        ),
-                                    );
-                                }
-                            },
-                        ),
+                        // Small source icon (Top Right)
+                         _buildPlatformIconWidget(source),
                       ],
                     ),
                   ),
 
-                  // Layer 4: Content Info (Bottom Left) - Title Only
+                  // Layer 4: Title
                   Positioned(
-                    bottom: 16, // Moved up slightly
-                    left: 12,
-                    right: 12,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    bottom: 16, left: 12, right: 12,
+                    child: Text(
+                      item.displayTitle,
+                      maxLines: 2, // Allow 2 lines for better readability
+                      overflow: TextOverflow.ellipsis,
+                      // White text on dark gradient for readability
+                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white, height: 1.2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ), // Material
+      ),
+    ));
+  }
+
+  Widget _buildContentCardRefactored(ItemModel item, String badgeText, List<CategoryModel> categories, {required bool isGrid, bool forceSquare = false}) {
+    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
+    final source = item.url ?? '';
+
+    // Image widget builder
+    Widget buildImage() {
+      if (hasImage) {
+        return item.displayImage!.startsWith('http') 
+          ? CachedNetworkImage(
+              imageUrl: item.displayImage!,
+              fit: BoxFit.cover, 
+              alignment: Alignment.center,
+              placeholder: (context, url) => Container(color: Colors.grey[100]),
+              errorWidget: (context, url, error) => _buildFallbackView(source),
+            )
+          : Image.asset(
+              item.displayImage!,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              errorBuilder: (context, error, stackTrace) => _buildFallbackView(source),
+            );
+      } else {
+        return _buildFallbackView(source);
+      }
+    }
+
+    // ========== FEED LAYOUT ==========
+    if (!isGrid) {
+      return FadeIn(
+        duration: const Duration(milliseconds: 500),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.grey.shade100,
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
+                    await launchUrl(Uri.parse(item.url!));
+                  }
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Image with platform icon (same style as other views)
+                    Stack(
                       children: [
-                        // Title
-                        Text(
-                          item['title']!,
-                          maxLines: 1, // Single line
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600, // Medium weight
-                            color: const Color(0xFF1A1E38), // Dark Text
-                            height: 1.2,
+                        AspectRatio(
+                          aspectRatio: 16/10,
+                          child: buildImage(),
+                        ),
+                        Positioned(
+                          top: 10, right: 10,
+                          child: _buildPlatformIconWidget(source),
+                        ),
+                      ],
+                    ),
+                    // Info section (same style as other views)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.displayTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+                                ),
+                                Text(
+                                  badgeText,
+                                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w400, color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
                           ),
+                          GestureDetector(
+                            onTap: () => ItemDetailBottomSheet.show(context, item, badgeText, categories),
+                            child: Icon(PhosphorIconsLight.dotsThreeCircle, size: 24, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ========== SQUARE GRID LAYOUT ==========
+    if (forceSquare) {
+      return FadeIn(
+        duration: const Duration(milliseconds: 500),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.grey.shade100,
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
+                    await launchUrl(Uri.parse(item.url!));
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          buildImage(),
+                          Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(item.displayTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+                                Text(badgeText, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => ItemDetailBottomSheet.show(context, item, badgeText, categories),
+                            child: Icon(PhosphorIconsLight.dotsThreeCircle, size: 20, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ========== MASONRY LAYOUT ==========
+    // Varying aspect ratios for true masonry effect
+    final aspectRatio = (item.id.codeUnitAt(0) % 3 == 0) ? 0.75 : (item.id.codeUnitAt(0) % 3 == 1) ? 1.0 : 1.2;
+    
+    return FadeIn(
+      duration: const Duration(milliseconds: 500),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.grey.shade100,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () async {
+                if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
+                  await launchUrl(Uri.parse(item.url!));
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AspectRatio(
+                    aspectRatio: aspectRatio,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        buildImage(),
+                        Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(item.displayTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+                              Text(badgeText, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => ItemDetailBottomSheet.show(context, item, badgeText, categories),
+                          child: Icon(PhosphorIconsLight.dotsThreeCircle, size: 20, color: Colors.grey.shade600),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-                ),
-              ),
             ),
           ),
+        ),
       ),
+    );
+  }
+
+  // Simple platform icon (no container)
+  Widget _buildPlatformIcon(String source, {double size = 16}) {
+    IconData icon = PhosphorIconsLight.link;
+    Color color = Colors.grey;
+    
+    if (source.contains('instagram')) {
+      icon = PhosphorIconsBold.instagramLogo;
+      color = const Color(0xFFE4405F);
+    } else if (source.contains('youtube')) {
+      icon = PhosphorIconsBold.youtubeLogo;
+      color = const Color(0xFFFF0000);
+    } else if (source.contains('x.com') || source.contains('twitter')) {
+      icon = PhosphorIconsBold.xLogo;
+      color = Colors.black;
+    } else if (source.contains('pinterest')) {
+      icon = PhosphorIconsBold.pinterestLogo;
+      color = const Color(0xFFBD081C);
+    }
+    
+    return Icon(icon, size: size, color: color);
+  }
+
+  // --- Helpers ---
+
+  // Clean Card Design for X (Twitter) and Instagram profiles
+  // White background with gradient-colored LOGO only
+  Widget _buildFallbackView(String source) {
+    IconData icon = PhosphorIconsLight.link;
+    List<Color> gradientColors = [Colors.grey, Colors.grey.shade600];
+    
+    if (source.contains('x.com') || source.contains('twitter')) {
+      icon = PhosphorIconsBold.xLogo;
+      gradientColors = [Colors.grey.shade800, Colors.black];
+    } else if (source.contains('instagram')) {
+      icon = PhosphorIconsBold.instagramLogo;
+      gradientColors = [
+        const Color(0xFFFEDA77),
+        const Color(0xFFF58529),
+        const Color(0xFFDD2A7B),
+        const Color(0xFF8134AF),
+      ];
+    } else if (source.contains('youtube')) {
+      icon = PhosphorIconsBold.youtubeLogo;
+      gradientColors = [const Color(0xFFFF0000), const Color(0xFFCC0000)];
+    } else if (source.contains('pinterest')) {
+      icon = PhosphorIconsBold.pinterestLogo;
+      gradientColors = [const Color(0xFFBD081C), const Color(0xFF8C0615)];
+    }
+
+    return Container(
+       color: Colors.white, // White background
+       child: Center(
+         child: ShaderMask(
+           shaderCallback: (bounds) => LinearGradient(
+             colors: gradientColors,
+             begin: Alignment.topLeft,
+             end: Alignment.bottomRight,
+           ).createShader(bounds),
+           child: Icon(icon, size: 56, color: Colors.white),
+         ),
+       ),
+    );
+  }
+
+  Widget _buildCenterIcon(IconData icon) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), shape: BoxShape.circle),
+        child: Icon(icon, color: Colors.white.withOpacity(0.9), size: 32),
+      ),
+    );
+  }
+
+  Widget _buildPlatformIconWidget(String source) {
+    final s = source.toLowerCase();
+    Gradient gradient;
+    IconData icon;
+
+    if (s.contains('instagram')) {
+      gradient = const LinearGradient(colors: [Color(0xFFFEDA75), Color(0xFFD62976), Color(0xFF962FBF)], begin: Alignment.bottomLeft, end: Alignment.topRight);
+      icon = PhosphorIconsLight.instagramLogo;
+    } else if (s.contains('youtube')) {
+      gradient = const LinearGradient(colors: [Color(0xFFFF0000), Color(0xFFCC0000)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+      icon = PhosphorIconsLight.youtubeLogo;
+    } else if (s.contains('twitter') || s.contains('x.com')) {
+      gradient = const LinearGradient(colors: [Colors.black, Color(0xFF333333)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+      icon = PhosphorIconsLight.xLogo;
+    } else if (s.contains('pinterest')) {
+      gradient = const LinearGradient(colors: [Color(0xFFBD081C), Color(0xFF8C0615)], begin: Alignment.topLeft, end: Alignment.bottomRight);
+      icon = PhosphorIconsLight.pinterestLogo;
+    } else {
+      gradient = LinearGradient(colors: [Colors.grey[400]!, Colors.grey[600]!]);
+      icon = PhosphorIconsLight.link;
+    }
+
+    return Container(
+      width: 24, height: 24,
+      decoration: BoxDecoration(shape: BoxShape.circle, gradient: gradient.scale(0.8)), // translucent
+      child: Center(child: Icon(icon, color: Colors.white, size: 14)),
     );
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:somine_app/core/design/design_tokens.dart';
+import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ItemCard extends StatelessWidget {
   final ItemModel item;
@@ -40,6 +41,7 @@ class ItemCard extends StatelessWidget {
                 _CardImage(
                    imageUrl: item.displayImage, 
                    heroTag: item.id,
+                   url: item.url, // Pass URL for fallback logic
                    // If no image, show a nice gradient placeholder
                    placeholderGradient: _getGradientForType(item.url),
                 ),
@@ -72,7 +74,7 @@ class ItemCard extends StatelessWidget {
                      style: GoogleFonts.poppins(
                        fontWeight: FontWeight.bold,
                        fontSize: 15,
-                       color: const Color(0xFF1F2937), // Dark grey
+                       color: AppColors.headline, // Dark grey
                        height: 1.3,
                      ),
                      maxLines: 2,
@@ -85,7 +87,7 @@ class ItemCard extends StatelessWidget {
                      style: GoogleFonts.poppins(
                        fontWeight: FontWeight.w500,
                        fontSize: 12,
-                       color: DesignTokens.textTertiary,
+                       color: AppColors.hint,
                      ),
                    ),
                  ],
@@ -127,15 +129,16 @@ class ItemCard extends StatelessWidget {
 class _CardImage extends StatelessWidget {
   final String? imageUrl;
   final String? heroTag;
+  final String? url; // Added to determine fallback type
   final LinearGradient? placeholderGradient;
 
-  const _CardImage({this.imageUrl, this.heroTag, this.placeholderGradient});
+  const _CardImage({this.imageUrl, this.heroTag, this.url, this.placeholderGradient});
 
   @override
   Widget build(BuildContext context) {
     Widget content;
     
-    if (imageUrl != null) {
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
       content = Image.network(
         imageUrl!,
         fit: BoxFit.cover,
@@ -145,7 +148,7 @@ class _CardImage extends StatelessWidget {
             if (loadingProgress == null) return child;
             return Container(
               height: 150, // Placeholder height
-              color: DesignTokens.background,
+              color: AppColors.backgroundBottom, // Soft grey/mist
               alignment: Alignment.center,
               child: const LoadingIndicator(size: 20),
             );
@@ -163,13 +166,32 @@ class _CardImage extends StatelessWidget {
   }
   
   Widget _buildPlaceholder() {
+     IconData icon = Icons.link;
+     Color iconColor = Colors.white;
+     double iconSize = 48;
+     
+     if (url != null) {
+       if (url!.contains('instagram')) {
+         icon = PhosphorIconsBold.instagramLogo; 
+       } else if (url!.contains('youtube')) {
+         icon = PhosphorIconsBold.youtubeLogo;
+       } else if (url!.contains('twitter') || url!.contains('x.com')) {
+         icon = PhosphorIconsBold.xLogo;
+       }
+     }
+
      return Container(
        height: 150,
        decoration: BoxDecoration(
          gradient: placeholderGradient ?? const LinearGradient(colors: [Color(0xFFE0EAFC), Color(0xFFCFDEF3)]),
        ),
        alignment: Alignment.center,
-       child: Icon(Icons.auto_awesome, color: Colors.white.withValues(alpha: 0.5), size: 32),
+       child: Column(
+         mainAxisAlignment: MainAxisAlignment.center,
+         children: [
+           Icon(icon, color: iconColor.withValues(alpha: 0.9), size: iconSize),
+         ],
+       ),
      );
   }
 }

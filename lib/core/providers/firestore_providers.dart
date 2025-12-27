@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Pagination
+
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/user_model.dart';
@@ -159,3 +161,119 @@ final searchResultsProvider = FutureProvider<List<ItemModel>>((ref) async {
 });
 
 
+// ==================== Pagination Provider ====================
+
+class PaginatedItemsState {
+  final List<ItemModel> items;
+  final bool isLoading;
+  final bool hasMore;
+  final DocumentSnapshot? lastDocument;
+
+  PaginatedItemsState({
+    this.items = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.lastDocument,
+  });
+
+  PaginatedItemsState copyWith({
+    List<ItemModel>? items,
+    bool? isLoading,
+    bool? hasMore,
+    DocumentSnapshot? lastDocument,
+  }) {
+    return PaginatedItemsState(
+      items: items ?? this.items,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      lastDocument: lastDocument ?? this.lastDocument,
+    );
+  }
+}
+
+class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
+  final ItemRepository _repository;
+  String? _userId;
+  String? _categoryId;
+  
+  // Cache for client-side pagination
+  List<ItemModel> _allCachedItems = [];
+
+  PaginatedItemsNotifier(this._repository) : super(PaginatedItemsState());
+
+  void setParams(String userId, String? categoryId) {
+    bool changed = _userId != userId || _categoryId != categoryId;
+    _userId = userId;
+    _categoryId = categoryId;
+    if (changed) {
+      loadInitial();
+    }
+  }
+
+  Future<void> loadInitial() async {
+    if (_userId == null) return;
+    
+    // Reset state
+    state = state.copyWith(isLoading: true, items: [], hasMore: true, lastDocument: null);
+    _allCachedItems = [];
+    
+    try {
+      // 1. Fetch ALL items (Simple Query, No Index needed)
+      final allItems = await _repository.getItems(_userId!, categoryId: _categoryId);
+      
+      // 2. Sort in memory (just to be safe, repo does it too)
+      allItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      _allCachedItems = allItems;
+      
+      // 3. Slice first page
+      final initialBatch = _allCachedItems.take(8).toList();
+      
+      state = state.copyWith(
+        items: initialBatch,
+        isLoading: false,
+        hasMore: initialBatch.length < _allCachedItems.length,
+        lastDocument: null, 
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, hasMore: false);
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (_userId == null || state.isLoading || !state.hasMore) return;
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      // 4. Simulate Network Delay for UX
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // 5. Get next batch from cache
+      final currentLength = state.items.length;
+      final nextBatch = _allCachedItems.skip(currentLength).take(8).toList();
+      
+      state = state.copyWith(
+        items: [...state.items, ...nextBatch],
+        isLoading: false,
+        hasMore: (state.items.length + nextBatch.length) < _allCachedItems.length,
+      );
+    } catch (e) {
+       state = state.copyWith(isLoading: false);
+    }
+  }
+}
+
+final paginatedFeedProvider = StateNotifierProvider.autoDispose<PaginatedItemsNotifier, PaginatedItemsState>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final repo = ref.watch(itemRepositoryProvider);
+  final catId = ref.watch(selectedCategoryIdProvider);
+  
+  final notifier = PaginatedItemsNotifier(repo);
+  
+  if (authState.value != null) {
+     notifier.setParams(authState.value!.uid, catId);
+  }
+  
+  return notifier;
+});

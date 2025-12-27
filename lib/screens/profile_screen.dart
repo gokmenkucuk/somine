@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:somine_app/screens/recently_deleted_screen.dart';
 import 'package:somine_app/screens/appearance_screen.dart';
+import 'package:somine_app/screens/login_screen.dart';
+import 'package:somine_app/core/repositories/auth_repository.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -264,8 +266,39 @@ class ProfileScreen extends StatelessWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {
-                          // Logout Logic
+                        onTap: () async {
+                          // Show Logout Confirmation Dialog
+                          final shouldLogout = await showCupertinoDialog<bool>(
+                            context: context,
+                            builder: (context) => CupertinoAlertDialog(
+                              title: const Text('Çıkış Yap'),
+                              content: const Text('Hesabınızdan çıkmak istediğinize emin misiniz?'),
+                              actions: [
+                                CupertinoDialogAction(
+                                  child: const Text('İptal'),
+                                  onPressed: () => Navigator.pop(context, false),
+                                ),
+                                CupertinoDialogAction(
+                                  isDestructiveAction: true,
+                                  child: const Text('Çıkış Yap'),
+                                  onPressed: () => Navigator.pop(context, true),
+                                ),
+                              ],
+                            ),
+                          );
+                          
+                          if (shouldLogout == true && context.mounted) {
+                            // Perform logout
+                            await AuthRepository().signOut();
+                            
+                            // Navigate to Login Screen (replace all routes)
+                            if (context.mounted) {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                (route) => false,
+                              );
+                            }
+                          }
                         },
                         borderRadius: BorderRadius.circular(20),
                         child: Padding(

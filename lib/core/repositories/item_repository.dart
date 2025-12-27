@@ -30,6 +30,30 @@ class ItemRepository {
     }
   }
 
+  /// Get PAGINATED items
+  Future<QuerySnapshot<Map<String, dynamic>>> getItemsPaginated(String userId, {String? categoryId, int limit = 8, DocumentSnapshot? startAfter}) async {
+    try {
+      Query<Map<String, dynamic>> query =
+          _itemsCollection.where('userId', isEqualTo: userId);
+
+      if (categoryId != null) {
+        query = query.where('categoryId', isEqualTo: categoryId);
+      }
+      
+      // Order by createdAt desc for feed
+      query = query.orderBy('createdAt', descending: true);
+
+      if (startAfter != null) {
+          query = query.startAfterDocument(startAfter);
+      }
+      
+      return await query.limit(limit).get();
+    } catch (e) {
+       debugPrint('❌ [ItemRepository] Error fetching paginated items: $e');
+       rethrow;
+    }
+  }
+
   /// Get item by ID
   Future<ItemModel?> getItem(String itemId) async {
     try {
