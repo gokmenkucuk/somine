@@ -89,13 +89,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _openAddContentScreen({String? initialText}) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.transparent,
-        pageBuilder: (context, animation, secondaryAnimation) => AddContentScreen(initialText: initialText),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
-      ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Full screen capable
+      useSafeArea: false, // Respect safe area
+      backgroundColor: Colors.transparent, // Let screen handle its own bg/rounding
+      barrierColor: Colors.black.withOpacity(0.5),
+      enableDrag: true, // Enable native pull-to-dismiss
+      builder: (context) => AddContentScreen(initialText: initialText),
     );
   }
 
@@ -110,7 +111,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final feedState = ref.watch(paginatedFeedProvider);
 
     // Derived State
-    final userName = userAsync.value?.displayName?.split(' ').first ?? 'Misafir';
+    final rawName = userAsync.value?.displayName?.split(' ').first ?? 'Misafir';
+    final userName = rawName.isNotEmpty 
+        ? '${rawName[0].toUpperCase()}${rawName.substring(1)}' 
+        : rawName;
     final categories = categoriesAsync.value ?? [];
     
     // Items come from Pagination State
@@ -269,28 +273,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Hep seninle kalsın.",
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w300,
-                                    color: Colors.grey[600],
-                                    letterSpacing: 0.5,
+                                ShaderMask(
+                                  blendMode: BlendMode.srcIn,
+                                  shaderCallback: (bounds) => const LinearGradient(
+                                    colors: [AppColors.primary, Color(0xFF6FBFAC)], // Dark Brand -> Vibrant Bright Oil Green
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ).createShader(bounds),
+                                  child: Text(
+                                    "Dijital İçeriklerini\nKoleksiyona Kaydet",
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 30, // Uniform size for both lines
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.0, // Increased from -0.5
+                                      height: 1.1,
+                                      color: Colors.white, 
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                RichText(
-                                  text: TextSpan(
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.0,
-                                      height: 1.2,
-                                    ),
-                                    children: [
-                                      const TextSpan(text: "Sevdiğin içerikleri ", style: TextStyle(color: Colors.black)),
-                                      TextSpan(text: "kaybetme.", style: TextStyle(color: const Color(0xFFB7BFD2))),
-                                    ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Hep seninle kalsın",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.headline,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
                               ],
@@ -638,24 +646,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final source = item.url ?? '';
 
     // Image widget builder
-    Widget buildImage() {
+    Widget buildImage({BoxFit fit = BoxFit.cover}) {
+      Widget errorWidget() {
+        // In Feed view (fitWidth), force 16/10 ratio for fallback.
+        // In Grid/Masonry (cover), let it fill the parent constraint.
+        final fallback = _buildFallbackView(source);
+        return fit == BoxFit.fitWidth 
+            ? AspectRatio(aspectRatio: 16 / 10, child: fallback) 
+            : fallback;
+      }
+
       if (hasImage) {
         return item.displayImage!.startsWith('http') 
           ? CachedNetworkImage(
               imageUrl: item.displayImage!,
-              fit: BoxFit.cover, 
+              fit: fit, 
               alignment: Alignment.center,
-              placeholder: (context, url) => Container(color: Colors.grey[100]),
-              errorWidget: (context, url, error) => _buildFallbackView(source),
+              placeholder: (context, url) => Container(
+                height: 200,
+                color: Colors.grey[100],
+                child: Center(child: Icon(PhosphorIconsLight.image, size: 32, color: Colors.grey[300])),
+              ),
+              errorWidget: (context, url, error) => errorWidget(),
             )
           : Image.asset(
               item.displayImage!,
-              fit: BoxFit.cover,
+              fit: fit,
               alignment: Alignment.center,
-              errorBuilder: (context, error, stackTrace) => _buildFallbackView(source),
+              errorBuilder: (context, error, stackTrace) => errorWidget(),
             );
       } else {
-        return _buildFallbackView(source);
+        return errorWidget();
       }
     }
 
@@ -674,22 +695,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () async {
-                  if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
-                    await launchUrl(Uri.parse(item.url!));
-                  }
+                onTap: () {
+                  ItemDetailBottomSheet.show(context, item, badgeText, categories);
                 },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Image with platform icon (same style as other views)
+                    // Image with platform icon (Same Width, Natural Height)
                     Stack(
                       children: [
-                        AspectRatio(
-                          aspectRatio: 16/10,
-                          child: buildImage(),
-                        ),
+                        buildImage(fit: BoxFit.fitWidth),
                         Positioned(
                           top: 10, right: 10,
                           child: _buildPlatformIconWidget(source),
@@ -749,10 +765,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () async {
-                  if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
-                    await launchUrl(Uri.parse(item.url!));
-                  }
+                onTap: () {
+                  ItemDetailBottomSheet.show(context, item, badgeText, categories);
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
@@ -814,10 +828,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () async {
-                if (item.url != null && await canLaunchUrl(Uri.parse(item.url!))) {
-                  await launchUrl(Uri.parse(item.url!));
-                }
+              onTap: () {
+                ItemDetailBottomSheet.show(context, item, badgeText, categories);
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,

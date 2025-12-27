@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
 import '../core/design/app_colors.dart';
@@ -32,6 +33,7 @@ class ItemDetailBottomSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      enableDrag: true, // Allow drag to dismiss
       builder: (context) => ItemDetailBottomSheet(
         item: item, 
         categoryName: categoryName, 
@@ -97,6 +99,13 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final url = widget.item.url;
     if (url != null && await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _shareLink() {
+    final url = widget.item.url;
+    if (url != null && url.isNotEmpty) {
+      Share.share(url);
     }
   }
 
@@ -196,52 +205,224 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final platformIcon = _getPlatformIcon(widget.item.url);
     final platformColor = _getPlatformColor(widget.item.url);
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return DraggableScrollableSheet(
+      initialChildSize: hasImage ? 1.0 : 0.85, // Increased from 0.6 per request
+      minChildSize: 0.5,
+      maxChildSize: 1.0,
+      snap: true,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // Stack for Image + Handle Bar
             Stack(
               alignment: Alignment.topCenter,
               children: [
-                // Image (Full Width)
+                  // Image (Full Width)
                 if (hasImage)
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    child: AspectRatio(
-                      aspectRatio: 16/10,
-                      child: widget.item.displayImage!.startsWith('http')
-                        ? CachedNetworkImage(
-                            imageUrl: widget.item.displayImage!,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.asset(
-                            widget.item.displayImage!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: Colors.grey.shade100,
-                              child: Center(child: Icon(platformIcon, size: 48, color: platformColor)),
-                            ),
-                          ),
+                  GestureDetector(
+                    onTap: _openInApp,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.70, // Max 70% height as requested
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: widget.item.displayImage!.startsWith('http')
+                            ? CachedNetworkImage(
+                                imageUrl: widget.item.displayImage!,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter, 
+                              )
+                            : Image.asset(
+                                widget.item.displayImage!,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                errorBuilder: (_, __, ___) => Container(
+                                  height: 250, 
+                                  color: Colors.grey.shade100,
+                                  child: Center(child: Icon(platformIcon, size: 48, color: platformColor)),
+                                ),
+                              ),
+                        ),
+                      ),
                     ),
                   )
                 else
-                  const SizedBox(height: 48), // Spacing for handle if no image
+                   // Fallback Header for No Image
+                   Container(
+                     height: 380, // Increased height for better spacing
+                     width: double.infinity,
+                     decoration: const BoxDecoration(
+                       color: Color(0xFFF9FAFB),
+                       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                     ),
+                     child: Center(
+                        // Add padding to push icon up slightly for visual balance against the bottom button
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 60), 
+                          child: Icon(platformIcon, size: 72, color: platformColor.withOpacity(0.5)),
+                        ),
+                     ),
+                   ),
 
-                // Handle Bar (overlay)
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: hasImage ? Colors.white.withOpacity(0.8) : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+                // Close Button (Top Left)
+                Positioned(
+                  top: hasImage ? 56 : 24, // Higher for no-image items
+                  left: 16,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        // Removed border as requested
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(PhosphorIconsLight.x, size: 20, color: Colors.black),
+                    ),
+                  ),
+                ),
+
+                // Share Button (Top Right)
+                Positioned(
+                  top: hasImage ? 56 : 24, // Higher for no-image items
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: _shareLink,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        // Removed border as requested
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(PhosphorIconsLight.paperPlaneTilt, size: 20, color: Colors.black),
+                    ),
+                  ),
+                ),
+
+                // Open App Button & Disclaimer (Always Visible)
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: Builder(
+                    builder: (context) {
+                      final url = widget.item.url?.toLowerCase() ?? '';
+                      Color textColor = Colors.white;
+                      Color? bgColor;
+                      Gradient? bgGradient;
+                      Border? border;
+
+                      if (url.contains('instagram')) {
+                        bgGradient = const LinearGradient(
+                          colors: [Color(0xFFFEDA75), Color(0xFFD62976), Color(0xFF962FBF)],
+                          begin: Alignment.bottomLeft,
+                          end: Alignment.topRight,
+                        );
+                        bgColor = null; 
+                      } else if (url.contains('x.com') || url.contains('twitter')) {
+                        bgColor = Colors.black;
+                      } else if (url.contains('youtube')) {
+                        bgColor = const Color(0xFFFF0000);
+                      } else if (url.contains('pinterest')) {
+                        bgColor = const Color(0xFFBD081C);
+                      } else {
+                        // Generic Link -> White button
+                        bgColor = Colors.white;
+                        textColor = Colors.black;
+                        border = Border.all(color: Colors.grey.shade300, width: 1);
+                      }
+
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              gradient: bgGradient,
+                              borderRadius: BorderRadius.circular(12),
+                              border: border,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _openInApp,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(platformIcon, size: 20, color: textColor),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "$platformName'da Aç",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 15, 
+                                          fontWeight: FontWeight.w600, 
+                                          color: textColor
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Text color logic: white if hasImage (overlay), dark grey if no image (fallback bg)
+                          Text(
+                            "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: hasImage ? Colors.white.withOpacity(0.8) : Colors.grey.shade500,
+                              fontStyle: FontStyle.italic,
+                              shadows: hasImage ? [
+                                Shadow(
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 3.0,
+                                  color: Colors.black.withOpacity(0.5),
+                                )
+                              ] : null,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
                   ),
                 ),
               ],
@@ -274,13 +455,13 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
             
             const SizedBox(height: 16),
 
-            // Category section with multi-select chips
+            // Category section with chips
             Padding(
               padding: const EdgeInsets.only(left: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Kategoriler', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                  Text('Koleksiyon Seç', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 45,
@@ -298,55 +479,35 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
             const SizedBox(height: 24),
 
-            // Open in app button
+            // Actions: Delete and Save (Minimalist)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _openInApp,
-                  icon: Icon(platformIcon, size: 20),
-                  label: Text("$platformName'da Aç"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: platformColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    textStyle: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Delete Button
+                  TextButton.icon(
+                    onPressed: () => _showDeleteConfirmation(),
+                    icon: Icon(PhosphorIconsLight.trash, size: 20, color: Colors.grey.shade600),
+                    label: Text('Sil', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
                   ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Save button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () {
-                    // TODO: Implement save logic with _titleController.text and _selectedCategoryIds
-                    Navigator.pop(context);
-                  },
-                  child: Text('Kaydet', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Delete button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () => _showDeleteConfirmation(),
-                  icon: Icon(PhosphorIconsLight.trash, size: 18, color: Colors.red.shade400),
-                  label: Text('Sil', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.red.shade400)),
-                ),
+                  
+                  // Save Button
+                  TextButton.icon(
+                    onPressed: () {
+                      // TODO: Implement save logic
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(PhosphorIconsLight.check, size: 20, color: Colors.black),
+                    label: Text('Kaydet', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -354,6 +515,8 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }

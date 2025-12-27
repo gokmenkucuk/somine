@@ -398,40 +398,52 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
       statusBarIconBrightness: Brightness.dark,
     ));
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Main Content
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                _buildHeroStage(),
-                if (_hasLink || _isManualEntry) _buildControlCenter(),
-                const SizedBox(height: 140),
-              ],
-            ),
+    return DraggableScrollableSheet(
+      initialChildSize: 1.0,
+      minChildSize: 0.6,
+      maxChildSize: 1.0,
+      snap: true,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
+          child: Stack(
+            children: [
+              // Main Content
+              SingleChildScrollView(
+                controller: scrollController, // Crucial for drag-to-dismiss
+                physics: const AlwaysScrollableScrollPhysics(), // Ensure drag works even if content is short
+                child: Column(
+                  children: [
+                    _buildHeroStage(),
+                    if (_hasLink || _isManualEntry) _buildControlCenter(),
+                    const SizedBox(height: 140),
+                  ],
+                ),
+              ),
 
-          // Back Button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            left: 16,
-            child: _buildBackButton(),
+              // Back Button (re-styled as Drag Handle/Close)
+              Positioned(
+                top: 56, // Matched ItemDetailBottomSheet hasImage state
+                left: 16,
+                child: _buildBackButton(),
+              ),
+
+              // Floating CTA Dock
+              // Show dock if we have a link OR we are in manual entry mode
+              if (_hasLink || _isManualEntry)
+                Positioned(
+                  bottom: 40,
+                  left: 24,
+                  right: 24,
+                  child: _buildFloatingDock(),
+                ),
+            ],
           ),
-
-          // Floating CTA Dock
-          // Show dock if we have a link OR we are in manual entry mode
-          if (_hasLink || _isManualEntry)
-            Positioned(
-              bottom: 40,
-              left: 24,
-              right: 24,
-              child: _buildFloatingDock(),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -501,25 +513,15 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
             // Clear Button (Visible if has link OR manual entry)
             if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
               Positioned(
-                top: MediaQuery.of(context).padding.top + 12,
+                top: 56, // Aligned with Close button
                 right: 16,
                 child: _buildCircleButton(
-                  icon: PhosphorIconsLight.x,
+                  icon: PhosphorIconsLight.trash, // Changed to Trash to avoid confusion with Close X
                   onTap: _clearContent,
                 ),
               ),
 
-            // Platform Icon at Bottom Right (minimal, no bg)
-            if (_hasLink && !_isLoadingMetadata)
-              Positioned(
-                bottom: 20,
-                right: 24,
-                child: Icon(
-                  _getPlatformIcon(_detectedPlatform),
-                  size: 24,
-                  color: _getPlatformColor(_detectedPlatform).withValues(alpha: 0.6),
-                ),
-              ),
+            // Platform Icon removed as requested
           ],
         ),
       ),
@@ -601,7 +603,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Sahnedesin",
+                      "Yeni Ekle",
                       style: GoogleFonts.poppins(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -701,21 +703,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
           errorWidget: (context, url, error) => _buildPlatformBackground(),
         ),
 
-        // Light overlay
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white.withValues(alpha: 0.0),
-                Colors.white.withValues(alpha: 0.3),
-                Colors.white.withValues(alpha: 0.95),
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ),
-          ),
-        ),
+        // Overlay removed for clearer image
       ],
     );
   }
@@ -757,35 +745,13 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
           const SizedBox(height: 32),
 
           // Category Section Header
-          Row(
-            children: [
-              Container(
-                width: 3,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                "Koleksiyon Seç",
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.headline,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                "Birden fazla seçilebilir",
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.body,
-                ),
-              ),
-            ],
+          Text(
+            "Koleksiyon Seç",
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade500,
+            ),
           ),
 
           const SizedBox(height: 16),
@@ -834,21 +800,11 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
     int maxLines = 1,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Standardized Height
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.secondary,
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.white, // White background
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300, width: 1), // Subtle border
       ),
       child: Row(
         crossAxisAlignment:
@@ -870,7 +826,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
                 fontSize: isTitle ? 15 : 14,
-                fontWeight: isTitle ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: FontWeight.w400,
                 color: AppColors.headline,
               ),
               decoration: InputDecoration(
@@ -902,21 +858,14 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
     final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsRegular.link;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Standardized Height
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: platformColor.withValues(alpha: hasPlatform ? 0.25 : 1.0),
-          width: 1.5,
-        ),
-        boxShadow: hasPlatform ? [
-           BoxShadow(
-            color: platformColor.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ] : null,
+        color: Colors.white, // White background
+        borderRadius: BorderRadius.circular(12),
+        // Use Platform Color border if platform detected, else subtle grey
+        border: hasPlatform 
+            ? Border.all(color: platformColor.withOpacity(0.5), width: 1.0)
+            : Border.all(color: Colors.grey.shade300, width: 1), 
       ),
       child: Row(
         children: [
@@ -948,14 +897,14 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
               cursorColor: AppColors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
-                fontSize: 13,
+                fontSize: 14, // Standardized to 14
                 fontWeight: FontWeight.w400,
                 color: AppColors.headline,
               ),
               decoration: InputDecoration(
                 hintText: "Bağlantı yapıştır...",
                 hintStyle: GoogleFonts.poppins(
-                  fontSize: 13,
+                  fontSize: 14, // Standardized to 14
                   color: AppColors.body.withValues(alpha: 0.6),
                 ),
                 border: InputBorder.none,
@@ -1060,16 +1009,43 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
   // ============== FLOATING DOCK ==============
 
   Widget _buildFloatingDock() {
+    // Calculate Button Style Logic
+    Color bgColor = AppColors.accentDark;
+    Gradient? bgGradient;
+    
+    if (_hasLink && _detectedPlatform.isNotEmpty) {
+       final platform = _detectedPlatform.toLowerCase();
+       if (platform.contains('instagram')) {
+          bgGradient = const LinearGradient(
+            colors: [Color(0xFFFEDA75), Color(0xFFD62976), Color(0xFF962FBF)],
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
+          );
+       } else if (platform.contains('x') || platform.contains('twitter')) {
+          bgColor = Colors.black;
+       } else if (platform.contains('youtube')) {
+          bgColor = const Color(0xFFFF0000); // YouTube Red
+       } else if (platform.contains('pinterest')) {
+          bgColor = const Color(0xFFBD081C); // Pinterest Red
+       } else if (platform.contains('spotify')) {
+          bgColor = const Color(0xFF1DB954); 
+       } else {
+          // Fallback for other detected platforms to their generic color
+          bgColor = _getPlatformColor(_detectedPlatform);
+       }
+    }
+
     return GestureDetector(
       onTap: _isSaving ? null : _saveContent,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.accentDark, // Brand Color (Matching FAB)
+          color: bgGradient == null ? bgColor : null,
+          gradient: bgGradient,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accentDark.withValues(alpha: 0.3),
+              color: (bgGradient != null ? Colors.black : bgColor).withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -1089,9 +1065,9 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      PhosphorIconsBold.plus, // Changed to Plus
+                      PhosphorIconsBold.plus, 
                       size: 20,
-                      color: Colors.white, // White Text/Icon
+                      color: Colors.white, 
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -1099,7 +1075,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white, // White Text/Icon
+                        color: Colors.white, 
                       ),
                     ),
                   ],
@@ -1119,18 +1095,18 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
         height: 44,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.secondary, width: 1.5),
+          shape: BoxShape.circle, // Circular
+          border: Border.all(color: Colors.grey.shade300, width: 1), // Grey Border
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Icon(
-          PhosphorIconsLight.caretLeft,
+          PhosphorIconsLight.x, // Changed to X for modal close
           size: 20,
           color: AppColors.headline,
         ),
@@ -1149,11 +1125,11 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
         height: 44,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.secondary, width: 1.5),
+          shape: BoxShape.circle, // Updated to Circle
+          border: Border.all(color: Colors.grey.shade300, width: 1), // Updated to grey border
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.1), // Updated opacity
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
