@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:somine_app/screens/recently_deleted_screen.dart';
 import 'package:somine_app/screens/appearance_screen.dart';
@@ -16,26 +17,47 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: const Color(
         0xFFFAFAFA,
       ), // Very light grey background for "Cozy" feel
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFAFAFA),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(CupertinoIcons.share, color: Colors.black),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 10),
+            // --- CUSTOM HEADER ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+
+                  
+                  // Right Actions (Share)
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05), // Subtle shadow for secondary action
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(CupertinoIcons.share, size: 22, color: Colors.black),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // --- SCROLLABLE CONTENT ---
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
 
             // --- HEADER ---
             FadeInDown(
@@ -48,13 +70,13 @@ class ProfileScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                        colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)], // Oil Green
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withOpacity(0.2),
+                          color: const Color(0xFF6E8E91).withOpacity(0.25),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -79,8 +101,8 @@ class ProfileScreen extends StatelessWidget {
                   // Name
                   Text(
                     "Gökmen Küçük",
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF111827),
                     ),
@@ -88,22 +110,21 @@ class ProfileScreen extends StatelessWidget {
 
                   // Title / Bio
                   Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      "It is so mine!",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        fontStyle: FontStyle.italic, // Italic
-                        color: const Color(0xFF4B5563),
+                    margin: const EdgeInsets.only(top: 4),
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)], // Oil Green
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: Text(
+                        "It is so mine!",
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.white, // Required for ShaderMask
+                        ),
                       ),
                     ),
                   ),
@@ -175,15 +196,14 @@ class ProfileScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      _buildDivider(),
-                      _buildMenuItem(
-                        icon: CupertinoIcons.star,
-                        title: "Üyelik Planı",
-                        subtitle: "Pro Üye",
-                        onTap: () {},
-                      ),
+
                     ],
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // Membership Plan (Standalone Highlighted)
+                  _buildMembershipCard(isPro: true), // Mock PRO status
 
                   const SizedBox(height: 20),
 
@@ -323,8 +343,8 @@ class ProfileScreen extends StatelessWidget {
                               const SizedBox(width: 16),
                               Text(
                                 "Çıkış Yap",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.red,
                                 ),
@@ -341,8 +361,8 @@ class ProfileScreen extends StatelessWidget {
                   // Version
                   Text(
                     "v1.0.0",
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
                       color: Colors.grey[400],
                       fontWeight: FontWeight.w500,
                     ),
@@ -353,27 +373,136 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
+        ),
       ),
+    ],
+  ),
+),
     );
   }
 
   // --- Helpers ---
+
+  Widget _buildMembershipCard({required bool isPro}) {
+    // Single Gradient for Background (Oil Green)
+    final backgroundGradient = const LinearGradient(
+      colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)], // Oil Green
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        gradient: backgroundGradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6E8E91).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {}, // Handle Tap
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Row(
+              children: [
+                // Icon Box
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: isPro 
+                  ? ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFFFFE082), Color(0xFFFFD54F)], // Bright Gold
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: const Icon(
+                        CupertinoIcons.star_fill,
+                        color: Colors.white, // Required for ShaderMask
+                        size: 24,
+                      ),
+                    )
+                  : const Icon(
+                      CupertinoIcons.star,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                ),
+                const SizedBox(width: 16),
+
+                // Text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Üyelik Planı",
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                         decoration: BoxDecoration(
+                           color: Colors.white.withOpacity(0.15),
+                           borderRadius: BorderRadius.circular(6)
+                         ),
+                         child: Text(
+                           isPro ? "PRO ÜYE" : "STANDART",
+                           style: GoogleFonts.outfit(
+                             fontSize: 10,
+                             fontWeight: FontWeight.w700,
+                             color: Colors.white,
+                             letterSpacing: 0.5,
+                           ),
+                         ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.white70,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
         Text(
           value,
-          style: GoogleFonts.poppins(
-            fontSize: 22,
+          style: GoogleFonts.outfit(
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF111827),
           ),
         ),
         Text(
           label,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
+          style: GoogleFonts.outfit(
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF9CA3AF),
           ),
@@ -446,8 +575,8 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF111827),
                       ),
@@ -455,8 +584,8 @@ class ProfileScreen extends StatelessWidget {
                     if (subtitle != null)
                       Text(
                         subtitle,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
                           color: const Color(0xFF6B7280),
                         ),
                       ),
@@ -477,7 +606,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: Text(
                     badge,
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.outfit(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: badgeColor ?? Colors.blue,

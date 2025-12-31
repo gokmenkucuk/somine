@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
+import 'package:somine_app/screens/home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final bool forceLogin;
@@ -22,6 +23,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signInWithGoogle();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -37,6 +43,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signInWithApple();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -51,6 +62,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _continueAsGuest() {
     final guestNotifier = ref.read(guestUserStateProvider.notifier);
     guestNotifier.setGuestMode(true);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
   }
 
   @override

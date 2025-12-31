@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
 import '../core/design/app_colors.dart';
+import '../screens/edit_content_screen.dart'; // Import Edit Screen
 
 class ItemDetailBottomSheet extends StatefulWidget {
   final ItemModel item;
@@ -33,7 +35,7 @@ class ItemDetailBottomSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      enableDrag: true, // Allow drag to dismiss
+      enableDrag: true,
       builder: (context) => ItemDetailBottomSheet(
         item: item, 
         categoryName: categoryName, 
@@ -48,21 +50,34 @@ class ItemDetailBottomSheet extends StatefulWidget {
 }
 
 class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
-  late TextEditingController _titleController;
-  late Set<String> _selectedCategoryIds;
+  double? _imageAspectRatio;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.item.displayTitle);
-    // Initialize with current category
-    _selectedCategoryIds = widget.item.categoryId != null ? {widget.item.categoryId!} : {};
+    _resolveImageSize();
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    super.dispose();
+  void _resolveImageSize() {
+    final imageUrl = widget.item.displayImage;
+    if (imageUrl == null || imageUrl.isEmpty) return;
+
+    ImageProvider? provider;
+    if (imageUrl.startsWith('http')) {
+      provider = CachedNetworkImageProvider(imageUrl);
+    } else {
+      provider = AssetImage(imageUrl);
+    }
+
+    provider.resolve(const ImageConfiguration()).addListener(
+      ImageStreamListener((ImageInfo info, bool synchronousCall) {
+        if (!mounted) return;
+        final myImage = info.image;
+        setState(() {
+          _imageAspectRatio = myImage.width / myImage.height;
+        });
+      }),
+    );
   }
 
   String _getPlatformName(String? url) {
@@ -85,16 +100,6 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     return PhosphorIconsBold.link;
   }
 
-  Color _getPlatformColor(String? url) {
-    if (url == null) return Colors.grey;
-    final s = url.toLowerCase();
-    if (s.contains('instagram')) return const Color(0xFFE4405F);
-    if (s.contains('youtube')) return const Color(0xFFFF0000);
-    if (s.contains('x.com') || s.contains('twitter')) return Colors.black;
-    if (s.contains('pinterest')) return const Color(0xFFBD081C);
-    return AppColors.primary;
-  }
-
   Future<void> _openInApp() async {
     final url = widget.item.url;
     if (url != null && await canLaunchUrl(Uri.parse(url))) {
@@ -109,90 +114,31 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     }
   }
 
-  void _showDeleteConfirmation() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('İçeriği Sil', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text('Bu içeriği silmek istediğinize emin misiniz?', style: GoogleFonts.poppins()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('İptal', style: GoogleFonts.poppins(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Implement delete logic
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(this.context); // Close bottom sheet
-            },
-            child: Text('Sil', style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
+  void _openEditScreen() {
+    Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) => EditContentScreen(item: widget.item)),
+    ).then((_) {
+      // Ideally refresh state if item changed, but BottomSheet might need reload. 
+      // For now, simple return.
+      // If we want to see updates live, we might need to re-fetch or pass updated item back.
+      // Given the architecture, let's assume parent list updates on return.
+      Navigator.pop(context); // Close sheet to force refresh from list (simplest for now)
+    });
   }
 
-  Widget _buildCategoryChip(CategoryModel cat) {
-    final bool isSelected = _selectedCategoryIds.contains(cat.id);
-
-    return GestureDetector(
-      onTap: () => setState(() {
-        if (isSelected) {
-          _selectedCategoryIds.remove(cat.id);
-        } else {
-          _selectedCategoryIds.add(cat.id);
-        }
-      }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [AppColors.secondary.withOpacity(0.5), AppColors.surfaceWhite],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected ? null : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(
-            color: isSelected ? Colors.transparent : Colors.grey.shade300,
-            width: 1.5,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.secondary.withOpacity(0.35),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              cat.name,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.headline : AppColors.body,
-              ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              Icon(
-                PhosphorIconsBold.check,
-                size: 12,
-                color: AppColors.headline,
-              ),
-            ],
-          ],
+  Widget _buildFallbackHeader(IconData icon) {
+    return Container(
+      color: const Color(0xFFF9FAFB),
+      child: Center(
+        child: ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AppColors.primary, Color(0xFF6FBFAC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Icon(icon, size: 96, color: Colors.white),
         ),
       ),
     );
@@ -203,318 +149,250 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final hasImage = widget.item.displayImage != null && widget.item.displayImage!.isNotEmpty;
     final platformName = _getPlatformName(widget.item.url);
     final platformIcon = _getPlatformIcon(widget.item.url);
-    final platformColor = _getPlatformColor(widget.item.url);
+    
+    // Dynamic Header Calculation
+    double headerRatio = 0.45;
+    if (_imageAspectRatio != null) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      final screenHeight = MediaQuery.of(context).size.height;
+      final desiredHeight = screenWidth / _imageAspectRatio!;
+      double calculatedRatio = desiredHeight / screenHeight;
+      if (calculatedRatio > 0.65) calculatedRatio = 0.65;
+      if (calculatedRatio < 0.35) calculatedRatio = 0.35; 
+      headerRatio = calculatedRatio;
+    }
+    
+    final headerHeight = MediaQuery.of(context).size.height * headerRatio;
+
+    // Find assigned category
+    final assignedCategory = widget.categories.firstWhere(
+      (c) => c.id == widget.item.categoryId, 
+      orElse: () => CategoryModel(id: '', userId: '', name: widget.categoryName, icon: '', createdAt: DateTime.now(), updatedAt: DateTime.now())
+    );
 
     return DraggableScrollableSheet(
-      initialChildSize: hasImage ? 1.0 : 0.85, // Increased from 0.6 per request
-      minChildSize: 0.5,
+      initialChildSize: hasImage ? 1.0 : 0.85,
+      minChildSize: 0.25, // Lowered to allow drag down
       maxChildSize: 1.0,
-      snap: true,
+      snap: false, // Disabled snap to prevent sticking in middle
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Colors.transparent, 
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-            // Stack for Image + Handle Bar
-            Stack(
-              alignment: Alignment.topCenter,
-              children: [
-                  // Image (Full Width)
-                if (hasImage)
-                  GestureDetector(
-                    onTap: _openInApp,
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.70, // Max 70% height as requested
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: widget.item.displayImage!.startsWith('http')
-                            ? CachedNetworkImage(
-                                imageUrl: widget.item.displayImage!,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter, 
-                              )
-                            : Image.asset(
-                                widget.item.displayImage!,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                                errorBuilder: (_, __, ___) => Container(
-                                  height: 250, 
-                                  color: Colors.grey.shade100,
-                                  child: Center(child: Icon(platformIcon, size: 48, color: platformColor)),
-                                ),
-                              ),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                   // Fallback Header for No Image
-                   Container(
-                     height: 380, // Increased height for better spacing
+          child: Stack(
+            children: [
+              // --- LAYOUT COLUMN ---
+              Column(
+                children: [
+                   // 1. HEADER IMAGE
+                   SizedBox(
+                     height: headerHeight,
                      width: double.infinity,
-                     decoration: const BoxDecoration(
-                       color: Color(0xFFF9FAFB),
-                       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                     ),
-                     child: Center(
-                        // Add padding to push icon up slightly for visual balance against the bottom button
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 60), 
-                          child: Icon(platformIcon, size: 72, color: platformColor.withOpacity(0.5)),
-                        ),
+                     child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        child: hasImage
+                          ? widget.item.displayImage!.startsWith('http')
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.item.displayImage!,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.topCenter,
+                                )
+                              : Image.asset(
+                                  widget.item.displayImage!,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.topCenter,
+                                  errorBuilder: (_, __, ___) => _buildFallbackHeader(platformIcon),
+                                )
+                          : _buildFallbackHeader(platformIcon),
                      ),
                    ),
 
-                // Close Button (Top Left)
-                Positioned(
-                  top: hasImage ? 56 : 24, // Higher for no-image items
-                  left: 16,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        // Removed border as requested
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(PhosphorIconsLight.x, size: 20, color: Colors.black),
-                    ),
-                  ),
-                ),
+                   // 2. CONTENT AREA
+                   Expanded(
+                     child: Container(
+                       width: double.infinity,
+                       color: Colors.white,
+                       child: Column(
+                         children: [
+                           // DRAG HANDLE REMOVED
+                           const SizedBox(height: 12),
 
-                // Share Button (Top Right)
-                Positioned(
-                  top: hasImage ? 56 : 24, // Higher for no-image items
-                  right: 16,
-                  child: GestureDetector(
-                    onTap: _shareLink,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        // Removed border as requested
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(PhosphorIconsLight.paperPlaneTilt, size: 20, color: Colors.black),
-                    ),
-                  ),
-                ),
 
-                // Open App Button & Disclaimer (Always Visible)
-                Positioned(
-                  bottom: 16,
-                  left: 16,
-                  right: 16,
-                  child: Builder(
-                    builder: (context) {
-                      final url = widget.item.url?.toLowerCase() ?? '';
-                      Color textColor = Colors.white;
-                      Color? bgColor;
-                      Gradient? bgGradient;
-                      Border? border;
+                           // OPEN BUTTON
+                           Padding(
+                             padding: const EdgeInsets.symmetric(horizontal: 20),
+                             child: Container(
+                               width: double.infinity,
+                               decoration: BoxDecoration(
+                                 gradient: const LinearGradient(
+                                   colors: [AppColors.primary, Color(0xFF6FBFAC)],
+                                   begin: Alignment.topLeft,
+                                   end: Alignment.bottomRight,
+                                 ),
+                                 borderRadius: BorderRadius.circular(12),
+                                 boxShadow: [
+                                   BoxShadow(
+                                     color: const Color(0xFF6FBFAC).withOpacity(0.3),
+                                     blurRadius: 10,
+                                     offset: const Offset(0, 4),
+                                   ),
+                                 ],
+                               ),
+                               child: Material(
+                                 color: Colors.transparent,
+                                 child: InkWell(
+                                   onTap: _openInApp,
+                                   borderRadius: BorderRadius.circular(12),
+                                   child: Padding(
+                                     padding: const EdgeInsets.symmetric(vertical: 14),
+                                     child: Row(
+                                       mainAxisAlignment: MainAxisAlignment.center,
+                                       children: [
+                                         Icon(platformIcon, size: 20, color: Colors.white),
+                                         const SizedBox(width: 8),
+                                         Text(
+                                           "$platformName'da Aç",
+                                           style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ),
+                               ),
+                             ),
+                           ),
 
-                      if (url.contains('instagram')) {
-                        bgGradient = const LinearGradient(
-                          colors: [Color(0xFFFEDA75), Color(0xFFD62976), Color(0xFF962FBF)],
-                          begin: Alignment.bottomLeft,
-                          end: Alignment.topRight,
-                        );
-                        bgColor = null; 
-                      } else if (url.contains('x.com') || url.contains('twitter')) {
-                        bgColor = Colors.black;
-                      } else if (url.contains('youtube')) {
-                        bgColor = const Color(0xFFFF0000);
-                      } else if (url.contains('pinterest')) {
-                        bgColor = const Color(0xFFBD081C);
-                      } else {
-                        // Generic Link -> White button
-                        bgColor = Colors.white;
-                        textColor = Colors.black;
-                        border = Border.all(color: Colors.grey.shade300, width: 1);
-                      }
+                           const SizedBox(height: 24),
 
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: bgColor,
-                              gradient: bgGradient,
-                              borderRadius: BorderRadius.circular(12),
-                              border: border,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: _openInApp,
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(platformIcon, size: 20, color: textColor),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "$platformName'da Aç",
+                           // SCROLLABLE CONTENT
+                           Expanded(
+                             child: SingleChildScrollView(
+                               controller: scrollController,
+                               padding: const EdgeInsets.symmetric(horizontal: 20),
+                               child: Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                    // Title Display
+                                    Text('Başlık', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      widget.item.displayTitle,
+                                      style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.headline),
+                                    ),
+
+                                    const SizedBox(height: 24),
+
+                                    // Category Display
+                                    Text('Koleksiyon', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                                    const SizedBox(height: 12),
+                                    
+                                    // Single Category Text
+                                    Text(
+                                      assignedCategory.name,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: AppColors.headline,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 32),
+
+                                    // Note (if any)
+                                    if (widget.item.note != null && widget.item.note!.isNotEmpty && widget.item.note != widget.item.displayTitle) ...[
+                                       Text('Not', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                                       const SizedBox(height: 8),
+                                       Text(
+                                         widget.item.note!,
+                                         style: GoogleFonts.poppins(fontSize: 14, color: AppColors.body),
+                                       ),
+                                       const SizedBox(height: 32),
+                                    ],
+                                    
+                                    
+                                    // Footer Text
+                                    Center(
+                                      child: Text(
+                                        "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
+                                        textAlign: TextAlign.center,
                                         style: GoogleFonts.poppins(
-                                          fontSize: 15, 
-                                          fontWeight: FontWeight.w600, 
-                                          color: textColor
+                                          fontSize: 10,
+                                          color: Colors.grey.shade400,
+                                          fontStyle: FontStyle.italic,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          // Text color logic: white if hasImage (overlay), dark grey if no image (fallback bg)
-                          Text(
-                            "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: hasImage ? Colors.white.withOpacity(0.8) : Colors.grey.shade500,
-                              fontStyle: FontStyle.italic,
-                              shadows: hasImage ? [
-                                Shadow(
-                                  offset: const Offset(0, 1),
-                                  blurRadius: 3.0,
-                                  color: Colors.black.withOpacity(0.5),
-                                )
-                              ] : null,
-                            ),
-                          ),
-                        ],
-                      );
-                    }
+                                    ),
+                                    
+                                    SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+                                 ],
+                               ),
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ),
+                ],
+              ),
+
+              // --- 3. STICKY ICONS (Top Layer) ---
+              // Close Button (Top Left)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 56, 
+                left: 16,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: const Icon(PhosphorIconsLight.x, size: 22, color: Colors.black),
                   ),
                 ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-
-            // Title section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Başlık', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: _titleController,
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      hintText: 'Başlık girin',
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                ],
               ),
-            ),
-            
-            const SizedBox(height: 16),
 
-            // Category section with chips
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Koleksiyon Seç', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 45,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.only(right: 16),
-                      itemCount: widget.categories.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) => _buildCategoryChip(widget.categories[index]),
+              // Share Button (Top Right)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 56, 
+                right: 16,
+                child: GestureDetector(
+                  onTap: _shareLink,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
+                    child: const Icon(PhosphorIconsLight.paperPlaneTilt, size: 22, color: Colors.black),
                   ),
-                ],
+                ),
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Actions: Delete and Save (Minimalist)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Delete Button
-                  TextButton.icon(
-                    onPressed: () => _showDeleteConfirmation(),
-                    icon: Icon(PhosphorIconsLight.trash, size: 20, color: Colors.grey.shade600),
-                    label: Text('Sil', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              
+              // Edit Button (Left of Share)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 56, 
+                right: 16 + 40 + 12, // 16 (margin) + 40 (share btn width approx) + 12 (gap)
+                child: GestureDetector(
+                  onTap: _openEditScreen,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
+                    child: const Icon(PhosphorIconsLight.pencilSimple, size: 22, color: Colors.black),
                   ),
-                  
-                  // Save Button
-                  TextButton.icon(
-                    onPressed: () {
-                      // TODO: Implement save logic
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(PhosphorIconsLight.check, size: 20, color: Colors.black),
-                    label: Text('Kaydet', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black)),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-          ],
-        ),
-      ),
+            ],
+          ),
         );
       },
     );

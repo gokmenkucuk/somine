@@ -94,6 +94,7 @@ class ItemRepository {
       await _itemsCollection.doc(item.id).update({
         'categoryId': item.categoryId,
         'note': item.note,
+        'url': item.url, // Added URL update
         'isFavorite': item.isFavorite,
         'ogMetadata': item.ogMetadata?.toMap(),
         'updatedAt': FieldValue.serverTimestamp(),

@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // Add CachedNetworkImage
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/repositories/item_repository.dart';
+// Remove ItemCard
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:somine_app/core/design/app_colors.dart';
+
+import 'package:somine_app/core/models/category_model.dart';
+import 'package:somine_app/widgets/item_detail_bottom_sheet.dart'; // Import Detail Sheet
+import 'package:somine_app/core/repositories/category_repository.dart';
+
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -13,25 +26,113 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   final TextEditingController _searchController = TextEditingController();
+  final ItemRepository _itemRepository = ItemRepository();
+  final CategoryRepository _categoryRepository = CategoryRepository();
+  
+  List<ItemModel> _allItems = [];
+  List<ItemModel> _filteredItems = [];
+  List<CategoryModel> _categories = [];
+  bool _isLoading = true;
+
+  String? _selectedPlatform;
+
+
+  // Computed property to check if search mode is active
+  bool get _isSearching => _searchController.text.isNotEmpty || _selectedPlatform != null;
 
   // Son Aramalar (Mock Data)
   final List<String> _recentSearches = [
-    "Minimalist Tasarım",
-    "Flutter UI Kit",
-    "Seyahat Planı",
-    "Yemek Tarifleri",
-    "Teknoloji Haberleri",
-    "Logo İlhamları",
-    "Renk Paletleri",
+    "Yaz Tatili Planı",
+    "Ofis Dekorasyonu",
+    "Pratik Akşam Yemeği",
+    "İngilizce Çalışma Kaynakları",
+    "Yatırım İpuçları",
+    "Haftasonu Etkinlikleri",
   ];
 
   @override
   void initState() {
     super.initState();
+    _fetchItems();
+    _searchController.addListener(_performSearch);
+    
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) {
         _searchFocusNode.requestFocus();
       }
+    });
+  }
+
+  Future<void> _fetchItems() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final itemsFuture = _itemRepository.getItems(user.uid);
+        final categoriesFuture = _categoryRepository.getCategories(user.uid);
+        
+        final results = await Future.wait([itemsFuture, categoriesFuture]);
+        final items = results[0] as List<ItemModel>;
+        final categories = results[1] as List<CategoryModel>;
+        
+        if (mounted) {
+          setState(() {
+            _allItems = items;
+            _categories = categories;
+            _isLoading = false;
+          });
+          _performSearch();
+        }
+      } catch (e) {
+        debugPrint("Error fetching items: $e");
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _performSearch() {
+    final query = _searchController.text.toLowerCase();
+    
+    setState(() {
+      if (!_isSearching) {
+        _filteredItems = [];
+        return;
+      }
+
+      _filteredItems = _allItems.where((item) {
+        bool matchesQuery = true;
+        bool matchesPlatform = true;
+
+        // Text Search
+        if (query.isNotEmpty) {
+           final title = item.displayTitle.toLowerCase();
+           final note = item.note?.toLowerCase() ?? '';
+           // Check URL or Title or Note
+           matchesQuery = title.contains(query) || note.contains(query);
+        }
+
+        // Platform Filter
+        if (_selectedPlatform != null) {
+          final url = item.url?.toLowerCase() ?? '';
+          final siteName = item.ogMetadata?.siteName?.toLowerCase() ?? '';
+          final filter = _selectedPlatform!.toLowerCase();
+
+          // Simple contains check
+           // Simple contains check
+          if (filter == 'web') {
+             // Web matches if NOT specific social
+             final isSocial = url.contains('youtube') || 
+                              url.contains('instagram') || 
+                              url.contains('tiktok') || 
+                              url.contains('twitter') || 
+                              url.contains('x.com');
+             matchesPlatform = !isSocial; 
+          } else {
+             matchesPlatform = url.contains(filter) || siteName.contains(filter);
+          }
+        }
+        
+        return matchesQuery && matchesPlatform;
+      }).toList();
     });
   }
 
@@ -60,280 +161,263 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // === 1. BACKGROUND: "The Freedom Wave" ===
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(
-                0xFFFFFEF9,
-              ), // Sunlight Cream (üst sol) - çok açık sıcak beyaz
-              Color(0xFFF7F9F4), // Soft warm white
-              Color(0xFFEEF6F5), // Geçiş - çok açık mint
-              Color(0xFFE4F2F1), // Mist Teal
-              Color(0xFFDBEEF0), // Soft Ocean Mist (alt sağ)
-            ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, Color(0xFFE6F2ED)],
+            stops: [0.3, 1.0],
           ),
         ),
         child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              const SizedBox(height: 12),
-
-              // === HEADER: Back Button + Title ===
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: FadeInDown(
-                  duration: const Duration(milliseconds: 400),
-                  child: Row(
+              // === LAYER 1: CONTENT (Filters + Results) ===
+              Positioned.fill(
+                top: 180, // Increased to prevent SearchBar overlap
+                child: GestureDetector(
+                  onTap: () {
+                    // Unfocus when tapping background
+                    _searchFocusNode.unfocus();
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Geri/Kapat Butonu
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF0EA5E9,
-                                ).withOpacity(0.08),
-                                blurRadius: 20,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.close_rounded,
-                            size: 22,
-                            color: Color(0xFF374151),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Başlık
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "Ara ",
+                      // === PLATFORM FILTERS ===
+                      FadeInDown(
+                        delay: const Duration(milliseconds: 200),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              child: Text(
+                                "Kaynaklara Göz At",
                                 style: GoogleFonts.poppins(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w300,
-                                  color: const Color(0xFF1F2937),
-                                  height: 1.2,
-                                ),
-                              ),
-                              Text(
-                                "ve Keşfet",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1F2937),
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Koleksiyonlarında arama yap...",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: const Color(0xFF9CA3AF),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              // === 2. THE HERO: "Aurora Search Bar" ===
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: FadeInDown(
-                  delay: const Duration(milliseconds: 150),
-                  child: Container(
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: Colors.white, // Pure White Background
-                      borderRadius: BorderRadius.circular(30), // Tam oval
-                      // White Contour (Visible but soft)
-                      border: Border.all(
-                        color: const Color(
-                          0xFFB0BEC5,
-                        ), // Slightly more distinct Grey
-                        width: 1.5,
-                      ),
-                      // Shadow Removed
-                      boxShadow: [],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(32),
-                      child: Stack(
-                        children: [
-                          // TextField
-                          Center(
-                            child: TextField(
-                              controller: _searchController,
-                              focusNode: _searchFocusNode,
-                              style: GoogleFonts.poppins(
-                                color: Colors.black, // Black Text
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              cursorColor: Colors.black, // Black Cursor
-                              cursorWidth: 2,
-                              decoration: InputDecoration(
-                                hintText: "Aramak için bir şeyler yaz...",
-                                hintStyle: GoogleFonts.poppins(
-                                  color: Colors.black54, // Distinct Grey Hint
                                   fontSize: 15,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                                prefixIcon: const Padding(
-                                  padding: EdgeInsets.only(left: 20, right: 14),
-                                  child: Icon(
-                                    CupertinoIcons.search,
-                                    color: Colors.black, // Black Icon
-                                    size: 22,
-                                  ),
-                                ),
-                                prefixIconConstraints: const BoxConstraints(
-                                  minWidth: 56,
-                                ),
-                                suffixIcon:
-                                    _searchController.text.isNotEmpty
-                                        ? Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 10,
-                                          ),
-                                          child: GestureDetector(
-                                            onTap:
-                                                () => setState(
-                                                  () =>
-                                                      _searchController.clear(),
-                                                ),
-                                            child: Container(
-                                              width: 32,
-                                              height: 32,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(
-                                                  0.1,
-                                                ),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.close_rounded,
-                                                size: 18,
-                                                color: Colors.white60,
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                        : null,
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade500,
                                 ),
                               ),
-                              onChanged: (value) => setState(() {}),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 36),
-
-              // === 3. SON ARAMALAR HEADER ===
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: FadeInDown(
-                  delay: const Duration(milliseconds: 250),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.clock,
-                            size: 18,
-                            color: const Color(0xFF6B7280),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Son Aramalar",
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF374151),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 40,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                physics: const BouncingScrollPhysics(),
+                                children: [
+                                  _buildPlatformFilterChip("Instagram", PhosphorIconsBold.instagramLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("YouTube", PhosphorIconsBold.youtubeLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Web", PhosphorIconsBold.globe),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("TikTok", PhosphorIconsBold.tiktokLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("X", PhosphorIconsBold.xLogo),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      if (_recentSearches.isNotEmpty)
-                        GestureDetector(
-                          onTap: _clearAllSearches,
-                          child: Text(
-                            "Temizle",
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(
-                                0xFF2563EB,
-                              ), // Home Screen Blue
-                            ),
-                          ),
+                          ],
                         ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+
+                      // === RESULTS ===
+                      // === RESULTS OR HISTORY ===
+                      Expanded(
+                        child: _isSearching
+                            ? (_isLoading
+                                ? const Center(child: CupertinoActivityIndicator())
+                                : _filteredItems.isEmpty
+                                    ? _buildNoResults()
+                                    : _buildSearchResults())
+                            : _buildRecentSearchesSection(), // Show History Inline
+                      ),
                     ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // === 3. SON ARAMALAR LİSTESİ ===
-              Expanded(
-                child:
-                    _recentSearches.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: _recentSearches.length,
-                          itemBuilder: (context, index) {
-                            return FadeInUp(
-                              delay: Duration(milliseconds: 300 + (index * 60)),
-                              child: _buildSearchHistoryItem(
-                                _recentSearches[index],
-                                index,
+              // === LAYER 2: HEADER + SEARCH BAR ===
+              Positioned(
+                top: 0, left: 0, right: 0,
+                child: Column(
+                  children: [
+                     const SizedBox(height: 12),
+                     // Header
+                     Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: FadeInDown(
+                          duration: const Duration(milliseconds: 400),
+                          child: Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                      Text("Ara ", style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w300, color: const Color(0xFF1F2937), height: 1.2)),
+                                      Text("ve Keşfet", style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w600, color: const Color(0xFF1F2937), height: 1.2)),
+                                  ]),
+                                  const SizedBox(height: 4),
+                                  Text("Koleksiyonlarında arama yap...", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w400, color: const Color(0xFF9CA3AF))),
+                                ],
                               ),
-                            );
-                          },
+                            ],
+                          ),
                         ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // Search Bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: FadeInDown(
+                          delay: const Duration(milliseconds: 150),
+                          child: _buildSearchBar(),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Extracted Search Bar for reusing
+  Widget _buildSearchBar() {
+    return Container(
+      height: 58,
+      padding: const EdgeInsets.all(1.0), // Reduced Border Width further
+      decoration: BoxDecoration(
+        // Oil Green Gradient Border
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6E8E91).withOpacity(0.25), // Increased opacity for glow
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28), // Inner Radius
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Center(
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              style: GoogleFonts.poppins(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w500),
+              cursorColor: const Color(0xFF6E8E91), // Match cursor to theme
+              decoration: InputDecoration(
+                hintText: "Aramak için bir şeyler yaz...",
+                hintStyle: GoogleFonts.poppins(color: Colors.black54, fontSize: 15, fontWeight: FontWeight.w400),
+                prefixIcon: const Padding(padding: EdgeInsets.only(left: 20, right: 14), child: Icon(CupertinoIcons.search, color: Colors.black, size: 22)),
+                prefixIconConstraints: const BoxConstraints(minWidth: 56),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _searchController.clear()),
+                          child: Container(
+                            width: 32, height: 32,
+                            decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), shape: BoxShape.circle),
+                            child: const Icon(Icons.close_rounded, size: 18, color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    : null,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), // Adjusted padding
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSearchesSection() {
+    if (_recentSearches.isEmpty) return _buildEmptyState();
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: FadeInDown(
+                delay: const Duration(milliseconds: 250),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(CupertinoIcons.clock, size: 16, color: const Color(0xFF9CA3AF)),
+                        const SizedBox(width: 8),
+                        Text("Son Aramalar", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: _clearAllSearches,
+                      child: Text("Temizle", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primary)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Divider(height: 1, color: Colors.grey.shade50),
+            Flexible(
+              child: ListView.separated(
+                physics: const BouncingScrollPhysics(),
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: _recentSearches.length,
+                separatorBuilder: (c, i) => Divider(height: 1, color: Colors.grey[50]),
+                itemBuilder: (context, index) {
+                  return FadeInUp(
+                    delay: Duration(milliseconds: 300 + (index * 60)),
+                    child: _buildSearchHistoryItem(_recentSearches[index], index),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -341,77 +425,86 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Son Arama Kartı
   Widget _buildSearchHistoryItem(String query, int index) {
+    return ListTile(
+      onTap: () {
+        _searchController.text = query;
+      },
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      leading: const Icon(Icons.history, color: Color(0xFF636E72), size: 20), // AppColors.body
+      title: Text(
+        query,
+        style: GoogleFonts.poppins(
+          color: const Color(0xFF2D312F), // AppColors.headline
+           fontSize: 14,
+           fontWeight: FontWeight.w400,
+        ),
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.close, size: 18, color: Color(0xFFB2BEC3)), // AppColors.hint
+        onPressed: () => _removeSearchItem(index),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+      ),
+    );
+  }
+
+  Widget _buildPlatformFilterChip(String label, IconData icon) {
+    final isSelected = _selectedPlatform == label;
+    final primaryColor = const Color(0xFF6E8E91); // AppColors.primary
+    
+    // Determine Icon Color (Brand)
+    Color iconColor;
+    if (isSelected) {
+      iconColor = Colors.white;
+    } else {
+        switch (label) {
+          case 'YouTube': iconColor = const Color(0xFFFF0000); break;
+          case 'Instagram': iconColor = const Color(0xFFE4405F); break;
+          case 'TikTok': iconColor = Colors.black; break;
+          case 'X': iconColor = Colors.black; break;
+          case 'Web': iconColor = Colors.blue; break;
+          default: iconColor = primaryColor;
+        }
+    }
+    
     return GestureDetector(
       onTap: () {
-        // Aramayı yap
-        _searchController.text = query;
-        debugPrint('Aranıyor: $query');
+        setState(() {
+          if (_selectedPlatform == label) {
+            _selectedPlatform = null; // Toggle off
+          } else {
+            _selectedPlatform = label;
+          }
+          _performSearch(); // Trigger search on filter change
+        });
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          color: isSelected ? primaryColor : Colors.white, // White for unselected
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? null : Border.all(color: Colors.grey.shade300, width: 1), // Subtle grey border
           boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0EA5E9).withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
+             if (!isSelected) 
+               BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
           ],
         ),
         child: Row(
           children: [
-            // Saat ikonu
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                CupertinoIcons.time,
-                size: 18,
-                color: const Color(0xFF9CA3AF),
-              ),
+            Icon(
+              icon,
+              size: 18,
+              color: iconColor,
             ),
-            const SizedBox(width: 14),
-            // Arama metni
-            Expanded(
-              child: Text(
-                query,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF374151),
-                ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600, // Bold
+                color: isSelected ? Colors.white : const Color(0xFF2D312F),
               ),
-            ),
-            IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF60A5FA), // Faint Blue Border
-                    width: 1.5,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.close,
-                  size: 14,
-                  color: Color(0xFF60A5FA),
-                ), // Faint Blue Icon
-              ),
-              color: const Color(0xFF60A5FA), // Faint Blue Splash
-              onPressed: () => _removeSearchItem(index),
             ),
           ],
         ),
@@ -419,55 +512,317 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // --- Search Results Grid (Masonry) ---
+  Widget _buildSearchResults() {
+    // Check if we have any results
+    if (_filteredItems.isEmpty) return _buildNoResults();
+    
+    return MasonryGridView.count(
+       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+       physics: const BouncingScrollPhysics(),
+       crossAxisCount: 2,
+       mainAxisSpacing: 12,
+       crossAxisSpacing: 12,
+       itemCount: _filteredItems.length,
+       itemBuilder: (context, index) {
+          final item = _filteredItems[index];
+          final cat = _categories.where((c) => c.id == item.categoryId).firstOrNull;
+          return FadeInUp(
+            duration: const Duration(milliseconds: 400),
+            delay: Duration(milliseconds: index * 50),
+            child: _buildResultCard(item, cat?.name ?? 'Genel'),
+          );
+       },
+     );
+  }
+
+  // --- Home Screen Style Card Logic ---
+  Widget _buildResultCard(ItemModel item, String badgeText) {
+    // Masonry Aspect Ratio Logic from HomeScreen
+    final aspectRatio = (item.id.codeUnitAt(0) % 3 == 0) ? 0.75 : (item.id.codeUnitAt(0) % 3 == 1) ? 1.0 : 1.2;
+    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
+    final source = item.url ?? '';
+
+    Widget buildImage() {
+      if (hasImage) {
+        return item.displayImage!.startsWith('http') 
+          ? CachedNetworkImage(
+              imageUrl: item.displayImage!,
+              fit: BoxFit.cover, 
+              alignment: Alignment.center,
+              placeholder: (context, url) => Container(
+                color: Colors.grey[100],
+                child: Center(child: Icon(PhosphorIconsLight.image, size: 32, color: Colors.grey[300])),
+              ),
+              errorWidget: (context, url, error) => _buildFallbackView(source),
+            )
+          : Image.asset(
+              item.displayImage!,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              errorBuilder: (context, error, stackTrace) => _buildFallbackView(source),
+            );
+      } else {
+        return _buildFallbackView(source);
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade100,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              ItemDetailBottomSheet.show(context, item, badgeText, _categories);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AspectRatio(
+                  aspectRatio: aspectRatio,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      buildImage(),
+                      Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item.displayTitle, 
+                              maxLines: 1, 
+                              overflow: TextOverflow.ellipsis, 
+                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)
+                            ),
+                            Text(
+                              badgeText, 
+                              style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => ItemDetailBottomSheet.show(context, item, badgeText, _categories),
+                        child: Icon(PhosphorIconsLight.dotsThreeCircle, size: 20, color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackView(String source) {
+    IconData icon = PhosphorIconsLight.link;
+    // Unified Green Gradient for all Empty State Icons
+    List<Color> gradientColors = [AppColors.primary, const Color(0xFF6FBFAC)];
+
+    if (source.contains('x.com') || source.contains('twitter')) {
+      icon = PhosphorIconsBold.xLogo;
+    } else if (source.contains('instagram')) {
+      icon = PhosphorIconsBold.instagramLogo;
+    } else if (source.contains('youtube')) {
+      icon = PhosphorIconsBold.youtubeLogo;
+    } else if (source.contains('pinterest')) {
+      icon = PhosphorIconsBold.pinterestLogo;
+    }
+
+    return Container(
+       color: Colors.white, // White background
+       child: Center(
+         child: ShaderMask(
+           shaderCallback: (bounds) => LinearGradient(
+             colors: gradientColors,
+             begin: Alignment.topLeft,
+             end: Alignment.bottomRight,
+           ).createShader(bounds),
+           child: Icon(icon, size: 48, color: Colors.white),
+         ),
+       ),
+    );
+  }
+
+  Widget _buildPlatformIconWidget(String source) {
+    final s = source.toLowerCase();
+    IconData icon;
+
+    if (s.contains('instagram')) {
+      icon = PhosphorIconsBold.instagramLogo;
+    } else if (s.contains('youtube')) {
+      icon = PhosphorIconsBold.youtubeLogo;
+    } else if (s.contains('twitter') || s.contains('x.com')) {
+      icon = PhosphorIconsBold.xLogo;
+    } else if (s.contains('pinterest')) {
+      icon = PhosphorIconsBold.pinterestLogo;
+    } else {
+      icon = PhosphorIconsBold.link;
+    }
+
+    return Container(
+      width: 24, height: 24,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white, // White background
+      ),
+      child: Center(child: Icon(icon, color: AppColors.primary, size: 14)), // Green Icon
+    );
+  }
+
+  Widget _buildNoResults() {
+     return Center(
+       child: Column(
+         mainAxisAlignment: MainAxisAlignment.center,
+         children: [
+            Icon(PhosphorIconsBold.magnifyingGlass, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text(
+              "Sonuç bulunamadı", 
+              style: GoogleFonts.poppins(
+                fontSize: 16, 
+                fontWeight: FontWeight.w500, 
+                color: Colors.grey.shade600
+              )
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Farklı bir arama yapmayı dene", 
+              style: GoogleFonts.poppins(
+                fontSize: 13, 
+                fontWeight: FontWeight.w400, 
+                color: Colors.grey.shade400
+              )
+            ),
+         ],
+       ),
+     );
+  }
+
   // Boş State
   Widget _buildEmptyState() {
     return FadeInUp(
       delay: const Duration(milliseconds: 300),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.1),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Icon(
-                CupertinoIcons.search,
-                size: 32,
-                color: const Color(0xFFD1D5DB),
-              ),
+      child: SingleChildScrollView(
+         physics: const BouncingScrollPhysics(),
+         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.stretch,
+           children: [
+             // Header Text
+             Text(
+               "Koleksiyonlarını Keşfet",
+               textAlign: TextAlign.center,
+               style: GoogleFonts.poppins(
+                 fontSize: 16,
+                 fontWeight: FontWeight.w600,
+                 color: Colors.grey.shade400,
+                 letterSpacing: 0.5,
+               ),
+             ),
+             const SizedBox(height: 24),
+    
+             // Info Card 1: Platform Filters
+             _buildInfoCard(
+               title: "Kaynaklara Göre Süz",
+               description: "Instagram, YouTube veya Web... İlgilendiğin kaynağın ikonuna dokunarak sadece oradan gelen içerikleri gör.",
+               icon: PhosphorIconsDuotone.funnel,
+               accentColor: const Color(0xFF0EA5E9), // Light Blue
+             ),
+             
+             const SizedBox(height: 16),
+    
+             // Info Card 2: Search
+             _buildInfoCard(
+               title: "Detaylı Arama",
+               description: "Başlık, not veya link... Aklına gelen herhangi bir anahtar kelimeyi yaz, saniyeler içinde bul.",
+               icon: PhosphorIconsDuotone.magnifyingGlass,
+               accentColor: const Color(0xFF10B981), // Emerald Green
+             ),
+             
+             const SizedBox(height: 48), // Bottom padding
+           ],
+         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color accentColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+             width: 48, 
+             height: 48,
+             decoration: BoxDecoration(
+               color: accentColor.withOpacity(0.1),
+               shape: BoxShape.circle,
+             ),
+             child: Icon(icon, color: accentColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                 Text(
+                   title,
+                   style: GoogleFonts.poppins(
+                     fontSize: 15,
+                     fontWeight: FontWeight.w600,
+                     color: const Color(0xFF1F2937),
+                   ),
+                 ),
+                 const SizedBox(height: 6),
+                 Text(
+                   description,
+                   style: GoogleFonts.poppins(
+                     fontSize: 13,
+                     fontWeight: FontWeight.w400,
+                     color: const Color(0xFF6B7280),
+                     height: 1.5,
+                   ),
+                 ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              "Henüz arama yapmadınız",
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF1F2937), // Dark Black-Grey
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              "Aramalarınız burada görünecek",
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: const Color(0xFF6B7280), // Medium Dark Grey
-              ),
-            ),
-            const SizedBox(height: 80),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

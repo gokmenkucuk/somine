@@ -13,6 +13,7 @@ import 'package:html/parser.dart' as parser;
 
 
 import 'dart:math' as math;
+import 'dart:ui' as import_dart_ui;
 import 'package:somine_app/core/design/app_colors.dart';
 
 class AddContentScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class AddContentScreen extends StatefulWidget {
   State<AddContentScreen> createState() => _AddContentScreenState();
 }
 
-class _AddContentScreenState extends State<AddContentScreen> with SingleTickerProviderStateMixin {
+class _AddContentScreenState extends State<AddContentScreen> with TickerProviderStateMixin {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _linkController = TextEditingController(); // New Link Controller
@@ -34,6 +35,8 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
   // Animation
   late AnimationController _textAnimationController;
   late Animation<double> _textAnimation;
+  late AnimationController _loadingController;
+  late AnimationController _rotationController;
 
   // State
   bool _isSaving = false;
@@ -53,8 +56,32 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
   final Set<String> _selectedCategoryIds = {};
   List<CategoryModel> _categories = [];
   bool _isLoadingCategories = true;
+  
+  // Dynamic Header Height
+  double? _imageAspectRatio;
 
   // ============== COLORS ==============
+
+  void _resolveImageSize(String imageUrl) {
+    if (imageUrl.isEmpty) return;
+    
+    // Reset first
+    setState(() => _imageAspectRatio = null);
+
+    final ImageProvider provider = CachedNetworkImageProvider(imageUrl);
+    
+    provider.resolve(const ImageConfiguration()).addListener(
+      ImageStreamListener((ImageInfo info, bool synchronousCall) {
+        if (!mounted) return;
+        final myImage = info.image;
+        setState(() {
+          _imageAspectRatio = myImage.width / myImage.height;
+        });
+      }, onError: (exception, stackTrace) {
+        debugPrint("Image resolution error: $exception");
+      }),
+    );
+  }
   // Using AppColors constants directly now
 
 
@@ -78,6 +105,18 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
          _checkClipboardAndProcess(auto: true);
        }
     });
+
+    // Loading Animation (Heartbeat effect)
+    _loadingController = AnimationController(
+       vsync: this,
+       duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    
+    // Ambient Rotation
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
   }
 
   @override
@@ -85,7 +124,10 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
     _titleController.dispose();
     _noteController.dispose();
     _linkController.dispose();
+    _linkController.dispose();
     _textAnimationController.dispose();
+    _loadingController.dispose();
+    _rotationController.dispose();
     super.dispose();
   }
 
@@ -246,6 +288,9 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
             );
             if (title != null && _titleController.text.isEmpty) {
               _titleController.text = title;
+            }
+            if (image != null) {
+              _resolveImageSize(image);
             }
           });
         }
@@ -456,7 +501,15 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
     // If empty -> 75% height
     double stageHeight;
     if (_hasLink) {
-      stageHeight = size.height * 0.38;
+      if (_imageAspectRatio != null) {
+        double calculatedRatio = (size.width / _imageAspectRatio!) / size.height;
+        if (calculatedRatio > 0.65) calculatedRatio = 0.65;
+        // Relaxing lower bound to allow landscape images to fit fully without zoom
+        if (calculatedRatio < 0.20) calculatedRatio = 0.20; 
+        stageHeight = size.height * calculatedRatio;
+      } else {
+         stageHeight = size.height * 0.30; // Reduced default height to prevent excessive cropping during load
+      }
     } else if (_isManualEntry) {
       stageHeight = size.height * 0.40;  // Increased from 0.25 
     } else {
@@ -480,35 +533,12 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
             // Background Layer
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
-              child: _isLoadingMetadata
-                  ? _buildLoadingState()
-                  : hasImage
+              child: hasImage
                       ? _buildImageBackground()
-                      : _hasLink
-                          ? _buildPlatformBackground()
-                          : _buildManualEntryHeader(),
+                      : _buildPlatformBackground(animate: _isLoadingMetadata),
             ),
 
-            // Bottom Fade (only when has image)
-            if (hasImage || _hasLink)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 100,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.0),
-                        Colors.white,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+
 
             // Clear Button (Visible if has link OR manual entry)
             if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
@@ -530,167 +560,141 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
 
   // Manual Entry Header (God Ray / Spotlight Cone Effect)
   Widget _buildManualEntryHeader() {
+    return _buildPlatformBackground(animate: false);
+  }
+
+
+  // Loading State (Filling Animation)
+  Widget _buildLoadingState() {
+    return Container(
+      key: const ValueKey('loading'),
+      color: Colors.white,
+      width: double.infinity,
+      height: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Center vertically
+        children: [
+          // Animated Filling Icon
+          AnimatedBuilder(
+            animation: _loadingController,
+            builder: (context, child) {
+              return ShaderMask(
+                shaderCallback: (bounds) {
+                  return LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      AppColors.primary, // Filled Color (Green)
+                      AppColors.primary.withOpacity(0.15), // Empty Color (Light Green)
+                    ],
+                    stops: [
+                      _loadingController.value, // Fill level moves from 0.0 to 1.0
+                      _loadingController.value + 0.05, // Smooth blurred edge
+                    ],
+                  ).createShader(bounds);
+                },
+                child: Icon(
+                  _getPlatformIcon(_detectedPlatform),
+                  size: 60, // Smaller Icon
+                  color: Colors.white, // Base color for ShaderMask target
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
+          Text(
+            "Yükleniyor...",
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.headline,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Platform Background (Gradient Preview Placeholder)
+  Widget _buildPlatformBackground({bool animate = false}) {
     return AnimatedBuilder(
-      animation: _textAnimation,
+      animation: _loadingController,
       builder: (context, child) {
+        // Subtle shimmer animation values
+        final double shimmer = animate ? _loadingController.value : 0.0;
+        final startAlign = Alignment.lerp(Alignment.topLeft, Alignment.topCenter, shimmer)!;
+        final endAlign = Alignment.lerp(Alignment.bottomRight, Alignment.bottomCenter, shimmer)!;
+        
         return Container(
-          key: const ValueKey('manual'),
+          key: const ValueKey('platform'),
           width: double.infinity,
-          height: double.infinity,
-          // Dark Background for Contrast
-          color: Colors.black.withOpacity(0.06),
-          child: Stack(
-            children: [
-              // Wave Animation (Right to Left - Large Cloud, Seamless Loop)
-              Positioned.fill(
-                child: Builder(
-                  builder: (context) {
-                    // Eased animation for ultra-smooth motion
-                    final easedValue = Curves.easeInOut.transform(_textAnimation.value);
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          // Large cloud: wider range (3.5x) for bigger coverage
-                          // When this exits left, next one enters right (seamless)
-                          begin: Alignment(2.0 - (easedValue * 3.5), 0),
-                          end: Alignment(-1.5 - (easedValue * 3.5), 0),
-                          colors: [
-                            Colors.white.withOpacity(0.0),         // Soft start
-                            AppColors.secondary.withOpacity(0.2),  // Cloud edge
-                            AppColors.secondary.withOpacity(0.5),  // Light
-                            AppColors.secondary.withOpacity(0.8),  // Medium
-                            AppColors.secondary,                   // Full Gold center
-                            AppColors.secondary.withOpacity(0.8),  // Medium
-                            AppColors.secondary.withOpacity(0.5),  // Light
-                            AppColors.secondary.withOpacity(0.2),  // Cloud edge
-                            Colors.white.withOpacity(0.0),         // Soft end
-                          ],
-                          stops: const [0.0, 0.05, 0.15, 0.3, 0.5, 0.7, 0.85, 0.95, 1.0],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // Bottom Fade to White (for Text readability)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 180,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withOpacity(0.0),
-                        Colors.white.withOpacity(0.9),
-                        Colors.white,
-                      ],
-                      stops: const [0.0, 0.6, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-              // Text Content
-              Positioned(
-                bottom: 20,
-                left: 24,
-                right: 24,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Yeni Ekle",
-                      style: GoogleFonts.poppins(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.headline,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Koleksiyonuna yeni içerik ekle.",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.body,
-                      ),
-                    ),
-                  ],
-                ),
+          decoration: BoxDecoration(
+            color: Colors.white, // Fallback
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: animate 
+                  ? [
+                      const Color(0xFF6E8E91), 
+                      Color.lerp(const Color(0xFF6FBFAC), Colors.white, shimmer * 0.3)!, // Subtle lighten
+                      const Color(0xFF6FBFAC)
+                    ]
+                  : [const Color(0xFF6E8E91), const Color(0xFF6FBFAC)],
+              begin: startAlign,
+              end: endAlign,
+              stops: animate ? [0.0, 0.5 + (shimmer * 0.5), 1.0] : null,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6E8E91).withOpacity(0.25),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                animate 
+                    ? SizedBox(
+                        height: 64,
+                        width: 64,
+                        child: Center(
+                          child: SizedBox(
+                            height: 48, 
+                            width: 48,
+                            child: CircularProgressIndicator(
+                              color: Colors.white.withOpacity(0.9),
+                              strokeWidth: 4,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.add_link_rounded,
+                        size: 64,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                const SizedBox(height: 12),
+                Text(
+                  animate ? "Bağlantı taranıyor..." : "Bağlantı önizlemesi burada görünecek",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-
-  // Loading State
-  Widget _buildLoadingState() {
-    return Container(
-      key: const ValueKey('loading'),
-      color: Colors.white,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Platform Icon
-            Icon(
-              _getPlatformIcon(_detectedPlatform),
-              size: 64,
-              color: _getPlatformColor(_detectedPlatform),
-            ),
-            const SizedBox(height: 32),
-
-            // Loading Indicator
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  _getPlatformColor(_detectedPlatform),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              "$_detectedPlatform yükleniyor...",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.body,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Platform Background (no OG image)
-  Widget _buildPlatformBackground() {
-    return Container(
-      key: const ValueKey('platform'),
-      color: Colors.white,
-      child: Center(
-        child: Icon(
-          _getPlatformIcon(_detectedPlatform),
-          size: 100,
-          color: _getPlatformColor(_detectedPlatform).withValues(alpha: 0.15),
-        ),
-      ),
-    );
-  }
-
   // Image Background
+  // Image Background (Cover)
   Widget _buildImageBackground() {
     return Stack(
       key: const ValueKey('image'),
@@ -699,13 +703,19 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
         CachedNetworkImage(
           imageUrl: _ogMetadata!.imageUrl!,
           fit: BoxFit.cover,
-          placeholder: (context, url) => _buildLoadingState(),
+          alignment: Alignment.center,
+          placeholder: (context, url) => _buildPlatformBackground(animate: true),
           errorWidget: (context, url, error) => _buildPlatformBackground(),
         ),
-
-        // Overlay removed for clearer image
       ],
     );
+  }
+
+  // Reusable Ambient Animation Core (Liftoff Particles)
+  Widget _buildAmbientAnimationCore({double scale = 1.0}) {
+      // Scale is ignored in Particle simulation (it fills space), 
+      // but if needed we could pass it. For now, filling space is better.
+      return _ParticleBackground(color: AppColors.primary);
   }
 
   // ============== CONTROL CENTER ==============
@@ -716,7 +726,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
+          const SizedBox(height: 40),
 
           // Link Preview / Input (Show if link detected OR manual entry mode)
           if (_hasLink || _isManualEntry) ...[
@@ -727,7 +737,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
           // Title Input
           _buildInputField(
             controller: _titleController,
-            icon: PhosphorIconsLight.pencilSimple, // Updated Icon
+            icon: PhosphorIconsThin.pencilSimple, // Thin
             hint: "Başlık ekle (opsiyonel)",
             isTitle: true,
           ),
@@ -737,7 +747,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
           // Note Input
           _buildInputField(
             controller: _noteController,
-            icon: PhosphorIconsLight.notePencil,
+            icon: PhosphorIconsThin.notePencil, // Thin
             hint: "Kişisel not ekle (opsiyonel)",
             maxLines: 3,
           ),
@@ -748,7 +758,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
           Text(
             "Koleksiyon Seç",
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
               color: Colors.grey.shade500,
             ),
@@ -800,7 +810,9 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
     int maxLines = 1,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+      height: maxLines == 1 ? 52 : null, // Fix height for single line inputs (Title)
+      alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 14 : 0),
       decoration: BoxDecoration(
         color: Colors.white, // White background
         borderRadius: BorderRadius.circular(12),
@@ -825,14 +837,14 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
               cursorColor: AppColors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
-                fontSize: isTitle ? 15 : 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w400,
                 color: AppColors.headline,
               ),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: GoogleFonts.poppins(
-                  fontSize: isTitle ? 15 : 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w400,
                   color: AppColors.body.withValues(alpha: 0.6),
                 ),
@@ -854,33 +866,30 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
   // Link Input (Editable)
   Widget _buildLinkPreview() {
     final hasPlatform = _detectedPlatform.isNotEmpty;
-    final platformColor = hasPlatform ? _getPlatformColor(_detectedPlatform) : AppColors.secondary;
-    final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsRegular.link;
+    // Always use Primary Brand Color to match design, ignoring platform specific colors (e.g. Red for YouTube)
+    final themeColor = AppColors.primary; 
+    final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsThin.link;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+      height: 52, // Fixed height to match filled state stability
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 16), 
       decoration: BoxDecoration(
         color: Colors.white, // White background
         borderRadius: BorderRadius.circular(12),
-        // Use Platform Color border if platform detected, else subtle grey
-        border: hasPlatform 
-            ? Border.all(color: platformColor.withOpacity(0.5), width: 1.0)
-            : Border.all(color: Colors.grey.shade300, width: 1), 
+        // Always use Primary Color border
+        border: Border.all(
+          color: themeColor.withOpacity(0.5), 
+          width: 1.0
+        ),
       ),
       child: Row(
         children: [
           // Platform Icon
-          Container(
-            padding: const EdgeInsets.all(4), // Reduced padding to match height
-            decoration: BoxDecoration(
-              color: platformColor.withValues(alpha: hasPlatform ? 0.08 : 0.0),
-              borderRadius: BorderRadius.circular(8), // Adjusted radius
-            ),
-            child: Icon(
-              platformIcon,
-              size: 18, // Reduced size to match Title Field icon
-              color: hasPlatform ? platformColor : AppColors.body,
-            ),
+          Icon(
+            platformIcon,
+            size: 18, 
+            color: themeColor,
           ),
           const SizedBox(width: 12),
 
@@ -897,14 +906,14 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
               cursorColor: AppColors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
-                fontSize: 14, // Standardized to 14
+                fontSize: 15, // Matched with Title Input
                 fontWeight: FontWeight.w400,
                 color: AppColors.headline,
               ),
               decoration: InputDecoration(
-                hintText: "Bağlantı yapıştır...",
+                hintText: "Bağlantını buraya yapıştır",
                 hintStyle: GoogleFonts.poppins(
-                  fontSize: 14, // Standardized to 14
+                  fontSize: 15, // Matched with Title Input
                   color: AppColors.body.withValues(alpha: 0.6),
                 ),
                 border: InputBorder.none,
@@ -1009,43 +1018,20 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
   // ============== FLOATING DOCK ==============
 
   Widget _buildFloatingDock() {
-    // Calculate Button Style Logic
-    Color bgColor = AppColors.accentDark;
-    Gradient? bgGradient;
-    
-    if (_hasLink && _detectedPlatform.isNotEmpty) {
-       final platform = _detectedPlatform.toLowerCase();
-       if (platform.contains('instagram')) {
-          bgGradient = const LinearGradient(
-            colors: [Color(0xFFFEDA75), Color(0xFFD62976), Color(0xFF962FBF)],
-            begin: Alignment.bottomLeft,
-            end: Alignment.topRight,
-          );
-       } else if (platform.contains('x') || platform.contains('twitter')) {
-          bgColor = Colors.black;
-       } else if (platform.contains('youtube')) {
-          bgColor = const Color(0xFFFF0000); // YouTube Red
-       } else if (platform.contains('pinterest')) {
-          bgColor = const Color(0xFFBD081C); // Pinterest Red
-       } else if (platform.contains('spotify')) {
-          bgColor = const Color(0xFF1DB954); 
-       } else {
-          // Fallback for other detected platforms to their generic color
-          bgColor = _getPlatformColor(_detectedPlatform);
-       }
-    }
-
     return GestureDetector(
       onTap: _isSaving ? null : _saveContent,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
-          color: bgGradient == null ? bgColor : null,
-          gradient: bgGradient,
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, Color(0xFF6FBFAC)], // Slogan Gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: (bgGradient != null ? Colors.black : bgColor).withOpacity(0.3),
+              color: const Color(0xFF6FBFAC).withOpacity(0.3), // Matching shadow
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -1053,7 +1039,7 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
         ),
         child: Center(
           child: _isSaving
-              ? SizedBox(
+              ? const SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
@@ -1149,30 +1135,30 @@ class _AddContentScreenState extends State<AddContentScreen> with SingleTickerPr
   IconData _getPlatformIcon(String platform) {
     switch (platform.toLowerCase()) {
       case 'instagram':
-        return PhosphorIconsBold.instagramLogo;
+        return PhosphorIconsThin.instagramLogo;
       case 'youtube':
-        return PhosphorIconsBold.youtubeLogo;
+        return PhosphorIconsThin.youtubeLogo;
       case 'x':
       case 'twitter':
-        return PhosphorIconsBold.xLogo;
+        return PhosphorIconsThin.xLogo;
       case 'tiktok':
-        return PhosphorIconsBold.tiktokLogo;
+        return PhosphorIconsThin.tiktokLogo;
       case 'linkedin':
-        return PhosphorIconsBold.linkedinLogo;
+        return PhosphorIconsThin.linkedinLogo;
       case 'spotify':
-        return PhosphorIconsBold.spotifyLogo;
+        return PhosphorIconsThin.spotifyLogo;
       case 'pinterest':
-        return PhosphorIconsBold.pinterestLogo;
+        return PhosphorIconsThin.pinterestLogo;
       case 'reddit':
-        return PhosphorIconsBold.redditLogo;
+        return PhosphorIconsThin.redditLogo;
       case 'medium':
-        return PhosphorIconsBold.mediumLogo;
+        return PhosphorIconsThin.mediumLogo;
       case 'behance':
-        return PhosphorIconsBold.behanceLogo;
+        return PhosphorIconsThin.behanceLogo;
       case 'dribbble':
-        return PhosphorIconsBold.dribbbleLogo;
+        return PhosphorIconsThin.dribbbleLogo;
       default:
-        return PhosphorIconsBold.globe;
+        return PhosphorIconsThin.globe;
     }
   }
 
@@ -1269,3 +1255,194 @@ class _WavyStreamPainter extends CustomPainter {
     return oldDelegate.animationValue != animationValue;
   }
 }
+
+// ==========================================
+// LIFTOFF PARTICLE SYSTEM
+// ==========================================
+
+class _ParticleBackground extends StatefulWidget {
+  final Color color;
+  const _ParticleBackground({required this.color});
+
+  @override
+  State<_ParticleBackground> createState() => _ParticleBackgroundState();
+}
+
+class _ParticleBackgroundState extends State<_ParticleBackground> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  List<_Particle> _particles = [];
+  Offset? _touchPosition;
+  final int _particleCount = 120;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Particles
+    _particles = List.generate(_particleCount, (index) => _ArticleFactory.createRandom());
+    
+    // Animation Loop
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 10))
+      ..addListener(_updateParticles)
+      ..repeat();
+  }
+
+  void _updateParticles() {
+    for (var p in _particles) {
+      // 1. Upward Movement (Liftoff)
+      p.y -= p.speed;
+      
+      // 2. Interaction (Magnetic Repulsion)
+      if (_touchPosition != null) {
+        final double dx = p.x - _touchPosition!.dx;
+        
+        // Aspect ratio correction for Y to make interaction circular
+        // Otherwise repulsion is oval if screen is non-square.
+        // Assuming roughly 9:16, but simple is fine for now.
+        final double dy = p.y - _touchPosition!.dy;
+        
+        final double dist = math.sqrt(dx * dx + dy * dy);
+        
+        // Repulsion Radius in normalized space (0.0 to 1.0)
+        // 0.2 = ~20% of screen width
+        const double repulsionRadius = 0.25; 
+        
+        if (dist < repulsionRadius) {
+          final double force = (repulsionRadius - dist) / repulsionRadius;
+          
+          // Gentle Nudge (Velocity-ish)
+          // Previously 5.0 caused teleportation. Now 0.02.
+          final double strength = 0.02 * force;
+          
+          p.x += (dx / dist) * strength;
+          p.y += (dy / dist) * strength;
+        }
+      }
+
+      // 3. Reset loop
+      if (p.y < -0.1) {
+        p.y = 1.1; // Reset to bottom
+        p.x = math.Random().nextDouble(); 
+      }
+      
+      // Wrap X
+      if (p.x < 0) p.x += 1.0;
+      if (p.x > 1) p.x -= 1.0;
+      
+      // Wrap Y Bottom (if pushed down)
+      if (p.y > 1.1) p.y = -0.1; 
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Sync touch coordinates to 0..1 space or pixel space?
+        // Let's use Pixel space in Painter, normalized in Model?
+        // Model is 0..1 for easier resizing.
+        return MouseRegion(
+          onHover: (event) {
+             final size = context.size;
+             if (size != null) {
+                setState(() {
+                  _touchPosition = Offset(
+                    event.localPosition.dx / size.width,
+                    event.localPosition.dy / size.height
+                  );
+                });
+             }
+          },
+          onExit: (_) => setState(() => _touchPosition = null),
+          child: GestureDetector(
+            onPanUpdate: (details) {
+               final size = context.size;
+               if (size != null) {
+                  setState(() {
+                    _touchPosition = Offset(
+                      details.localPosition.dx / size.width,
+                      details.localPosition.dy / size.height
+                    );
+                  });
+               }
+            },
+            onPanEnd: (_) => setState(() => _touchPosition = null),
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: _ParticlePainter(
+                particles: _particles,
+                color: widget.color.withOpacity(0.6), // Base color
+                repaint: _controller,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Particle {
+  double x; // 0..1
+  double y; // 0..1
+  double speed;
+  double size;
+  double opacity;
+
+  _Particle({
+    required this.x,
+    required this.y,
+    required this.speed,
+    required this.size,
+    required this.opacity,
+  });
+}
+
+class _ArticleFactory {
+  static final _rng = math.Random();
+
+  static _Particle createRandom() {
+    return _Particle(
+      x: _rng.nextDouble(),
+      y: _rng.nextDouble(),
+      speed: 0.001 + (_rng.nextDouble() * 0.004), // Varies speed for Parallax
+      size: 1.0 + (_rng.nextDouble() * 3.0), // 1..4 radius
+      opacity: 0.2 + (_rng.nextDouble() * 0.6), // 0.2..0.8
+    );
+  }
+}
+
+class _ParticlePainter extends CustomPainter {
+  final List<_Particle> particles;
+  final Color color;
+
+  _ParticlePainter({
+    required this.particles, 
+    required this.color, 
+    required Listenable repaint,
+  }) : super(repaint: repaint);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill;
+
+    for (var p in particles) {
+      paint.color = color.withOpacity(p.opacity * 0.6); // Global dim
+      
+      final dx = p.x * size.width;
+      final dy = p.y * size.height;
+      
+      canvas.drawCircle(Offset(dx, dy), p.size, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true; 
+}    
+
