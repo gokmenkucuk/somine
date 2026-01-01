@@ -450,22 +450,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildPlatformFilterChip(String label, IconData icon) {
     final isSelected = _selectedPlatform == label;
-    final primaryColor = const Color(0xFF6E8E91); // AppColors.primary
-    
-    // Determine Icon Color (Brand)
-    Color iconColor;
-    if (isSelected) {
-      iconColor = Colors.white;
-    } else {
-        switch (label) {
-          case 'YouTube': iconColor = const Color(0xFFFF0000); break;
-          case 'Instagram': iconColor = const Color(0xFFE4405F); break;
-          case 'TikTok': iconColor = Colors.black; break;
-          case 'X': iconColor = Colors.black; break;
-          case 'Web': iconColor = Colors.blue; break;
-          default: iconColor = primaryColor;
-        }
-    }
     
     return GestureDetector(
       onTap: () {
@@ -479,31 +463,53 @@ class _SearchScreenState extends State<SearchScreen> {
         });
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor : Colors.white, // White for unselected
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected ? null : Border.all(color: Colors.grey.shade300, width: 1), // Subtle grey border
-          boxShadow: [
-             if (!isSelected) 
-               BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
-          ],
+          // Oil Green Gradient for Selected
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)], // Oil Green
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          // Border only for unselected
+          border: isSelected
+              ? null
+              : Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1.0),
+          // Shadow: Green glow for selected, NONE for unselected (to fix "cut-off" look)
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF6FBFAC).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6)
+                  )
+                ]
+              : null, // Completely flat for unselected
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               size: 18,
-              color: iconColor,
+              // White icon when selected
+              color: isSelected ? Colors.white : const Color(0xFF6B7280), 
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600, // Bold
-                color: isSelected ? Colors.white : const Color(0xFF2D312F),
+                // White text when selected
+                color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                // Lighter font weight as requested
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                fontSize: 14,
               ),
             ),
           ],
@@ -585,16 +591,22 @@ class _SearchScreenState extends State<SearchScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AspectRatio(
-                  aspectRatio: aspectRatio,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      buildImage(),
-                      Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
-                    ],
+                if (!hasImage)
+                  AspectRatio(
+                    aspectRatio: 1.0,
+                    child: _buildFallbackView(source),
+                  )
+                else
+                  AspectRatio(
+                    aspectRatio: aspectRatio,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        buildImage(),
+                        Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
+                      ],
+                    ),
                   ),
-                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Row(
