@@ -70,15 +70,15 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final categories = categoriesAsync.value ?? [];
     final items = feedState.items;
 
-    // Force Reseed Logic
-    ref.listen<AsyncValue<int>>(itemCountProvider, (previous, next) {
-        if (next.hasValue) {
-           DemoSeeder.seed(ref).then((_) {
-              ref.refresh(paginatedFeedProvider); 
-              ref.refresh(categoriesProvider);
-           });
-        }
-    });
+    // Force Reseed Logic - DISABLED FOR REAL DATA
+    // ref.listen<AsyncValue<int>>(itemCountProvider, (previous, next) {
+    //     if (next.hasValue) {
+    //        DemoSeeder.seed(ref).then((_) {
+    //           ref.refresh(paginatedFeedProvider); 
+    //           ref.refresh(categoriesProvider);
+    //        });
+    //     }
+    // });
 
     return Container(
         decoration: const BoxDecoration(
@@ -367,13 +367,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         );
       case ViewMode.masonry:
         return SliverMasonryGrid.count(
-          key: ValueKey(items.length),
+          // key: ValueKey(items.length), // Removed to prevent full rebuild flash
           crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childCount: items.length,
           itemBuilder: (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true),
         );
       case ViewMode.feed:
         return SliverList(
-          key: ValueKey(items.length),
+          // key: ValueKey(items.length),
           delegate: SliverChildBuilderDelegate(
             (context, index) => Padding(
               padding: const EdgeInsets.only(bottom: 24),
@@ -459,14 +459,19 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () {
-                showModalBottomSheet(
+              onTap: () async {
+                final result = await showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     enableDrag: true, 
                     builder: (context) => ItemDetailBottomSheet(item: item, categoryName: badgeText, categories: categories),
                 );
+                
+                if (result == true) {
+                   ref.invalidate(paginatedFeedProvider);
+                   ref.invalidate(itemCountProvider);
+                }
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -474,29 +479,21 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 children: [
                   cardContent,
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    padding: const EdgeInsets.all(12), // Increased padding
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item.displayTitle, 
-                                maxLines: 1, 
-                                overflow: TextOverflow.ellipsis, 
-                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)
-                              ),
-                              Text(
-                                badgeText, 
-                                style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)
-                              ),
-                            ],
-                          ),
+                        Text(
+                          item.displayTitle, 
+                          maxLines: 1, 
+                          overflow: TextOverflow.ellipsis, 
+                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)
                         ),
-                        Icon(PhosphorIconsLight.dotsThreeCircle, size: 20, color: Colors.grey.shade600),
+                        Text(
+                          badgeText, 
+                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)
+                        ),
                       ],
                     ),
                   ),

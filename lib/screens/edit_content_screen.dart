@@ -292,10 +292,70 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     });
   }
   
-  void _clearContent() {
-     // Revert to original state or clear all?
-     // For edit screen, 'trash' icon on hero stage might mean "Remove Link/Image"
-     _clearLinkField();
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Silmek İstediğine Emin misin?",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: AppColors.headline,
+            ),
+          ),
+          content: Text(
+            "Bu işlem geri alınamaz.",
+            style: GoogleFonts.poppins(
+              color: AppColors.body,
+            ),
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Cancel
+              child: Text(
+                "Vazgeç",
+                style: GoogleFonts.poppins(
+                  color: AppColors.body,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                _deleteItem();
+              },
+              child: Text(
+                "Sil",
+                style: GoogleFonts.poppins(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteItem() async {
+    try {
+      // 1. Delete from Repository
+      await _itemRepository.deleteItem(widget.item.id);
+
+      if (mounted) {
+        // 2. Return success signal
+        // Pop Edit Screen -> Returns to Detail Sheet
+        // We pass 'true' to indicate update/delete
+        Navigator.pop(context, true); 
+      }
+    } catch (e) {
+      debugPrint("Delete error: $e");
+      if (mounted) _showError("Silme işlemi başarısız");
+    }
   }
 
   Future<void> _updateItem() async {
@@ -330,12 +390,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       await _itemRepository.updateItem(updatedItem);
 
       if (mounted) {
-        Navigator.pop(context); // Close Edit Screen
-        Navigator.pop(context); // Close Detail Sheet? Or reload? 
-        // User probably expects to see the updated detail sheet. 
-        // But popping Edit screen returns to Detail sheet. Detail sheet data is stale.
-        // Detail sheet needs to refresh or we should pop both.
-        // Usually, best UX: Pop Edit, return result, Detail Sheet updates state.
+        Navigator.pop(context, true); // Return success to reload
       }
     } catch (e) {
       debugPrint("Update error: $e");
@@ -444,7 +499,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
               right: 16,
               child: _buildCircleButton(
                 icon: PhosphorIconsLight.trash,
-                onTap: _clearContent,
+                onTap: _showDeleteConfirmation,
               ),
             ),
         ],

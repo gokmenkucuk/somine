@@ -5,6 +5,7 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 
 import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/screens/item_feed_screen.dart';
 import 'package:somine_app/screens/search_screen.dart';
 import 'package:somine_app/screens/profile_screen.dart';
@@ -58,8 +59,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _openAddContentScreen({String? initialText}) {
-    showModalBottomSheet(
+  void _openAddContentScreen({String? initialText}) async {
+    final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true, 
       useSafeArea: false, 
@@ -68,6 +69,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       enableDrag: true,
       builder: (context) => AddContentScreen(initialText: initialText),
     );
+
+    if (result == true) {
+      // Refresh feed content
+      ref.invalidate(paginatedFeedProvider); 
+      ref.invalidate(itemCountProvider);
+    }
   }
 
   @override

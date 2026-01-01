@@ -242,6 +242,30 @@ class ItemRepository {
       return 0;
     }
   }
+
+  /// Move all items from one category to another (or to Uncategorized if newCategoryId is null)
+  Future<void> updateItemsCategory(String userId, String oldCategoryId, String? newCategoryId) async {
+    try {
+      final batch = _firestore.batch();
+      
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('categoryId', isEqualTo: oldCategoryId)
+          .get();
+
+      if (snapshot.docs.isEmpty) return; // Nothing to move
+
+      for (final doc in snapshot.docs) {
+        batch.update(doc.reference, {'categoryId': newCategoryId});
+      }
+
+      await batch.commit();
+      debugPrint('✅ [ItemRepository] Moved ${snapshot.docs.length} items from $oldCategoryId to $newCategoryId');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error moving items: $e');
+      rethrow;
+    }
+  }
 }
 
 

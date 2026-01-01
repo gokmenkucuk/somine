@@ -8,6 +8,7 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 
@@ -134,7 +135,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   // ============== BUSINESS LOGIC ==============
 
   Future<void> _loadCategories() async {
-    const userId = "user_1";
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      if (mounted) _useFallbackCategories();
+      return;
+    }
+
     try {
       final categories = await _categoryRepository.getCategories(userId);
       if (mounted) {
@@ -373,7 +379,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
     try {
       final now = DateTime.now();
-      const userId = "user_1";
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      
+      if (userId == null) {
+        if (mounted) _showError("Oturum açmanız gerekiyor");
+        return;
+      }
+      
       final noteText = _noteController.text.isNotEmpty
           ? _noteController.text
           : _titleController.text;
@@ -396,7 +408,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       await Future.wait(futures);
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
         _showSuccess("${_selectedCategoryIds.length} koleksiyona eklendi");
       }
     } catch (e) {

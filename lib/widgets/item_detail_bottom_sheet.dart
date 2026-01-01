@@ -118,12 +118,9 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     Navigator.push(
       context, 
       MaterialPageRoute(builder: (context) => EditContentScreen(item: widget.item)),
-    ).then((_) {
-      // Ideally refresh state if item changed, but BottomSheet might need reload. 
-      // For now, simple return.
-      // If we want to see updates live, we might need to re-fetch or pass updated item back.
-      // Given the architecture, let's assume parent list updates on return.
-      Navigator.pop(context); // Close sheet to force refresh from list (simplest for now)
+    ).then((result) {
+      // Pass the result (true if updated/deleted) back to the caller
+      Navigator.pop(context, result); 
     });
   }
 

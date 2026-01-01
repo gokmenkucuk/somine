@@ -101,6 +101,25 @@ final itemsProvider = StreamProvider<List<ItemModel>>((ref) {
   );
 });
 
+/// Items for current user (UNFILTERED - for Catalog Screen)
+final catalogItemsProvider = StreamProvider<List<ItemModel>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final itemRepository = ref.watch(itemRepositoryProvider);
+  
+  // Explicitly NOT watching selectedCategoryIdProvider
+  
+  return authState.when(
+    data: (user) {
+      if (user != null) {
+        return itemRepository.streamItems(user.uid); // No categoryId filter
+      }
+      return Stream.value([]);
+    },
+    loading: () => Stream.value([]),
+    error: (_, __) => Stream.value([]),
+  );
+});
+
 /// Favorite items for current user
 final favoriteItemsProvider = FutureProvider<List<ItemModel>>((ref) async {
   final authState = ref.watch(authStateProvider);
