@@ -34,6 +34,10 @@ class ItemFeedScreen extends ConsumerStatefulWidget {
 class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   ViewMode _viewMode = ViewMode.masonry; 
   final ScrollController _scrollController = ScrollController();
+  
+  // For smooth skeleton-to-content transition
+  double _contentOpacity = 0.0;
+  int _lastItemCount = 0;
 
   @override
   void initState() {
@@ -45,8 +49,22 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       final feedState = ref.read(paginatedFeedProvider);
       if (!feedState.isLoading && feedState.hasMore) {
+        // DO NOT reset opacity - keep existing content visible
+        // Just load more items
         ref.read(paginatedFeedProvider.notifier).loadMore();
       }
+    }
+  }
+  
+  void _onItemsLoaded(int newCount) {
+    if (newCount > _lastItemCount && newCount > 0) {
+      _lastItemCount = newCount;
+      // Wait for layout to complete, then fade in
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _contentOpacity = 1.0);
+        }
+      });
     }
   }
 
@@ -62,6 +80,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final selCategory = ref.watch(selectedCategoryIdProvider);
     final feedState = ref.watch(paginatedFeedProvider);
+    
+    // Listen for item changes to trigger fade-in after layout
+    ref.listen<PaginatedItemsState>(paginatedFeedProvider, (previous, next) {
+      if (!next.isLoading && next.items.isNotEmpty) {
+        _onItemsLoaded(next.items.length);
+      }
+    });
 
     final rawName = userAsync.value?.displayName?.split(' ').first ?? 'Misafir';
     final userName = rawName.isNotEmpty 
@@ -88,189 +113,205 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
           ),
         ),
-        child: Stack(
-          children: [
-            SafeArea(
-              bottom: false,
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  // Header Block
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Top Row
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                          child: FadeInDown(
-                            duration: const Duration(milliseconds: 600),
-                            child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text("Merhaba,", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.hint, height: 1.2)),
-                                        Text(userName, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.headline, height: 1.2)),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        // Search Icon triggers Tab Change
-                                        GestureDetector(
-                                          onTap: widget.onSearchTap,
-                                          child: Container(
-                                            width: 48, height: 48,
-                                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
-                                            child: const Icon(PhosphorIconsLight.magnifyingGlass, color: AppColors.headline, size: 24),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
-                                          child: Container(
-                                            width: 48, height: 48,
-                                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
-                                            child: const Icon(PhosphorIconsLight.bell, color: AppColors.headline, size: 24),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ===== FIXED HEADER SECTION =====
+              // Top Row
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                child: FadeInDown(
+                  duration: const Duration(milliseconds: 600),
+                  child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text("Merhaba,", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.hint, height: 1.2)),
+                              Text(userName, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.headline, height: 1.2)),
+                            ],
                           ),
-                        ),
-                        
-                        const SizedBox(height: 16),
-
-                        // Slogan
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: FadeInLeft(
-                            delay: const Duration(milliseconds: 400),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ShaderMask(
-                                  blendMode: BlendMode.srcIn,
-                                  shaderCallback: (bounds) => const LinearGradient(
-                                    colors: [AppColors.primary, Color(0xFF6FBFAC)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ).createShader(bounds),
-                                  child: Text(
-                                    "Dijital İçeriklerini\nKoleksiyona Kaydet",
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 30,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.0,
-                                      height: 1.1,
-                                      color: Colors.white, 
-                                    ),
-                                  ),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: widget.onSearchTap,
+                                child: Container(
+                                  width: 48, height: 48,
+                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                                  child: const Icon(PhosphorIconsLight.magnifyingGlass, color: AppColors.headline, size: 24),
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  "Özenle sakla, keyifle paylaş!",
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.headline,
-                                    letterSpacing: 0.5,
-                                  ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
+                                child: Container(
+                                  width: 48, height: 48,
+                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                                  child: const Icon(PhosphorIconsLight.bell, color: AppColors.headline, size: 24),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Categories List
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 1000),
-                          child: SizedBox(
-                            height: 48,
-                            child: ListView.builder(
-                              clipBehavior: Clip.none,
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
-                              itemCount: categories.length + 1, 
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  return Center(child: _buildCategoryChip(ref, null, "Tümü", selCategory == null));
-                                }
-                                final cat = categories[index - 1];
-                                return Center(child: _buildCategoryChip(ref, cat, cat.name, selCategory == cat.id));
-                              },
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-                        
-                        // Controls Row
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 1200),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-                                  child: Row(
-                                    children: [
-                                      _buildViewModeButton(icon: PhosphorIconsLight.squaresFour, mode: ViewMode.square),
-                                      const SizedBox(width: 4),
-                                      _buildViewModeButton(icon: PhosphorIconsLight.layout, mode: ViewMode.masonry),
-                                      const SizedBox(width: 4),
-                                      _buildViewModeButton(icon: PhosphorIconsLight.list, mode: ViewMode.feed),
-                                    ],
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text("Tümünü Gör", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.headline)),
-                                    const SizedBox(width: 4),
-                                    const Icon(PhosphorIconsLight.caretRight, size: 14, color: AppColors.iconInactive),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8), 
-                      ],
-                    ),
-                  ),
-
-                  // Content Grid
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver: _buildSliverContent(items, categories, feedState.isLoading),
-                  ),
-
-                  // Bottom Loader
-                  if (feedState.isLoading && items.isNotEmpty)
-                     SliverToBoxAdapter(
-                       child: Padding(
-                         padding: const EdgeInsets.all(16.0),
-                         child: Center(
-                             child: CupertinoActivityIndicator(radius: 12),
-                         ),
-                       ),
-                     ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 140)),
-                ],
+                        ],
+                      ),
+                ),
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 16),
+
+              // Slogan
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: FadeInLeft(
+                  delay: const Duration(milliseconds: 400),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [AppColors.primary, Color(0xFF6FBFAC)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: Text(
+                          "Dijital İçeriklerini\nKoleksiyona Kaydet",
+                          style: GoogleFonts.outfit(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.0,
+                            height: 1.1,
+                            color: Colors.white, 
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Özenle sakla, keyifle paylaş!",
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.headline,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Categories List
+              FadeInUp(
+                delay: const Duration(milliseconds: 1000),
+                child: SizedBox(
+                  height: 48,
+                  child: ListView.builder(
+                    clipBehavior: Clip.none,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: categories.length + 1, 
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return Center(child: _buildCategoryChip(ref, null, "Tümü", selCategory == null));
+                      }
+                      final cat = categories[index - 1];
+                      return Center(child: _buildCategoryChip(ref, cat, cat.name, selCategory == cat.id));
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              
+              // Controls Row
+              FadeInUp(
+                delay: const Duration(milliseconds: 1200),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                        child: Row(
+                          children: [
+                            _buildViewModeButton(icon: PhosphorIconsLight.squaresFour, mode: ViewMode.square),
+                            const SizedBox(width: 4),
+                            _buildViewModeButton(icon: PhosphorIconsLight.layout, mode: ViewMode.masonry),
+                            const SizedBox(width: 4),
+                            _buildViewModeButton(icon: PhosphorIconsLight.list, mode: ViewMode.feed),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Tümünü Gör", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.headline)),
+                          const SizedBox(width: 4),
+                          const Icon(PhosphorIconsLight.caretRight, size: 14, color: AppColors.iconInactive),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8), 
+
+              // ===== SCROLLABLE CONTENT WITH SMOOTH TRANSITION =====
+              Expanded(
+                child: Stack(
+                  children: [
+                    // LAYER 1: Actual Content (starts invisible, fades in)
+                    AnimatedOpacity(
+                      opacity: _contentOpacity,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        slivers: [
+                          // Content Grid
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            sliver: _buildSliverContent(items, categories, feedState.isLoading),
+                          ),
+
+                          // Pagination Skeleton Loader - Adapts to view mode
+                          if (feedState.isLoading && items.isNotEmpty)
+                             SliverPadding(
+                               padding: const EdgeInsets.symmetric(horizontal: 20),
+                               sliver: _buildPaginationSkeleton(),
+                             ),
+
+                          const SliverToBoxAdapter(child: SizedBox(height: 140)),
+                        ],
+                      ),
+                    ),
+                    
+                    // LAYER 2: Skeleton Overlay (visible until content fades in)
+                    if (_contentOpacity < 1.0)
+                      AnimatedOpacity(
+                        opacity: 1.0 - _contentOpacity,
+                        duration: const Duration(milliseconds: 300),
+                        child: Container(
+                          color: AppColors.backgroundTop, // Match background
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: _buildSkeletonOverlay(),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
   }
@@ -341,12 +382,37 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     }
     
     if (items.isEmpty && isLoading) {
-         return SliverToBoxAdapter(
-         child: Padding(
-           padding: const EdgeInsets.only(top: 100),
-           child: Center(child: CupertinoActivityIndicator()),
-         ),
-       );
+         // Skeleton Loading - Adapt to current view mode
+         switch (_viewMode) {
+           case ViewMode.square:
+             return SliverGrid(
+               delegate: SliverChildBuilderDelegate(
+                 (context, index) => _buildSkeletonCard(index),
+                 childCount: 6,
+               ),
+               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                 crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72,
+               ),
+             );
+           case ViewMode.masonry:
+             return SliverMasonryGrid.count(
+               crossAxisCount: 2, 
+               mainAxisSpacing: 12, 
+               crossAxisSpacing: 12, 
+               childCount: 6,
+               itemBuilder: (context, index) => _buildSkeletonCard(index),
+             );
+           case ViewMode.feed:
+             return SliverList(
+               delegate: SliverChildBuilderDelegate(
+                 (context, index) => Padding(
+                   padding: const EdgeInsets.only(bottom: 24),
+                   child: _buildSkeletonCard(index),
+                 ),
+                 childCount: 4, // Less for feed mode
+               ),
+             );
+         }
     }
 
     String getBadge(ItemModel item) {
@@ -399,14 +465,10 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
               imageUrl: item.displayImage!,
               fit: fit, 
               alignment: Alignment.center,
-              // Use an AspectRatio placeholder to prevent zero-height during load if possible, 
-              // or just a fixed height container.
+              // Shimmer placeholder instead of static grey
               placeholder: (context, url) => AspectRatio(
                 aspectRatio: 1.0,
-                child: Container(
-                  color: Colors.grey[100],
-                  child: Center(child: Icon(PhosphorIconsLight.image, size: 32, color: Colors.grey[300])),
-                ),
+                child: _ImageShimmerPlaceholder(),
               ),
               errorWidget: (context, url, error) => _buildFallbackView(source),
             )
@@ -559,6 +621,235 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         color: Colors.white, // White background
       ),
       child: Center(child: Icon(icon, color: AppColors.primary, size: 14)), // Green Icon
+    );
+  }
+
+  Widget _buildSkeletonCard(int index) {
+    // Alternate heights for masonry effect
+    final heights = [180.0, 220.0, 160.0, 200.0, 190.0, 240.0];
+    final height = heights[index % heights.length];
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Image Placeholder with Shimmer - use ClipRRect for top corners
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: _ShimmerBox(height: height),
+            ),
+            
+            // Text Placeholder
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: _ShimmerBox(height: 14, width: double.infinity),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: _ShimmerBox(height: 10, width: 80),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationSkeleton() {
+    switch (_viewMode) {
+      case ViewMode.square:
+        return SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildSkeletonCard(index),
+            childCount: 4,
+          ),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72,
+          ),
+        );
+      case ViewMode.masonry:
+        return SliverMasonryGrid.count(
+          crossAxisCount: 2, 
+          mainAxisSpacing: 12, 
+          crossAxisSpacing: 12, 
+          childCount: 4,
+          itemBuilder: (context, index) => _buildSkeletonCard(index),
+        );
+      case ViewMode.feed:
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: _buildSkeletonCard(index),
+            ),
+            childCount: 2,
+          ),
+        );
+    }
+  }
+  
+  Widget _buildSkeletonOverlay() {
+    // Build a non-sliver skeleton grid for the overlay
+    switch (_viewMode) {
+      case ViewMode.square:
+        return GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72,
+          ),
+          itemCount: 6,
+          itemBuilder: (context, index) => _buildSkeletonCard(index),
+        );
+      case ViewMode.masonry:
+        return MasonryGridView.count(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          itemCount: 6,
+          itemBuilder: (context, index) => _buildSkeletonCard(index),
+        );
+      case ViewMode.feed:
+        return ListView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          itemCount: 4,
+          itemBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: _buildSkeletonCard(index),
+          ),
+        );
+    }
+  }
+}
+
+// Shimmer Effect Widget
+class _ShimmerBox extends StatefulWidget {
+  final double height;
+  final double? width;
+  final double borderRadius;
+
+  const _ShimmerBox({required this.height, this.width, this.borderRadius = 0});
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+    _animation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          height: widget.height,
+          width: widget.width,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment((_animation.value - 1), 0),
+              end: Alignment(_animation.value, 0),
+              colors: [
+                Colors.grey.shade200,
+                Colors.grey.shade100,
+                Colors.grey.shade200,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Shimmer placeholder for images
+class _ImageShimmerPlaceholder extends StatefulWidget {
+  const _ImageShimmerPlaceholder();
+
+  @override
+  State<_ImageShimmerPlaceholder> createState() => _ImageShimmerPlaceholderState();
+}
+
+class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+    _animation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment((_animation.value - 1), 0),
+              end: Alignment(_animation.value, 0),
+              colors: [
+                Colors.grey.shade200,
+                Colors.grey.shade100,
+                Colors.grey.shade200,
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

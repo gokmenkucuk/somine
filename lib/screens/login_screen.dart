@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
-import 'package:somine_app/screens/home_screen.dart';
+import 'package:somine_app/screens/somine_loading_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final bool forceLogin;
@@ -22,10 +22,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     try {
       final authRepository = ref.read(authRepositoryProvider);
-      await authRepository.signInWithGoogle();
-      if (mounted) {
+      final userCredential = await authRepository.signInWithGoogle(
+        onProcessStart: () {
+          if (mounted) setState(() => _isLoading = true);
+        },
+      );
+      if (mounted && userCredential != null) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const SoMineLoadingScreen()),
         );
       }
     } catch (e) {
@@ -40,12 +44,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _signInWithApple() async {
+    setState(() => _isLoading = true);
     try {
       final authRepository = ref.read(authRepositoryProvider);
-      await authRepository.signInWithApple();
-      if (mounted) {
+      final userCredential = await authRepository.signInWithApple();
+      if (mounted && userCredential != null) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const SoMineLoadingScreen()),
         );
       }
     } catch (e) {
@@ -63,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final guestNotifier = ref.read(guestUserStateProvider.notifier);
     guestNotifier.setGuestMode(true);
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const SoMineLoadingScreen()),
     );
   }
 

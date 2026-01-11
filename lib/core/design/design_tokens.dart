@@ -78,3 +78,63 @@ class DesignTokens {
   ];
 }
 
+/// New Design Tokens (v2) - Matches Task Specs
+class SoMineTokens {
+  // Spacing
+  static const double spacingXS = 4.0;
+  static const double spacingS = 8.0;
+  static const double spacingM = 16.0;
+  static const double spacingL = 24.0;
+  static const double spacingXL = 32.0;
+  static const double spacingXXL = 48.0;
+  static const double spacingSection = 64.0;
+
+  // Radius
+  static const double radiusSmall = 8.0;
+  static const double radiusMedium = 16.0;
+  static const double radiusLarge = 24.0;
+  static const double radiusXLarge = 32.0;
+  static const double radiusRound = 999.0;
+
+  // Colors
+  static const Color background = Color(0xFFF8F9FB); 
+  static const Color cardBackground = Colors.white;
+  static const Color textPrimary = Color(0xFF1A1E38); // Deep Navy
+  static const Color textSecondary = Color(0xFF89898E);
+  static const Color textTertiary = Color(0xFFB0B0B5);
+  static const Color accentEnd = Color(0xFF0EA5E9);
+
+  // Gradients
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFF22D3EE), Color(0xFF0EA5E9)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const List<LinearGradient> showcaseGradients = [
+    LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)]), // Lavender
+    LinearGradient(colors: [Color(0xFFFB923C), Color(0xFFFDBA74)]), // Peach
+    LinearGradient(colors: [Color(0xFF34D399), Color(0xFF6EE7B7)]), // Mint
+    LinearGradient(colors: [Color(0xFF60A5FA), Color(0xFF93C5FD)]), // Blue
+  ];
+
+  // Shadows
+  static List<BoxShadow> get cardShadow => [
+    BoxShadow(
+      color: const Color(0xFF1A1E38).withValues(alpha: 0.06),
+      blurRadius: 20,
+      offset: const Offset(0, 8),
+    ),
+  ];
+
+  static List<BoxShadow> get cardShadowElevated => [
+    BoxShadow(
+      color: const Color(0xFF1A1E38).withValues(alpha: 0.12),
+      blurRadius: 30,
+      offset: const Offset(0, 15),
+    ),
+  ];
+
+  // Animation
+  static const Duration animationFast = Duration(milliseconds: 200);
+}

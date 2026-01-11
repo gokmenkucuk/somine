@@ -297,43 +297,95 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(
-            "Silmek İstediğine Emin misin?",
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              color: AppColors.headline,
+          title: Center(
+            child: Text(
+              "Silme Onayı",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: AppColors.headline,
+              ),
             ),
           ),
-          content: Text(
-            "Bu işlem geri alınamaz.",
-            style: GoogleFonts.poppins(
-              color: AppColors.body,
-            ),
-          ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // Cancel
-              child: Text(
-                "Vazgeç",
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Bu içeriği silmek istediğinize emin misiniz?",
+                textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   color: AppColors.body,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
                 ),
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                _deleteItem();
-              },
-              child: Text(
-                "Sil",
-                style: GoogleFonts.poppins(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(height: 12),
+            ],
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.grey.shade300, Colors.grey.shade400],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Vazgeç",
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context); // Close dialog
+                      _deleteItem();
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Sil",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );

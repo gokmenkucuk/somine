@@ -1097,45 +1097,84 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         actions: [
           Row(
             children: [
+              // Vazgeç Butonu (Gri Gradient)
               Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
+                child: InkWell(
+                  onTap: () => Navigator.pop(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.grey.shade300, Colors.grey.shade400],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Vazgeç",
+                        style: GoogleFonts.poppins(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ),
-                  child: Text("Vazgeç", style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
+              
+              // Oluştur Butonu (Yeşil Gradient)
               Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                     if (_controller.text.trim().isNotEmpty && _currentUserId != null) {
-                       try {
-                         await ref.read(categoryRepositoryProvider).createCategory(
-                           CategoryModel(
-                             id: DateTime.now().millisecondsSinceEpoch.toString(),
-                             name: _controller.text.trim(),
-                             userId: _currentUserId!,
-                             createdAt: DateTime.now(),
-                             updatedAt: DateTime.now(),
-                             icon: PhosphorIconsRegular.folder.codePoint.toString(),
-                           )
-                         );
-                         if (context.mounted) Navigator.pop(context);
-                       } catch (e) {
-                         // Error handling
-                       }
-                     }
+                child: InkWell(
+                  onTap: () async {
+                    if (_controller.text.trim().isNotEmpty && _currentUserId != null) {
+                      try {
+                        await ref.read(categoryRepositoryProvider).createCategory(
+                          CategoryModel(
+                            id: DateTime.now().millisecondsSinceEpoch.toString(),
+                            name: _controller.text.trim(),
+                            userId: _currentUserId!,
+                            createdAt: DateTime.now(),
+                            updatedAt: DateTime.now(),
+                            icon: PhosphorIconsRegular.folder.codePoint.toString(),
+                          )
+                        );
+                        if (context.mounted) Navigator.pop(context);
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Koleksiyon oluşturuldu", style: GoogleFonts.poppins()), 
+                            backgroundColor: AppColors.primary,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          )
+                        );
+                      } catch (e) {
+                         // Error
+                      }
+                    }
                   },
-                  child: Text("Oluştur", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppColors.primary, const Color(0xFF6FBFAC)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Oluştur",
+                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -31,7 +31,7 @@ class ItemRepository {
   }
 
   /// Get PAGINATED items
-  Future<QuerySnapshot<Map<String, dynamic>>> getItemsPaginated(String userId, {String? categoryId, int limit = 8, DocumentSnapshot? startAfter}) async {
+  Future<QuerySnapshot<Map<String, dynamic>>> getItemsPaginated(String userId, {String? categoryId, int limit = 5, DocumentSnapshot? startAfter}) async {
     try {
       Query<Map<String, dynamic>> query =
           _itemsCollection.where('userId', isEqualTo: userId);

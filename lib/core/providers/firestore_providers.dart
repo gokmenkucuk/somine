@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Pagination
+import 'package:cached_network_image/cached_network_image.dart'; // Image Precaching
+import 'package:flutter/painting.dart'; // ImageConfiguration
 
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -246,7 +248,10 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       _allCachedItems = allItems;
       
       // 3. Slice first page
-      final initialBatch = _allCachedItems.take(8).toList();
+      final initialBatch = _allCachedItems.take(5).toList();
+      
+      // 4. Precache images before showing content
+      await _precacheImages(initialBatch);
       
       state = state.copyWith(
         items: initialBatch,
@@ -258,6 +263,31 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       state = state.copyWith(isLoading: false, hasMore: false);
     }
   }
+  
+  /// Precache images for items (waits for all images to download)
+  Future<void> _precacheImages(List<ItemModel> items) async {
+    final imageUrls = items
+        .where((item) => item.displayImage != null && item.displayImage!.startsWith('http'))
+        .map((item) => item.displayImage!)
+        .toList();
+    
+    if (imageUrls.isEmpty) return;
+    
+    // Use CachedNetworkImageProvider to precache all images in parallel
+    await Future.wait(
+      imageUrls.map((url) async {
+        try {
+          // Download and cache the image
+          await CachedNetworkImageProvider(url).resolve(ImageConfiguration.empty);
+        } catch (e) {
+          // Ignore errors for individual images
+        }
+      }),
+    );
+    
+    // Small delay to allow Flutter to calculate layout after images are cached
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
 
   Future<void> loadMore() async {
     if (_userId == null || state.isLoading || !state.hasMore) return;
@@ -265,12 +295,12 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      // 4. Simulate Network Delay for UX
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      // 5. Get next batch from cache
+      // Get next batch from cache
       final currentLength = state.items.length;
-      final nextBatch = _allCachedItems.skip(currentLength).take(8).toList();
+      final nextBatch = _allCachedItems.skip(currentLength).take(5).toList();
+      
+      // Precache images before showing
+      await _precacheImages(nextBatch);
       
       state = state.copyWith(
         items: [...state.items, ...nextBatch],

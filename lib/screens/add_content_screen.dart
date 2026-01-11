@@ -11,6 +11,7 @@ import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
+import 'package:somine_app/core/services/storage_service.dart';
 
 
 import 'dart:math' as math;
@@ -97,6 +98,11 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       duration: const Duration(seconds: 10), // Slow, smooth flow
     )..repeat();
     _textAnimation = Tween<double>(begin: 0, end: 1).animate(_textAnimationController);
+
+    // Listeners for UI updates (Delete icon opacity)
+    _titleController.addListener(() => setState(() {}));
+    _noteController.addListener(() => setState(() {}));
+    _linkController.addListener(() => setState(() {}));
 
     // Check clipboard on open to show notice (auto: true just sets the flag)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -376,6 +382,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     }
 
     setState(() => _isSaving = true);
+    final storageService = StorageService();
 
     try {
       final now = DateTime.now();
@@ -384,6 +391,23 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       if (userId == null) {
         if (mounted) _showError("Oturum açmanız gerekiyor");
         return;
+      }
+
+      // Check for remote image and process if needed
+      if (_ogMetadata?.imageUrl != null && 
+          !_ogMetadata!.imageUrl!.contains('firebasestorage')) {
+          
+        // Only attempt upload if it looks like an external URL
+        final persistentUrl = await storageService.uploadImageFromUrl(_ogMetadata!.imageUrl!, userId);
+        
+        if (persistentUrl != null) {
+           _ogMetadata = OGMetadata(
+             title: _ogMetadata!.title,
+             description: _ogMetadata!.description,
+             imageUrl: persistentUrl, // Use new Firebase Storage URL
+             siteName: _ogMetadata!.siteName,
+           );
+        }
       }
       
       final noteText = _noteController.text.isNotEmpty
@@ -420,28 +444,27 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: GoogleFonts.poppins(color: Colors.white)),
-        backgroundColor: Colors.red.shade400,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _AlertBottomSheet(
+        title: "Uyarı",
+        message: message,
+        type: _AlertType.warning,
       ),
     );
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w500),
-        ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _AlertBottomSheet(
+        title: "Başarılı!",
+        message: message,
+        type: _AlertType.success,
       ),
     );
   }
@@ -554,13 +577,26 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
             // Clear Button (Visible if has link OR manual entry)
             if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
-              Positioned(
-                top: 56, // Aligned with Close button
-                right: 16,
-                child: _buildCircleButton(
-                  icon: PhosphorIconsLight.trash, // Changed to Trash to avoid confusion with Close X
-                  onTap: _clearContent,
-                ),
+              Builder(
+                builder: (context) {
+                   // Check if there is actual content to clear
+                   final hasContent = _hasLink || 
+                                      _titleController.text.isNotEmpty || 
+                                      _noteController.text.isNotEmpty ||
+                                      _linkController.text.isNotEmpty;
+                   
+                   return Positioned(
+                    top: 56, // Aligned with Close button
+                    right: 16,
+                    child: Opacity(
+                      opacity: hasContent ? 1.0 : 0.4,
+                      child: _buildCircleButton(
+                        icon: PhosphorIconsLight.trash, 
+                        onTap: hasContent ? _clearContent : () {}, // No-op if empty
+                      ),
+                    ),
+                  );
+                }
               ),
 
             // Platform Icon removed as requested
@@ -1457,4 +1493,156 @@ class _ParticlePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true; 
 }    
+
+// ============== ALERT BOTTOM SHEET ==============
+enum _AlertType { success, warning, error }
+
+class _AlertBottomSheet extends StatefulWidget {
+  final String title;
+  final String message;
+  final _AlertType type;
+
+  const _AlertBottomSheet({
+    super.key,
+    required this.title,
+    required this.message,
+    required this.type,
+  });
+
+  @override
+  State<_AlertBottomSheet> createState() => _AlertBottomSheetState();
+}
+
+class _AlertBottomSheetState extends State<_AlertBottomSheet> {
+  @override
+  void initState() {
+    super.initState();
+    // 2 saniye sonra otomatik kapan
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        // Yağ Yeşili Gradient Zemin
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary, // Derin Adaçayı
+            const Color(0xFF6FBFAC), // Biraz daha canlı ton
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Stack(
+        alignment: Alignment.center, // Stack içeriğini de ortala
+        children: [
+          // Content
+          Padding(
+            padding: const EdgeInsets.fromLTRB(32, 16, 32, 56), // Yanlardan padding artırıldı
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center, // Kesinlikle ortala
+              children: [
+                // Drag Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3), // Beyaz Opak Handle
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Icon Circle
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2), // Beyaz Opak Zemin
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: widget.type == _AlertType.success
+                        ? const Icon(
+                            PhosphorIconsBold.check,
+                            color: Colors.white,
+                            size: 32,
+                          )
+                        : Text(
+                            "!",
+                            style: GoogleFonts.poppins(
+                              fontSize: 32, // Biraz küçültüldü
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              height: 1.0, // Dikey ortalama için
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  widget.title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20, // Biraz daha büyük ve iddialı
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white, // Başlık Beyaz
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 12), // Mesaj ile başlık arası biraz açıldı
+
+                // Message
+                Text(
+                  widget.message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15, // Biraz daha okunur
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withOpacity(0.9), // Hafif kırık beyaz mesaj
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16), // Buton olmadığı için alt boşluk
+              ],
+            ),
+          ),
+
+          // Close Button (Top Right)
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.pop(context),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    PhosphorIconsLight.x,
+                    size: 20,
+                    color: Colors.white.withOpacity(0.8), // Beyaz X butonu
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 

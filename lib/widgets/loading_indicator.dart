@@ -123,11 +123,11 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
-            color: Colors.white.withValues(
-              alpha: 0.9,
-            ), // Increased opacity for better visibility of white/black logo
-            child: Center(child: LoadingIndicator(color: color, size: 24)),
+          Positioned.fill(
+            child: Container(
+              color: Colors.white, // Solid white to hide underlying content
+              child: Center(child: LoadingIndicator(color: color, size: 24)),
+            ),
           ),
       ],
     );

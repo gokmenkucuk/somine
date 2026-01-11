@@ -43,7 +43,7 @@ class AuthRepository {
   }
 
   /// Sign in with Google
-  Future<UserCredential?> signInWithGoogle() async {
+  Future<UserCredential?> signInWithGoogle({VoidCallback? onProcessStart}) async {
     try {
       debugPrint('🔵 [AuthRepository] Starting Google Sign-In flow...');
       
@@ -55,6 +55,11 @@ class AuthRepository {
         debugPrint('❌ [AuthRepository] Firebase Auth not available: $e');
         throw Exception('Firebase Auth not initialized: $e');
       }
+
+      // Ensure clean state before signing in
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
       
       // Trigger the authentication flow
       debugPrint('🔵 [AuthRepository] Calling GoogleSignIn.signIn()...');
@@ -66,12 +71,24 @@ class AuthRepository {
         return null;
       }
 
+      // Trigger the loading indicator callback here, after successful account selection
+      onProcessStart?.call();
+
       debugPrint('✅ [AuthRepository] Google user obtained: ${googleUser.email}');
       debugPrint('🔵 [AuthRepository] Getting authentication details...');
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      GoogleSignInAuthentication? googleAuth;
+      try {
+        googleAuth = await googleUser.authentication;
+      } catch (e) {
+        debugPrint('❌ [AuthRepository] Failed to get Google authentication: $e');
+        try {
+          await _googleSignIn.disconnect(); 
+        } catch (_) {}
+        throw Exception('Failed to get Google authentication details: $e');
+      }
+      
       debugPrint('✅ [AuthRepository] Google auth details obtained');
 
       // Create a new credential
@@ -98,9 +115,15 @@ class AuthRepository {
     } catch (e, stack) {
       debugPrint('❌ [AuthRepository] Google sign-in error: $e');
       debugPrint('❌ [AuthRepository] Stack trace: $stack');
+      
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+      
       throw Exception('Google sign-in failed: $e');
     }
   }
+
 
   /// Sign in with Apple
   Future<UserCredential?> signInWithApple() async {
@@ -155,10 +178,28 @@ class AuthRepository {
   /// Sign out
   Future<void> signOut() async {
     debugPrint('🔵 [AuthRepository] Signing out...');
-    await Future.wait([
-      _auth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    
+    // 1. Sign out from Firebase
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('⚠️ [AuthRepository] Firebase signOut error: $e');
+    }
+
+    // 2. Sign out from Google (Clear local session)
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      debugPrint('⚠️ [AuthRepository] Google signOut error: $e');
+    }
+
+    // 3. Disconnect from Google (Revoke permissions/Force picker)
+    try {
+      await _googleSignIn.disconnect();
+    } catch (e) {
+      debugPrint('⚠️ [AuthRepository] Google disconnect error: $e');
+    }
+    
     debugPrint('✅ [AuthRepository] Signed out');
   }
 }

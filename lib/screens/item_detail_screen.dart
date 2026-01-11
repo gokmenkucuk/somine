@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
@@ -31,17 +32,86 @@ class ItemDetailScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sil?'),
-        content: const Text('Bu öğeyi silmek istediğinize emin misiniz?'),
+        title: Center(
+          child: Text(
+            'Silme Onayı', 
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.headline)
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Bu içeriği silmek istediğinize emin misiniz?', 
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(color: AppColors.body, fontSize: 14)
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil', style: TextStyle(color: Colors.red)),
-          ),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, false),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.grey.shade300, Colors.grey.shade400],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "İptal",
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, true),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Sil",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
