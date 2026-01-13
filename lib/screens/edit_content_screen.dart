@@ -14,7 +14,8 @@ import 'package:html/parser.dart' as parser;
 
 import 'dart:ui' as import_dart_ui;
 import 'dart:math' as math;
-import 'package:somine_app/core/design/app_colors.dart';
+// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 class EditContentScreen extends StatefulWidget {
   final ItemModel item;
@@ -303,7 +304,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
-                color: AppColors.headline,
+                color: context.colors.headline,
               ),
             ),
           ),
@@ -314,7 +315,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                 "Bu içeriği silmek istediğinize emin misiniz?",
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                  color: AppColors.body,
+                  color: context.colors.body,
                   fontSize: 14,
                 ),
               ),
@@ -322,6 +323,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             ],
           ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: context.colors.surfaceWhite,
           actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           actions: [
             Row(
@@ -468,13 +470,13 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
     ));
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.backgroundBottom,
       body: Stack(
         children: [
           // Main Content
@@ -534,7 +536,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       curve: Curves.easeInOut,
       height: stageHeight,
       width: double.infinity,
-      color: Colors.white,
+      color: context.colors.backgroundTop, // Using themed background
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -570,16 +572,16 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.colors.backgroundTop,
             borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
             gradient: LinearGradient(
               colors: animate 
                   ? [
-                      const Color(0xFF6E8E91), 
-                      Color.lerp(const Color(0xFF6FBFAC), Colors.white, shimmer * 0.3)!, 
-                      const Color(0xFF6FBFAC)
+                      context.colors.primary, 
+                      Color.lerp(context.colors.secondary, context.colors.surfaceWhite, shimmer * 0.3)!, 
+                      context.colors.secondary
                     ]
-                  : [const Color(0xFF6E8E91), const Color(0xFF6FBFAC)],
+                  : [context.colors.primary, context.colors.secondary],
               begin: startAlign,
               end: endAlign,
               stops: animate ? [0.0, 0.5 + (shimmer * 0.5), 1.0] : null,
@@ -598,7 +600,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                             height: 48, 
                             width: 48,
                             child: CircularProgressIndicator(
-                              color: Colors.white.withOpacity(0.9),
+                              color: context.colors.surfaceWhite.withOpacity(0.9),
                               strokeWidth: 4,
                             ),
                           ),
@@ -607,13 +609,13 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                     : Icon(
                         Icons.edit_note_rounded, // Changed icon for edit
                         size: 64,
-                        color: Colors.white.withOpacity(0.9),
+                        color: context.colors.surfaceWhite.withOpacity(0.9),
                       ),
                 const SizedBox(height: 12),
                 Text(
                   animate ? "Bağlantı taranıyor..." : "İçeriği düzenle",
                   style: GoogleFonts.poppins(
-                    color: Colors.white.withOpacity(0.9),
+                    color: context.colors.surfaceWhite.withOpacity(0.9),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -683,7 +685,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade500,
+              color: context.colors.hint,
             ),
           ),
 
@@ -722,9 +724,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 14 : 0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1),
       ),
       child: Row(
         crossAxisAlignment:
@@ -735,26 +737,26 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             child: Icon(
               icon,
               size: 18,
-              color: AppColors.body,
+              color: context.colors.body,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: controller,
-              cursorColor: AppColors.primary,
+              cursorColor: context.colors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
-                color: AppColors.headline,
+                color: context.colors.headline,
               ),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.body.withValues(alpha: 0.6),
+                  color: context.colors.body.withOpacity(0.6),
                 ),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -773,7 +775,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
   Widget _buildLinkPreview() {
     final hasPlatform = _detectedPlatform.isNotEmpty;
-    final themeColor = AppColors.primary; 
+    final themeColor = context.colors.primary; 
     final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsThin.link;
 
     return Container(
@@ -781,7 +783,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 16), 
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: themeColor.withOpacity(0.5), 
@@ -800,12 +802,12 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             child: TextField(
               controller: _linkController,
               onChanged: _onLinkChanged,
-              cursorColor: AppColors.primary,
+              cursorColor: context.colors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
-                color: AppColors.headline,
+                color: context.colors.headline,
               ),
               decoration: InputDecoration(
                 hintText: "Bağlantı",
@@ -827,7 +829,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
               icon: Icon(
                 PhosphorIconsBold.x,
                 size: 16,
-                color: AppColors.body,
+                color: context.colors.body,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -856,21 +858,21 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
           decoration: BoxDecoration(
             gradient: isSelected
                 ? LinearGradient(
-                    colors: [AppColors.secondary.withValues(alpha: 0.5), AppColors.surfaceWhite],
+                    colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
                 : null,
-            color: isSelected ? null : Colors.white,
+            color: isSelected ? null : context.colors.surfaceWhite,
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: isSelected ? Colors.transparent : AppColors.secondary,
+              color: isSelected ? Colors.transparent : context.colors.secondary,
               width: 1.5,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.secondary.withValues(alpha: 0.35),
+                      color: context.colors.secondary.withOpacity(0.35),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -885,7 +887,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppColors.headline : AppColors.body,
+                  color: isSelected ? context.colors.headline : context.colors.body,
                 ),
               ),
               if (isSelected) ...[
@@ -893,7 +895,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                 Icon(
                   PhosphorIconsBold.check,
                   size: 12,
-                  color: AppColors.headline,
+                  color: context.colors.headline,
                 ),
               ],
             ],
@@ -909,15 +911,15 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, Color(0xFF6FBFAC)],
+          gradient: LinearGradient(
+            colors: [context.colors.primary, context.colors.secondary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6FBFAC).withOpacity(0.3),
+              color: context.colors.secondary.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -925,12 +927,12 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         ),
         child: Center(
           child: _isSaving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(context.colors.surfaceWhite),
                   ),
                 )
               : Row(
@@ -939,7 +941,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                     Icon(
                       PhosphorIconsBold.check, // Changed to Check
                       size: 20,
-                      color: Colors.white, 
+                      color: context.colors.surfaceWhite, 
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -947,7 +949,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white, 
+                        color: context.colors.surfaceWhite, 
                       ),
                     ),
                   ],
@@ -964,9 +966,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey.shade300, width: 1),
+          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -978,7 +980,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         child: Icon(
           PhosphorIconsLight.arrowLeft,
           size: 20,
-          color: AppColors.headline,
+          color: context.colors.headline,
         ),
       ),
     );
@@ -994,9 +996,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey.shade300, width: 1),
+          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -1008,7 +1010,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         child: Icon(
           icon,
           size: 18,
-          color: AppColors.headline,
+          color: context.colors.headline,
         ),
       ),
     );

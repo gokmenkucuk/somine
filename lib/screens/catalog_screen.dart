@@ -8,7 +8,8 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
-import 'package:somine_app/core/design/app_colors.dart';
+// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
@@ -67,7 +68,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final itemsAsync = ref.watch(catalogItemsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB), // Soft background
+      backgroundColor: context.colors.backgroundBottom, // Soft background
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -84,7 +85,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.headline
+                      color: context.colors.headline
                     ),
                   ),
                   GestureDetector(
@@ -92,10 +93,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     child: Container(
                        padding: const EdgeInsets.all(8),
                        decoration: BoxDecoration(
-                         color: AppColors.primary.withOpacity(0.1),
+                         color: context.colors.primary.withOpacity(0.1),
                          shape: BoxShape.circle,
                        ),
-                       child: Icon(PhosphorIconsRegular.plus, size: 20, color: AppColors.primary),
+                       child: Icon(PhosphorIconsRegular.plus, size: 20, color: context.colors.primary),
                     ),
                   )
                 ],
@@ -119,21 +120,21 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.04),
+                  color: context.colors.primary.withOpacity(0.04),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+                  border: Border.all(color: context.colors.primary.withOpacity(0.08)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(PhosphorIconsRegular.handGrabbing, size: 16, color: AppColors.primary.withOpacity(0.8)),
+                    Icon(PhosphorIconsRegular.handGrabbing, size: 16, color: context.colors.primary.withOpacity(0.8)),
                     const SizedBox(width: 8),
                     Text(
                       "İçerikleri basılı tutup istediğin koleksiyona taşıyabilirsin",
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.primary.withOpacity(0.8),
+                        color: context.colors.primary.withOpacity(0.8),
                       ),
                     ),
                   ],
@@ -144,7 +145,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             // 2. Divider (Subtle)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Divider(height: 1, color: Colors.grey.shade200),
+              child: Divider(height: 1, color: context.colors.hint.withOpacity(0.2)),
             ),
 
             // 3. Main Content
@@ -267,8 +268,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         Widget? childContent;
 
         // Hover Effect: Stronger Border & Glow
-        final hoverBorder = Border.all(color: AppColors.primary, width: 3);
-        final hoverShadow = BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4));
+        final hoverBorder = Border.all(color: context.colors.primary, width: 3);
+        final hoverShadow = BoxShadow(color: context.colors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4));
 
         if (imageProvider != null) {
            // CASE 1: Has Image -> Image Background + B&W/Color Filter
@@ -284,12 +285,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               boxShadow: isHovered 
                   ? [hoverShadow] // Glow on Hover
                   : (isSelected 
-                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 8))]
+                      ? [BoxShadow(color: context.colors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 8))]
                       : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 2))]),
               border: isHovered 
                   ? hoverBorder // Accent Border on Hover
                   : (isSelected 
-                      ? Border.all(color: AppColors.primary, width: 2) 
+                      ? Border.all(color: context.colors.primary, width: 2) 
                       : Border.all(color: Colors.white.withOpacity(0.2), width: 1)),
            );
            childContent = Stack(
@@ -316,8 +317,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               // Selection: Gradient Border -> White Gap -> Gradient Fill
               // Normal: Gradient Fill
               
-              const primaryGradient = LinearGradient(
-                  colors: [AppColors.primary, Color(0xFF6FBFAC)],
+              final primaryGradient = LinearGradient(
+                  colors: [context.colors.primary, context.colors.secondary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
               );
@@ -332,7 +333,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                      decoration: BoxDecoration(
                        borderRadius: BorderRadius.circular(24), // Outer radius
                        gradient: primaryGradient, // Border Gradient
-                       boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 6))],
+                       boxShadow: [BoxShadow(color: context.colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 6))],
                      ),
                      padding: const EdgeInsets.all(2.5), // Border Width
                      child: Container(
@@ -457,16 +458,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                margin: const EdgeInsets.only(right: 12),
                decoration: BoxDecoration(
                  borderRadius: BorderRadius.circular(20),
-                 gradient: const LinearGradient(
-                    colors: [AppColors.primary, Color(0xFF6FBFAC)], // Oil Green Gradient
+                 gradient: LinearGradient(
+                    colors: [context.colors.primary, context.colors.secondary], // Oil Green Gradient
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                  ),
                  boxShadow: isHovered
                     ? [hoverShadow]
                     : (isSelected 
-                        ? [BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 6))]
-                        : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]),
+                        ? [BoxShadow(color: context.colors.primary.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 6))]
+                        : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]),
                  // Make border appear thicker on hover by increasing padding
                ),
                padding: EdgeInsets.all(isHovered ? 4 : 2), 
@@ -500,9 +501,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Widget _buildShelfLabel(String name, int count, {required bool isDarkBg, required bool isSystem, required bool isSelected}) {
-     Color textColor = isDarkBg ? Colors.white : AppColors.headline;
+     Color textColor = isDarkBg ? Colors.white : context.colors.headline;
      Color badgeBg = isDarkBg ? Colors.white.withOpacity(0.9) : const Color(0xFFF3F4F6);
-     Color badgeText = isDarkBg ? Colors.black : AppColors.headline;
+     Color badgeText = isDarkBg ? Colors.black : context.colors.headline;
      
      return Stack(
        children: [
@@ -546,7 +547,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isDarkBg ? Colors.white.withOpacity(0.9) : AppColors.primary,
+                color: isDarkBg ? Colors.white.withOpacity(0.9) : context.colors.primary,
               ),
             ),
           ),
@@ -555,7 +556,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             Positioned(
                bottom: 10,
                left: 12,
-               child: Icon(PhosphorIconsFill.checkCircle, color: AppColors.primary, size: 16),
+               child: Icon(PhosphorIconsFill.checkCircle, color: context.colors.primary, size: 16),
             )
        ],
      );
@@ -582,7 +583,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                ]
              ),
              child: Center(
-               child: Icon(PhosphorIconsRegular.plus, size: 24, color: AppColors.primary),
+               child: Icon(PhosphorIconsRegular.plus, size: 24, color: context.colors.primary),
              ),
            ),
            Padding(
@@ -592,7 +593,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                style: GoogleFonts.outfit(
                  fontSize: 12,
                  fontWeight: FontWeight.w600,
-                 color: AppColors.headline.withOpacity(0.7)
+                 color: context.colors.headline.withOpacity(0.7)
                ),
              ),
            )
@@ -622,7 +623,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                        width: 100,
                        height: 100,
                        decoration: BoxDecoration(
-                         color: AppColors.primary.withOpacity(0.05),
+                         color: context.colors.primary.withOpacity(0.05),
                          borderRadius: BorderRadius.circular(32),
                        ),
                      ),
@@ -638,7 +639,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                        ),
                      ),
                    ),
-                   Icon(PhosphorIconsDuotone.plant, size: 56, color: AppColors.primary),
+                   Icon(PhosphorIconsDuotone.plant, size: 56, color: context.colors.primary),
                 ],
               ),
             ),
@@ -648,7 +649,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppColors.headline
+                color: context.colors.headline
               )
             ),
             const SizedBox(height: 8),
@@ -660,7 +661,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.body.withOpacity(0.7)
+                  color: context.colors.body.withOpacity(0.7)
                 )
               ),
             )
@@ -716,9 +717,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         child: Column(
@@ -755,10 +756,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: (color ?? AppColors.primary).withOpacity(0.1), shape: BoxShape.circle),
-        child: Icon(icon, color: color ?? AppColors.primary, size: 20),
+        decoration: BoxDecoration(color: (color ?? context.colors.primary).withOpacity(0.1), shape: BoxShape.circle),
+        child: Icon(icon, color: color ?? context.colors.primary, size: 20),
       ),
-      title: Text(title, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? AppColors.headline)),
+      title: Text(title, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? context.colors.headline)),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
@@ -796,7 +797,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: context.colors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text("Kaydet", style: GoogleFonts.outfit(color: Colors.white)),
@@ -819,7 +820,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       await repo.updateCategory(category);
       ref.invalidate(categoriesProvider);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Koleksiyon adı güncellendi", style: GoogleFonts.poppins()), backgroundColor: AppColors.primary),
+        SnackBar(content: Text("Koleksiyon adı güncellendi", style: GoogleFonts.poppins()), backgroundColor: context.colors.primary),
       );
     } catch (e) {
       debugPrint("Rename error: $e");
@@ -837,7 +838,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     // Helper to build Platform Icon (Matches ItemFeedScreen exactly - Green Color)
     Widget buildPlatformIcon() {
       IconData icon = PhosphorIconsBold.link;
-      Color iconColor = AppColors.primary; // Default Green for ALL icons to match Home
+      Color iconColor = context.colors.primary; // Default Green for ALL icons to match Home
       final s = source.toLowerCase();
 
       if (s.contains('instagram')) {
@@ -858,8 +859,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
       return Container(
         padding: const EdgeInsets.all(5),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
         ),
         child: Center(child: Icon(icon, size: 14, color: iconColor)),
@@ -869,7 +870,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     // --- FALLBACK VIEW For Grid (Matches ItemFeedScreen exactly) ---
     Widget buildFallbackView() {
        IconData icon = PhosphorIconsBold.link;
-       List<Color> gradientColors = [AppColors.primary, const Color(0xFF6FBFAC)]; // Oil Green Gradient
+       List<Color> gradientColors = [context.colors.primary, context.colors.secondary]; // Oil Green Gradient
        final s = source.toLowerCase();
        
        if (s.contains('twitter') || s.contains('x.com')) {
@@ -889,7 +890,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
        }
 
        return Container(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           child: Center(
             child: ShaderMask(
               shaderCallback: (bounds) => LinearGradient(
@@ -954,9 +955,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           boxShadow: isFeedback 
-             ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))]
+             ? [BoxShadow(color: context.colors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))]
              : [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 4))],
         ),
         child: ClipRRect(
@@ -981,7 +982,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                        style: GoogleFonts.poppins(
                          fontSize: 12, 
                          fontWeight: FontWeight.w600, 
-                         color: Colors.grey.shade800
+                         color: context.colors.headline
                        ),
                      ),
                      Text(
@@ -991,7 +992,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                        style: GoogleFonts.poppins(
                          fontSize: 10, 
                          fontWeight: FontWeight.w400, 
-                         color: Colors.grey.shade500
+                         color: context.colors.hint
                        ),
                      ),
                    ],
@@ -1017,9 +1018,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
          : Image.asset(item.displayImage!, fit: BoxFit.cover);
     } else {
        return Container(
-           decoration: const BoxDecoration(
+           decoration: BoxDecoration(
              gradient: LinearGradient(
-                colors: [AppColors.primary, Color(0xFF6FBFAC)],
+                colors: [context.colors.primary, context.colors.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
              ),
@@ -1044,7 +1045,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
        ScaffoldMessenger.of(context).showSnackBar(
          SnackBar(
            content: Text("İçerik taşındı", style: GoogleFonts.poppins()), 
-           backgroundColor: AppColors.primary,
+           backgroundColor: context.colors.primary,
            duration: const Duration(milliseconds: 1000),
            behavior: SnackBarBehavior.floating,
            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1066,7 +1067,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           "Yeni Koleksiyon",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: AppColors.headline),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: context.colors.headline),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -1074,14 +1075,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
            children: [
               Text(
                 "İçeriklerini düzenlemek için yeni bir koleksiyon oluştur.",
-                style: GoogleFonts.poppins(fontSize: 13, color: AppColors.body),
+                style: GoogleFonts.poppins(fontSize: 13, color: context.colors.body),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: _controller,
                 autofocus: true,
-                style: GoogleFonts.poppins(color: AppColors.headline),
+                style: GoogleFonts.poppins(color: context.colors.headline),
                 decoration: InputDecoration(
                    hintText: "Koleksiyon Adı (Örn: Tatil Planı)",
                    hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
@@ -1142,7 +1143,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("Koleksiyon oluşturuldu", style: GoogleFonts.poppins()), 
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: context.colors.primary,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           )
@@ -1157,12 +1158,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [AppColors.primary, const Color(0xFF6FBFAC)],
+                        colors: [context.colors.primary, context.colors.secondary],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: context.colors.primary.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         )
@@ -1192,7 +1193,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           "Koleksiyonu Sil?",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: AppColors.headline),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: context.colors.headline),
           textAlign: TextAlign.center,
         ),
         content: Column(
@@ -1200,7 +1201,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           children: [
             Text(
               "'$categoryName' silinecek.",
-              style: GoogleFonts.poppins(fontSize: 14, color: AppColors.headline, fontWeight: FontWeight.w500),
+              style: GoogleFonts.poppins(fontSize: 14, color: context.colors.headline, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 12),
             Container(

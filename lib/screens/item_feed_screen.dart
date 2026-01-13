@@ -9,7 +9,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'dart:ui' as ui;
 
-import 'package:somine_app/core/design/app_colors.dart';
+// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -106,11 +107,11 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     // });
 
     return Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
+            colors: [context.colors.backgroundTop, context.colors.backgroundBottom],
           ),
         ),
         child: SafeArea(
@@ -131,8 +132,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text("Merhaba,", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.hint, height: 1.2)),
-                              Text(userName, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.headline, height: 1.2)),
+                              Text("Merhaba,", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: context.colors.hint, height: 1.2)),
+                              Text(userName, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: context.colors.headline, height: 1.2)),
                             ],
                           ),
                           Row(
@@ -141,8 +142,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                                 onTap: widget.onSearchTap,
                                 child: Container(
                                   width: 48, height: 48,
-                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
-                                  child: const Icon(PhosphorIconsLight.magnifyingGlass, color: AppColors.headline, size: 24),
+                                  decoration: BoxDecoration(color: context.colors.surfaceWhite.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: context.colors.surfaceWhite, width: 1.5)),
+                                  child: Icon(PhosphorIconsLight.magnifyingGlass, color: context.colors.headline, size: 24),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -150,8 +151,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
                                 child: Container(
                                   width: 48, height: 48,
-                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
-                                  child: const Icon(PhosphorIconsLight.bell, color: AppColors.headline, size: 24),
+                                  decoration: BoxDecoration(color: context.colors.surfaceWhite.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: context.colors.surfaceWhite, width: 1.5)),
+                                  child: Icon(PhosphorIconsLight.bell, color: context.colors.headline, size: 24),
                                 ),
                               ),
                             ],
@@ -173,8 +174,10 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     children: [
                       ShaderMask(
                         blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [AppColors.primary, Color(0xFF6FBFAC)],
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: Theme.of(context).brightness == Brightness.light
+                              ? [context.colors.primary, const Color(0xFF6FBFAC)] // Air: Detail Button Gradient
+                              : [context.colors.primary, context.colors.secondary], // Midnight: Turquoise -> Blue
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ).createShader(bounds),
@@ -195,7 +198,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.headline,
+                          color: context.colors.headline,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -239,7 +242,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: context.colors.surfaceWhite, borderRadius: BorderRadius.circular(12)),
                         child: Row(
                           children: [
                             _buildViewModeButton(icon: PhosphorIconsLight.squaresFour, mode: ViewMode.square),
@@ -253,9 +256,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text("Tümünü Gör", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.headline)),
+                          Text("Tümü", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: context.colors.headline)),
                           const SizedBox(width: 4),
-                          const Icon(PhosphorIconsLight.caretRight, size: 14, color: AppColors.iconInactive),
+                          Icon(PhosphorIconsLight.caretRight, size: 14, color: context.colors.hint),
                         ],
                       ),
                     ],
@@ -300,7 +303,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         opacity: 1.0 - _contentOpacity,
                         duration: const Duration(milliseconds: 300),
                         child: Container(
-                          color: AppColors.backgroundTop, // Match background
+                          color: context.colors.backgroundTop, // Match background
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: _buildSkeletonOverlay(),
@@ -324,11 +327,11 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? context.colors.backgroundTop : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))] : null,
+          boxShadow: isSelected ? [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))] : null,
         ),
-        child: Icon(icon, size: 20, color: isSelected ? AppColors.primary : AppColors.iconInactive),
+        child: Icon(icon, size: 20, color: isSelected ? context.colors.primary : context.colors.hint),
       ),
     );
   }
@@ -347,21 +350,21 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             gradient: isSelected
-                ? LinearGradient(colors: [AppColors.primary.withOpacity(0.1), AppColors.surfaceWhite], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                ? LinearGradient(colors: [context.colors.primary.withOpacity(0.1), context.colors.surfaceWhite], begin: Alignment.topLeft, end: Alignment.bottomRight)
                 : null,
-            color: isSelected ? null : Colors.white,
+            color: isSelected ? null : context.colors.surfaceWhite,
             borderRadius: BorderRadius.circular(30),
             border: isSelected
-                ? Border.all(color: Colors.white.withOpacity(0.5), width: 1)
-                : Border.all(color: Colors.grey.withOpacity(0.2), width: 1.5),
+                ? Border.all(color: context.colors.surfaceWhite.withOpacity(0.5), width: 1)
+                : Border.all(color: context.colors.hint.withOpacity(0.2), width: 1.5),
             boxShadow: isSelected
-                ? [BoxShadow(color: const Color(0xFF6B8C96).withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))]
-                : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                ? [BoxShadow(color: context.colors.primary.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))]
+                : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
           ),
           child: Text(
             label, 
             style: GoogleFonts.poppins(
-              color: isSelected ? const Color(0xFF1A1E38) : const Color(0xFF4B5563),
+              color: isSelected ? context.colors.headline : context.colors.body,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 15,
             ),
@@ -376,7 +379,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
        return SliverToBoxAdapter(
          child: Padding(
            padding: const EdgeInsets.only(top: 40),
-           child: Center(child: Text("Henüz içerik yok", style: GoogleFonts.poppins(color: AppColors.hint))),
+           child: Center(child: Text("Henüz içerik yok", style: GoogleFonts.poppins(color: context.colors.hint))),
          ),
        );
     }
@@ -513,8 +516,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: Colors.grey.shade100,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+          color: context.colors.surfaceWhite,
+          boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
@@ -550,11 +553,11 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                           item.displayTitle, 
                           maxLines: 1, 
                           overflow: TextOverflow.ellipsis, 
-                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)
+                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.headline)
                         ),
                         Text(
                           badgeText, 
-                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)
+                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: context.colors.hint)
                         ),
                       ],
                     ),
@@ -571,7 +574,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   Widget _buildFallbackView(String source) {
     IconData icon = PhosphorIconsLight.link;
     // Unified Green Gradient for all Empty State Icons
-    List<Color> gradientColors = [AppColors.primary, const Color(0xFF6FBFAC)];
+    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
 
     if (source.contains('x.com') || source.contains('twitter')) {
       icon = PhosphorIconsBold.xLogo;
@@ -584,8 +587,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     }
 
     return Container(
-       color: Colors.white, // White background
-       child: Center(
+       color: context.colors.surfaceWhite, // White background
          child: ShaderMask(
            shaderCallback: (bounds) => LinearGradient(
              colors: gradientColors,
@@ -594,7 +596,6 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
            ).createShader(bounds),
            child: Icon(icon, size: 48, color: Colors.white),
          ),
-       ),
     );
   }
 
@@ -616,11 +617,11 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
     return Container(
       width: 24, height: 24,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white, // White background
+        color: context.colors.surfaceWhite, 
       ),
-      child: Center(child: Icon(icon, color: AppColors.primary, size: 14)), // Green Icon
+      child: Center(child: Icon(icon, color: context.colors.primary, size: 14)), // Green Icon
     );
   }
 
@@ -632,8 +633,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))],
+        color: context.colors.surfaceWhite,
+        boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -789,9 +790,9 @@ class _ShimmerBoxState extends State<_ShimmerBox> with SingleTickerProviderState
               begin: Alignment((_animation.value - 1), 0),
               end: Alignment(_animation.value, 0),
               colors: [
-                Colors.grey.shade200,
-                Colors.grey.shade100,
-                Colors.grey.shade200,
+                context.colors.hint.withOpacity(0.1),
+                context.colors.hint.withOpacity(0.05),
+                context.colors.hint.withOpacity(0.1),
               ],
             ),
           ),

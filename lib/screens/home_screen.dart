@@ -4,7 +4,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 
-import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
+// import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/screens/item_feed_screen.dart';
 import 'package:somine_app/screens/search_screen.dart';
@@ -81,7 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     // Determine active color for tabs
     Color getIconColor(int index) {
-      return _selectedIndex == index ? AppColors.primary : AppColors.iconInactive; // Using Primary for active
+      return _selectedIndex == index ? context.colors.primary : context.colors.iconInactive; 
     }
 
     return Scaffold(
@@ -94,10 +95,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         height: 64,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.accentDark,
+          gradient: LinearGradient(
+            colors: [context.colors.primary, context.colors.secondary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: context.colors.surfaceWhite.withOpacity(0.2), // Subtle midnight-like border
+            width: 1.5,
+          ),
           boxShadow: [
              BoxShadow(
-              color: AppColors.accentDark.withOpacity(0.3),
+              color: context.colors.primary.withOpacity(0.3),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -119,7 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
-        color: Colors.white, // Surface White
+        color: context.colors.surfaceWhite, 
         elevation: 0,
         height: 60, // Slight height increase for touch target
         padding: const EdgeInsets.symmetric(horizontal: 8),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:somine_app/core/design/app_colors.dart';
+// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
@@ -35,7 +36,7 @@ class ItemDetailScreen extends ConsumerWidget {
         title: Center(
           child: Text(
             'Silme Onayı', 
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.headline)
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 20, color: context.colors.headline)
           ),
         ),
         content: Column(
@@ -44,12 +45,13 @@ class ItemDetailScreen extends ConsumerWidget {
             Text(
               'Bu içeriği silmek istediğinize emin misiniz?', 
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(color: AppColors.body, fontSize: 14)
+              style: GoogleFonts.poppins(color: context.colors.body, fontSize: 14)
             ),
             const SizedBox(height: 12),
           ],
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: context.colors.surfaceWhite,
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         actions: [
             Row(
@@ -133,15 +135,15 @@ class ItemDetailScreen extends ConsumerWidget {
     final categoryName = category?.name ?? 'Genel';
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.surfaceWhite,
       body: CustomScrollView(
         slivers: [
           // 1. Hero Image Header with AppBar
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.white, // For back button on image
+            backgroundColor: context.colors.surfaceWhite,
+            foregroundColor: context.colors.headline, // For back button on image
             flexibleSpace: FlexibleSpaceBar(
               background: item.displayImage != null
                   ? Hero(
@@ -240,7 +242,7 @@ class ItemDetailScreen extends ConsumerWidget {
                       Text(
                         item.url!,
                         style: GoogleFonts.poppins(
-                          color: DesignTokens.textTertiary,
+                          color: context.colors.hint,
                           fontSize: 14,
                         ),
                         maxLines: 1,
@@ -311,10 +313,10 @@ class ItemDetailScreen extends ConsumerWidget {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(DesignTokens.spacingLG),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: context.colors.premiumShadow.withOpacity(0.05),
               offset: const Offset(0, -4),
               blurRadius: 16,
             )
@@ -336,7 +338,7 @@ class ItemDetailScreen extends ConsumerWidget {
             ),
             child: Ink(
               decoration: BoxDecoration(
-                gradient: DesignTokens.primaryGradient,
+                gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
               ),
               child: Container(

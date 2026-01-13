@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/theme_provider.dart'; // Import Enum
 import 'app_colors.dart';
+import 'app_colors_extension.dart';
 import 'design_tokens.dart';
 
 class AppTheme {
@@ -25,6 +26,22 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.backgroundTop,
+      extensions: [
+        AppColorsExtension(
+          backgroundTop: AppColors.backgroundTop,
+          backgroundBottom: AppColors.backgroundBottom,
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          accentDark: AppColors.accentDark,
+          headline: AppColors.headline,
+          body: AppColors.body,
+          hint: AppColors.hint,
+          iconActive: AppColors.iconActive,
+          iconInactive: AppColors.iconInactive,
+          surfaceWhite: AppColors.surfaceWhite,
+          premiumShadow: AppColors.premiumShadow,
+        ),
+      ],
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
@@ -46,33 +63,60 @@ class AppTheme {
 
   // ================= MIDNIGHT THEME (Dark) =================
   static ThemeData get _midnightTheme {
-    // Placeholder Colors for Midnight - To be updated by User
-    const bgDark = Color(0xFF121212);
-    const surfaceDark = Color(0xFF1E1E1E);
-    const primaryDark = Color(0xFFBB86FC); // Purple accent example
-    const textLight = Color(0xFFE0E0E0);
-    const textDim = Color(0xFFA0A0A0);
+    // Midnight Palette (Updated)
+    const bgDark = Color(0xFF121212); // Keep for fallbacks
+    const gradientStart = Color(0xFF2DD4BF); // Canlı Turkuaz
+    const gradientEnd = Color(0xFF0EA5E9); // Okyanus Mavisi
+    
+    // Primary/Secondary can match the gradient or be contrast
+    const primaryColor = Color(0xFF2DD4BF); 
+    const secondaryColor = Color(0xFF0EA5E9);
+    
+    const surfaceDark = Color(0xFF1E1E1E); 
+    const textLight = Color(0xFFF1F5F9); 
+    const textDim = Color(0xFF94A3B8);
+    const iconDim = Color(0xFF64748B);
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: bgDark,
+      extensions: [
+        const AppColorsExtension(
+          backgroundTop: bgDark, // Reverted to Dark
+          backgroundBottom: bgDark, // Reverted to Dark
+          primary: primaryColor,
+          secondary: secondaryColor,
+          accentDark: primaryColor,
+          headline: textLight,
+          body: textDim,
+          hint: iconDim,
+          iconActive: primaryColor,
+          iconInactive: iconDim,
+          surfaceWhite: surfaceDark,
+          premiumShadow: Colors.black54,
+        ),
+      ],
       colorScheme: const ColorScheme.dark(
-        primary: primaryDark,
-        secondary: Color(0xFF03DAC6),
+        primary: primaryColor, // Changed from primaryAcid
+        secondary: secondaryColor, // Changed from primaryAcid
         surface: surfaceDark,
-        error: Color(0xFFCF6679),
-        onPrimary: Colors.black,
-        onSecondary: Colors.black,
+        error: Color(0xFFEF4444),
+        onPrimary: Color(0xFF0F172A), // Black content on acid green
+        onSecondary: Color(0xFF0F172A),
         onSurface: textLight,
-        onError: Colors.black,
+        onError: Colors.white,
       ),
       textTheme: _buildTextTheme(textLight, textDim),
       appBarTheme: _buildAppBarTheme(textLight),
       cardTheme: _buildCardTheme(surfaceDark),
-      inputDecorationTheme: _buildInputTheme(surfaceDark, primaryDark),
-      elevatedButtonTheme: _buildElevatedButtonTheme(primaryDark, Colors.black),
-      textButtonTheme: _buildTextButtonTheme(primaryDark),
+      inputDecorationTheme: _buildInputTheme(surfaceDark, primaryColor),
+      elevatedButtonTheme: _buildElevatedButtonTheme(primaryColor, const Color(0xFF0F172A)),
+      textButtonTheme: _buildTextButtonTheme(primaryColor),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: primaryColor,
+        foregroundColor: Color(0xFF0F172A),
+      ),
     );
   }
 
@@ -88,6 +132,22 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: bgVibe,
+      extensions: [
+        AppColorsExtension(
+          backgroundTop: bgVibe,
+          backgroundBottom: Colors.white,
+          primary: primaryVibe,
+          secondary: secondaryVibe,
+          accentDark: primaryVibe,
+          headline: textDark,
+          body: Colors.grey.shade700,
+          hint: Colors.grey.shade400,
+          iconActive: primaryVibe,
+          iconInactive: Colors.grey.shade400,
+          surfaceWhite: Colors.white,
+          premiumShadow: primaryVibe.withOpacity(0.2),
+        ),
+      ],
       colorScheme: const ColorScheme.light(
         primary: primaryVibe,
         secondary: secondaryVibe,

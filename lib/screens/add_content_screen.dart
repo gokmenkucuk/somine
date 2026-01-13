@@ -16,7 +16,9 @@ import 'package:somine_app/core/services/storage_service.dart';
 
 import 'dart:math' as math;
 import 'dart:ui' as import_dart_ui;
-import 'package:somine_app/core/design/app_colors.dart';
+import 'dart:ui' as import_dart_ui;
+// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 class AddContentScreen extends StatefulWidget {
   final String? initialText;
@@ -504,9 +506,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
     ));
 
     return DraggableScrollableSheet(
@@ -516,9 +518,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       snap: true,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Stack(
             children: [
@@ -615,7 +617,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         curve: Curves.easeInOut,
         height: stageHeight,
         width: double.infinity,
-        color: Colors.white,
+
+        color: context.colors.backgroundTop,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -664,8 +667,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      AppColors.primary, // Filled Color (Green)
-                      AppColors.primary.withOpacity(0.15), // Empty Color (Light Green)
+                      context.colors.primary, // Filled Color (Green)
+                      context.colors.primary.withOpacity(0.15), // Empty Color (Light Green)
                     ],
                     stops: [
                       _loadingController.value, // Fill level moves from 0.0 to 1.0
@@ -688,7 +691,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: AppColors.headline,
+              color: context.colors.headline,
             ),
           ),
         ],
@@ -715,18 +718,18 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             gradient: LinearGradient(
               colors: animate 
                   ? [
-                      const Color(0xFF6E8E91), 
-                      Color.lerp(const Color(0xFF6FBFAC), Colors.white, shimmer * 0.3)!, // Subtle lighten
-                      const Color(0xFF6FBFAC)
+                      context.colors.primary, 
+                      Color.lerp(context.colors.secondary, Colors.white, shimmer * 0.3)!, // Subtle lighten
+                      context.colors.secondary
                     ]
-                  : [const Color(0xFF6E8E91), const Color(0xFF6FBFAC)],
+                  : [context.colors.primary, context.colors.secondary],
               begin: startAlign,
               end: endAlign,
               stops: animate ? [0.0, 0.5 + (shimmer * 0.5), 1.0] : null,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6E8E91).withOpacity(0.25),
+               color: context.colors.primary.withOpacity(0.25),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -795,7 +798,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   Widget _buildAmbientAnimationCore({double scale = 1.0}) {
       // Scale is ignored in Particle simulation (it fills space), 
       // but if needed we could pass it. For now, filling space is better.
-      return _ParticleBackground(color: AppColors.primary);
+      return _ParticleBackground(color: context.colors.primary);
   }
 
   // ============== CONTROL CENTER ==============
@@ -873,7 +876,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.primary,
+                  color: context.colors.primary,
                 ),
               ),
             ),
@@ -894,9 +897,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 14 : 0),
       decoration: BoxDecoration(
-        color: Colors.white, // White background
+        color: context.colors.surfaceWhite, 
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1), // Subtle border
+        border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1), 
       ),
       child: Row(
         crossAxisAlignment:
@@ -907,26 +910,26 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             child: Icon(
               icon,
               size: 18,
-              color: AppColors.body,
+              color: context.colors.body,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: controller,
-              cursorColor: AppColors.primary,
+              cursorColor: context.colors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
-                color: AppColors.headline,
+                color: context.colors.headline,
               ),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.body.withValues(alpha: 0.6),
+                  color: context.colors.body.withOpacity(0.6),
                 ),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -947,7 +950,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   Widget _buildLinkPreview() {
     final hasPlatform = _detectedPlatform.isNotEmpty;
     // Always use Primary Brand Color to match design, ignoring platform specific colors (e.g. Red for YouTube)
-    final themeColor = AppColors.primary; 
+    final themeColor = context.colors.primary; 
     final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsThin.link;
 
     return Container(
@@ -955,7 +958,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 16), 
       decoration: BoxDecoration(
-        color: Colors.white, // White background
+        color: context.colors.surfaceWhite, 
         borderRadius: BorderRadius.circular(12),
         // Always use Primary Color border
         border: Border.all(
@@ -983,18 +986,18 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                    _checkClipboardAndProcess(auto: false); // Prompt paste if empty
                 }
               },
-              cursorColor: AppColors.primary,
+              cursorColor: context.colors.primary,
               textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.poppins(
                 fontSize: 15, // Matched with Title Input
                 fontWeight: FontWeight.w400,
-                color: AppColors.headline,
+                color: context.colors.headline,
               ),
               decoration: InputDecoration(
                 hintText: "Bağlantını buraya yapıştır",
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 15, // Matched with Title Input
-                  color: AppColors.body.withValues(alpha: 0.6),
+                  color: context.colors.body.withOpacity(0.6),
                 ),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -1016,7 +1019,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
               icon: Icon(
                 PhosphorIconsBold.x,
                 size: 16,
-                color: AppColors.body,
+                color: context.colors.body,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -1048,21 +1051,21 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           decoration: BoxDecoration(
             gradient: isSelected
                 ? LinearGradient(
-                    colors: [AppColors.secondary.withValues(alpha: 0.5), AppColors.surfaceWhite],
+                    colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
                 : null,
-            color: isSelected ? null : Colors.white,
+            color: isSelected ? null : context.colors.surfaceWhite, // White/Dark Surface
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: isSelected ? Colors.transparent : AppColors.secondary,
+              color: isSelected ? Colors.transparent : context.colors.secondary,
               width: 1.5,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.secondary.withValues(alpha: 0.35),
+                      color: context.colors.secondary.withOpacity(0.35),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1077,7 +1080,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppColors.headline : AppColors.body,
+                  color: isSelected ? context.colors.headline : context.colors.body,
                 ),
               ),
               if (isSelected) ...[
@@ -1085,7 +1088,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 Icon(
                   PhosphorIconsBold.check,
                   size: 12,
-                  color: AppColors.headline,
+                  color: context.colors.headline,
                 ),
               ],
             ],
@@ -1103,15 +1106,15 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, Color(0xFF6FBFAC)], // Slogan Gradient
+          gradient: LinearGradient(
+            colors: [context.colors.primary, context.colors.secondary], // Slogan Gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6FBFAC).withOpacity(0.3), // Matching shadow
+              color: context.colors.secondary.withOpacity(0.3), // Matching shadow
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -1160,12 +1163,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           shape: BoxShape.circle, // Circular
-          border: Border.all(color: Colors.grey.shade300, width: 1), // Grey Border
+          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1), // Grey Border
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: context.colors.premiumShadow.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1174,7 +1177,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         child: Icon(
           PhosphorIconsLight.x, // Changed to X for modal close
           size: 20,
-          color: AppColors.headline,
+          color: context.colors.headline,
         ),
       ),
     );
@@ -1190,12 +1193,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           shape: BoxShape.circle, // Updated to Circle
-          border: Border.all(color: Colors.grey.shade300, width: 1), // Updated to grey border
+          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1), // Updated to grey border
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1), // Updated opacity
+              color: context.colors.premiumShadow.withOpacity(0.1), // Updated opacity
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1204,7 +1207,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         child: Icon(
           icon,
           size: 18,
-          color: AppColors.headline,
+          color: context.colors.headline,
         ),
       ),
     );
@@ -1267,8 +1270,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         return const Color(0xFF1769FF);
       case 'dribbble':
         return const Color(0xFFEA4C89);
+
       default:
-        return AppColors.primary;
+        return context.colors.primary;
     }
   }
 }
@@ -1567,8 +1571,8 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary, // Derin Adaçayı
-            const Color(0xFF6FBFAC), // Biraz daha canlı ton
+            context.colors.primary, // Derin Adaçayı
+            context.colors.secondary, // Biraz daha canlı ton
           ],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),

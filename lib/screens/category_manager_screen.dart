@@ -5,7 +5,9 @@ import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
-import 'package:somine_app/core/design/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/design/design_tokens.dart';
 
 class CategoryManagerScreen extends ConsumerStatefulWidget {
   const CategoryManagerScreen({super.key});
@@ -21,6 +23,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
     final allItems = ref.watch(itemsProvider).valueOrNull ?? [];
 
     return Scaffold(
+      backgroundColor: context.colors.backgroundTop,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -33,7 +36,8 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
                   children: [
                     Text(
                       'Kategoriler',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: GoogleFonts.outfit(
+                          fontSize: 24, fontWeight: FontWeight.bold, color: context.colors.headline),
                     ),
                     _AddCategoryButton(
                       onTap: () => _showAddCategorySheet(context),
@@ -60,6 +64,8 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
                       final itemCount = allItems
                           .where((i) => i.categoryId == category.id)
                           .length;
+                      // Use context colors or keep as is if showcase gradients are fine
+                      // But better to use primary/secondary logic if possible, or just keep variety
                       final gradient = SoMineTokens.showcaseGradients[
                         index % SoMineTokens.showcaseGradients.length
                       ];
@@ -104,24 +110,25 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                gradient: SoMineTokens.primaryGradient,
+                gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.folder_open_rounded,
                 size: 48,
-                color: Colors.white,
+                color: Colors.white, // Icon on primary color should remain white or high contrast
               ),
             ),
             const SizedBox(height: SoMineTokens.spacingXXL),
             Text(
               'Henüz kategori yok',
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: GoogleFonts.outfit(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: context.colors.headline),
             ),
             const SizedBox(height: SoMineTokens.spacingS),
             Text(
               'İçeriklerini düzenlemek için\nkategoriler oluştur',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: GoogleFonts.poppins(color: context.colors.body, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: SoMineTokens.spacingXXL),
@@ -250,7 +257,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: SoMineTokens.accentEnd,
+        backgroundColor: context.colors.primary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
         ),
@@ -288,11 +295,11 @@ class _AddCategoryButton extends StatelessWidget {
           vertical: SoMineTokens.spacingS,
         ),
         decoration: BoxDecoration(
-          gradient: SoMineTokens.primaryGradient,
+          gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
           borderRadius: BorderRadius.circular(SoMineTokens.radiusRound),
           boxShadow: [
             BoxShadow(
-              color: SoMineTokens.accentEnd.withValues(alpha: 0.3),
+              color: context.colors.premiumShadow.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -346,9 +353,15 @@ class _CategoryTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(SoMineTokens.spacingL),
         decoration: BoxDecoration(
-          color: SoMineTokens.cardBackground,
+          color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(SoMineTokens.radiusLarge),
-          boxShadow: SoMineTokens.cardShadow,
+          boxShadow: [
+             BoxShadow(
+               color: context.colors.premiumShadow.withOpacity(0.05),
+               offset: const Offset(0, 4),
+               blurRadius: 12,
+             )
+          ],
         ),
         child: Row(
           children: [
@@ -377,12 +390,13 @@ class _CategoryTile extends StatelessWidget {
                 children: [
                   Text(
                     category.name,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600, fontSize: 16, color: context.colors.headline),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '$itemCount içerik',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: GoogleFonts.poppins(fontSize: 12, color: context.colors.hint),
                   ),
                 ],
               ),
@@ -430,13 +444,13 @@ class _IconButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: SoMineTokens.background,
+          color: context.colors.backgroundTop, // Slightly different bg for icon button
           borderRadius: BorderRadius.circular(SoMineTokens.radiusSmall),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: color ?? SoMineTokens.textSecondary,
+          color: color ?? context.colors.body,
         ),
       ),
     );
@@ -495,9 +509,16 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     return Container(
       margin: const EdgeInsets.all(SoMineTokens.spacingL),
       decoration: BoxDecoration(
-        color: SoMineTokens.cardBackground,
+      decoration: BoxDecoration(
+        color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(SoMineTokens.radiusXLarge),
-        boxShadow: SoMineTokens.cardShadowElevated,
+        boxShadow: [
+          BoxShadow(
+             color: context.colors.premiumShadow.withOpacity(0.1),
+             offset: const Offset(0, -4),
+             blurRadius: 20
+          )
+        ],
       ),
       child: Padding(
         padding: EdgeInsets.only(
@@ -516,7 +537,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: SoMineTokens.textTertiary.withValues(alpha: 0.3),
+                  color: context.colors.hint.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -527,7 +548,8 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
             // Başlık
             Text(
               widget.isEditing ? 'Kategoriyi Düzenle' : 'Yeni Kategori',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: GoogleFonts.outfit(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: context.colors.headline),
             ),
 
             const SizedBox(height: SoMineTokens.spacingXXL),
@@ -535,7 +557,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
             // Emoji seçici
             Text(
               'İkon Seç',
-              style: Theme.of(context).textTheme.labelLarge,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: context.colors.headline),
             ),
             const SizedBox(height: SoMineTokens.spacingM),
             SizedBox(
@@ -561,9 +583,9 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       height: 50,
                       decoration: BoxDecoration(
                         gradient: isSelected
-                            ? SoMineTokens.primaryGradient
+                            ? LinearGradient(colors: [context.colors.primary, context.colors.secondary])
                             : null,
-                        color: isSelected ? null : SoMineTokens.background,
+                        color: isSelected ? null : context.colors.backgroundTop,
                         borderRadius: BorderRadius.circular(
                           SoMineTokens.radiusMedium,
                         ),
@@ -585,19 +607,21 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
             // İsim input
             Text(
               'Kategori Adı',
-              style: Theme.of(context).textTheme.labelLarge,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: context.colors.headline),
             ),
             const SizedBox(height: SoMineTokens.spacingS),
             Container(
               decoration: BoxDecoration(
-                color: SoMineTokens.background,
+                color: context.colors.backgroundTop,
                 borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
               ),
               child: TextField(
                 controller: _nameController,
                 autofocus: true,
-                decoration: const InputDecoration(
+                style: GoogleFonts.poppins(color: context.colors.headline),
+                decoration: InputDecoration(
                   hintText: 'Örn: Tatil Fikirleri',
+                  hintStyle: GoogleFonts.poppins(color: context.colors.hint),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: SoMineTokens.spacingL,
@@ -624,8 +648,8 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.grey.shade300,
-                            Colors.grey.shade400,
+                            Colors.grey.shade100,
+                            Colors.grey.shade200,
                           ],
                         ),
                         borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
@@ -634,7 +658,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                         child: Text(
                           'Vazgeç',
                           style: TextStyle(
-                            color: Colors.grey.shade800,
+                            color: context.colors.body,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -655,14 +679,14 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary,
-                            const Color(0xFF6FBFAC),
+                            context.colors.primary,
+                            context.colors.secondary,
                           ],
                         ),
                         borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: context.colors.primary.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),

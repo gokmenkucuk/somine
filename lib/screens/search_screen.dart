@@ -9,7 +9,8 @@ import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 // Remove ItemCard
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:somine_app/core/design/app_colors.dart';
+// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart'; // Import Detail Sheet
@@ -178,12 +179,12 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.white, Color(0xFFE6F2ED)],
-            stops: [0.3, 1.0],
+            colors: [context.colors.backgroundTop, context.colors.backgroundBottom],
+            stops: const [0.3, 1.0],
           ),
         ),
         child: SafeArea(
@@ -276,11 +277,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(children: [
-                                      Text("Ara ", style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w300, color: const Color(0xFF1F2937), height: 1.2)),
-                                      Text("ve Keşfet", style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w600, color: const Color(0xFF1F2937), height: 1.2)),
+                                      Text("Ara ", style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w300, color: context.colors.headline, height: 1.2)),
+                                      Text("ve Keşfet", style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w600, color: context.colors.headline, height: 1.2)),
                                   ]),
                                   const SizedBox(height: 4),
-                                  Text("Koleksiyonlarında arama yap...", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w400, color: const Color(0xFF9CA3AF))),
+                                  Text("Koleksiyonlarında arama yap...", style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w400, color: context.colors.body)),
                                 ],
                               ),
                             ],
@@ -315,8 +316,8 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: const EdgeInsets.all(1.0), // Reduced Border Width further
       decoration: BoxDecoration(
         // Oil Green Gradient Border
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)],
+        gradient: LinearGradient(
+          colors: [context.colors.primary.withOpacity(0.7), context.colors.secondary.withOpacity(0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -412,7 +413,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     GestureDetector(
                       onTap: _clearAllSearches,
-                      child: Text("Temizle", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primary)),
+                      child: Text("Temizle", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.primary)),
                     ),
                   ],
                 ),
@@ -448,17 +449,17 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchController.text = query;
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      leading: const Icon(Icons.history, color: Color(0xFF636E72), size: 20), // AppColors.body
+      leading: Icon(Icons.history, color: context.colors.body, size: 20), 
       title: Text(
         query,
         style: GoogleFonts.poppins(
-          color: const Color(0xFF2D312F), // AppColors.headline
+          color: context.colors.headline, 
            fontSize: 14,
            fontWeight: FontWeight.w400,
         ),
       ),
       trailing: IconButton(
-        icon: const Icon(Icons.close, size: 18, color: Color(0xFFB2BEC3)), // AppColors.hint
+        icon: Icon(Icons.close, size: 18, color: context.colors.hint),
         onPressed: () => _removeSearchItem(index),
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
@@ -487,8 +488,8 @@ class _SearchScreenState extends State<SearchScreen> {
         decoration: BoxDecoration(
           // Oil Green Gradient for Selected
           gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF6E8E91), Color(0xFF6FBFAC)], // Oil Green
+              ? LinearGradient(
+                  colors: [context.colors.primary, context.colors.secondary], // Oil Green
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -665,7 +666,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildFallbackView(String source) {
     IconData icon = PhosphorIconsLight.link;
     // Unified Green Gradient for all Empty State Icons
-    List<Color> gradientColors = [AppColors.primary, const Color(0xFF6FBFAC)];
+    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
 
     if (source.contains('x.com') || source.contains('twitter')) {
       icon = PhosphorIconsBold.xLogo;
@@ -710,11 +711,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Container(
       width: 24, height: 24,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white, // White background
+        color: context.colors.surfaceWhite, 
       ),
-      child: Center(child: Icon(icon, color: AppColors.primary, size: 14)), // Green Icon
+      child: Center(child: Icon(icon, color: context.colors.primary, size: 14)), // Green Icon
     );
   }
 

@@ -6,8 +6,9 @@ class AppColors {
   static const Color backgroundBottom = Color(0xFFE8F1EF);
   
   // 2. MARKA (BRAND)
-  static const Color primary = Color(0xFF6E8E91); // Derin Adaçayı
-  static const Color secondary = Color(0xFFD8E2DC); // Sis Yeşili
+  // 2. MARKA (BRAND)
+  static const Color primary = Color(0xFF688E8B); // Derin Adaçayı (User: End Color)
+  static const Color secondary = Color(0xFF95C5C1); // Su Yeşili / Mint (User: Start Color)
   static const Color accentDark = Color(0xFF323736); // Koyu Kömür (Floating Btn)
 
   // 3. YAZI (TEXT)
