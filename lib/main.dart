@@ -4,8 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/theme_provider.dart';
+import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/services/share_service.dart';
-import 'package:somine_app/screens/capture_screen.dart';
+import 'package:somine_app/screens/add_content_screen.dart';
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/splash_screen.dart';
@@ -59,14 +61,14 @@ void main() async {
   );
 }
 
-class SoMineApp extends StatefulWidget {
+class SoMineApp extends ConsumerStatefulWidget {
   const SoMineApp({super.key});
 
   @override
-  State<SoMineApp> createState() => _SoMineAppState();
+  ConsumerState<SoMineApp> createState() => _SoMineAppState();
 }
 
-class _SoMineAppState extends State<SoMineApp> {
+class _SoMineAppState extends ConsumerState<SoMineApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   bool _isSplashFinished = false;
 
@@ -87,7 +89,7 @@ class _SoMineAppState extends State<SoMineApp> {
     if (url != null) {
       _navigatorKey.currentState?.push(
         MaterialPageRoute(
-          builder: (context) => CaptureScreen(url: url),
+          builder: (context) => AddContentScreen(initialText: url),
         ),
       );
     }
@@ -95,10 +97,12 @@ class _SoMineAppState extends State<SoMineApp> {
 
   @override
   Widget build(BuildContext context) {
+    final currentTheme = ref.watch(themeProvider);
+
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'So Mine', // Updated title
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.getTheme(currentTheme),
       debugShowCheckedModeBanner: false,
       home: _isSplashFinished
           ? const AuthWrapper()

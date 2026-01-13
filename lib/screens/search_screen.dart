@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:animate_do/animate_do.dart';
@@ -13,6 +14,7 @@ import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart'; // Import Detail Sheet
 import 'package:somine_app/core/repositories/category_repository.dart';
+import 'package:somine_app/core/services/preferences_service.dart';
 
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -33,27 +35,24 @@ class _SearchScreenState extends State<SearchScreen> {
   List<ItemModel> _filteredItems = [];
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
+  StreamSubscription? _itemsSubscription; // Subscription for live updates
 
   String? _selectedPlatform;
 
 
+  final PreferencesService _prefsService = PreferencesService();
+
   // Computed property to check if search mode is active
   bool get _isSearching => _searchController.text.isNotEmpty || _selectedPlatform != null;
 
-  // Son Aramalar (Mock Data)
-  final List<String> _recentSearches = [
-    "Yaz Tatili Planı",
-    "Ofis Dekorasyonu",
-    "Pratik Akşam Yemeği",
-    "İngilizce Çalışma Kaynakları",
-    "Yatırım İpuçları",
-    "Haftasonu Etkinlikleri",
-  ];
+  // Son Aramalar
+  List<String> _recentSearches = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchItems();
+    _loadHistory();
+    _subscribeToItems(); // Use subscription instead of fetch
     _searchController.addListener(_performSearch);
     
     Future.delayed(const Duration(milliseconds: 400), () {
@@ -63,30 +62,47 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  Future<void> _fetchItems() async {
+  void _subscribeToItems() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      try {
-        final itemsFuture = _itemRepository.getItems(user.uid);
-        final categoriesFuture = _categoryRepository.getCategories(user.uid);
-        
-        final results = await Future.wait([itemsFuture, categoriesFuture]);
-        final items = results[0] as List<ItemModel>;
-        final categories = results[1] as List<CategoryModel>;
-        
+      setState(() => _isLoading = true);
+      
+      // 1. Fetch Categories once (or stream if needed, but usually static enough)
+      _categoryRepository.getCategories(user.uid).then((categories) {
+         if (mounted) setState(() => _categories = categories);
+      });
+
+      // 2. Stream Items
+      _itemsSubscription = _itemRepository.streamItems(user.uid).listen((items) {
         if (mounted) {
           setState(() {
             _allItems = items;
-            _categories = categories;
             _isLoading = false;
           });
-          _performSearch();
+          _performSearch(); // Re-run search with new data
         }
-      } catch (e) {
-        debugPrint("Error fetching items: $e");
+      }, onError: (e) {
+        debugPrint("Error streaming items: $e");
         if (mounted) setState(() => _isLoading = false);
-      }
+      });
     }
+  }
+
+
+
+  Future<void> _loadHistory() async {
+    final history = await _prefsService.getSearchHistory();
+    if (mounted) {
+      setState(() {
+        _recentSearches = history;
+      });
+    }
+  }
+
+  Future<void> _addToHistory(String term) async {
+    if (term.trim().isEmpty) return;
+    await _prefsService.addSearchTerm(term.trim());
+    _loadHistory();
   }
 
   void _performSearch() {
@@ -104,10 +120,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
         // Text Search
         if (query.isNotEmpty) {
-           final title = item.displayTitle.toLowerCase();
-           final note = item.note?.toLowerCase() ?? '';
-           // Check URL or Title or Note
-           matchesQuery = title.contains(query) || note.contains(query);
+           final searchTerms = query.split(' ').where((s) => s.isNotEmpty).toList();
+           final searchableText = '${item.displayTitle} ${item.note ?? ''} ${item.url ?? ''}'.toLowerCase();
+
+           // Check if ALL terms are present in the searchable text
+           matchesQuery = searchTerms.every((term) => searchableText.contains(term));
         }
 
         // Platform Filter
@@ -138,21 +155,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    _itemsSubscription?.cancel(); // Cancel subscription
     _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _removeSearchItem(int index) {
-    setState(() {
-      _recentSearches.removeAt(index);
-    });
+  void _removeSearchItem(int index) async {
+    final term = _recentSearches[index];
+    await _prefsService.removeSearchTerm(term);
+    _loadHistory();
   }
 
-  void _clearAllSearches() {
-    setState(() {
-      _recentSearches.clear();
-    });
+  void _clearAllSearches() async {
+    await _prefsService.clearSearchHistory();
+    _loadHistory();
   }
 
   @override
@@ -349,6 +366,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), // Adjusted padding
               ),
               onChanged: (value) => setState(() {}),
+              onSubmitted: (value) => _addToHistory(value),
             ),
           ),
         ),

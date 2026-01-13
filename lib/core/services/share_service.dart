@@ -38,11 +38,8 @@ class ShareService {
     
     if (content.isNotEmpty) {
       debugPrint("Received shared content: $content");
-      final url = _extractUrl(content);
-      if (url != null) {
-        debugPrint("Extracted URL: $url");
-        sharedUrlNotifier.value = url;
-      }
+      // Pass the raw content (text/link) to the UI
+      sharedUrlNotifier.value = content;
     }
   }
 

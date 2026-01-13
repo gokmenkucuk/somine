@@ -148,16 +148,47 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     }
 
     try {
-      final categories = await _categoryRepository.getCategories(userId);
+      var categories = await _categoryRepository.getCategories(userId);
+      
+      // Auto-create "Hızlı" category if not exists
+      CategoryModel? quickCategory;
+      try {
+         quickCategory = categories.cast<CategoryModel?>().firstWhere(
+           (c) => c!.name.toLowerCase() == 'hızlı', 
+           orElse: () => null
+         );
+
+         if (quickCategory == null) {
+           // Create "Hızlı" category
+           final now = DateTime.now();
+           final newCategory = CategoryModel(
+             id: '', // Repo generates ID
+             userId: userId,
+             name: 'Hızlı',
+             icon: '⚡', // Lightning icon for Quick
+             createdAt: now,
+             updatedAt: now,
+           );
+           quickCategory = await _categoryRepository.createCategory(newCategory);
+           // Refresh list
+           categories = await _categoryRepository.getCategories(userId); 
+         }
+      } catch (e) {
+        debugPrint("Error handling Quick category: $e");
+      }
+
       if (mounted) {
-        // If Firestore returns empty, use fallback
         if (categories.isEmpty) {
           _useFallbackCategories();
         } else {
           setState(() {
             _categories = categories;
             _isLoadingCategories = false;
-
+            
+            // Auto-select "Hızlı"
+            if (quickCategory != null) {
+              _selectedCategoryIds.add(quickCategory.id);
+            }
           });
         }
       }
@@ -511,6 +542,29 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 child: _buildBackButton(),
               ),
 
+              // Sticky Trash Button (Moved from HeroStage)
+              if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
+                Positioned(
+                  top: 56, // Matched Left button
+                  right: 16,
+                  child: Builder(
+                    builder: (context) {
+                       final hasContent = _hasLink || 
+                                          _titleController.text.isNotEmpty || 
+                                          _noteController.text.isNotEmpty ||
+                                          _linkController.text.isNotEmpty;
+                       
+                       return Opacity(
+                          opacity: hasContent ? 1.0 : 0.4,
+                          child: _buildCircleButton(
+                            icon: PhosphorIconsLight.trash, 
+                            onTap: hasContent ? _clearContent : () {}, 
+                          ),
+                        );
+                    }
+                  ),
+                ),
+
               // Floating CTA Dock
               // Show dock if we have a link OR we are in manual entry mode
               if (_hasLink || _isManualEntry)
@@ -575,29 +629,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
 
 
-            // Clear Button (Visible if has link OR manual entry)
-            if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
-              Builder(
-                builder: (context) {
-                   // Check if there is actual content to clear
-                   final hasContent = _hasLink || 
-                                      _titleController.text.isNotEmpty || 
-                                      _noteController.text.isNotEmpty ||
-                                      _linkController.text.isNotEmpty;
-                   
-                   return Positioned(
-                    top: 56, // Aligned with Close button
-                    right: 16,
-                    child: Opacity(
-                      opacity: hasContent ? 1.0 : 0.4,
-                      child: _buildCircleButton(
-                        icon: PhosphorIconsLight.trash, 
-                        onTap: hasContent ? _clearContent : () {}, // No-op if empty
-                      ),
-                    ),
-                  );
-                }
-              ),
+
 
             // Platform Icon removed as requested
           ],
