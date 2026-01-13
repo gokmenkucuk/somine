@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
 import '../core/design/app_colors.dart';
+import '../core/design/app_colors_extension.dart'; // Import Extension
 import '../screens/edit_content_screen.dart'; // Import Edit Screen
 
 class ItemDetailBottomSheet extends StatefulWidget {
@@ -210,7 +211,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                    Expanded(
                      child: Container(
                        width: double.infinity,
-                       color: Colors.white,
+                       color: context.colors.surfaceWhite, // Dynamic Surface
                        child: Column(
                          children: [
                            // DRAG HANDLE REMOVED
@@ -223,8 +224,8 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                              child: Container(
                                width: double.infinity,
                                decoration: BoxDecoration(
-                                 gradient: const LinearGradient(
-                                   colors: [AppColors.primary, Color(0xFF6FBFAC)],
+                                 gradient: LinearGradient(
+                                   colors: [context.colors.primary, const Color(0xFF6FBFAC)],
                                    begin: Alignment.topLeft,
                                    end: Alignment.bottomRight,
                                  ),
@@ -272,17 +273,17 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                  crossAxisAlignment: CrossAxisAlignment.start,
                                  children: [
                                     // Title Display
-                                    Text('Başlık', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                                    Text('Başlık', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)),
                                     const SizedBox(height: 8),
                                     Text(
                                       widget.item.displayTitle,
-                                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.headline),
+                                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: context.colors.headline),
                                     ),
 
                                     const SizedBox(height: 24),
 
                                     // Category Display
-                                    Text('Koleksiyon', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                                    Text('Koleksiyon', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)),
                                     const SizedBox(height: 12),
                                     
                                     // Single Category Text
@@ -291,7 +292,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w500,
-                                        color: AppColors.headline,
+                                        color: context.colors.headline,
                                       ),
                                     ),
 
@@ -299,11 +300,11 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
                                     // Note (if any)
                                     if (widget.item.note != null && widget.item.note!.isNotEmpty && widget.item.note != widget.item.displayTitle) ...[
-                                       Text('Not', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade500)),
+                                       Text('Not', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)),
                                        const SizedBox(height: 8),
                                        Text(
                                          widget.item.note!,
-                                         style: GoogleFonts.poppins(fontSize: 14, color: AppColors.body),
+                                         style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
                                        ),
                                        const SizedBox(height: 32),
                                     ],
@@ -316,7 +317,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                         textAlign: TextAlign.center,
                                         style: GoogleFonts.poppins(
                                           fontSize: 10,
-                                          color: Colors.grey.shade400,
+                                          color: context.colors.hint,
                                           fontStyle: FontStyle.italic,
                                         ),
                                       ),
@@ -344,11 +345,11 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.surfaceWhite,
                       shape: BoxShape.circle,
                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: const Icon(PhosphorIconsLight.x, size: 22, color: Colors.black),
+                    child: Icon(PhosphorIconsLight.x, size: 22, color: context.colors.headline),
                   ),
                 ),
               ),
@@ -362,11 +363,11 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.surfaceWhite,
                       shape: BoxShape.circle,
                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: const Icon(PhosphorIconsLight.paperPlaneTilt, size: 22, color: Colors.black),
+                    child: Icon(PhosphorIconsLight.paperPlaneTilt, size: 22, color: context.colors.headline),
                   ),
                 ),
               ),
@@ -380,11 +381,11 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.surfaceWhite,
                       shape: BoxShape.circle,
                       boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: const Icon(PhosphorIconsLight.pencilSimple, size: 22, color: Colors.black),
+                    child: Icon(PhosphorIconsLight.pencilSimple, size: 22, color: context.colors.headline),
                   ),
                 ),
               ),

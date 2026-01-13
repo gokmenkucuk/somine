@@ -389,26 +389,36 @@ class ProfileScreen extends StatelessWidget {
   // --- Helpers ---
 
   Widget _buildMembershipCard(BuildContext context, {required bool isPro}) {
-    // Single Gradient for Background (Oil Green)
-    final backgroundGradient = LinearGradient(
-      colors: [context.colors.primary, context.colors.secondary], // Oil Green
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  
+  // Gradient like Tümü button for Midnight, solid for Air
+  final backgroundGradient = isDark 
+      ? LinearGradient(
+          colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        )
+      : LinearGradient(
+          colors: [context.colors.primary, context.colors.secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colors.surfaceWhite,
-        gradient: backgroundGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.primary.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+  return Container(
+    decoration: BoxDecoration(
+      gradient: backgroundGradient,
+      borderRadius: BorderRadius.circular(20),
+      border: isDark ? Border.all(color: context.colors.secondary.withOpacity(0.3), width: 1) : null,
+      boxShadow: [
+        BoxShadow(
+          color: isDark 
+              ? context.colors.secondary.withOpacity(0.35) 
+              : context.colors.primary.withOpacity(0.3),
+          blurRadius: 15,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(

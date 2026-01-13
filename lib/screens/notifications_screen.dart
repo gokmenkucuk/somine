@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -9,19 +10,19 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.backgroundTop,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.backgroundTop,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.colors.headline, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Bilgilendirme Merkezi",
           style: GoogleFonts.poppins(
-            color: const Color(0xFF111827),
+            color: context.colors.headline,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -34,6 +35,7 @@ class NotificationsScreen extends StatelessWidget {
           FadeInUp(
             delay: const Duration(milliseconds: 100),
             child: _buildNotificationItem(
+              context,
               icon: CupertinoIcons.info,
               iconColor: const Color(0xFF3B82F6), // Blue
               title: "Panonuzda bekleyen içerik var",
@@ -47,6 +49,7 @@ class NotificationsScreen extends StatelessWidget {
           FadeInUp(
             delay: const Duration(milliseconds: 200),
             child: _buildNotificationItem(
+              context,
               icon: CupertinoIcons.checkmark_alt,
               iconColor: const Color(0xFF10B981), // Green
               title: "İçe aktarım tamamlandı",
@@ -60,6 +63,7 @@ class NotificationsScreen extends StatelessWidget {
           FadeInUp(
             delay: const Duration(milliseconds: 300),
             child: _buildNotificationItem(
+              context,
               icon: CupertinoIcons.sparkles,
               iconColor: const Color(0xFF8B5CF6), // Purple
               title: "Haftalık Özet",
@@ -73,7 +77,8 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationItem({
+  Widget _buildNotificationItem(
+    BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -81,13 +86,16 @@ class NotificationsScreen extends StatelessWidget {
     required String time,
     required bool isUnread,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isUnread ? const Color(0xFFF3F4F6) : Colors.white, // Highlight unread
+        color: isUnread 
+            ? (isDark ? context.colors.surfaceWhite.withOpacity(0.1) : const Color(0xFFF3F4F6))
+            : context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
+          color: isDark ? context.colors.hint.withOpacity(0.2) : const Color(0xFFE5E7EB),
           width: 1,
         ),
         boxShadow: [
@@ -124,7 +132,7 @@ class NotificationsScreen extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF111827),
+                          color: context.colors.headline,
                         ),
                       ),
                     ),
@@ -132,7 +140,7 @@ class NotificationsScreen extends StatelessWidget {
                       time,
                       style: GoogleFonts.poppins(
                         fontSize: 11,
-                        color: const Color(0xFF9CA3AF),
+                        color: context.colors.hint,
                       ),
                     ),
                   ],
@@ -142,7 +150,7 @@ class NotificationsScreen extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    color: const Color(0xFF4B5563),
+                    color: context.colors.body,
                     height: 1.4,
                   ),
                 ),

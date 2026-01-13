@@ -651,7 +651,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   Widget _buildLoadingState() {
     return Container(
       key: const ValueKey('loading'),
-      color: Colors.white,
+      color: context.colors.surfaceWhite,
       width: double.infinity,
       height: double.infinity,
       child: Column(
@@ -713,7 +713,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           key: const ValueKey('platform'),
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white, // Fallback
+            color: context.colors.surfaceWhite, // Fallback
             borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
               colors: animate 

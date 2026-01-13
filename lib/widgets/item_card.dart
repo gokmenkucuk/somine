@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -20,7 +21,7 @@ class ItemCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(20), // More rounded like reference
           boxShadow: [
              BoxShadow(
@@ -53,7 +54,7 @@ class ItemCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: context.colors.surfaceWhite.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                     ),
                     child: _getSourceIcon(item.url),

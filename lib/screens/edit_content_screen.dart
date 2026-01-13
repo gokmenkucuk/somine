@@ -529,7 +529,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       stageHeight = size.height * 0.75;
     }
 
-    final hasImage = _ogMetadata?.imageUrl != null;
+    // Use ogMetadata image first, fallback to original item image
+    final imageUrl = _ogMetadata?.imageUrl ?? widget.item.displayImage;
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
@@ -543,7 +545,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             child: hasImage
-                    ? _buildImageBackground()
+                    ? _buildImageBackground(imageUrl!)
                     : _buildPlatformBackground(animate: _isLoadingMetadata),
           ),
           
@@ -628,12 +630,12 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     );
   }
 
-  Widget _buildImageBackground() {
+  Widget _buildImageBackground(String imageUrl) {
     return Stack(
       fit: StackFit.expand,
       children: [
         CachedNetworkImage(
-          imageUrl: _ogMetadata!.imageUrl!,
+          imageUrl: imageUrl,
           fit: BoxFit.cover,
           alignment: Alignment.center,
           placeholder: (context, url) => _buildPlatformBackground(animate: true),

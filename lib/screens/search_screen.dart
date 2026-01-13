@@ -92,7 +92,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
 
   Future<void> _loadHistory() async {
-    final history = await _prefsService.getSearchHistory();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    final history = await _prefsService.getSearchHistoryFirebase(user.uid);
     if (mounted) {
       setState(() {
         _recentSearches = history;
@@ -102,7 +105,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _addToHistory(String term) async {
     if (term.trim().isEmpty) return;
-    await _prefsService.addSearchTerm(term.trim());
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    await _prefsService.addSearchTermFirebase(user.uid, term.trim());
     _loadHistory();
   }
 
@@ -163,13 +169,19 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _removeSearchItem(int index) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
     final term = _recentSearches[index];
-    await _prefsService.removeSearchTerm(term);
+    await _prefsService.removeSearchTermFirebase(user.uid, term);
     _loadHistory();
   }
 
   void _clearAllSearches() async {
-    await _prefsService.clearSearchHistory();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    await _prefsService.clearSearchHistoryFirebase(user.uid);
     _loadHistory();
   }
 
@@ -214,7 +226,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade500,
+                                  color: context.colors.hint,
                                 ),
                               ),
                             ),
@@ -332,7 +344,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(28), // Inner Radius
         ),
         child: ClipRRect(
@@ -341,12 +353,12 @@ class _SearchScreenState extends State<SearchScreen> {
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              style: GoogleFonts.poppins(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w500),
+              style: GoogleFonts.poppins(color: context.colors.headline, fontSize: 15, fontWeight: FontWeight.w500),
               cursorColor: const Color(0xFF6E8E91), // Match cursor to theme
               decoration: InputDecoration(
                 hintText: "Aramak için bir şeyler yaz...",
-                hintStyle: GoogleFonts.poppins(color: Colors.black54, fontSize: 15, fontWeight: FontWeight.w400),
-                prefixIcon: const Padding(padding: EdgeInsets.only(left: 20, right: 14), child: Icon(CupertinoIcons.search, color: Colors.black, size: 22)),
+                hintStyle: GoogleFonts.poppins(color: context.colors.hint, fontSize: 15, fontWeight: FontWeight.w400),
+                prefixIcon: Padding(padding: const EdgeInsets.only(left: 20, right: 14), child: Icon(CupertinoIcons.search, color: context.colors.iconActive, size: 22)),
                 prefixIconConstraints: const BoxConstraints(minWidth: 56),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? Padding(
@@ -384,7 +396,7 @@ class _SearchScreenState extends State<SearchScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -420,14 +432,14 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Divider(height: 1, color: Colors.grey.shade50),
+            Divider(height: 1, color: context.colors.hint.withOpacity(0.2)),
             Flexible(
               child: ListView.separated(
                 physics: const BouncingScrollPhysics(),
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: _recentSearches.length,
-                separatorBuilder: (c, i) => Divider(height: 1, color: Colors.grey[50]),
+                separatorBuilder: (c, i) => Divider(height: 1, color: context.colors.hint.withOpacity(0.2)),
                 itemBuilder: (context, index) {
                   return FadeInUp(
                     delay: Duration(milliseconds: 300 + (index * 60)),
@@ -494,7 +506,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   end: Alignment.bottomRight,
                 )
               : null,
-          color: isSelected ? null : Colors.white,
+          color: isSelected ? null : context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(30),
           // Border only for unselected
           border: isSelected
@@ -518,14 +530,14 @@ class _SearchScreenState extends State<SearchScreen> {
               icon,
               size: 18,
               // White icon when selected
-              color: isSelected ? Colors.white : const Color(0xFF6B7280), 
+              color: isSelected ? Colors.white : context.colors.hint, 
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.poppins(
                 // White text when selected
-                color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                color: isSelected ? Colors.white : context.colors.hint,
                 // Lighter font weight as requested
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
                 fontSize: 14,
@@ -576,8 +588,8 @@ class _SearchScreenState extends State<SearchScreen> {
               fit: BoxFit.cover, 
               alignment: Alignment.center,
               placeholder: (context, url) => Container(
-                color: Colors.grey[100],
-                child: Center(child: Icon(PhosphorIconsLight.image, size: 32, color: Colors.grey[300])),
+                color: context.colors.surfaceWhite,
+                child: Center(child: Icon(PhosphorIconsLight.image, size: 32, color: context.colors.hint)),
               ),
               errorWidget: (context, url, error) => _buildFallbackView(source),
             )
@@ -595,7 +607,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Colors.grey.shade100,
+        color: context.colors.surfaceWhite,
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: ClipRRect(
@@ -639,18 +651,14 @@ class _SearchScreenState extends State<SearchScreen> {
                               item.displayTitle, 
                               maxLines: 1, 
                               overflow: TextOverflow.ellipsis, 
-                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade800)
+                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.headline)
                             ),
                             Text(
                               badgeText, 
-                              style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: Colors.grey.shade500)
+                              style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: context.colors.hint)
                             ),
                           ],
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () => ItemDetailBottomSheet.show(context, item, badgeText, _categories),
-                        child: Icon(PhosphorIconsLight.dotsThreeCircle, size: 20, color: Colors.grey.shade600),
                       ),
                     ],
                   ),
@@ -679,7 +687,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return Container(
-       color: Colors.white, // White background
+       color: context.colors.surfaceWhite, // Theme-aware background
        child: Center(
          child: ShaderMask(
            shaderCallback: (bounds) => LinearGradient(
@@ -805,7 +813,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -837,7 +845,7 @@ class _SearchScreenState extends State<SearchScreen> {
                    style: GoogleFonts.poppins(
                      fontSize: 15,
                      fontWeight: FontWeight.w600,
-                     color: const Color(0xFF1F2937),
+                     color: context.colors.headline,
                    ),
                  ),
                  const SizedBox(height: 6),
@@ -846,7 +854,7 @@ class _SearchScreenState extends State<SearchScreen> {
                    style: GoogleFonts.poppins(
                      fontSize: 13,
                      fontWeight: FontWeight.w400,
-                     color: const Color(0xFF6B7280),
+                     color: context.colors.body,
                      height: 1.5,
                    ),
                  ),

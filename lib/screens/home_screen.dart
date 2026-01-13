@@ -191,6 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 0: Feed
           ItemFeedScreen(
             onSearchTap: () => _onItemTapped(1), // Switch to Search Tab
+            onCatalogTap: () => _onItemTapped(2), // Switch to Catalog Tab
           ),
           
           // 1: Search

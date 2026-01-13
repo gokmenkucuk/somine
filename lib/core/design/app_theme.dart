@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/theme_provider.dart'; // Import Enum
 import 'app_colors.dart';
@@ -53,7 +54,7 @@ class AppTheme {
         onError: Colors.white,
       ),
       textTheme: _buildTextTheme(AppColors.headline, AppColors.body),
-      appBarTheme: _buildAppBarTheme(AppColors.headline),
+      appBarTheme: _buildAppBarTheme(AppColors.headline, brightness: Brightness.light),
       cardTheme: _buildCardTheme(AppColors.surfaceWhite),
       inputDecorationTheme: _buildInputTheme(AppColors.surfaceWhite, AppColors.primary),
       elevatedButtonTheme: _buildElevatedButtonTheme(AppColors.primary, Colors.white),
@@ -108,7 +109,7 @@ class AppTheme {
         onError: Colors.white,
       ),
       textTheme: _buildTextTheme(textLight, textDim),
-      appBarTheme: _buildAppBarTheme(textLight),
+      appBarTheme: _buildAppBarTheme(textLight, brightness: Brightness.dark),
       cardTheme: _buildCardTheme(surfaceDark),
       inputDecorationTheme: _buildInputTheme(surfaceDark, primaryColor),
       elevatedButtonTheme: _buildElevatedButtonTheme(primaryColor, const Color(0xFF0F172A)),
@@ -159,7 +160,7 @@ class AppTheme {
         onError: Colors.white,
       ),
       textTheme: _buildTextTheme(textDark, Colors.grey.shade700),
-      appBarTheme: _buildAppBarTheme(textDark),
+      appBarTheme: _buildAppBarTheme(textDark, brightness: Brightness.light),
       cardTheme: _buildCardTheme(Colors.white),
       inputDecorationTheme: _buildInputTheme(Colors.white, primaryVibe),
       elevatedButtonTheme: _buildElevatedButtonTheme(primaryVibe, Colors.white),
@@ -185,7 +186,7 @@ class AppTheme {
     );
   }
 
-  static AppBarTheme _buildAppBarTheme(Color color) {
+  static AppBarTheme _buildAppBarTheme(Color color, {Brightness brightness = Brightness.light}) {
     return AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -195,6 +196,9 @@ class AppTheme {
         fontSize: 18,
         fontWeight: FontWeight.w600,
       ),
+      systemOverlayStyle: brightness == Brightness.dark 
+          ? SystemUiOverlayStyle.light // Light icons for dark backgrounds
+          : SystemUiOverlayStyle.dark,  // Dark icons for light backgrounds
     );
   }
 

@@ -291,7 +291,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ? hoverBorder // Accent Border on Hover
                   : (isSelected 
                       ? Border.all(color: context.colors.primary, width: 2) 
-                      : Border.all(color: Colors.white.withOpacity(0.2), width: 1)),
+                      : Border.all(color: context.colors.surfaceWhite.withOpacity(0.2), width: 1)),
            );
            childContent = Stack(
               children: [
@@ -339,7 +339,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                      child: Container(
                        decoration: BoxDecoration(
                          borderRadius: BorderRadius.circular(21),
-                         color: Colors.white, // Gap color
+                         color: context.colors.backgroundBottom, // Gap color matches background
                        ),
                        padding: const EdgeInsets.all(2.5), // Gap Width
                        child: Container(
@@ -405,7 +405,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                      child: Container(
                        decoration: BoxDecoration(
                          borderRadius: BorderRadius.circular(21),
-                         color: Colors.white, // Contrast Gap
+                         color: context.colors.backgroundBottom, // Contrast Gap matches background
                        ),
                        padding: const EdgeInsets.all(2.5),
                        child: Container(
@@ -473,7 +473,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                padding: EdgeInsets.all(isHovered ? 4 : 2), 
                child: Container(
                  decoration: BoxDecoration(
-                   color: Colors.white,
+                   color: context.colors.surfaceWhite,
                    borderRadius: BorderRadius.circular(18), 
                  ),
                  child: _buildShelfLabel(name, itemCount, isDarkBg: false, isSystem: false, isSelected: isSelected),
@@ -502,8 +502,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   Widget _buildShelfLabel(String name, int count, {required bool isDarkBg, required bool isSystem, required bool isSelected}) {
      Color textColor = isDarkBg ? Colors.white : context.colors.headline;
-     Color badgeBg = isDarkBg ? Colors.white.withOpacity(0.9) : const Color(0xFFF3F4F6);
-     Color badgeText = isDarkBg ? Colors.black : context.colors.headline;
+     Color badgeBg = Colors.white.withOpacity(0.9); // Always white for consistency
+     Color badgeText = Colors.black87; // Always dark text for readability
      
      return Stack(
        children: [
@@ -575,7 +575,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
              height: 60, // Fixed height to match others (approx)
              margin: const EdgeInsets.only(right: 20, bottom: 8),
              decoration: BoxDecoration(
-               color: Colors.white,
+               color: Theme.of(context).brightness == Brightness.dark ? Colors.white : context.colors.surfaceWhite,
                shape: BoxShape.circle,
                border: Border.all(color: Colors.grey.shade200, width: 1.5),
                boxShadow: [
@@ -770,7 +770,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.surfaceWhite,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24), // Wider Dialog
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text("Koleksiyon Adı", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
@@ -779,15 +779,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           autofocus: true,
           decoration: InputDecoration(
             hintText: "Yeni isim girin",
+            hintStyle: TextStyle(color: context.colors.hint),
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: context.colors.backgroundTop,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Vazgeç", style: GoogleFonts.outfit(color: Colors.grey)),
+            child: Text("Vazgeç", style: GoogleFonts.outfit(color: context.colors.hint)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -800,7 +801,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               backgroundColor: context.colors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text("Kaydet", style: GoogleFonts.outfit(color: Colors.white)),
+            child: Text("Kaydet", style: GoogleFonts.outfit(color: Colors.white)), // Button text stays white usually
           ),
         ],
       ),
@@ -1062,7 +1063,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.surfaceWhite,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24), // Wider Dialog
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
@@ -1085,9 +1086,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 style: GoogleFonts.poppins(color: context.colors.headline),
                 decoration: InputDecoration(
                    hintText: "Koleksiyon Adı (Örn: Tatil Planı)",
-                   hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
+                   hintStyle: GoogleFonts.poppins(color: context.colors.hint, fontSize: 14),
                    filled: true,
-                   fillColor: Colors.grey.shade50,
+                   fillColor: context.colors.backgroundTop,
                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
@@ -1140,14 +1141,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         );
                         if (context.mounted) Navigator.pop(context);
                         
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Koleksiyon oluşturuldu", style: GoogleFonts.poppins()), 
-                            backgroundColor: context.colors.primary,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          )
-                        );
+                        // Show success bottom sheet
+                        if (context.mounted) {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (ctx) => _SuccessBottomSheet(
+                              title: "Başarılı!",
+                              message: "Koleksiyon oluşturuldu",
+                            ),
+                          );
+                        }
                       } catch (e) {
                          // Error
                       }
@@ -1189,35 +1194,41 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.surfaceWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          "Koleksiyonu Sil?",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: context.colors.headline),
-          textAlign: TextAlign.center,
+        title: Center(
+          child: Text(
+            "Koleksiyonu Sil?",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: context.colors.headline,
+            ),
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               "'$categoryName' silinecek.",
-              style: GoogleFonts.poppins(fontSize: 14, color: context.colors.headline, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: context.colors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                   Icon(PhosphorIconsFill.info, color: Colors.amber.shade700, size: 20),
+                   Icon(PhosphorIconsFill.info, color: context.colors.primary, size: 20),
                    const SizedBox(width: 8),
                    Expanded(
                      child: Text(
-                       "İçerikler silinmez, 'Gelen Kutusu'na taşınır.",
-                       style: GoogleFonts.poppins(fontSize: 12, color: Colors.amber.shade900),
+                       "İçerikler silinmez, 'Hızlı' koleksiyonuna taşınır.",
+                       style: GoogleFonts.poppins(fontSize: 12, color: context.colors.headline),
                      ),
                    ),
                 ],
@@ -1225,31 +1236,38 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         actions: [
           Row(
             children: [
               Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
+                child: InkWell(
+                  onTap: () => Navigator.pop(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.grey.shade300, Colors.grey.shade400],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Vazgeç",
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Text("İptal", style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade50,
-                    foregroundColor: Colors.red,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
+                child: InkWell(
+                  onTap: () async {
                      final userId = _currentUserId;
                      if (userId == null) return;
                      
@@ -1267,10 +1285,170 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                        // Error
                      }
                   },
-                  child: Text("Sil", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF5252), Color(0xFFD32F2F)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Sil",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============== SUCCESS BOTTOM SHEET ==============
+class _SuccessBottomSheet extends StatefulWidget {
+  final String title;
+  final String message;
+
+  const _SuccessBottomSheet({
+    super.key,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  State<_SuccessBottomSheet> createState() => _SuccessBottomSheetState();
+}
+
+class _SuccessBottomSheetState extends State<_SuccessBottomSheet> {
+  @override
+  void initState() {
+    super.initState();
+    // Auto-dismiss after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            context.colors.primary,
+            context.colors.secondary,
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(32, 16, 32, 56),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Drag Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Icon Circle
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      PhosphorIconsBold.check,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  widget.title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Message
+                Text(
+                  widget.message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withOpacity(0.9),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+
+          // Close Button
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.pop(context),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    PhosphorIconsLight.x,
+                    size: 20,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

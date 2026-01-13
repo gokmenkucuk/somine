@@ -25,8 +25,9 @@ enum ViewMode { square, masonry, feed }
 
 class ItemFeedScreen extends ConsumerStatefulWidget {
   final VoidCallback onSearchTap;
+  final VoidCallback onCatalogTap;
 
-  const ItemFeedScreen({super.key, required this.onSearchTap});
+  const ItemFeedScreen({super.key, required this.onSearchTap, required this.onCatalogTap});
 
   @override
   ConsumerState<ItemFeedScreen> createState() => _ItemFeedScreenState();
@@ -242,7 +243,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: context.colors.surfaceWhite, borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(
+                          color: context.colors.surfaceWhite, 
+                          borderRadius: BorderRadius.circular(12),
+                          border: Theme.of(context).brightness == Brightness.light 
+                              ? Border.all(color: Colors.grey.shade300, width: 0.5)
+                              : null,
+                        ),
                         child: Row(
                           children: [
                             _buildViewModeButton(icon: PhosphorIconsLight.squaresFour, mode: ViewMode.square),
@@ -253,13 +260,16 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                           ],
                         ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text("Tümü", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: context.colors.headline)),
-                          const SizedBox(width: 4),
-                          Icon(PhosphorIconsLight.caretRight, size: 14, color: context.colors.hint),
-                        ],
+                      GestureDetector(
+                        onTap: widget.onCatalogTap,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text("Tümü", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: context.colors.headline)),
+                            const SizedBox(width: 4),
+                            Icon(PhosphorIconsLight.caretRight, size: 14, color: context.colors.hint),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -341,6 +351,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       padding: const EdgeInsets.only(right: 12.0),
       child: GestureDetector(
         onTap: () {
+          // Trigger skeleton loading for smooth transition
+          if (ref.read(selectedCategoryIdProvider) != category?.id) {
+            setState(() {
+              _contentOpacity = 0.0; // Show skeleton
+              _lastItemCount = 0; // Reset item count to re-trigger fade-in
+            });
+          }
           ref.read(selectedCategoryIdProvider.notifier).state = category?.id;
         },
         child: AnimatedContainer(
@@ -350,15 +367,20 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             gradient: isSelected
-                ? LinearGradient(colors: [context.colors.primary.withOpacity(0.1), context.colors.surfaceWhite], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                ? LinearGradient(
+                    colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
                 : null,
             color: isSelected ? null : context.colors.surfaceWhite,
             borderRadius: BorderRadius.circular(30),
-            border: isSelected
-                ? Border.all(color: context.colors.surfaceWhite.withOpacity(0.5), width: 1)
-                : Border.all(color: context.colors.hint.withOpacity(0.2), width: 1.5),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : context.colors.secondary,
+              width: 1.5,
+            ),
             boxShadow: isSelected
-                ? [BoxShadow(color: context.colors.primary.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))]
+                ? [BoxShadow(color: context.colors.secondary.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))]
                 : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
           ),
           child: Text(
