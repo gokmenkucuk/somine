@@ -276,7 +276,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                     const SizedBox(height: 8),
                                     Text(
                                       widget.item.displayTitle,
-                                      style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.headline),
+                                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.headline),
                                     ),
 
                                     const SizedBox(height: 24),

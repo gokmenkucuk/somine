@@ -229,7 +229,7 @@ class ItemDetailScreen extends ConsumerWidget {
                      item.displayTitle,
                      style: GoogleFonts.poppins(
                        fontSize: 24,
-                       fontWeight: FontWeight.bold,
+                       fontWeight: FontWeight.w500,
                        color: DesignTokens.textPrimary,
                        height: 1.3,
                      ),

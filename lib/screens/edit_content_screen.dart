@@ -545,7 +545,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                     : _buildPlatformBackground(animate: _isLoadingMetadata),
           ),
           
-          if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
+          if (_hasLink || _isManualEntry)
             Positioned(
               top: MediaQuery.of(context).padding.top + 16,
               right: 16,
