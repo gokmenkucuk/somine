@@ -108,13 +108,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     // });
 
     return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [context.colors.backgroundTop, context.colors.backgroundBottom],
-          ),
-        ),
+        color: Colors.transparent,
         child: SafeArea(
           bottom: false,
           child: Column(

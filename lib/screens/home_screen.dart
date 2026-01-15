@@ -5,8 +5,9 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 
 import 'package:somine_app/core/design/app_colors_extension.dart';
-// import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/providers/theme_provider.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/widgets/vibe_background.dart';
 import 'package:somine_app/screens/item_feed_screen.dart';
 import 'package:somine_app/screens/search_screen.dart';
 import 'package:somine_app/screens/profile_screen.dart';
@@ -85,8 +86,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return _selectedIndex == index ? context.colors.primary : context.colors.iconInactive; 
     }
 
+    // Check if Vibe theme is active
+    final isVibeTheme = ref.watch(themeProvider) == AppThemeEnum.vibe;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isVibeTheme ? const Color(0xFF0A0A12) : context.colors.backgroundBottom,
       extendBody: true, // Important for floating dock style
 
       // FAB for Adding Content
@@ -185,25 +189,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
 
       // Main Content Switching
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          // 0: Feed
-          ItemFeedScreen(
-            onSearchTap: () => _onItemTapped(1), // Switch to Search Tab
-            onCatalogTap: () => _onItemTapped(2), // Switch to Catalog Tab
-          ),
-          
-          // 1: Search
-          const SearchScreen(),
-
-          // 2: Catalog
-          const CatalogScreen(),
-
-          // 3: Profile
-          const ProfileScreen(),
-        ],
-      ),
+      body: _buildBody(isVibeTheme),
     );
+  }
+
+  Widget _buildBody(bool isVibeTheme) {
+    final content = IndexedStack(
+      index: _selectedIndex,
+      children: [
+        // 0: Feed
+        ItemFeedScreen(
+          onSearchTap: () => _onItemTapped(1), // Switch to Search Tab
+          onCatalogTap: () => _onItemTapped(2), // Switch to Catalog Tab
+        ),
+        
+        // 1: Search
+        const SearchScreen(),
+
+        // 2: Catalog
+        const CatalogScreen(),
+
+        // 3: Profile
+        const ProfileScreen(),
+      ],
+    );
+
+    // Wrap with VibeBackground for Vibe theme
+    if (isVibeTheme) {
+      return VibeBackground(child: content);
+    }
+    return content;
   }
 }

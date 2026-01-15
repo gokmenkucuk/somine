@@ -15,7 +15,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.colors.backgroundBottom,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [

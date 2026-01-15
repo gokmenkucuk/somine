@@ -121,48 +121,51 @@ class AppTheme {
     );
   }
 
-  // ================= VIBE THEME (Colorful) =================
+  // ================= VIBE THEME (Dark Navy to Pink/Red Gradient) =================
   static ThemeData get _vibeTheme {
-    // Placeholder Colors for Vibe - To be updated by User
-    const bgVibe = Color(0xFFFFFFFF);
-    const primaryVibe = Color(0xFFFF4081); // Pink accent example
-    const secondaryVibe = Color(0xFFFFD740); // Amber
-    const textDark = Color(0xFF212121);
+    // Vibe Palette - Dark with Red/Pink accents
+    const bgVibe = Color(0xFF1A2A3A); // Dark Navy
+    const surfaceVibe = Color(0xFF2A3A4A); // Slightly lighter for cards
+    const primaryVibe = Color(0xFFE86B8A); // Soft Red/Pink
+    const secondaryVibe = Color(0xFF5A8AB5); // Blue accent
+    const textLight = Color(0xFFF5F5F5); // Light text
+    const textDim = Color(0xFFB0C0C8); // Dim text
+    const iconDim = Color(0xFF7A9AA8);
     
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: bgVibe,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: Colors.transparent, // Transparent for gradient
       extensions: [
         AppColorsExtension(
           backgroundTop: bgVibe,
-          backgroundBottom: Colors.white,
+          backgroundBottom: const Color(0xFFE8B8A8), // Light Salmon
           primary: primaryVibe,
           secondary: secondaryVibe,
           accentDark: primaryVibe,
-          headline: textDark,
-          body: Colors.grey.shade700,
-          hint: Colors.grey.shade400,
+          headline: textLight,
+          body: textDim,
+          hint: iconDim,
           iconActive: primaryVibe,
-          iconInactive: Colors.grey.shade400,
-          surfaceWhite: Colors.white,
-          premiumShadow: primaryVibe.withOpacity(0.2),
+          iconInactive: iconDim,
+          surfaceWhite: surfaceVibe,
+          premiumShadow: primaryVibe.withOpacity(0.3),
         ),
       ],
-      colorScheme: const ColorScheme.light(
+      colorScheme: const ColorScheme.dark(
         primary: primaryVibe,
         secondary: secondaryVibe,
-        surface: Colors.white,
+        surface: surfaceVibe,
         error: Colors.redAccent,
         onPrimary: Colors.white,
-        onSecondary: Colors.black,
-        onSurface: textDark,
+        onSecondary: Colors.white,
+        onSurface: textLight,
         onError: Colors.white,
       ),
-      textTheme: _buildTextTheme(textDark, Colors.grey.shade700),
-      appBarTheme: _buildAppBarTheme(textDark, brightness: Brightness.light),
-      cardTheme: _buildCardTheme(Colors.white),
-      inputDecorationTheme: _buildInputTheme(Colors.white, primaryVibe),
+      textTheme: _buildTextTheme(textLight, textDim),
+      appBarTheme: _buildAppBarTheme(textLight, brightness: Brightness.dark),
+      cardTheme: _buildCardTheme(surfaceVibe),
+      inputDecorationTheme: _buildInputTheme(surfaceVibe, primaryVibe),
       elevatedButtonTheme: _buildElevatedButtonTheme(primaryVibe, Colors.white),
       textButtonTheme: _buildTextButtonTheme(primaryVibe),
     );

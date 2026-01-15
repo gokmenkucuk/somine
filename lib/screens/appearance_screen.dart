@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
+import 'package:somine_app/widgets/vibe_background.dart';
 
 class AppearanceScreen extends ConsumerWidget {
   const AppearanceScreen({super.key});
@@ -11,9 +12,13 @@ class AppearanceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeProvider);
+    final isVibe = currentTheme == AppThemeEnum.vibe;
 
-    return Scaffold(
+    Widget content = Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text("Görünüm"),
         centerTitle: true,
       ),
@@ -77,13 +82,14 @@ class AppearanceScreen extends ConsumerWidget {
               theme: AppThemeEnum.vibe,
               currentTheme: currentTheme,
               title: "Vibe",
-              subtitle: "Canlı renkler ve enerjik tasarım.",
+              subtitle: "Koyu zemin, kırmızı ışıltı.",
               icon: PhosphorIconsRegular.sparkle,
               gradient: const LinearGradient(
-                colors: [Color(0xFFFFF0F5), Colors.white], // Pink tint
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0A0A12), Color(0xFFC41E3A)], // Dark with red glow
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              isDark: true,
             ),
 
             const SizedBox(height: 32),
@@ -112,6 +118,9 @@ class AppearanceScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    // Wrap with VibeBackground when Vibe theme is active
+    return isVibe ? VibeBackground(child: content) : content;
   }
 
   Widget _buildThemeOption({

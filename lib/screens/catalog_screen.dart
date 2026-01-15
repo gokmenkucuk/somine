@@ -68,7 +68,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final itemsAsync = ref.watch(catalogItemsProvider);
 
     return Scaffold(
-      backgroundColor: context.colors.backgroundBottom, // Soft background
+      backgroundColor: Colors.transparent, // Transparent for VibeBackground
       body: SafeArea(
         bottom: false,
         child: Column(

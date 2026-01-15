@@ -188,17 +188,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [context.colors.backgroundTop, context.colors.backgroundBottom],
-            stops: const [0.3, 1.0],
-          ),
-        ),
+        color: Colors.transparent,
         child: SafeArea(
           child: Stack(
             children: [
