@@ -55,6 +55,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Gizli kasayı açmak için Face ID kullanılır.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app uses the local network to discover devices and services.</string>
 	<key>NSBonjourServices</key>

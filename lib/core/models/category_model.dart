@@ -7,6 +7,7 @@ class CategoryModel {
   final String? icon; // emoji or icon name
   final String? color; // hex color
   final int order;
+  final bool isVault; // Locked with FaceID/TouchID
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -17,6 +18,7 @@ class CategoryModel {
     this.icon,
     this.color,
     this.order = 0,
+    this.isVault = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -31,6 +33,7 @@ class CategoryModel {
       icon: data['icon'] as String?,
       color: data['color'] as String?,
       order: data['order'] as int? ?? 0,
+      isVault: data['isVault'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
@@ -44,6 +47,7 @@ class CategoryModel {
       'icon': icon,
       'color': color,
       'order': order,
+      'isVault': isVault,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -57,6 +61,7 @@ class CategoryModel {
     String? icon,
     String? color,
     int? order,
+    bool? isVault,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -67,6 +72,7 @@ class CategoryModel {
       icon: icon ?? this.icon,
       color: color ?? this.color,
       order: order ?? this.order,
+      isVault: isVault ?? this.isVault,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

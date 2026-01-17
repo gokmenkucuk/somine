@@ -14,6 +14,8 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
+import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'dart:ui';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
@@ -890,18 +892,27 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           icon = PhosphorIconsBold.linkedinLogo;
        }
 
-       return Container(
-          color: context.colors.surfaceWhite,
-          child: Center(
-            child: ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: gradientColors,
+       return AspectRatio(
+         aspectRatio: 1.0, // Square container for equal spacing
+         child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-              ).createShader(bounds),
-              child: Icon(icon, size: 48, color: Colors.white),
+              ),
             ),
-          ),
+            child: Center(
+              child: ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Icon(icon, size: 48, color: Colors.white),
+              ),
+            ),
+         ),
        );
     }
 
@@ -1058,6 +1069,21 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showAddCategoryDialog() {
+    // Check subscription limit
+    final subscriptionState = ref.read(subscriptionProvider);
+    final categories = ref.read(categoriesProvider).valueOrNull ?? [];
+    
+    if (!subscriptionState.isPremium && categories.length >= 3) {
+      // Show limit reached dialog
+      showLimitReachedDialog(
+        context,
+        type: LimitType.collection,
+        currentCount: categories.length,
+        maxCount: 3,
+      );
+      return;
+    }
+    
     final TextEditingController _controller = TextEditingController();
     
     showDialog(

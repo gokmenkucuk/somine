@@ -54,6 +54,11 @@ dependencies:
   share_plus: ^12.0.1
   firebase_storage: ^12.4.10
   shared_preferences: ^2.5.3
+  
+  # Subscription & Premium Features
+  purchases_flutter: ^8.0.0        # RevenueCat
+  local_auth: ^2.3.0               # FaceID/TouchID for Vault
+  flutter_dynamic_icon: ^2.1.0     # App icon switching
 
 dev_dependencies:
   flutter_test:

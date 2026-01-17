@@ -127,17 +127,12 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
   Widget _buildFallbackHeader(IconData icon) {
     return Container(
-      color: const Color(0xFFF9FAFB),
+      width: double.infinity,
+      height: double.infinity,
+      padding: const EdgeInsets.only(top: 48), // Push icon down from top
+      color: context.colors.surfaceWhite,
       child: Center(
-        child: ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppColors.primary, Color(0xFF6FBFAC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: Icon(icon, size: 96, color: Colors.white),
-        ),
+        child: Icon(icon, size: 56, color: context.colors.primary),
       ),
     );
   }
@@ -150,7 +145,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     
     // Dynamic Header Calculation
     double headerRatio = 0.45;
-    if (_imageAspectRatio != null) {
+    if (!hasImage) {
+      // Square header for non-image content with centered icon
+      headerRatio = 0.45;
+    } else if (_imageAspectRatio != null) {
       final screenWidth = MediaQuery.of(context).size.width;
       final screenHeight = MediaQuery.of(context).size.height;
       final desiredHeight = screenWidth / _imageAspectRatio!;
@@ -169,15 +167,15 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     );
 
     return DraggableScrollableSheet(
-      initialChildSize: hasImage ? 1.0 : 0.85,
+      initialChildSize: 1.0, // Always full to show header properly
       minChildSize: 0.25, // Lowered to allow drag down
       maxChildSize: 1.0,
       snap: false, // Disabled snap to prevent sticking in middle
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.transparent, 
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite, // Solid background, not transparent
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Stack(
             children: [
@@ -196,6 +194,8 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                   imageUrl: widget.item.displayImage!,
                                   fit: BoxFit.cover,
                                   alignment: Alignment.topCenter,
+                                  placeholder: (context, url) => _buildFallbackHeader(platformIcon),
+                                  errorWidget: (context, url, error) => _buildFallbackHeader(platformIcon),
                                 )
                               : Image.asset(
                                   widget.item.displayImage!,

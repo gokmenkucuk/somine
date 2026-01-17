@@ -617,16 +617,27 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       icon = PhosphorIconsBold.pinterestLogo;
     }
 
-    return Container(
-       color: context.colors.surfaceWhite, // White background
-         child: ShaderMask(
-           shaderCallback: (bounds) => LinearGradient(
-             colors: gradientColors,
+    return AspectRatio(
+      aspectRatio: 1.0, // Square container for equal spacing
+      child: Container(
+         decoration: BoxDecoration(
+           gradient: LinearGradient(
+             colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
              begin: Alignment.topLeft,
              end: Alignment.bottomRight,
-           ).createShader(bounds),
-           child: Icon(icon, size: 48, color: Colors.white),
+           ),
          ),
+         child: Center(
+           child: ShaderMask(
+             shaderCallback: (bounds) => LinearGradient(
+               colors: gradientColors,
+               begin: Alignment.topLeft,
+               end: Alignment.bottomRight,
+             ).createShader(bounds),
+             child: Icon(icon, size: 48, color: Colors.white),
+           ),
+         ),
+      ),
     );
   }
 

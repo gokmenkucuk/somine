@@ -139,7 +139,7 @@ class AppTheme {
       extensions: [
         AppColorsExtension(
           backgroundTop: bgVibe,
-          backgroundBottom: const Color(0xFFE8B8A8), // Light Salmon
+          backgroundBottom: bgVibe, // Dark Navy (matching dark theme)
           primary: primaryVibe,
           secondary: secondaryVibe,
           accentDark: primaryVibe,

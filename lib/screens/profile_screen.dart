@@ -8,12 +8,19 @@ import 'package:somine_app/screens/appearance_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:somine_app/screens/paywall_screen.dart';
+import 'package:somine_app/core/services/image_migration_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPro = ref.watch(isPremiumProvider);
+    
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -202,7 +209,7 @@ class ProfileScreen extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Membership Plan (Standalone Highlighted)
-                          _buildMembershipCard(context, isPro: true), // Mock PRO status
+                          _buildMembershipCard(context, isPro: isPro, ref: ref), // Real subscription status
 
                           const SizedBox(height: 20),
 
@@ -269,6 +276,63 @@ class ProfileScreen extends StatelessWidget {
                                 icon: CupertinoIcons.question_circle,
                                 title: "Yardım ve Destek",
                                 onTap: () {},
+                              ),
+                              _buildDivider(context),
+                              _buildMenuItem(
+                                context,
+                                icon: PhosphorIconsBold.instagramLogo,
+                                title: "Instagram Görsellerini Onar",
+                                subtitle: "Bozuk görselleri düzelt",
+                                onTap: () async {
+                                  final userId = FirebaseAuth.instance.currentUser?.uid;
+                                  if (userId == null) return;
+                                  
+                                  final migrationService = ImageMigrationService();
+                                  final count = await migrationService.getItemsNeedingMigration(userId);
+                                  
+                                  if (!context.mounted) return;
+                                  
+                                  if (count == 0) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Tüm görseller zaten düzgün!")),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  // Confirm dialog
+                                  final shouldMigrate = await showCupertinoDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => CupertinoAlertDialog(
+                                      title: const Text('Görselleri Onar'),
+                                      content: Text('$count adet Instagram görseli bulundu. Bunları kalıcı olarak kaydetmek ister misiniz? Bu işlem biraz zaman alabilir.'),
+                                      actions: [
+                                        CupertinoDialogAction(
+                                          child: const Text('İptal'),
+                                          onPressed: () => Navigator.pop(ctx, false),
+                                        ),
+                                        CupertinoDialogAction(
+                                          isDefaultAction: true,
+                                          child: const Text('Onar'),
+                                          onPressed: () => Navigator.pop(ctx, true),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  
+                                  if (shouldMigrate == true && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Görseller onarılıyor...")),
+                                    );
+                                    
+                                    final migratedCount = await migrationService.migrateInstagramImages(userId: userId);
+                                    
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text("$migratedCount görsel başarıyla onarıldı!")),
+                                      );
+                                    }
+                                  }
+                                },
                               ),
                             ],
                           ),
@@ -388,7 +452,7 @@ class ProfileScreen extends StatelessWidget {
 
   // --- Helpers ---
 
-  Widget _buildMembershipCard(BuildContext context, {required bool isPro}) {
+  Widget _buildMembershipCard(BuildContext context, {required bool isPro, required WidgetRef ref}) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   
   // Gradient like Tümü button for Midnight, solid for Air
@@ -422,7 +486,13 @@ class ProfileScreen extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {}, // Handle Tap
+          onTap: () {
+            // Navigate to Paywall
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaywallScreen()),
+            );
+          },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
