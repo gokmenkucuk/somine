@@ -119,8 +119,24 @@ class AppearanceScreen extends ConsumerWidget {
       ),
     );
 
-    // Wrap with VibeBackground when Vibe theme is active
-    return isVibe ? VibeBackground(child: content) : content;
+    // Wrap with VibeBackground when Vibe theme is active, otherwise use gradient
+    if (isVibe) {
+      return VibeBackground(child: content);
+    } else {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: content,
+      );
+    }
   }
 
   Widget _buildThemeOption({

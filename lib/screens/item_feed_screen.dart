@@ -97,6 +97,18 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final categories = categoriesAsync.value ?? [];
     final items = feedState.items;
 
+    // Ensure content is visible if items already loaded (e.g., after theme change)
+    if (items.isNotEmpty && _contentOpacity == 0.0 && !feedState.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _contentOpacity = 1.0;
+            _lastItemCount = items.length;
+          });
+        }
+      });
+    }
+
     // Force Reseed Logic - DISABLED FOR REAL DATA
     // ref.listen<AsyncValue<int>>(itemCountProvider, (previous, next) {
     //     if (next.hasValue) {
@@ -167,25 +179,28 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ShaderMask(
-                        blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: Theme.of(context).brightness == Brightness.light
-                              ? [context.colors.primary, const Color(0xFF6FBFAC)] // Air: Detail Button Gradient
-                              : [context.colors.primary, context.colors.secondary], // Midnight: Turquoise -> Blue
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: Text(
-                          "Dijital İçeriklerini\nKoleksiyona Kaydet",
-                          style: GoogleFonts.outfit(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.0,
-                            height: 1.1,
-                            color: Colors.white, 
-                          ),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final colors = Theme.of(context).brightness == Brightness.light
+                              ? [context.colors.primary, const Color(0xFF6FBFAC)]
+                              : [context.colors.primary, context.colors.secondary];
+                          
+                          return Text(
+                            "Dijital İçeriklerini\nKoleksiyona Kaydet",
+                            style: GoogleFonts.outfit(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.0,
+                              height: 1.1,
+                              foreground: Paint()
+                                ..shader = LinearGradient(
+                                  colors: colors,
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ).createShader(const Rect.fromLTWH(0, 0, 300, 80)),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -307,7 +322,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         opacity: 1.0 - _contentOpacity,
                         duration: const Duration(milliseconds: 300),
                         child: Container(
-                          color: context.colors.backgroundTop, // Match background
+                          color: Colors.transparent, // Transparent to show VibeBackground
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: _buildSkeletonOverlay(),
