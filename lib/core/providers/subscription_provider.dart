@@ -117,12 +117,14 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
   /// Check if can create collection
   bool canCreateCollection(int currentCount) {
-    return _service.canCreateCollection(currentCount);
+    return true; // TESTING: Bypass limits
+    // return _service.canCreateCollection(currentCount);
   }
 
   /// Check if can add item
   bool canAddItem(int currentItemCount) {
-    return _service.canAddItem(currentItemCount);
+    return true; // TESTING: Bypass limits
+    // return _service.canAddItem(currentItemCount);
   }
 }
 
@@ -138,7 +140,8 @@ final subscriptionProvider = StateNotifierProvider<SubscriptionNotifier, Subscri
 
 /// Convenience providers
 final isPremiumProvider = Provider<bool>((ref) {
-  return ref.watch(subscriptionProvider).isPremium;
+  return true; // TESTING: Force Premium
+  // return ref.watch(subscriptionProvider).isPremium;
 });
 
 final subscriptionTierProvider = Provider<SubscriptionTier>((ref) {

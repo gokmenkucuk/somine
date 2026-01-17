@@ -82,6 +82,7 @@ class CategoryRepository {
         'icon': category.icon,
         'color': category.color,
         'order': category.order,
+        'isVault': category.isVault,
         'updatedAt': FieldValue.serverTimestamp(),
       });
       debugPrint('✅ [CategoryRepository] Category updated: ${category.id}');

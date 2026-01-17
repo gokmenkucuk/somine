@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
@@ -124,7 +125,12 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
   // ============== BUSINESS LOGIC ==============
 
   Future<void> _loadCategories() async {
-    const userId = "user_1";
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      if (mounted) _useFallbackCategories();
+      return;
+    }
+
     try {
       final categories = await _categoryRepository.getCategories(userId);
       if (mounted) {
@@ -430,18 +436,54 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
           ? _noteController.text
           : _titleController.text;
       
-      final categoryId = _selectedCategoryIds.first; // Edit mode supports single category
+      // Multi-category logic:
+      // 1. Identify primary category (preserve original if selected, else pick first)
+      // 2. Update existing item with primary category
+      // 3. Create clones for other selected categories
+
+      final originalCatId = widget.item.categoryId;
+      final Set<String> targetIds = Set.from(_selectedCategoryIds);
+      String primaryTargetId;
+
+      if (originalCatId != null && targetIds.contains(originalCatId)) {
+        primaryTargetId = originalCatId;
+        targetIds.remove(originalCatId);
+      } else {
+        // Original category deselected -> Move to first available
+        primaryTargetId = targetIds.first;
+        targetIds.remove(primaryTargetId);
+      }
 
       final updatedItem = widget.item.copyWith(
-          categoryId: categoryId,
+          categoryId: primaryTargetId,
           type: _hasLink ? ItemType.link : ItemType.note,
           url: _hasLink ? _detectedLink : null,
           note: noteText,
           ogMetadata: _ogMetadata,
-          // displayTitle is usually derived from OG or note/url
+          updatedAt: DateTime.now(),
       );
 
       await _itemRepository.updateItem(updatedItem);
+
+      // Create clones for other categories
+      if (targetIds.isNotEmpty) {
+        final now = DateTime.now();
+        final futures = targetIds.map((catId) {
+          final clone = ItemModel(
+            id: '', // New ID
+            userId: widget.item.userId,
+            categoryId: catId,
+            type: _hasLink ? ItemType.link : ItemType.note,
+            url: _hasLink ? _detectedLink : null,
+            note: noteText,
+            ogMetadata: _ogMetadata,
+            createdAt: now,
+            updatedAt: now,
+          );
+          return _itemRepository.createItem(clone);
+        });
+        await Future.wait(futures);
+      }
 
       if (mounted) {
         Navigator.pop(context, true); // Return success to reload
@@ -849,9 +891,11 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       padding: const EdgeInsets.only(right: 10),
       child: GestureDetector(
         onTap: () => setState(() {
-          // Single select behavior for Edit
-          _selectedCategoryIds.clear();
-          _selectedCategoryIds.add(cat.id);
+          if (isSelected) {
+            _selectedCategoryIds.remove(cat.id);
+          } else {
+            _selectedCategoryIds.add(cat.id);
+          }
         }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),

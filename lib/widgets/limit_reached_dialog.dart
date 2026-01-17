@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/screens/paywall_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Type of limit reached
 enum LimitType {
@@ -30,15 +31,38 @@ Future<bool?> showLimitReachedDialog(
 }
 
 class LimitReachedDialog extends StatelessWidget {
+  static Future<bool?> show({
+    required BuildContext context,
+    required WidgetRef? ref,
+    String? title,
+    String? message,
+    required LimitType type,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => LimitReachedDialog(
+        type: type,
+        title: title,
+        description: message,
+      ),
+    );
+  }
+
   final LimitType type;
-  final int currentCount;
-  final int maxCount;
+  final int? currentCount;
+  final int? maxCount;
+  final String? title;
+  final String? description;
 
   const LimitReachedDialog({
     super.key,
     required this.type,
-    required this.currentCount,
-    required this.maxCount,
+    this.currentCount,
+    this.maxCount,
+    this.title,
+    this.description,
   });
 
   @override
@@ -74,21 +98,22 @@ class LimitReachedDialog extends StatelessWidget {
 
           // Title
           Text(
-            isCollection ? "Koleksiyon Sınırına Ulaştın" : "İçerik Sınırına Ulaştın",
+            title ?? (isCollection ? "Koleksiyon Sınırına Ulaştın" : "İçerik Sınırına Ulaştın"),
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: context.colors.headline,
             ),
+            textAlign: TextAlign.center,
           ),
 
           const SizedBox(height: 12),
 
           // Description
           Text(
-            isCollection
+            description ?? (isCollection
                 ? "Ücretsiz planda en fazla $maxCount koleksiyon oluşturabilirsin."
-                : "Her koleksiyonda en fazla $maxCount içerik ekleyebilirsin.",
+                : "Her koleksiyonda en fazla $maxCount içerik ekleyebilirsin."),
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               fontSize: 15,
@@ -99,22 +124,23 @@ class LimitReachedDialog extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Current status
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: context.colors.hint.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "$currentCount / $maxCount",
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.colors.hint,
+          // Current status (Only show if counts provided)
+          if (currentCount != null && maxCount != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: context.colors.hint.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "$currentCount / $maxCount",
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: context.colors.hint,
+                ),
               ),
             ),
-          ),
 
           const SizedBox(height: 24),
 

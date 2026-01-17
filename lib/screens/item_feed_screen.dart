@@ -18,6 +18,7 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/utils/demo_seeder.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/item_card.dart';
+import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/screens/search_screen.dart';
 
@@ -95,6 +96,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         ? '${rawName[0].toUpperCase()}${rawName.substring(1)}' 
         : rawName;
     final categories = categoriesAsync.value ?? [];
+    final allItems = ref.watch(catalogItemsProvider).value ?? [];
+
+    // Filter out empty categories (User Request)
+    final filteredCategories = categories.where((cat) {
+      return allItems.any((item) => item.categoryId == cat.id);
+    }).toList();
+
     final items = feedState.items;
 
     // Ensure content is visible if items already loaded (e.g., after theme change)
@@ -109,15 +117,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       });
     }
 
-    // Force Reseed Logic - DISABLED FOR REAL DATA
-    // ref.listen<AsyncValue<int>>(itemCountProvider, (previous, next) {
-    //     if (next.hasValue) {
-    //        DemoSeeder.seed(ref).then((_) {
-    //           ref.refresh(paginatedFeedProvider); 
-    //           ref.refresh(categoriesProvider);
-    //        });
-    //     }
-    // });
+
 
     return Container(
         color: Colors.transparent,
@@ -228,12 +228,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     clipBehavior: Clip.none,
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: categories.length + 1, 
+                    itemCount: filteredCategories.length + 1, 
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return Center(child: _buildCategoryChip(ref, null, "Tümü", selCategory == null));
                       }
-                      final cat = categories[index - 1];
+                      final cat = filteredCategories[index - 1];
                       return Center(child: _buildCategoryChip(ref, cat, cat.name, selCategory == cat.id));
                     },
                   ),
@@ -356,10 +356,33 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   }
 
   Widget _buildCategoryChip(WidgetRef ref, CategoryModel? category, String label, bool isSelected) {
+    final isVault = category?.isVault ?? false;
+    
     return Padding(
       padding: const EdgeInsets.only(right: 12.0),
       child: GestureDetector(
-        onTap: () {
+        onTap: () async {
+          // If vault category, require biometric auth first
+          if (isVault && !isSelected) {
+            final vaultService = VaultService();
+            final result = await vaultService.authenticate(
+              reason: '${category?.name ?? "Gizli Kasa"} koleksiyonuna erişmek için doğrulama yapın',
+            );
+            
+            if (result == VaultAuthResult.canceled) {
+              return; // Do nothing on cancel
+            }
+            
+            if (result != VaultAuthResult.success) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Doğrulama başarısız')),
+                );
+              }
+              return;
+            }
+          }
+          
           // Trigger skeleton loading for smooth transition
           if (ref.read(selectedCategoryIdProvider) != category?.id) {
             setState(() {
@@ -373,33 +396,52 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : context.colors.surfaceWhite,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: isSelected ? Colors.transparent : context.colors.secondary,
-              width: 1.5,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : (isVault 
+                      ? null // No gradient for unselected vault, just clear or specific style
+                      : null),
+              color: isSelected 
+                  ? null 
+                  : (isVault ? context.colors.primary.withOpacity(0.1) : context.colors.surfaceWhite),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isSelected 
+                    ? Colors.transparent 
+                    : (isVault ? context.colors.primary.withOpacity(0.5) : context.colors.secondary),
+                width: 1.5,
+              ),
+              boxShadow: isSelected
+                  ? [BoxShadow(color: context.colors.secondary.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))]
+                  : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
             ),
-            boxShadow: isSelected
-                ? [BoxShadow(color: context.colors.secondary.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))]
-                : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
-          ),
-          child: Text(
-            label, 
-            style: GoogleFonts.poppins(
-              color: isSelected ? context.colors.headline : context.colors.body,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              fontSize: 15,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isVault) ...[
+                  Icon(
+                    PhosphorIconsBold.lockKey, // Key icon as requested
+                    size: 16,
+                    color: isSelected ? context.colors.headline : context.colors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? context.colors.headline : context.colors.body,
+                  ),
+                ),
+              ],
             ),
-          ),
         ),
       ),
     );

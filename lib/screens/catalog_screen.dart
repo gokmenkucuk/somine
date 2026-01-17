@@ -16,7 +16,8 @@ import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
-import 'dart:ui';
+import 'package:somine_app/widgets/success_notification_sheet.dart';
+import 'package:somine_app/core/services/vault_service.dart';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => null);
@@ -90,16 +91,56 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       color: context.colors.headline
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _showAddCategoryDialog,
-                    child: Container(
-                       padding: const EdgeInsets.all(8),
-                       decoration: BoxDecoration(
-                         color: context.colors.primary.withOpacity(0.1),
-                         shape: BoxShape.circle,
-                       ),
-                       child: Icon(PhosphorIconsRegular.plus, size: 20, color: context.colors.primary),
-                    ),
+                  Row(
+                    children: [
+                       // VAULT TOGGLE BUTTON
+                       GestureDetector(
+                        onTap: () async {
+                          final isUnlocked = ref.read(isVaultUnlockedProvider);
+                          if (isUnlocked) {
+                             // Lock immediately
+                             ref.read(isVaultUnlockedProvider.notifier).state = false;
+                          } else {
+                             // Unlock via Auth
+                             final vaultService = VaultService();
+                             final result = await vaultService.authenticate(
+                               reason: 'Gizli koleksiyonları görüntülemek için doğrulama yapın',
+                             );
+                             if (result == VaultAuthResult.success) {
+                                ref.read(isVaultUnlockedProvider.notifier).state = true;
+                             }
+                          }
+                        },
+                        child: Container(
+                           padding: const EdgeInsets.all(8),
+                           margin: const EdgeInsets.only(right: 12),
+                           decoration: BoxDecoration(
+                             color: ref.watch(isVaultUnlockedProvider) 
+                                ? context.colors.primary 
+                                : context.colors.primary.withOpacity(0.1),
+                             shape: BoxShape.circle,
+                           ),
+                           child: Icon(
+                             ref.watch(isVaultUnlockedProvider) ? PhosphorIconsBold.lockKeyOpen : PhosphorIconsBold.lockKey, 
+                             size: 20, 
+                             color: ref.watch(isVaultUnlockedProvider) ? Colors.white : context.colors.primary
+                           ),
+                        ),
+                      ),
+                      
+                      // ADD BUTTON
+                      GestureDetector(
+                        onTap: _showAddCategoryDialog,
+                        child: Container(
+                           padding: const EdgeInsets.all(8),
+                           decoration: BoxDecoration(
+                             color: context.colors.primary.withOpacity(0.1),
+                             shape: BoxShape.circle,
+                           ),
+                           child: Icon(PhosphorIconsRegular.plus, size: 20, color: context.colors.primary),
+                        ),
+                      ),
+                    ],
                   )
                 ],
               ),
@@ -150,13 +191,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               child: Divider(height: 1, color: context.colors.hint.withOpacity(0.2)),
             ),
 
-            // 3. Main Content
+             // 3. Main Content
             Expanded(
               child: itemsAsync.when(
                  data: (items) => categoriesAsync.when(
-                    data: (categories) => _buildBody(selectedId, items, categories),
+                    data: (categories) => _buildBody(selectedId, items, categories, ref.watch(isVaultUnlockedProvider)),
                     loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (_,__) => _buildBody(selectedId, items, []), // Fallback
+                    error: (_,__) => _buildBody(selectedId, items, [], false), // Fallback
                  ),
                  loading: () => const Center(child: CircularProgressIndicator()),
                  error: (err, stack) => Center(child: Text('Hata oluştu', style: GoogleFonts.poppins())),
@@ -169,17 +210,53 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   // Helper
-  // Helper
-  Widget _buildBody(String? selectedId, List<ItemModel> allItems, List<CategoryModel> categories) {
+  Widget _buildBody(String? selectedId, List<ItemModel> allItems, List<CategoryModel> categories, bool isVaultUnlocked) {
+     
+     // 1. Identify Locked Categories
+     // If a category is Vault AND !isUnlocked -> It is effectively hidden/masked.
+     final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
+     
      final filteredItems = allItems.where((item) {
        if (selectedId == null) {
-         return true; // Show ALL items
+         // Tümü View:
+         // If unlocked -> Show ALL.
+         // If locked -> Hide vault items.
+         if (isVaultUnlocked) return true;
+         return !vaultIds.contains(item.categoryId);
        }
        if (selectedId == 'uncategorized') {
          return item.categoryId == null || item.categoryId!.isEmpty;
        }
+       
+       // Specific Category View
+       // Ideally we shouldn't even be here if it's locked and we prevent selection?
+       // But if we are here:
+       if (!isVaultUnlocked && vaultIds.contains(selectedId)) {
+          // User selected a locked vault (maybe via deep link or state persistence?)
+          // Force hide contents or show placeholder?
+          // For now, logic: return true if ID matches. The UI will render empty list if we filter it out?
+          // Better: If locked, return false (empty list). Or show "Locked" UI in body.
+          return false; 
+       }
+       
        return item.categoryId == selectedId;
      }).toList();
+     
+     // Special UI for Locked Category Selection (if items empty but category exists)
+     if (selectedId != null && !isVaultUnlocked && vaultIds.contains(selectedId)) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+               Icon(PhosphorIconsDuotone.lockKey, size: 64, color: context.colors.primary.withOpacity(0.5)),
+               const SizedBox(height: 16),
+               Text("Koleksiyon Kilitli", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.headline)),
+               const SizedBox(height: 8),
+               Text("İçerikleri görmek için yukarıdan kilidi açın.", style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body)),
+            ],
+          ),
+        );
+     }
      
      return _buildItemGrid(filteredItems, categories);
   }
@@ -189,7 +266,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   Widget _buildCatalogShelf(AsyncValue<List<CategoryModel>> categoriesAsync, String? selectedId, List<ItemModel> allItems) {
     return categoriesAsync.when(
       data: (categories) {
+        // Identify Vault Categories
+        final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
+        
+        // Check Unlock State
+        final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
+        
         final uncategorizedCount = allItems.where((i) => i.categoryId == null || i.categoryId!.isEmpty).length;
+
+        // Tümü Count: If unlocked, show all. If locked, exclude vault items.
+        final allItemsCount = isVaultUnlocked 
+             ? allItems.length 
+             : allItems.where((i) => !vaultIds.contains(i.categoryId)).length;
 
         return ListView(
           controller: _scrollController,
@@ -204,7 +292,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               imageProvider: null, 
               isSelected: selectedId == null,
               isSystem: true,
-              itemCount: allItems.length,
+              itemCount: allItemsCount,
             ),
             
             // 2. Quick Saves (Inbox) - Show ONLY if has items
@@ -220,6 +308,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             
             // 3. User Categories
             ...categories.map((cat) {
+              final isLocked = cat.isVault && !isVaultUnlocked;
+              
               // Find latest image for this category
               final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
               final coverItem = catItems.firstWhere(
@@ -234,11 +324,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     ? CachedNetworkImageProvider(coverItem.displayImage!) 
                     : null,
                 isSelected: selectedId == cat.id,
-                onLongPress: () => _showEditCategoryOptions(context, cat.id!, cat.name), // New Options
-                // We are passing 'count' here but signature likely still expects 'itemCount'. This is risky if signature not updated.
-                // Assuming next step updates signature. I'll use itemCount here to be safe if next step fails, but next step WILL update signature.
-                // Actually, let's keep it as I intended: update signature to accept 'count' or 'itemCount' (keeping original name is safer).
-                // I'll stick to 'itemCount' here to match existing signature, then update logic to use onLongPress.
+                isLockedVault: isLocked, // Pass lock state
+                onLongPress: () => _showEditCategoryOptions(context, cat), 
                 itemCount: catItems.length,
               );
             }),
@@ -256,8 +343,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     required ImageProvider? imageProvider, 
     required bool isSelected,
     bool isSystem = false,
+    bool isLockedVault = false, // New param
     required int itemCount,
-    VoidCallback? onLongPress, // New param
+    VoidCallback? onLongPress,
   }) {
     return DragTarget<ItemModel>(
       onWillAccept: (item) => item != null && item.categoryId != id,
@@ -273,7 +361,31 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         final hoverBorder = Border.all(color: context.colors.primary, width: 3);
         final hoverShadow = BoxShadow(color: context.colors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4));
 
-        if (imageProvider != null) {
+        if (isLockedVault) {
+           // CASE 0: Locked Vault -> Lock Icon
+           boxDecoration = BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: context.colors.surfaceWhite,
+              border: isSelected 
+                  ? Border.all(color: context.colors.primary, width: 2) 
+                  : Border.all(color: context.colors.secondary.withOpacity(0.3)),
+              boxShadow: isSelected 
+                  ? [BoxShadow(color: context.colors.primary.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 4))] 
+                  : null,
+           );
+           childContent = Stack(
+             children: [
+                Center(
+                  child: Icon(
+                    PhosphorIconsFill.lockKey, 
+                    size: 28, 
+                    color: isSelected ? context.colors.primary : context.colors.body.withOpacity(0.4)
+                  ),
+                ),
+                _buildShelfLabel(name, itemCount, isDarkBg: false, isSystem: isSystem, isSelected: isSelected),
+             ],
+           );
+        } else if (imageProvider != null) {
            // CASE 1: Has Image -> Image Background + B&W/Color Filter
            boxDecoration = BoxDecoration(
               borderRadius: BorderRadius.circular(20),
@@ -714,11 +826,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   // --- EDIT & RENAME LOGIC ---
 
-  void _showEditCategoryOptions(BuildContext context, String categoryId, String currentName) {
+  void _showEditCategoryOptions(BuildContext context, CategoryModel category) {
+    final isPremium = ref.read(isPremiumProvider);
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (ctx) => Container(
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -733,8 +847,51 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               icon: PhosphorIconsRegular.pencilSimple,
               title: "Koleksiyon Adını Düzenle",
               onTap: () {
-                Navigator.pop(context);
-                _showRenameDialog(categoryId, currentName);
+                Navigator.pop(ctx);
+                _showRenameDialog(category.id!, category.name);
+              },
+            ),
+            Divider(color: Colors.grey[100]),
+            // Vault Toggle - Premium Feature
+            _buildOptionTile(
+              icon: category.isVault ? PhosphorIconsRegular.lockSimpleOpen : PhosphorIconsRegular.lock,
+              title: category.isVault ? "Gizli Kasadan Çıkar" : "Gizli Kasaya Ekle",
+              color: category.isVault ? Colors.green : context.colors.primary,
+              trailing: !isPremium ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text("PRO", style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+              ) : null,
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!isPremium) {
+                  // Show paywall
+                  LimitReachedDialog.show(
+                    context: context,
+                    ref: ref,
+                    title: "Premium Özellik",
+                    message: "Gizli Kasa özelliği premium üyelere özeldir. FaceID/TouchID ile koleksiyonlarını koruma altına al!",
+                    type: LimitType.collection,
+                  );
+                  return;
+                }
+                // Toggle vault status
+                try {
+                  final updated = category.copyWith(isVault: !category.isVault, updatedAt: DateTime.now());
+                  await ref.read(categoryRepositoryProvider).updateCategory(updated);
+                  if (mounted) {
+                    SuccessNotificationSheet.show(
+                      context,
+                      title: "Başarılı",
+                      message: updated.isVault ? "Koleksiyon gizli kasaya eklendi 🔒" : "Koleksiyon gizli kasadan çıkarıldı 🔓",
+                    );
+                  }
+                } catch (e) {
+                  debugPrint("Vault toggle error: $e");
+                }
               },
             ),
             Divider(color: Colors.grey[100]),
@@ -743,8 +900,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               title: "Koleksiyonu Sil",
               color: Colors.red,
               onTap: () {
-                Navigator.pop(context);
-                _showDeleteConfirmationDialog(categoryId, currentName);
+                Navigator.pop(ctx);
+                _showDeleteConfirmationDialog(category.id!, category.name);
               },
             ),
             const SizedBox(height: 16),
@@ -754,7 +911,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
-  Widget _buildOptionTile({required IconData icon, required String title, Color? color, required VoidCallback onTap}) {
+  Widget _buildOptionTile({required IconData icon, required String title, Color? color, Widget? trailing, required VoidCallback onTap}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -762,6 +919,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         child: Icon(icon, color: color ?? context.colors.primary, size: 20),
       ),
       title: Text(title, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? context.colors.headline)),
+      trailing: trailing,
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
@@ -1070,16 +1228,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   void _showAddCategoryDialog() {
     // Check subscription limit
-    final subscriptionState = ref.read(subscriptionProvider);
+    final isPremium = ref.read(isPremiumProvider);
     final categories = ref.read(categoriesProvider).valueOrNull ?? [];
     
-    if (!subscriptionState.isPremium && categories.length >= 3) {
-      // Show limit reached dialog
-      showLimitReachedDialog(
-        context,
+    if (!isPremium && categories.length >= 3) {
+      LimitReachedDialog.show(
+        context: context,
+        ref: ref,
+        title: null,
+        message: null,
         type: LimitType.collection,
-        currentCount: categories.length,
-        maxCount: 3,
       );
       return;
     }
@@ -1088,131 +1246,195 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.colors.surfaceWhite,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24), // Wider Dialog
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          "Yeni Koleksiyon",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: context.colors.headline),
-          textAlign: TextAlign.center,
-        ),
-        content: Column(
-           mainAxisSize: MainAxisSize.min,
-           children: [
-              Text(
-                "İçeriklerini düzenlemek için yeni bir koleksiyon oluştur.",
-                style: GoogleFonts.poppins(fontSize: 13, color: context.colors.body),
+      builder: (context) {
+        bool isVault = false;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: context.colors.surfaceWhite,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24), // Wider Dialog
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: Text(
+                "Yeni Koleksiyon",
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: context.colors.headline),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _controller,
-                autofocus: true,
-                style: GoogleFonts.poppins(color: context.colors.headline),
-                decoration: InputDecoration(
-                   hintText: "Koleksiyon Adı (Örn: Tatil Planı)",
-                   hintStyle: GoogleFonts.poppins(color: context.colors.hint, fontSize: 14),
-                   filled: true,
-                   fillColor: context.colors.backgroundTop,
-                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-           ],
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          Row(
-            children: [
-              // Vazgeç Butonu (Gri Gradient)
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.grey.shade300, Colors.grey.shade400],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+              content: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 children: [
+                    Text(
+                      "İçeriklerini düzenlemek için yeni bir koleksiyon oluştur.",
+                      style: GoogleFonts.poppins(fontSize: 13, color: context.colors.body),
+                      textAlign: TextAlign.center,
                     ),
-                    child: Center(
-                      child: Text(
-                        "Vazgeç",
-                        style: GoogleFonts.poppins(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _controller,
+                      autofocus: true,
+                      style: GoogleFonts.poppins(color: context.colors.headline),
+                      decoration: InputDecoration(
+                         hintText: "Koleksiyon Adı (Örn: Tatil Planı)",
+                         hintStyle: GoogleFonts.poppins(color: context.colors.hint, fontSize: 14),
+                         filled: true,
+                         fillColor: context.colors.backgroundTop,
+                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              
-              // Oluştur Butonu (Yeşil Gradient)
-              Expanded(
-                child: InkWell(
-                  onTap: () async {
-                    if (_controller.text.trim().isNotEmpty && _currentUserId != null) {
-                      try {
-                        await ref.read(categoryRepositoryProvider).createCategory(
-                          CategoryModel(
-                            id: DateTime.now().millisecondsSinceEpoch.toString(),
-                            name: _controller.text.trim(),
-                            userId: _currentUserId!,
-                            createdAt: DateTime.now(),
-                            updatedAt: DateTime.now(),
-                            icon: PhosphorIconsRegular.folder.codePoint.toString(),
-                          )
-                        );
-                        if (context.mounted) Navigator.pop(context);
-                        
-                        // Show success bottom sheet
-                        if (context.mounted) {
-                          showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            isScrollControlled: true,
-                            builder: (ctx) => _SuccessBottomSheet(
-                              title: "Başarılı!",
-                              message: "Koleksiyon oluşturuldu",
+                    const SizedBox(height: 16),
+                    // Vault Switch
+                    Container(
+                      decoration: BoxDecoration(
+                        color: context.colors.backgroundTop,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: SwitchListTile(
+                        value: isVault,
+                        onChanged: (val) {
+                          if (!isPremium) {
+                            LimitReachedDialog.show(
+                              context: context,
+                              ref: ref,
+                              title: "Premium Özellik",
+                              message: "Gizli Kasa özelliği premium üyelere özeldir.",
+                              type: LimitType.collection,
+                            );
+                            return;
+                          }
+                          setState(() => isVault = val);
+                        },
+                        title: Row(
+                          children: [
+                            Text(
+                              "Gizli Kasa",
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                color: context.colors.headline,
+                              ),
                             ),
-                          );
-                        }
-                      } catch (e) {
-                         // Error
-                      }
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [context.colors.primary, context.colors.secondary],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.colors.primary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Oluştur",
-                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                            if (!isPremium) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text("PRO", style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                              ),
+                            ],
+                          ],
+                        ),
+                        secondary: Icon(
+                          isVault ? PhosphorIconsFill.lockKey : PhosphorIconsRegular.lockKey,
+                          color: isVault ? context.colors.primary : context.colors.body,
+                        ),
+                        activeColor: context.colors.primary,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                     ),
-                  ),
-                ),
+                 ],
               ),
-            ],
-          ),
-        ],
-      ),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              actions: [
+                Row(
+                  children: [
+                    // Vazgeç Butonu (Gri Gradient)
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.grey.shade300, Colors.grey.shade400],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Vazgeç",
+                              style: GoogleFonts.poppins(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // Oluştur Butonu (Yeşil Gradient)
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          if (_controller.text.trim().isNotEmpty && _currentUserId != null) {
+                            try {
+                              await ref.read(categoryRepositoryProvider).createCategory(
+                                CategoryModel(
+                                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                  name: _controller.text.trim(),
+                                  userId: _currentUserId!,
+                                  createdAt: DateTime.now(),
+                                  updatedAt: DateTime.now(),
+                                  icon: PhosphorIconsRegular.folder.codePoint.toString(),
+                                  isVault: isVault,
+                                )
+                              );
+                              if (context.mounted) Navigator.pop(context);
+                              
+                              // Show success bottom sheet
+                              if (context.mounted) {
+                                SuccessNotificationSheet.show(
+                                  context, 
+                                  title: "Başarılı!", 
+                                  message: isVault ? "Gizli koleksiyon oluşturuldu" : "Koleksiyon oluşturuldu",
+                                );
+                              }
+                            } catch (e) {
+                              debugPrint("Error creating category: $e");
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Hata: $e")),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [context.colors.primary, context.colors.secondary],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: context.colors.premiumShadow.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Oluştur",
+                              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
   }
 
@@ -1340,141 +1562,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============== SUCCESS BOTTOM SHEET ==============
-class _SuccessBottomSheet extends StatefulWidget {
-  final String title;
-  final String message;
-
-  const _SuccessBottomSheet({
-    super.key,
-    required this.title,
-    required this.message,
-  });
-
-  @override
-  State<_SuccessBottomSheet> createState() => _SuccessBottomSheetState();
-}
-
-class _SuccessBottomSheetState extends State<_SuccessBottomSheet> {
-  @override
-  void initState() {
-    super.initState();
-    // Auto-dismiss after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            context.colors.primary,
-            context.colors.secondary,
-          ],
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 16, 32, 56),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Drag Handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Icon Circle
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      PhosphorIconsBold.check,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Message
-                Text(
-                  widget.message,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.9),
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-
-          // Close Button
-          Positioned(
-            top: 20,
-            right: 20,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => Navigator.pop(context),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    PhosphorIconsLight.x,
-                    size: 20,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ),
-            ),
           ),
         ],
       ),

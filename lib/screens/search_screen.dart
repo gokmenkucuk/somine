@@ -18,6 +18,7 @@ import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/services/preferences_service.dart';
 
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:somine_app/core/services/vault_service.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -39,12 +40,76 @@ class _SearchScreenState extends State<SearchScreen> {
   StreamSubscription? _itemsSubscription; // Subscription for live updates
 
   String? _selectedPlatform;
+  bool _isVaultSearch = false;
 
 
   final PreferencesService _prefsService = PreferencesService();
 
   // Computed property to check if search mode is active
-  bool get _isSearching => _searchController.text.isNotEmpty || _selectedPlatform != null;
+  bool get _isSearching => _searchController.text.isNotEmpty || _selectedPlatform != null || _isVaultSearch;
+
+  Widget _buildVaultFilterChip() {
+    final isSelected = _isVaultSearch;
+    return GestureDetector(
+      onTap: () async {
+        if (isSelected) {
+          // Disable Vault Search
+          setState(() {
+            _isVaultSearch = false;
+          });
+          _performSearch();
+        } else {
+          // Enable Vault Search (Require Auth)
+          final vaultService = VaultService();
+          final result = await vaultService.authenticate(
+            reason: 'Gizli arama yapmak için doğrulama yapın',
+          );
+          
+          if (result == VaultAuthResult.success) {
+             setState(() {
+               _isVaultSearch = true;
+               // Reset platform if needed? No, can search youtube in vault.
+             });
+             _performSearch();
+          }
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? context.colors.primary : context.colors.surfaceWhite,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? context.colors.primary : context.colors.primary.withOpacity(0.2),
+            width: 1.5,
+          ),
+          boxShadow: isSelected 
+              ? [BoxShadow(color: context.colors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] 
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? PhosphorIconsBold.lockKeyOpen : PhosphorIconsBold.lockKey, 
+              size: 16, 
+              color: isSelected ? Colors.white : context.colors.primary
+            ),
+            const SizedBox(width: 6),
+            Text(
+              "Gizli",
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? Colors.white : context.colors.headline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // Son Aramalar
   List<String> _recentSearches = [];
@@ -121,7 +186,20 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
 
+      // Identify Vault Categories
+      final vaultIds = _categories.where((c) => c.isVault).map((c) => c.id).toSet();
+
       _filteredItems = _allItems.where((item) {
+        
+        // 1. Vault Filter Logic
+        if (_isVaultSearch) {
+          // Must be in a vault category
+          if (!vaultIds.contains(item.categoryId)) return false;
+        } else {
+          // Must NOT be in a vault category
+          if (vaultIds.contains(item.categoryId)) return false;
+        }
+
         bool matchesQuery = true;
         bool matchesPlatform = true;
 
@@ -141,7 +219,6 @@ class _SearchScreenState extends State<SearchScreen> {
           final filter = _selectedPlatform!.toLowerCase();
 
           // Simple contains check
-           // Simple contains check
           if (filter == 'web') {
              // Web matches if NOT specific social
              final isSocial = url.contains('youtube') || 
@@ -232,6 +309,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 physics: const BouncingScrollPhysics(),
                                 children: [
+                                  _buildVaultFilterChip(),
+                                  const SizedBox(width: 8),
                                   _buildPlatformFilterChip("Instagram", PhosphorIconsBold.instagramLogo),
                                   const SizedBox(width: 8),
                                   _buildPlatformFilterChip("YouTube", PhosphorIconsBold.youtubeLogo),

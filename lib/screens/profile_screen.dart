@@ -11,8 +11,6 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/screens/paywall_screen.dart';
-import 'package:somine_app/core/services/image_migration_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -277,63 +275,6 @@ class ProfileScreen extends ConsumerWidget {
                                 title: "Yardım ve Destek",
                                 onTap: () {},
                               ),
-                              _buildDivider(context),
-                              _buildMenuItem(
-                                context,
-                                icon: PhosphorIconsBold.instagramLogo,
-                                title: "Instagram Görsellerini Onar",
-                                subtitle: "Bozuk görselleri düzelt",
-                                onTap: () async {
-                                  final userId = FirebaseAuth.instance.currentUser?.uid;
-                                  if (userId == null) return;
-                                  
-                                  final migrationService = ImageMigrationService();
-                                  final count = await migrationService.getItemsNeedingMigration(userId);
-                                  
-                                  if (!context.mounted) return;
-                                  
-                                  if (count == 0) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("Tüm görseller zaten düzgün!")),
-                                    );
-                                    return;
-                                  }
-                                  
-                                  // Confirm dialog
-                                  final shouldMigrate = await showCupertinoDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => CupertinoAlertDialog(
-                                      title: const Text('Görselleri Onar'),
-                                      content: Text('$count adet Instagram görseli bulundu. Bunları kalıcı olarak kaydetmek ister misiniz? Bu işlem biraz zaman alabilir.'),
-                                      actions: [
-                                        CupertinoDialogAction(
-                                          child: const Text('İptal'),
-                                          onPressed: () => Navigator.pop(ctx, false),
-                                        ),
-                                        CupertinoDialogAction(
-                                          isDefaultAction: true,
-                                          child: const Text('Onar'),
-                                          onPressed: () => Navigator.pop(ctx, true),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  
-                                  if (shouldMigrate == true && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("Görseller onarılıyor...")),
-                                    );
-                                    
-                                    final migratedCount = await migrationService.migrateInstagramImages(userId: userId);
-                                    
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("$migratedCount görsel başarıyla onarıldı!")),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
                             ],
                           ),
 
@@ -546,7 +487,7 @@ class ProfileScreen extends ConsumerWidget {
                             color: Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(6)),
                         child: Text(
-                          isPro ? "PRO ÜYE" : "STANDART",
+                          isPro ? "PREMIUM" : "STANDART",
                           style: GoogleFonts.outfit(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,

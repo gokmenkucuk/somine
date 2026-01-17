@@ -161,18 +161,47 @@ final itemCountProvider = FutureProvider<int>((ref) async {
 /// Search query
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
+/// Toggle for Vault Search mode
+final isVaultSearchProvider = StateProvider<bool>((ref) => false);
+
+/// Global Vault Unlock State (App-wide unlock for session)
+final isVaultUnlockedProvider = StateProvider<bool>((ref) => false);
+
 /// Search results
 final searchResultsProvider = FutureProvider<List<ItemModel>>((ref) async {
   final query = ref.watch(searchQueryProvider);
+  final isVaultSearch = ref.watch(isVaultSearchProvider);
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
+  
+  // Need categories to identify Vaults
+  final categoriesAsync = ref.watch(categoriesProvider);
+  final categories = categoriesAsync.value ?? [];
 
   if (query.isEmpty) return [];
 
   return authState.when(
     data: (user) async {
       if (user != null) {
-        return itemRepository.searchItems(user.uid, query);
+        var items = await itemRepository.searchItems(user.uid, query);
+        
+        // Identify Vault Categories
+        final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
+        
+        if (isVaultSearch) {
+           // SHOW ONLY VAULT ITEMS
+           if (vaultIds.isNotEmpty) {
+             items = items.where((i) => vaultIds.contains(i.categoryId)).toList();
+           } else {
+             items = []; // No vault categories -> No vault items
+           }
+        } else {
+           // HIDE VAULT ITEMS (Standard Mode)
+           if (vaultIds.isNotEmpty) {
+             items = items.where((i) => !vaultIds.contains(i.categoryId)).toList();
+           }
+        }
+        return items;
       }
       return [];
     },
@@ -217,15 +246,18 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
   String? _userId;
   String? _categoryId;
   
-  // Cache for client-side pagination
+  List<CategoryModel> _categories = [];
   List<ItemModel> _allCachedItems = [];
 
   PaginatedItemsNotifier(this._repository) : super(PaginatedItemsState());
 
-  void setParams(String userId, String? categoryId) {
-    bool changed = _userId != userId || _categoryId != categoryId;
+  void setParams(String userId, String? categoryId, List<CategoryModel> categories) {
+    bool changed = _userId != userId || _categoryId != categoryId || _categories != categories;
     _userId = userId;
     _categoryId = categoryId;
+    _categories = categories;
+    
+    // Only reload if params meaningfully changed (deep equality check for cat list might be expensive, simpler if reference changes)
     if (changed) {
       loadInitial();
     }
@@ -240,7 +272,15 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     
     try {
       // 1. Fetch ALL items (Simple Query, No Index needed)
-      final allItems = await _repository.getItems(_userId!, categoryId: _categoryId);
+      var allItems = await _repository.getItems(_userId!, categoryId: _categoryId);
+      
+      // Filter out Vault items if viewing "All" (null categoryId)
+      if (_categoryId == null) {
+        final vaultIds = _categories.where((c) => c.isVault).map((c) => c.id).toSet();
+        if (vaultIds.isNotEmpty) {
+          allItems = allItems.where((i) => !vaultIds.contains(i.categoryId)).toList();
+        }
+      }
       
       // 2. Sort in memory (just to be safe, repo does it too)
       allItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -317,11 +357,11 @@ final paginatedFeedProvider = StateNotifierProvider.autoDispose<PaginatedItemsNo
   final authState = ref.watch(authStateProvider);
   final repo = ref.watch(itemRepositoryProvider);
   final catId = ref.watch(selectedCategoryIdProvider);
-  
+  final categories = ref.watch(categoriesProvider).value ?? [];
   final notifier = PaginatedItemsNotifier(repo);
   
   if (authState.value != null) {
-     notifier.setParams(authState.value!.uid, catId);
+     notifier.setParams(authState.value!.uid, catId, categories);
   }
   
   return notifier;

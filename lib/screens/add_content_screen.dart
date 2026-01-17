@@ -433,6 +433,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         // Only attempt upload if it looks like an external URL
         final persistentUrl = await storageService.uploadImageFromUrl(_ogMetadata!.imageUrl!, userId);
         
+        if (!mounted) return;
+
         if (persistentUrl != null) {
            _ogMetadata = OGMetadata(
              title: _ogMetadata!.title,
@@ -1041,6 +1043,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           if (isSelected) {
             _selectedCategoryIds.remove(cat.id);
           } else {
+            // If selecting a non-Quick category, auto-deselect "Hızlı"
+            if (cat.name != 'Hızlı') {
+              try {
+                 final quickCat = _categories.firstWhere((c) => c.name == 'Hızlı');
+                 _selectedCategoryIds.remove(quickCat.id);
+              } catch (_) {}
+            }
             _selectedCategoryIds.add(cat.id);
           }
         }),

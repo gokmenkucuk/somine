@@ -1,6 +1,15 @@
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
+
+enum VaultAuthResult {
+  success,
+  failure,
+  canceled,
+  error,
+  unavailable
+}
 
 /// Vault service for biometric authentication (FaceID/TouchID)
 class VaultService {
@@ -32,16 +41,18 @@ class VaultService {
     }
   }
 
+
+
   /// Authenticate with biometrics
-  Future<bool> authenticate({String reason = 'Gizli kasaya erişmek için doğrulama yapın'}) async {
+  Future<VaultAuthResult> authenticate({String reason = 'Gizli kasaya erişmek için doğrulama yapın'}) async {
     try {
       final isAvailable = await isBiometricAvailable();
       if (!isAvailable) {
         debugPrint('Biometric authentication not available');
-        return false;
+        return VaultAuthResult.unavailable;
       }
 
-      return await _localAuth.authenticate(
+      final bool success = await _localAuth.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(
           stickyAuth: true,
@@ -49,9 +60,14 @@ class VaultService {
           useErrorDialogs: true,
         ),
       );
+      
+      return success ? VaultAuthResult.success : VaultAuthResult.failure;
     } on PlatformException catch (e) {
-      debugPrint('Authentication error: ${e.message}');
-      return false;
+      debugPrint('Authentication error: ${e.message} Code: ${e.code}');
+      if (e.code == 'UserCanceled' || e.code == 'userCanceled' || e.code == auth_error.notAvailable) {
+        return VaultAuthResult.canceled;
+      }
+      return VaultAuthResult.error;
     }
   }
 
