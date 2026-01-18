@@ -59,6 +59,8 @@ dependencies:
   purchases_flutter: ^8.0.0        # RevenueCat
   local_auth: ^2.3.0               # FaceID/TouchID for Vault
   flutter_dynamic_icon: ^2.1.0     # App icon switching
+  package_info_plus: ^8.0.0        # App version info
+  timeago: ^3.7.1                  # Relative time display
 
 dev_dependencies:
   flutter_test:

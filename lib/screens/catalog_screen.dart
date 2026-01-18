@@ -22,6 +22,9 @@ import 'package:somine_app/core/services/vault_service.dart';
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => null);
 
+// State to track reordering mode
+final isReorderingProvider = StateProvider.autoDispose<bool>((ref) => false);
+
 class CatalogScreen extends ConsumerStatefulWidget {
   const CatalogScreen({super.key});
 
@@ -69,6 +72,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final selectedId = ref.watch(selectedCatalogIdProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final itemsAsync = ref.watch(catalogItemsProvider);
+    final isReordering = ref.watch(isReorderingProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Transparent for VibeBackground
@@ -91,6 +95,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       color: context.colors.headline
                     ),
                   ),
+                  if (isReordering)
+                    TextButton(
+                      onPressed: () => ref.read(isReorderingProvider.notifier).state = false,
+                      style: TextButton.styleFrom(
+                        backgroundColor: context.colors.primary.withOpacity(0.1),
+                        foregroundColor: context.colors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      child: Text("Bitti", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                    )
+                  else
                   Row(
                     children: [
                        // VAULT TOGGLE BUTTON
@@ -149,7 +165,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             SizedBox(
               height: 140, // Height increased for new cards
               child: itemsAsync.when(
-                 data: (items) => _buildCatalogShelf(categoriesAsync, selectedId, items),
+                 data: (items) => _buildCatalogShelf(categoriesAsync, selectedId, items, isReordering),
                  loading: () => const Center(child: SizedBox()),
                  error: (_,__) => const SizedBox(),
               ),
@@ -158,6 +174,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             const SizedBox(height: 24), // Increased spacing per user request
 
             // Explanation Capsule
+            if (!isReordering)
             Center(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -263,7 +280,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   // --- CATALOG SHELF ---
 
-  Widget _buildCatalogShelf(AsyncValue<List<CategoryModel>> categoriesAsync, String? selectedId, List<ItemModel> allItems) {
+  Widget _buildCatalogShelf(AsyncValue<List<CategoryModel>> categoriesAsync, String? selectedId, List<ItemModel> allItems, bool isReordering) {
     return categoriesAsync.when(
       data: (categories) {
         // Vault detection
@@ -295,48 +312,88 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   isSelected: selectedId == null,
                   isSystem: true,
                   itemCount: allItemsCount,
+                  isReordering: isReordering,
                 ),
               ),
               
-              // 2. Reorderable user categories
+              // 2. Reorderable user categories OR Static ListView
               Expanded(
-                child: ReorderableListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(left: 8, right: 20),
-                  buildDefaultDragHandles: false,
-                  proxyDecorator: (child, index, animation) {
-                    return Material(
-                      color: Colors.transparent,
-                      elevation: 6,
-                      shadowColor: Colors.black26,
-                      borderRadius: BorderRadius.circular(24),
-                      child: child,
-                    );
-                  },
-                  onReorder: (oldIndex, newIndex) async {
-                    if (newIndex > oldIndex) newIndex--;
-                    final reorderedList = List<CategoryModel>.from(sortedCategories);
-                    final movedItem = reorderedList.removeAt(oldIndex);
-                    reorderedList.insert(newIndex, movedItem);
-                    
-                    // Save to database
-                    await CategoryRepository().reorderCategories(reorderedList);
-                    ref.invalidate(userCategoriesProvider);
-                  },
-                  itemCount: sortedCategories.length,
-                  itemBuilder: (context, index) {
-                    final cat = sortedCategories[index];
-                    final isLocked = cat.isVault && !isVaultUnlocked;
-                    final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
-                    final coverItem = catItems.firstWhere(
-                      (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
-                      orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
-                    );
+                child: isReordering 
+                ? ReorderableListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.only(left: 8, right: 20),
+                    buildDefaultDragHandles: false,
+                    proxyDecorator: (child, index, animation) {
+                      return Material(
+                        color: Colors.transparent,
+                        elevation: 6,
+                        shadowColor: Colors.black26,
+                        borderRadius: BorderRadius.circular(24),
+                        child: child,
+                      );
+                    },
+                    onReorder: (oldIndex, newIndex) async {
+                      if (newIndex > oldIndex) newIndex--;
+                      final reorderedList = List<CategoryModel>.from(sortedCategories);
+                      final movedItem = reorderedList.removeAt(oldIndex);
+                      reorderedList.insert(newIndex, movedItem);
+                      
+                      await CategoryRepository().reorderCategories(reorderedList);
+                      ref.invalidate(categoriesProvider);
+                    },
+                    itemCount: sortedCategories.length,
+                    itemBuilder: (context, index) {
+                      final cat = sortedCategories[index];
+                      final isLocked = cat.isVault && !isVaultUnlocked;
+                      final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
+                      final coverItem = catItems.firstWhere(
+                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
+                        orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
+                      );
 
-                    return ReorderableDragStartListener(
-                      key: ValueKey(cat.id),
-                      index: index,
-                      child: _buildImageCatalogCard(
+                        return ReorderableDelayedDragStartListener(
+                        key: ValueKey(cat.id),
+                        index: index,
+                        child: Stack(
+                          children: [
+                            _buildImageCatalogCard(
+                              id: cat.id,
+                              name: cat.name,
+                              imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty)
+                                  ? CachedNetworkImageProvider(coverItem.displayImage!)
+                                  : null,
+                              isSelected: selectedId == cat.id,
+                              isLockedVault: isLocked,
+                              itemCount: catItems.length,
+                              isReordering: true,
+                            ),
+                            Positioned(
+                              top: 0, right: 12,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                child: Icon(PhosphorIconsBold.list, size: 16, color: context.colors.primary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.only(left: 8, right: 20),
+                    itemCount: sortedCategories.length,
+                    itemBuilder: (context, index) {
+                      final cat = sortedCategories[index];
+                      final isLocked = cat.isVault && !isVaultUnlocked;
+                      final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
+                      final coverItem = catItems.firstWhere(
+                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
+                        orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
+                      );
+
+                      return _buildImageCatalogCard(
                         id: cat.id,
                         name: cat.name,
                         imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty)
@@ -346,10 +403,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         isLockedVault: isLocked,
                         onLongPress: () => _showEditCategoryOptions(context, cat),
                         itemCount: catItems.length,
-                      ),
-                    );
-                  },
-                ),
+                        isReordering: false,
+                      );
+                    },
+                  ),
               ),
             ],
           ),
@@ -366,10 +423,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     required ImageProvider? imageProvider, 
     required bool isSelected,
     bool isSystem = false,
-    bool isLockedVault = false, // New param
+    bool isLockedVault = false,
     required int itemCount,
     VoidCallback? onLongPress,
+    VoidCallback? onTap,
+    bool isReordering = false,
   }) {
+    final effectiveOnTap = isReordering ? null : (onTap ?? () => ref.read(selectedCatalogIdProvider.notifier).state = id);
+    final effectiveLongPress = isReordering ? null : (isSystem ? null : (onLongPress ?? () => _showDeleteConfirmationDialog(id!, name)));
+
     return DragTarget<ItemModel>(
       onWillAccept: (item) => item != null && item.categoryId != id,
       onAccept: (item) => _moveItemToCategory(item, id),
@@ -462,7 +524,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
               if (isSelected) {
                  return GestureDetector(
-                   onTap: () => ref.read(selectedCatalogIdProvider.notifier).state = id,
+                   onTap: effectiveOnTap,
                    child: AnimatedContainer(
                      duration: const Duration(milliseconds: 300),
                      width: 120,
@@ -500,7 +562,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                  );
               } else {
                  return GestureDetector(
-                   onTap: () => ref.read(selectedCatalogIdProvider.notifier).state = id,
+                   onTap: effectiveOnTap,
                    child: AnimatedContainer(
                      duration: const Duration(milliseconds: 300),
                      width: 120,
@@ -528,7 +590,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
               if (isSelected) {
                  return GestureDetector(
-                   onTap: () => ref.read(selectedCatalogIdProvider.notifier).state = id,
+                   onTap: effectiveOnTap,
                    child: AnimatedContainer(
                      duration: const Duration(milliseconds: 300),
                      width: 120,
@@ -566,7 +628,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                  );
               } else {
                   return GestureDetector(
-                   onTap: () => ref.read(selectedCatalogIdProvider.notifier).state = id,
+                   onTap: onTap ?? () => ref.read(selectedCatalogIdProvider.notifier).state = id,
                    child: AnimatedContainer(
                      duration: const Duration(milliseconds: 300),
                      width: 120,
@@ -587,8 +649,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         } else {
            // CASE 3: NO Image -> White Background + Gradient Border
            return GestureDetector(
-             onTap: () => ref.read(selectedCatalogIdProvider.notifier).state = id,
-             onLongPress: onLongPress ?? (() => _showDeleteConfirmationDialog(id!, name)), // Use override or default
+             onTap: effectiveOnTap,
+             onLongPress: effectiveLongPress,
              child: AnimatedContainer(
                duration: const Duration(milliseconds: 300),
                width: 120,
@@ -620,10 +682,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         }
 
         return GestureDetector(
-          onTap: () => ref.read(selectedCatalogIdProvider.notifier).state = id,
-          onLongPress: isSystem 
-              ? null 
-              : (onLongPress ?? () => _showDeleteConfirmationDialog(id!, name)), // Use override or default
+          onTap: effectiveOnTap,
+          onLongPress: effectiveLongPress,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.fastOutSlowIn,
@@ -866,6 +926,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 24),
+            _buildOptionTile(
+              icon: PhosphorIconsRegular.list,
+              title: "Sıralamayı Düzenle",
+              onTap: () {
+                Navigator.pop(ctx);
+                ref.read(isReorderingProvider.notifier).state = true;
+              },
+            ),
+            Divider(color: Colors.grey[100]),
             _buildOptionTile(
               icon: PhosphorIconsRegular.pencilSimple,
               title: "Koleksiyon Adını Düzenle",

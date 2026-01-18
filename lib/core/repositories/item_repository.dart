@@ -21,7 +21,10 @@ class ItemRepository {
 
       final snapshot = await query.get();
 
-      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+      final items = snapshot.docs
+          .map((doc) => ItemModel.fromFirestore(doc))
+          .where((item) => !item.isDeleted) // Client-side filter for legacy data
+          .toList();
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
@@ -137,8 +140,12 @@ class ItemRepository {
   /// Delete an item
   Future<void> deleteItem(String itemId) async {
     try {
-      await _itemsCollection.doc(itemId).delete();
-      debugPrint('✅ [ItemRepository] Item deleted: $itemId');
+      // Soft delete
+      await _itemsCollection.doc(itemId).update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('✅ [ItemRepository] Item soft deleted: $itemId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error deleting item: $e');
       rethrow;
@@ -178,6 +185,7 @@ class ItemRepository {
       final lowerQuery = query.toLowerCase();
       final items = snapshot.docs
           .map((doc) => ItemModel.fromFirestore(doc))
+          .where((item) => !item.isDeleted) // Client-side filter
           .where((item) {
             final title = item.displayTitle.toLowerCase();
             final note = item.note?.toLowerCase() ?? '';
@@ -204,7 +212,10 @@ class ItemRepository {
           .where('isFavorite', isEqualTo: true)
           .get();
 
-      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+      final items = snapshot.docs
+          .map((doc) => ItemModel.fromFirestore(doc))
+          .where((item) => !item.isDeleted)
+          .toList();
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
@@ -223,7 +234,10 @@ class ItemRepository {
     }
 
     return query.snapshots().map((snapshot) {
-      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+      final items = snapshot.docs
+          .map((doc) => ItemModel.fromFirestore(doc))
+          .where((item) => !item.isDeleted)
+          .toList();
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     });
@@ -232,11 +246,17 @@ class ItemRepository {
   /// Get item count for a user
   Future<int> getItemCount(String userId) async {
     try {
+      // Note: Count is harder to filter client-side without fetching all.
+      // For now, we will fetch all metadata (less efficient but correct) or live with inaccurate count.
+      // Fetching all to be correct:
       final snapshot = await _itemsCollection
           .where('userId', isEqualTo: userId)
-          .count()
           .get();
-      return snapshot.count ?? 0;
+      
+      return snapshot.docs
+          .map((doc) => ItemModel.fromFirestore(doc))
+          .where((item) => !item.isDeleted)
+          .length;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting item count: $e');
       return 0;
@@ -251,6 +271,7 @@ class ItemRepository {
       final snapshot = await _itemsCollection
           .where('userId', isEqualTo: userId)
           .where('categoryId', isEqualTo: oldCategoryId)
+          .where('isDeleted', isEqualTo: false) // Only active items
           .get();
 
       if (snapshot.docs.isEmpty) return; // Nothing to move
@@ -263,6 +284,49 @@ class ItemRepository {
       debugPrint('✅ [ItemRepository] Moved ${snapshot.docs.length} items from $oldCategoryId to $newCategoryId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error moving items: $e');
+      rethrow;
+    }
+  }
+
+  /// RESTORE a soft-deleted item
+  Future<void> restoreItem(String itemId) async {
+    try {
+      await _itemsCollection.doc(itemId).update({
+        'isDeleted': false,
+        'deletedAt': FieldValue.delete(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('✅ [ItemRepository] Item restored: $itemId');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error restoring item: $e');
+      rethrow;
+    }
+  }
+
+  /// PERMANENTLY delete an item
+  Future<void> permanentDeleteItem(String itemId) async {
+    try {
+      await _itemsCollection.doc(itemId).delete();
+      debugPrint('✅ [ItemRepository] Item permanently deleted: $itemId');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error permanently deleting item: $e');
+      rethrow;
+    }
+  }
+
+  /// Get DELETED items (for Recently Deleted screen)
+  Future<List<ItemModel>> getDeletedItems(String userId) async {
+    try {
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('isDeleted', isEqualTo: true)
+          .orderBy('deletedAt', descending: true)
+          .get();
+
+      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+      return items;
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error getting deleted items: $e');
       rethrow;
     }
   }

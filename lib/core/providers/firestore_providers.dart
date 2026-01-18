@@ -139,6 +139,23 @@ final favoriteItemsProvider = FutureProvider<List<ItemModel>>((ref) async {
   );
 });
 
+/// Deleted items for current user (Recently Deleted)
+final deletedItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((ref) async {
+  final authState = ref.watch(authStateProvider);
+  final itemRepository = ref.watch(itemRepositoryProvider);
+
+  return authState.when(
+    data: (user) async {
+      if (user != null) {
+        return itemRepository.getDeletedItems(user.uid);
+      }
+      return [];
+    },
+    loading: () async => [],
+    error: (_, __) async => [],
+  );
+});
+
 /// Item count for current user
 final itemCountProvider = FutureProvider<int>((ref) async {
   final authState = ref.watch(authStateProvider);

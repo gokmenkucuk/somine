@@ -630,7 +630,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         height: stageHeight,
         width: double.infinity,
 
-        color: context.colors.backgroundTop,
+        color: Colors.transparent, // Fix: Transparent to show underlying white surface at corners
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -724,9 +724,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         return Container(
           key: const ValueKey('platform'),
           width: double.infinity,
-          decoration: BoxDecoration(
-            color: context.colors.surfaceWhite, // Fallback
-            borderRadius: BorderRadius.circular(24),
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite, // Fallback
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), // Fix: Square bottom to merge with content
             gradient: LinearGradient(
               colors: animate 
                   ? [

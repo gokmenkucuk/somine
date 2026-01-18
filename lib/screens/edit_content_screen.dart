@@ -94,7 +94,8 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     // Pre-fill data from ItemModel
     _titleController.text = widget.item.displayTitle;
     _noteController.text = widget.item.note ?? "";
-    
+    _ogMetadata = widget.item.ogMetadata; // Initialize metadata FIRST to avoid unnecessary fetch
+
     if (widget.item.categoryId != null) {
       _selectedCategoryIds.add(widget.item.categoryId!);
     }
@@ -105,8 +106,6 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       _isManualEntry = true;
     }
 
-    _ogMetadata = widget.item.ogMetadata;
-    
     // Resolve initial image
     if (widget.item.displayImage != null) {
       _resolveImageSize(widget.item.displayImage!);
@@ -534,10 +533,21 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
           // Back Button
           Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
+            top: MediaQuery.of(context).padding.top + 8, // Fixed Alignment
             left: 16,
             child: _buildBackButton(),
           ),
+
+          // Sticky Trash Button
+          if (_hasLink || _isManualEntry)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8, // Fixed Alignment
+              right: 16,
+              child: _buildCircleButton(
+                icon: PhosphorIconsLight.trash,
+                onTap: _showDeleteConfirmation,
+              ),
+            ),
 
           // Floating CTA Dock
           Positioned(
@@ -591,15 +601,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                     : _buildPlatformBackground(animate: _isLoadingMetadata),
           ),
           
-          if (_hasLink || _isManualEntry)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              right: 16,
-              child: _buildCircleButton(
-                icon: PhosphorIconsLight.trash,
-                onTap: _showDeleteConfirmation,
-              ),
-            ),
+
         ],
       ),
     );

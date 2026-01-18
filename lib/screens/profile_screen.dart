@@ -6,6 +6,10 @@ import 'package:animate_do/animate_do.dart';
 import 'package:somine_app/screens/recently_deleted_screen.dart';
 import 'package:somine_app/screens/appearance_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
+import 'package:somine_app/screens/account_info_screen.dart';
+import 'package:somine_app/screens/notification_settings_screen.dart';
+import 'package:somine_app/screens/invite_friend_screen.dart';
+import 'package:somine_app/screens/help_support_screen.dart';
 import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -183,7 +187,14 @@ class ProfileScreen extends ConsumerWidget {
                                 context,
                                 icon: CupertinoIcons.person,
                                 title: "Hesap Bilgileri",
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AccountInfoScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                               _buildDivider(context),
                               _buildMenuItem(
@@ -219,8 +230,6 @@ class ProfileScreen extends ConsumerWidget {
                                 context,
                                 icon: CupertinoIcons.trash,
                                 title: "Son Silinenler",
-                                badge: "3",
-                                badgeColor: Colors.redAccent,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -235,20 +244,11 @@ class ProfileScreen extends ConsumerWidget {
                                 context,
                                 icon: CupertinoIcons.bell,
                                 title: "Bildirim Ayarları",
-                                onTap: () {},
-                              ),
-                              _buildDivider(context),
-                              _buildMenuItem(
-                                context,
-                                icon: CupertinoIcons.arrow_down_doc,
-                                title: "Yer İmlerini İçe Aktar",
                                 onTap: () {
-                                  // Mock Import Action
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "İçe aktarma penceresi açılıyor...",
-                                      ),
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const NotificationSettingsScreen(),
                                     ),
                                   );
                                 },
@@ -266,14 +266,28 @@ class ProfileScreen extends ConsumerWidget {
                                 context,
                                 icon: CupertinoIcons.gift,
                                 title: "Arkadaşını Davet Et",
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const InviteFriendScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                               _buildDivider(context),
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.question_circle,
                                 title: "Yardım ve Destek",
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const HelpSupportScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),

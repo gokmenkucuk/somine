@@ -12,9 +12,14 @@ import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/splash_screen.dart';
 import 'package:somine_app/firebase_options.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('tr', null);
+  timeago.setLocaleMessages('tr', timeago.TrMessages());
+  timeago.setDefaultLocale('tr');
   
   // Global error handling
   FlutterError.onError = (FlutterErrorDetails details) {

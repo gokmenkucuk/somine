@@ -68,6 +68,8 @@ class ItemModel {
   final bool isFavorite;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   const ItemModel({
     required this.id,
@@ -81,6 +83,8 @@ class ItemModel {
     this.isFavorite = false,
     required this.createdAt,
     required this.updatedAt,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   /// Create from Firestore document
@@ -101,6 +105,8 @@ class ItemModel {
       isFavorite: data['isFavorite'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -117,6 +123,8 @@ class ItemModel {
       'isFavorite': isFavorite,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'isDeleted': isDeleted,
+      'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
     };
   }
 
@@ -133,6 +141,8 @@ class ItemModel {
     bool? isFavorite,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return ItemModel(
       id: id ?? this.id,
@@ -146,6 +156,8 @@ class ItemModel {
       isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 
