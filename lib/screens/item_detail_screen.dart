@@ -1,51 +1,111 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class ItemDetailScreen extends ConsumerWidget {
+class ItemDetailScreen extends ConsumerStatefulWidget {
   final ItemModel item;
 
   const ItemDetailScreen({super.key, required this.item});
 
+  @override
+  ConsumerState<ItemDetailScreen> createState() => _ItemDetailScreenState();
+}
+
+class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
+  YoutubePlayerController? _youtubeController;
+  bool _isYoutube = false;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkYoutube();
+  }
+
+  void _checkYoutube() {
+    if (widget.item.url != null) {
+      final videoId = YoutubePlayer.convertUrlToId(widget.item.url!);
+      if (videoId != null) {
+        setState(() {
+          _isYoutube = true;
+          _youtubeController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              mute: false,
+              enableCaption: false,
+              forceHD: false,
+              hideControls: false,
+              controlsVisibleAtStart: true,
+            ),
+          )..addListener(_listener);
+        });
+      }
+    }
+  }
+
+  void _listener() {
+    if (_youtubeController != null && mounted) {
+      final isPlaying = _youtubeController!.value.isPlaying;
+      if (isPlaying != _isPlaying) {
+        setState(() => _isPlaying = isPlaying);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _youtubeController?.removeListener(_listener);
+    _youtubeController?.dispose();
+    super.dispose();
+  }
+
   Future<void> _launchUrl(BuildContext context) async {
-    if (item.url != null) {
-      final uri = Uri.parse(item.url!);
+    if (widget.item.url != null) {
+      final uri = Uri.parse(widget.item.url!);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Link açılamadı: ${item.url}')),
+            SnackBar(content: Text('Link açılamadı: ${widget.item.url}')),
           );
         }
       }
     }
   }
 
-  Future<void> _deleteItem(BuildContext context, WidgetRef ref) async {
+  Future<void> _deleteItem(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Center(
           child: Text(
-            'Silme Onayı', 
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 20, color: context.colors.headline)
+            'Silme Onayı',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: context.colors.headline,
+            ),
           ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Bu içeriği silmek istediğinize emin misiniz?', 
+              'Bu içeriği silmek istediğinize emin misiniz?',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(color: context.colors.body, fontSize: 14)
+              style: GoogleFonts.poppins(
+                color: context.colors.body,
+                fontSize: 14,
+              ),
             ),
             const SizedBox(height: 12),
           ],
@@ -54,82 +114,82 @@ class ItemDetailScreen extends ConsumerWidget {
         backgroundColor: context.colors.surfaceWhite,
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => Navigator.pop(context, false),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.grey.shade300, Colors.grey.shade400],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => Navigator.pop(context, false),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.grey.shade300, Colors.grey.shade400],
                       ),
-                      child: Center(
-                        child: Text(
-                          "İptal",
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey.shade800,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "İptal",
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => Navigator.pop(context, true),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () => Navigator.pop(context, true),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
                       ),
-                      child: Center(
-                        child: Text(
-                          "Sil",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Sil",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ],
       ),
     );
 
     if (confirmed == true && context.mounted) {
-      ref.read(itemRepositoryProvider).deleteItem(item.id);
+      ref.read(itemRepositoryProvider).deleteItem(widget.item.id);
       Navigator.pop(context);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final categories = categoriesAsync.asData?.value ?? [];
     final category = categories.cast<CategoryModel?>().firstWhere(
-      (c) => c?.id == item.categoryId,
+      (c) => c?.id == widget.item.categoryId,
       orElse: () => null,
     );
     final categoryName = category?.name ?? 'Genel';
@@ -145,20 +205,59 @@ class ItemDetailScreen extends ConsumerWidget {
             backgroundColor: context.colors.surfaceWhite,
             foregroundColor: context.colors.headline, // For back button on image
             flexibleSpace: FlexibleSpaceBar(
-              background: item.displayImage != null
-                  ? Hero(
-                      tag: item.id,
-                      child: Image.network(
-                        item.displayImage!,
-                        fit: BoxFit.cover,
-                      ),
+              background: _isYoutube && _youtubeController != null
+                  ? Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        YoutubePlayer(
+                          controller: _youtubeController!,
+                          showVideoProgressIndicator: true,
+                          progressIndicatorColor: context.colors.primary,
+                          progressColors: ProgressBarColors(
+                            playedColor: context.colors.primary,
+                            handleColor: context.colors.primary,
+                          ),
+                          onReady: () {
+                             // Player Ready
+                          },
+                        ),
+                        // Custom Play Content Overlay
+                        if (!_isPlaying)
+                          GestureDetector(
+                            onTap: () {
+                               _youtubeController!.play();
+                            },
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.play_arrow_rounded, 
+                                size: 48, 
+                                color: Colors.white
+                              ),
+                            ),
+                          ),
+                      ],
                     )
-                  : Container(
-                      color: DesignTokens.primary.withValues(alpha: 0.1),
-                      child: const Center(
-                        child: Icon(Icons.image, size: 64, color: DesignTokens.textTertiary),
-                      ),
-                    ),
+                  : (widget.item.displayImage != null
+                      ? Hero(
+                          tag: widget.item.id,
+                          child: Image.network(
+                            widget.item.displayImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Container(
+                          color: DesignTokens.primary.withValues(alpha: 0.1),
+                          child: const Center(
+                            child: Icon(Icons.image, size: 64, color: DesignTokens.textTertiary),
+                          ),
+                        )),
             ),
             actions: [
               IconButton(
@@ -168,9 +267,9 @@ class ItemDetailScreen extends ConsumerWidget {
                     color: Colors.black26, 
                     shape: BoxShape.circle
                   ),
-                  child: const Icon(Icons.delete, size: 20),
+                  child: const Icon(Icons.delete, size: 20, color: Colors.white),
                 ),
-                onPressed: () => _deleteItem(context, ref),
+                onPressed: () => _deleteItem(context),
               ),
               const SizedBox(width: 8),
             ],
@@ -181,7 +280,7 @@ class ItemDetailScreen extends ConsumerWidget {
                     color: Colors.black26, 
                     shape: BoxShape.circle
                   ),
-                  child: const Icon(Icons.arrow_back, size: 20),
+                  child: const Icon(Icons.arrow_back, size: 20, color: Colors.white),
                 ),
                 onPressed: () => Navigator.pop(context),
             ),
@@ -204,7 +303,7 @@ class ItemDetailScreen extends ConsumerWidget {
                            borderRadius: BorderRadius.circular(DesignTokens.radiusSM),
                          ),
                          child: Text(
-                           categoryName, // TODO: Get actual category name safely
+                           categoryName,
                            style: GoogleFonts.poppins(
                              color: DesignTokens.primary,
                              fontSize: 12,
@@ -228,7 +327,7 @@ class ItemDetailScreen extends ConsumerWidget {
                    
                    // Title (H1)
                    Text(
-                     item.displayTitle,
+                     widget.item.displayTitle,
                      style: GoogleFonts.poppins(
                        fontSize: 24,
                        fontWeight: FontWeight.w500,
@@ -237,10 +336,10 @@ class ItemDetailScreen extends ConsumerWidget {
                      ),
                    ),
                    
-                   if (item.url != null) ...[
+                   if (widget.item.url != null) ...[
                       const SizedBox(height: 8),
                       Text(
-                        item.url!,
+                        widget.item.url!,
                         style: GoogleFonts.poppins(
                           color: context.colors.hint,
                           fontSize: 14,
@@ -255,7 +354,7 @@ class ItemDetailScreen extends ConsumerWidget {
                    const SizedBox(height: DesignTokens.spacingLG),
 
                    // Note Section
-                   if (item.note != null && item.note!.isNotEmpty)
+                   if (widget.item.note != null && widget.item.note!.isNotEmpty)
                      Container(
                        width: double.infinity,
                        padding: const EdgeInsets.all(DesignTokens.spacingMD),
@@ -277,8 +376,8 @@ class ItemDetailScreen extends ConsumerWidget {
                            ),
                            const SizedBox(height: 8),
                            Text(
-                             item.note!,
-                             style: GoogleFonts.kalam( // Handwritten style if available, or italic poppins
+                             widget.item.note!,
+                             style: GoogleFonts.kalam(
                                fontSize: 16,
                                color: DesignTokens.textPrimary,
                                height: 1.5,
@@ -333,7 +432,6 @@ class ItemDetailScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
               ),
             ).copyWith(
-               // Gradient trick for button
                backgroundColor: WidgetStateProperty.all(Colors.transparent), 
             ),
             child: Ink(

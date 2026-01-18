@@ -6,6 +6,9 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 import 'package:somine_app/screens/somine_loading_screen.dart';
+import 'package:somine_app/screens/onboarding_name_screen.dart';
+
+import 'package:somine_app/screens/home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final bool forceLogin;
@@ -20,47 +23,83 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _signInWithGoogle() async {
+    if (_isLoading) return; // Prevent double tap
+    setState(() => _isLoading = true);
+    
     try {
       final authRepository = ref.read(authRepositoryProvider);
-      final userCredential = await authRepository.signInWithGoogle(
-        onProcessStart: () {
-          if (mounted) setState(() => _isLoading = true);
-        },
-      );
-      if (mounted && userCredential != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const SoMineLoadingScreen()),
-        );
+      final result = await authRepository.signInWithGoogle();
+      
+      // Manual navigation to ensure we don't get stuck on loading
+      // caused by AuthWrapper stream latency
+      if (mounted) {
+        final user = result.userCredential?.user;
+        if (user != null) {
+           final metadata = user.metadata;
+           bool isNewUser = true;
+           
+           if (metadata.creationTime != null && metadata.lastSignInTime != null) {
+              final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();
+              isNewUser = diff.inSeconds < 10;
+           }
+
+           Navigator.of(context).pushReplacement(
+             MaterialPageRoute(
+               builder: (_) => isNewUser 
+                   ? OnboardingNameScreen(userId: user.uid)
+                   : const HomeScreen(),
+             ),
+           );
+        }
       }
+      
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Giriş hatası: $e')));
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _signInWithApple() async {
+    if (_isLoading) return; // Prevent double tap
     setState(() => _isLoading = true);
+    
     try {
       final authRepository = ref.read(authRepositoryProvider);
-      final userCredential = await authRepository.signInWithApple();
-      if (mounted && userCredential != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const SoMineLoadingScreen()),
-        );
+      final result = await authRepository.signInWithApple();
+      
+      // Manual navigation
+      if (mounted) {
+        final user = result.userCredential?.user;
+        if (user != null) {
+           final metadata = user.metadata;
+           bool isNewUser = true;
+           
+           if (metadata.creationTime != null && metadata.lastSignInTime != null) {
+              final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();
+              isNewUser = diff.inSeconds < 10;
+           }
+
+           Navigator.of(context).pushReplacement(
+             MaterialPageRoute(
+               builder: (_) => isNewUser 
+                   ? OnboardingNameScreen(userId: user.uid)
+                   : const HomeScreen(),
+             ),
+           );
+        }
       }
+      
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Giriş hatası: $e')));
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 

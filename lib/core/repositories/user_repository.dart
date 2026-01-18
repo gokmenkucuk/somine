@@ -29,12 +29,35 @@ class UserRepository {
     try {
       final userRef = _usersCollection.doc(firebaseUser.uid);
       final existingDoc = await userRef.get();
+      
+      // Use displayName, or extract from email if null (common with Apple Sign-In)
+      String? displayName = firebaseUser.displayName;
+      if (displayName == null || displayName.isEmpty) {
+        if (firebaseUser.email != null && firebaseUser.email!.contains('@')) {
+          // Extract name from email (e.g., john.doe@gmail.com -> John Doe)
+          final emailName = firebaseUser.email!.split('@').first;
+          displayName = emailName
+              .replaceAll('.', ' ')
+              .replaceAll('_', ' ')
+              .split(' ')
+              .map((word) => word.isNotEmpty 
+                  ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+                  : '')
+              .join(' ');
+          debugPrint('📝 [UserRepository] Used email for displayName: $displayName');
+        }
+      }
 
       if (existingDoc.exists) {
-        // Update existing user
+        // Update existing user (only update displayName if it was null before)
+        final existingData = existingDoc.data();
+        final existingDisplayName = existingData?['displayName'] as String?;
+        
         await userRef.update({
           'email': firebaseUser.email,
-          'displayName': firebaseUser.displayName,
+          // Only update displayName if existing is null/empty or new one is provided
+          if (existingDisplayName == null || existingDisplayName.isEmpty)
+            'displayName': displayName,
           'photoURL': firebaseUser.photoURL,
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -45,7 +68,7 @@ class UserRepository {
         final newUser = UserModel(
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
+          displayName: displayName,
           photoURL: firebaseUser.photoURL,
           createdAt: now,
           updatedAt: now,

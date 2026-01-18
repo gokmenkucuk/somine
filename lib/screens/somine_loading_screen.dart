@@ -4,23 +4,38 @@ import 'package:somine_app/widgets/somine_loading_widget.dart';
 
 /// Branded loading screen shown after login while app initializes
 class SoMineLoadingScreen extends StatefulWidget {
-  const SoMineLoadingScreen({super.key});
+  final bool isNewUser;
+  
+  const SoMineLoadingScreen({
+    super.key, 
+    this.isNewUser = false,
+  });
 
   @override
   State<SoMineLoadingScreen> createState() => _SoMineLoadingScreenState();
 }
 
 class _SoMineLoadingScreenState extends State<SoMineLoadingScreen> {
+  String _message = '';
+
   @override
   void initState() {
     super.initState();
-    // Navigate to HomeScreen after a delay
+    
+    if (widget.isNewUser) {
+      _message = 'Koleksiyonlarınızı hazırlıyoruz...';
+    }
+    
     _navigateToHome();
   }
 
   Future<void> _navigateToHome() async {
-    // Wait for loading animation to show
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Wait longer for new users (demo content being created)
+    final delay = widget.isNewUser 
+        ? const Duration(milliseconds: 4000) 
+        : const Duration(milliseconds: 1500);
+    
+    await Future.delayed(delay);
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
@@ -38,6 +53,8 @@ class _SoMineLoadingScreenState extends State<SoMineLoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const SoMineLoadingWidget();
+    return SoMineLoadingWidget(
+      message: _message.isNotEmpty ? _message : null,
+    );
   }
 }

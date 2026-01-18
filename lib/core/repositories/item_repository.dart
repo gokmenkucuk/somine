@@ -330,6 +330,26 @@ class ItemRepository {
       rethrow;
     }
   }
+
+  /// Delete ALL items for a user (for account deletion)
+  Future<void> deleteAllUserItems(String userId) async {
+    try {
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      
+      debugPrint('✅ [ItemRepository] All items deleted for user: $userId (${snapshot.docs.length} items)');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error deleting all user items: $e');
+      rethrow;
+    }
+  }
 }
 
 

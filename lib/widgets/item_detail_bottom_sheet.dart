@@ -5,11 +5,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
 import '../core/design/app_colors.dart';
-import '../core/design/app_colors_extension.dart'; // Import Extension
-import '../screens/edit_content_screen.dart'; // Import Edit Screen
+import '../core/design/app_colors_extension.dart';
+import '../screens/edit_content_screen.dart';
 
 class ItemDetailBottomSheet extends StatefulWidget {
   final ItemModel item;
@@ -52,11 +53,55 @@ class ItemDetailBottomSheet extends StatefulWidget {
 
 class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   double? _imageAspectRatio;
+  
+  // YouTube Player State
+  YoutubePlayerController? _youtubeController;
+  bool _isYoutube = false;
+  bool _isPlaying = false;
 
   @override
   void initState() {
     super.initState();
     _resolveImageSize();
+    _checkYoutube();
+  }
+
+  void _checkYoutube() {
+    if (widget.item.url != null) {
+      final videoId = YoutubePlayer.convertUrlToId(widget.item.url!);
+      if (videoId != null) {
+        setState(() {
+          _isYoutube = true;
+          _youtubeController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              mute: false,
+              enableCaption: false,
+              forceHD: false,
+              hideControls: false,
+              controlsVisibleAtStart: true,
+            ),
+          )..addListener(_youtubeListener);
+        });
+      }
+    }
+  }
+
+  void _youtubeListener() {
+    if (_youtubeController != null && mounted) {
+      final isPlaying = _youtubeController!.value.isPlaying;
+      if (isPlaying != _isPlaying) {
+        setState(() => _isPlaying = isPlaying);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _youtubeController?.removeListener(_youtubeListener);
+    _youtubeController?.dispose();
+    super.dispose();
   }
 
   void _resolveImageSize() {
@@ -120,7 +165,6 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
       context, 
       MaterialPageRoute(builder: (context) => EditContentScreen(item: widget.item)),
     ).then((result) {
-      // Pass the result (true if updated/deleted) back to the caller
       Navigator.pop(context, result); 
     });
   }
@@ -129,11 +173,47 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: const EdgeInsets.only(top: 48), // Push icon down from top
+      padding: const EdgeInsets.only(top: 48),
       color: context.colors.surfaceWhite,
       child: Center(
         child: Icon(icon, size: 56, color: context.colors.primary),
       ),
+    );
+  }
+
+  Widget _buildYoutubePlayer() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        YoutubePlayer(
+          controller: _youtubeController!,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: context.colors.primary,
+          progressColors: ProgressBarColors(
+            playedColor: context.colors.primary,
+            handleColor: context.colors.primary,
+          ),
+        ),
+        // Custom Play Button Overlay
+        if (!_isPlaying)
+          GestureDetector(
+            onTap: () => _youtubeController!.play(),
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -145,8 +225,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     
     // Dynamic Header Calculation
     double headerRatio = 0.45;
-    if (!hasImage) {
-      // Square header for non-image content with centered icon
+    if (_isYoutube) {
+      // Fixed 16:9 aspect ratio for YouTube videos
+      headerRatio = 0.35;
+    } else if (!hasImage) {
       headerRatio = 0.45;
     } else if (_imageAspectRatio != null) {
       final screenWidth = MediaQuery.of(context).size.width;
@@ -167,14 +249,14 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     );
 
     return DraggableScrollableSheet(
-      initialChildSize: 1.0, // Always full to show header properly
-      minChildSize: 0.25, // Lowered to allow drag down
+      initialChildSize: 1.0,
+      minChildSize: 0.25,
       maxChildSize: 1.0,
-      snap: false, // Disabled snap to prevent sticking in middle
+      snap: false,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: context.colors.surfaceWhite, // Solid background, not transparent
+            color: context.colors.surfaceWhite,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Stack(
@@ -182,28 +264,30 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
               // --- LAYOUT COLUMN ---
               Column(
                 children: [
-                   // 1. HEADER IMAGE
+                   // 1. HEADER IMAGE or YOUTUBE PLAYER
                    SizedBox(
                      height: headerHeight,
                      width: double.infinity,
                      child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                        child: hasImage
-                          ? widget.item.displayImage!.startsWith('http')
-                              ? CachedNetworkImage(
-                                  imageUrl: widget.item.displayImage!,
-                                  fit: BoxFit.cover,
-                                  alignment: Alignment.topCenter,
-                                  placeholder: (context, url) => _buildFallbackHeader(platformIcon),
-                                  errorWidget: (context, url, error) => _buildFallbackHeader(platformIcon),
-                                )
-                              : Image.asset(
-                                  widget.item.displayImage!,
-                                  fit: BoxFit.cover,
-                                  alignment: Alignment.topCenter,
-                                  errorBuilder: (_, __, ___) => _buildFallbackHeader(platformIcon),
-                                )
-                          : _buildFallbackHeader(platformIcon),
+                        child: _isYoutube && _youtubeController != null
+                          ? _buildYoutubePlayer()
+                          : hasImage
+                            ? widget.item.displayImage!.startsWith('http')
+                                ? CachedNetworkImage(
+                                    imageUrl: widget.item.displayImage!,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.topCenter,
+                                    placeholder: (context, url) => _buildFallbackHeader(platformIcon),
+                                    errorWidget: (context, url, error) => _buildFallbackHeader(platformIcon),
+                                  )
+                                : Image.asset(
+                                    widget.item.displayImage!,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.topCenter,
+                                    errorBuilder: (_, __, ___) => _buildFallbackHeader(platformIcon),
+                                  )
+                            : _buildFallbackHeader(platformIcon),
                      ),
                    ),
 
@@ -211,12 +295,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                    Expanded(
                      child: Container(
                        width: double.infinity,
-                       color: context.colors.surfaceWhite, // Dynamic Surface
+                       color: context.colors.surfaceWhite,
                        child: Column(
                          children: [
-                           // DRAG HANDLE REMOVED
                            const SizedBox(height: 12),
-
 
                            // OPEN BUTTON
                            Padding(
@@ -375,7 +457,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
               // Edit Button (Left of Share)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 56, 
-                right: 16 + 40 + 12, // 16 (margin) + 40 (share btn width approx) + 12 (gap)
+                right: 16 + 40 + 12,
                 child: GestureDetector(
                   onTap: _openEditScreen,
                   child: Container(

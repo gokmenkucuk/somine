@@ -380,6 +380,119 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                           ),
 
+                          const SizedBox(height: 16),
+
+                          // Delete Account Button
+                          Container(
+                            decoration: BoxDecoration(
+                              color: context.colors.surfaceWhite,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  // Show Delete Account Confirmation Dialog
+                                  final shouldDelete = await showCupertinoDialog<bool>(
+                                    context: context,
+                                    builder: (context) => CupertinoAlertDialog(
+                                      title: const Text('Hesabı Sil'),
+                                      content: const Text(
+                                        'Bu işlem geri alınamaz! Tüm verileriniz (içerikler, koleksiyonlar) kalıcı olarak silinecek. Devam etmek istiyor musunuz?'
+                                      ),
+                                      actions: [
+                                        CupertinoDialogAction(
+                                          child: const Text('İptal'),
+                                          onPressed: () => Navigator.pop(context, false),
+                                        ),
+                                        CupertinoDialogAction(
+                                          isDestructiveAction: true,
+                                          child: const Text('Hesabı Sil'),
+                                          onPressed: () => Navigator.pop(context, true),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (shouldDelete == true && context.mounted) {
+                                    try {
+                                      // Show loading
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) => const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+
+                                      // Perform account deletion
+                                      await AuthRepository().deleteAccount();
+
+                                      // Close loading
+                                      if (context.mounted) Navigator.pop(context);
+
+                                      // Navigate to Login Screen
+                                      if (context.mounted) {
+                                        Navigator.of(context).pushAndRemoveUntil(
+                                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                          (route) => false,
+                                        );
+                                      }
+                                    } catch (e) {
+                                      // Close loading
+                                      if (context.mounted) Navigator.pop(context);
+                                      
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Hesap silinemedi: $e')),
+                                        );
+                                      }
+                                    }
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEE2E2),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(
+                                          Icons.delete_forever,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Text(
+                                        "Hesabı Sil",
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
                           const SizedBox(height: 32),
 
                           // Version

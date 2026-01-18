@@ -12,6 +12,9 @@ import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/splash_screen.dart';
 import 'package:somine_app/firebase_options.dart';
+import 'package:somine_app/widgets/loading_indicator.dart';
+import 'package:somine_app/widgets/somine_loading_widget.dart';
+import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -130,19 +133,43 @@ class AuthWrapper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
     final guestState = ref.watch(guestUserStateProvider);
+    final isOnboarding = ref.watch(onboardingStateProvider);
+    
+    // If user is in onboarding flow, don't override navigation
+    // The LoginScreen will handle navigation to onboarding screens
+    if (isOnboarding) {
+      return const SoMineLoadingWidget();
+    }
 
     return authState.when(
       data: (user) {
-        if (user != null) return const HomeScreen();
+        // 1. Authenticated User
+        if (user != null) {
+          // If explicit onboarding state is set, respect it
+          if (isOnboarding) return const SoMineLoadingWidget();
+          
+          // Heuristic for new user detection
+          final metadata = user.metadata;
+          if (metadata.creationTime != null && metadata.lastSignInTime != null) {
+            final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();
+            if (diff.inSeconds < 10) {
+              return OnboardingNameScreen(userId: user.uid);
+            }
+          }
+           
+          return const HomeScreen();
+        }
+
+        // 2. Unauthenticated User (Guest or Login)
         if (guestState.isGuest && guestState.hasPerformedAction) {
           return const LoginScreen(forceLogin: true);
         }
         if (guestState.isGuest) return const HomeScreen();
+        
+        // Default: Show Login Screen
         return const LoginScreen();
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () => const SoMineLoadingWidget(),
       error: (error, stack) => Scaffold(
         body: Center(child: Text('Hata: $error')),
       ),

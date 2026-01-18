@@ -83,3 +83,7 @@ final isAuthenticatedOrGuestProvider = Provider<bool>((ref) {
     error: (_, __) => false,
   );
 });
+
+/// Onboarding state - tracks if new user is in onboarding flow
+final onboardingStateProvider = StateProvider<bool>((ref) => false);
+

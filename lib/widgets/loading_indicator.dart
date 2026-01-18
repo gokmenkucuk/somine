@@ -4,7 +4,7 @@ class LoadingIndicator extends StatelessWidget {
   final Color? color;
   final double size;
 
-  const LoadingIndicator({super.key, this.color, this.size = 24.0});
+  const LoadingIndicator({super.key, this.color, this.size = 22.0});
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +126,7 @@ class LoadingOverlay extends StatelessWidget {
           Positioned.fill(
             child: Container(
               color: Colors.white, // Solid white to hide underlying content
-              child: Center(child: LoadingIndicator(color: color, size: 24)),
+              child: Center(child: LoadingIndicator(color: color)),
             ),
           ),
       ],

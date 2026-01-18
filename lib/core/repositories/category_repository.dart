@@ -135,6 +135,26 @@ class CategoryRepository {
           return categories;
         });
   }
+
+  /// Delete ALL categories for a user (for account deletion)
+  Future<void> deleteAllUserCategories(String userId) async {
+    try {
+      final snapshot = await _categoriesCollection
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      
+      debugPrint('✅ [CategoryRepository] All categories deleted for user: $userId');
+    } catch (e) {
+      debugPrint('❌ [CategoryRepository] Error deleting all categories: $e');
+      rethrow;
+    }
+  }
 }
 
 
