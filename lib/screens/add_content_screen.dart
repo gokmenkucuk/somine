@@ -22,8 +22,9 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 
 class AddContentScreen extends StatefulWidget {
   final String? initialText;
+  final String? preSelectedCategoryId;
 
-  const AddContentScreen({super.key, this.initialText});
+  const AddContentScreen({super.key, this.initialText, this.preSelectedCategoryId});
 
   @override
   State<AddContentScreen> createState() => _AddContentScreenState();
@@ -187,9 +188,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             _categories = categories;
             _isLoadingCategories = false;
             
-            // Auto-select "Hızlı"
-            if (quickCategory != null) {
-              _selectedCategoryIds.add(quickCategory.id);
+            // Pre-select category if provided (e.g., from CatalogScreen)
+            if (widget.preSelectedCategoryId != null && widget.preSelectedCategoryId!.isNotEmpty) {
+              _selectedCategoryIds.add(widget.preSelectedCategoryId!);
             }
           });
         }
@@ -409,9 +410,18 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         !_hasLink) {
       return;
     }
+    // If no category selected, silently assign to "Hızlı"
     if (_selectedCategoryIds.isEmpty) {
-      _showError("Lütfen en az bir koleksiyon seçin");
-      return;
+      final quickCat = _categories.cast<CategoryModel?>().firstWhere(
+        (c) => c!.name == 'Hızlı',
+        orElse: () => null,
+      );
+      if (quickCat != null) {
+        _selectedCategoryIds.add(quickCat.id);
+      } else {
+        _showError("Lütfen en az bir koleksiyon seçin");
+        return;
+      }
     }
 
     setState(() => _isSaving = true);
@@ -860,9 +870,11 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
                     clipBehavior: Clip.none,
-                    itemCount: _categories.length,
+                    // Hide "Hızlı" from UI - it's used silently for uncategorized items
+                    itemCount: _categories.where((c) => c.name != 'Hızlı').length,
                     itemBuilder: (context, index) {
-                      final cat = _categories[index];
+                      final visibleCategories = _categories.where((c) => c.name != 'Hızlı').toList();
+                      final cat = visibleCategories[index];
                       return _buildCategoryChip(cat);
                     },
                   ),

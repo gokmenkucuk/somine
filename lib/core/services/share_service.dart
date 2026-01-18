@@ -22,6 +22,8 @@ class ShareService {
     // For sharing or opening urls/text coming from outside the app while the app is closed
     ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> value) {
       _handleSharedFiles(value);
+      // Reset to prevent re-triggering on next cold start
+      ReceiveSharingIntent.instance.reset();
     });
   }
 

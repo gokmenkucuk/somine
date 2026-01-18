@@ -266,70 +266,93 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   Widget _buildCatalogShelf(AsyncValue<List<CategoryModel>> categoriesAsync, String? selectedId, List<ItemModel> allItems) {
     return categoriesAsync.when(
       data: (categories) {
-        // Identify Vault Categories
+        // Vault detection
         final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
-        
-        // Check Unlock State
         final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
         
-        final uncategorizedCount = allItems.where((i) => i.categoryId == null || i.categoryId!.isEmpty).length;
-
-        // Tümü Count: If unlocked, show all. If locked, exclude vault items.
+        // Tümü count
         final allItemsCount = isVaultUnlocked 
              ? allItems.length 
              : allItems.where((i) => !vaultIds.contains(i.categoryId)).length;
 
-        return ListView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          physics: const BouncingScrollPhysics(),
-          children: [
-            // 1. All Items (Tümü) - Oil Green -> White Gradient
-            _buildImageCatalogCard(
-              id: null, // null = All
-              name: "Tümü",
-              imageProvider: null, 
-              isSelected: selectedId == null,
-              isSystem: true,
-              itemCount: allItemsCount,
-            ),
-            
-            // 2. Quick Saves (Inbox) - Show ONLY if has items
-            if (uncategorizedCount > 0)
-              _buildImageCatalogCard(
-                id: 'uncategorized',
-                name: "HIZLI", 
-                imageProvider: null, 
-                isSelected: selectedId == 'uncategorized',
-                isSystem: true,
-                itemCount: uncategorizedCount,
+        // Sortable categories (exclude Hızlı, sorted by order)
+        final sortedCategories = categories
+            .where((c) => c.name != 'Hızlı')
+            .toList()
+          ..sort((a, b) => a.order.compareTo(b.order));
+
+        return SizedBox(
+          height: 160,
+          child: Row(
+            children: [
+              // 1. Fixed "Tümü" card (not reorderable)
+              Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: _buildImageCatalogCard(
+                  id: null,
+                  name: "Tümü",
+                  imageProvider: null,
+                  isSelected: selectedId == null,
+                  isSystem: true,
+                  itemCount: allItemsCount,
+                ),
               ),
-            
-            // 3. User Categories
-            ...categories.map((cat) {
-              final isLocked = cat.isVault && !isVaultUnlocked;
               
-              // Find latest image for this category
-              final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
-              final coverItem = catItems.firstWhere(
-                (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
-                orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note), 
-              );
-              
-              return _buildImageCatalogCard(
-                id: cat.id,
-                name: cat.name,
-                imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty) 
-                    ? CachedNetworkImageProvider(coverItem.displayImage!) 
-                    : null,
-                isSelected: selectedId == cat.id,
-                isLockedVault: isLocked, // Pass lock state
-                onLongPress: () => _showEditCategoryOptions(context, cat), 
-                itemCount: catItems.length,
-              );
-            }),
-          ],
+              // 2. Reorderable user categories
+              Expanded(
+                child: ReorderableListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(left: 8, right: 20),
+                  buildDefaultDragHandles: false,
+                  proxyDecorator: (child, index, animation) {
+                    return Material(
+                      color: Colors.transparent,
+                      elevation: 6,
+                      shadowColor: Colors.black26,
+                      borderRadius: BorderRadius.circular(24),
+                      child: child,
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) async {
+                    if (newIndex > oldIndex) newIndex--;
+                    final reorderedList = List<CategoryModel>.from(sortedCategories);
+                    final movedItem = reorderedList.removeAt(oldIndex);
+                    reorderedList.insert(newIndex, movedItem);
+                    
+                    // Save to database
+                    await CategoryRepository().reorderCategories(reorderedList);
+                    ref.invalidate(userCategoriesProvider);
+                  },
+                  itemCount: sortedCategories.length,
+                  itemBuilder: (context, index) {
+                    final cat = sortedCategories[index];
+                    final isLocked = cat.isVault && !isVaultUnlocked;
+                    final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
+                    final coverItem = catItems.firstWhere(
+                      (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
+                      orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
+                    );
+
+                    return ReorderableDragStartListener(
+                      key: ValueKey(cat.id),
+                      index: index,
+                      child: _buildImageCatalogCard(
+                        id: cat.id,
+                        name: cat.name,
+                        imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty)
+                            ? CachedNetworkImageProvider(coverItem.displayImage!)
+                            : null,
+                        isSelected: selectedId == cat.id,
+                        isLockedVault: isLocked,
+                        onLongPress: () => _showEditCategoryOptions(context, cat),
+                        itemCount: catItems.length,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         );
       },
       loading: () => const Center(child: SizedBox()),

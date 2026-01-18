@@ -54,14 +54,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             }
           }, onError: (err) => debugPrint("getMediaStream error: $err"));
 
-    ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> value) {
-      if (value.isNotEmpty && value.first.path.isNotEmpty) {
-        if (mounted) _openAddContentScreen(initialText: value.first.path);
-      }
-    });
+    // Note: getInitialMedia is handled by ShareService with proper reset()
+    // to prevent duplicate processing on cold starts
   }
 
   void _openAddContentScreen({String? initialText}) async {
+    // Get selected catalog category if on Catalog tab (index 2)
+    String? preSelectedCategoryId;
+    if (_selectedIndex == 2) {
+      preSelectedCategoryId = ref.read(selectedCatalogIdProvider);
+      // Don't pre-select special values like 'uncategorized' or null (Tümü)
+      if (preSelectedCategoryId == 'uncategorized') {
+        preSelectedCategoryId = null;
+      }
+    }
+    
     final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true, 
@@ -69,7 +76,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: Colors.transparent, 
       barrierColor: Colors.black.withOpacity(0.5),
       enableDrag: true,
-      builder: (context) => AddContentScreen(initialText: initialText),
+      builder: (context) => AddContentScreen(
+        initialText: initialText,
+        preSelectedCategoryId: preSelectedCategoryId,
+      ),
     );
 
     if (result == true) {

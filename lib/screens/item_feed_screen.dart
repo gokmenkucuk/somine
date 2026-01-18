@@ -98,8 +98,10 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final categories = categoriesAsync.value ?? [];
     final allItems = ref.watch(catalogItemsProvider).value ?? [];
 
-    // Filter out empty categories (User Request)
+    // Filter out empty categories and hide "Hızlı" from UI (User Request)
     final filteredCategories = categories.where((cat) {
+      // Hide "Hızlı" category from chips
+      if (cat.name == 'Hızlı') return false;
       return allItems.any((item) => item.categoryId == cat.id);
     }).toList();
 

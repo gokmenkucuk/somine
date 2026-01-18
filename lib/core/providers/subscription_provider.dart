@@ -10,7 +10,7 @@ class SubscriptionState {
   final String? error;
 
   const SubscriptionState({
-    this.tier = SubscriptionTier.starter,
+    this.tier = SubscriptionTier.curator, // TESTING: Force Premium
     this.isLoading = false,
     this.availablePackages = const [],
     this.error,
@@ -48,7 +48,8 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
     final packages = await _service.getOfferings();
     
     state = state.copyWith(
-      tier: _service.currentTier,
+      tier: SubscriptionTier.curator, // TESTING: Force Premium
+      // tier: _service.currentTier,
       isLoading: false,
       availablePackages: packages,
     );
@@ -61,7 +62,8 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
     final packages = await _service.getOfferings();
     
     state = state.copyWith(
-      tier: _service.currentTier,
+      tier: SubscriptionTier.curator, // TESTING: Force Premium
+      // tier: _service.currentTier,
       isLoading: false,
       availablePackages: packages,
     );

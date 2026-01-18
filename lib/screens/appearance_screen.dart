@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
 import 'package:somine_app/widgets/vibe_background.dart';
+import 'package:somine_app/screens/icon_picker_screen.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 class AppearanceScreen extends ConsumerWidget {
   const AppearanceScreen({super.key});
@@ -90,6 +92,81 @@ class AppearanceScreen extends ConsumerWidget {
                 end: Alignment.bottomRight,
               ),
               isDark: true,
+            ),
+
+            const SizedBox(height: 32),
+            
+            Text(
+              "UYGULAMA İKONU",
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            InkWell(
+              onTap: () {
+                 Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const IconPickerScreen()),
+                 );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: context.colors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(PhosphorIconsFill.appWindow, color: context.colors.primary, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "İkonu Değiştir",
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Ana ekran ikonunu özelleştir.",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(PhosphorIconsBold.caretRight, color: Colors.grey.withOpacity(0.5), size: 18),
+                  ],
+                ),
+              ),
             ),
 
             const SizedBox(height: 32),

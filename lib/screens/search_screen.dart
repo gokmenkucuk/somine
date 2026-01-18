@@ -121,11 +121,13 @@ class _SearchScreenState extends State<SearchScreen> {
     _subscribeToItems(); // Use subscription instead of fetch
     _searchController.addListener(_performSearch);
     
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) {
-        _searchFocusNode.requestFocus();
-      }
-    });
+    // Auto-focus disabled - was causing keyboard to open on cold start
+    // due to IndexedStack rendering all screens at once
+    // Future.delayed(const Duration(milliseconds: 400), () {
+    //   if (mounted) {
+    //     _searchFocusNode.requestFocus();
+    //   }
+    // });
   }
 
   void _subscribeToItems() {

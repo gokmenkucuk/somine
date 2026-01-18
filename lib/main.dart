@@ -87,6 +87,9 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
   void _handleSharedUrl() {
     final url = ShareService().sharedUrlNotifier.value;
     if (url != null) {
+      // Clear immediately to prevent re-processing
+      ShareService().sharedUrlNotifier.value = null;
+      
       _navigatorKey.currentState?.push(
         MaterialPageRoute(
           builder: (context) => AddContentScreen(initialText: url),
