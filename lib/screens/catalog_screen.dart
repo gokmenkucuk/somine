@@ -18,6 +18,7 @@ import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
+import 'package:somine_app/widgets/custom_note_icon.dart';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => null);
@@ -1122,6 +1123,19 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     
     // --- FALLBACK VIEW For Grid (Matches ItemFeedScreen exactly) ---
     Widget buildFallbackView() {
+       // Custom Note Icon View
+       if (item.type == ItemType.note) {
+          return AspectRatio(
+            aspectRatio: 1.0,
+            child: Container(
+              color: context.colors.surfaceWhite,
+              child: const Center(
+                child: CustomNoteIcon(),
+              ),
+            ),
+          );
+       }
+
        IconData icon = PhosphorIconsBold.link;
        List<Color> gradientColors = [context.colors.primary, context.colors.secondary]; // Oil Green Gradient
        final s = source.toLowerCase();
@@ -1167,8 +1181,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     }
 
     Widget contentHeader;
+    final isNote = item.type == ItemType.note;
     
-    if (hasImage) {
+    if (hasImage && !isNote) { // Notes always use fallback/custom icon view
       contentHeader = Stack(
         children: [
           item.displayImage!.startsWith('http') 

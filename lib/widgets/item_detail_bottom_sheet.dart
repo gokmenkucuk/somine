@@ -10,7 +10,9 @@ import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
 import '../core/design/app_colors.dart';
 import '../core/design/app_colors_extension.dart';
-import '../screens/edit_content_screen.dart';
+import '../screens/add_content_screen.dart';
+import '../widgets/custom_note_icon.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 
 class ItemDetailBottomSheet extends StatefulWidget {
   final ItemModel item;
@@ -170,13 +172,30 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   void _openEditScreen() {
     Navigator.push(
       context, 
-      MaterialPageRoute(builder: (context) => EditContentScreen(item: widget.item)),
+      MaterialPageRoute(builder: (context) => AddContentScreen(editItem: widget.item)),
     ).then((result) {
-      Navigator.pop(context, result); 
+      if (result != null) {
+        Navigator.pop(context, result); 
+      }
     });
   }
 
   Widget _buildFallbackHeader(IconData icon) {
+    if (widget.item.type == ItemType.note) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: const EdgeInsets.only(top: 48),
+        color: context.colors.surfaceWhite,
+        child: Center(
+          child: Transform.scale(
+            scale: 2.0, 
+            child: const CustomNoteIcon(),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -307,7 +326,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                          children: [
                            const SizedBox(height: 12),
 
-                           // OPEN BUTTON
+                           // DYNAMIC BUTTON: Edit for Notes, Open for Links
                            Padding(
                              padding: const EdgeInsets.symmetric(horizontal: 20),
                              child: Container(
@@ -330,17 +349,25 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                child: Material(
                                  color: Colors.transparent,
                                  child: InkWell(
-                                   onTap: _openInApp,
+                                   onTap: widget.item.type == ItemType.note ? _openEditScreen : _openInApp,
                                    borderRadius: BorderRadius.circular(12),
                                    child: Padding(
                                      padding: const EdgeInsets.symmetric(vertical: 14),
                                      child: Row(
                                        mainAxisAlignment: MainAxisAlignment.center,
                                        children: [
-                                         Icon(platformIcon, size: 20, color: Colors.white),
+                                         Icon(
+                                           widget.item.type == ItemType.note 
+                                               ? PhosphorIconsBold.pencilSimple 
+                                               : platformIcon, 
+                                           size: 20, 
+                                           color: Colors.white
+                                         ),
                                          const SizedBox(width: 8),
                                          Text(
-                                           "$platformName'da Aç",
+                                           widget.item.type == ItemType.note 
+                                               ? "Düzenle" 
+                                               : "$platformName'da Aç",
                                            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
                                          ),
                                        ],
@@ -387,30 +414,44 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
                                     const SizedBox(height: 32),
 
-                                    // Note (if any)
-                                    if (widget.item.note != null && widget.item.note!.isNotEmpty && widget.item.note != widget.item.displayTitle) ...[
-                                       Text('Not', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)),
-                                       const SizedBox(height: 8),
+                                    // Note Content (Always show if present)
+                                    if (widget.item.note != null && widget.item.note!.isNotEmpty) ...[
                                        Text(
-                                         widget.item.note!,
-                                         style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
+                                         widget.item.type == ItemType.note ? 'İçerik' : 'Not', // Label changes based on type
+                                         style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)
+                                       ),
+                                       const SizedBox(height: 8),
+                                       Align(
+                                         alignment: Alignment.centerLeft,
+                                         child: Linkify(
+                                           text: widget.item.note!,
+                                           onOpen: (link) async {
+                                             if (!await launchUrl(Uri.parse(link.url), mode: LaunchMode.externalApplication)) {
+                                               throw Exception('Could not launch ${link.url}');
+                                             }
+                                           },
+                                           textAlign: TextAlign.start,
+                                           style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
+                                           linkStyle: GoogleFonts.poppins(fontSize: 14, color: context.colors.primary, fontWeight: FontWeight.bold),
+                                         ),
                                        ),
                                        const SizedBox(height: 32),
                                     ],
                                     
                                     
-                                    // Footer Text
-                                    Center(
-                                      child: Text(
-                                        "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 10,
-                                          color: context.colors.hint,
-                                          fontStyle: FontStyle.italic,
+                                    // Footer Text (Hide for notes)
+                                    if (widget.item.type != ItemType.note)
+                                      Center(
+                                        child: Text(
+                                          "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 10,
+                                            color: context.colors.hint,
+                                            fontStyle: FontStyle.italic,
+                                          ),
                                         ),
                                       ),
-                                    ),
                                     
                                     SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                                  ],

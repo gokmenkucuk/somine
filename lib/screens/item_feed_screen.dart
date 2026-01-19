@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:somine_app/widgets/custom_note_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -506,7 +507,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             childCount: items.length,
           ),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72,
+            crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.75,
           ),
         );
       case ViewMode.masonry:
@@ -530,7 +531,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   }
 
   Widget _buildContentCardRefactored(ItemModel item, String badgeText, List<CategoryModel> categories, {required bool isGrid, bool forceSquare = false}) {
-    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
+    // Notes always show empty/fallback view with note icon
+    final isNote = item.type == ItemType.note;
+    final hasImage = !isNote && item.displayImage != null && item.displayImage!.isNotEmpty;
     final source = item.url ?? '';
 
     Widget buildImage() {
@@ -548,26 +551,28 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 aspectRatio: 1.0,
                 child: _ImageShimmerPlaceholder(),
               ),
-              errorWidget: (context, url, error) => _buildFallbackView(source),
+              errorWidget: (context, url, error) => _buildFallbackView(source, isNote: isNote),
             )
           : Image.asset(
               item.displayImage!,
               fit: fit,
               alignment: Alignment.center,
-              errorBuilder: (context, error, stackTrace) => _buildFallbackView(source),
+              errorBuilder: (context, error, stackTrace) => _buildFallbackView(source, isNote: isNote),
             );
       } else {
-        return _buildFallbackView(source);
+        return _buildFallbackView(source, isNote: isNote);
       }
     }
 
     Widget cardContent;
 
     if (!hasImage) {
-      // Empty content: Always Square, No Icon
+      // Empty content: Always Square, Note icon for notes
+      // USER REQUEST: Notes should be rectangular to fit screen better (Feed only)
+      // Grid view (forceSquare) must remain 1.0
       cardContent = AspectRatio(
-        aspectRatio: 1.0,
-        child: _buildFallbackView(source),
+        aspectRatio: forceSquare ? 1.0 : (isNote ? 1.5 : 1.0), 
+        child: _buildFallbackView(source, isNote: isNote),
       );
     } else {
       // Has Image: Natural or Forced Square, With Icon
@@ -646,12 +651,116 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     );
   }
 
-  Widget _buildFallbackView(String source) {
-    IconData icon = PhosphorIconsLight.link;
-    // Unified Green Gradient for all Empty State Icons
-    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
+  // DEDICATED NOTE CARD
+  Widget _buildNoteCard(ItemModel item, String badgeText, List<CategoryModel> categories) {
+    final notePreview = item.note ?? item.displayTitle;
+    
+    return FadeInUp(
+      duration: const Duration(milliseconds: 400),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          // Warm paper-like gradient for notes
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFFFFFBF5), // Warm cream
+              const Color(0xFFF5F0E8), // Soft beige
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () async {
+                final result = await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    enableDrag: true, 
+                    builder: (context) => ItemDetailBottomSheet(item: item, categoryName: badgeText, categories: categories),
+                );
+                
+                if (result == true) {
+                   ref.invalidate(paginatedFeedProvider);
+                   ref.invalidate(itemCountProvider);
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Note Icon Row
+                    Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: context.colors.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            PhosphorIconsBold.noteBlank,
+                            size: 16,
+                            color: context.colors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          badgeText,
+                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: context.colors.hint),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Title
+                    if (item.displayTitle.isNotEmpty)
+                      Text(
+                        item.displayTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: context.colors.headline),
+                      ),
+                    
+                    const SizedBox(height: 6),
+                    
+                    // Note Preview
+                    Text(
+                      notePreview,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: context.colors.body,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (source.contains('x.com') || source.contains('twitter')) {
+  Widget _buildFallbackView(String source, {bool isNote = false}) {
+    IconData icon;
+    
+    // Note icon for notes, platform icon for others
+    if (isNote) {
+      icon = PhosphorIconsLight.file;
+    } else if (source.contains('x.com') || source.contains('twitter')) {
       icon = PhosphorIconsBold.xLogo;
     } else if (source.contains('instagram')) {
       icon = PhosphorIconsBold.instagramLogo;
@@ -659,7 +768,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       icon = PhosphorIconsBold.youtubeLogo;
     } else if (source.contains('pinterest')) {
       icon = PhosphorIconsBold.pinterestLogo;
+    } else {
+      icon = PhosphorIconsLight.link;
     }
+    
+    // Unified Green Gradient for all Empty State Icons
+    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
 
     return AspectRatio(
       aspectRatio: 1.0, // Square container for equal spacing
@@ -672,18 +786,29 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
            ),
          ),
          child: Center(
-           child: ShaderMask(
-             shaderCallback: (bounds) => LinearGradient(
-               colors: gradientColors,
-               begin: Alignment.topLeft,
-               end: Alignment.bottomRight,
-             ).createShader(bounds),
-             child: Icon(icon, size: 48, color: Colors.white),
-           ),
+           child: isNote 
+             ? _buildCustomNoteGraphic()
+             : ShaderMask(
+                 shaderCallback: (bounds) => LinearGradient(
+                   colors: gradientColors,
+                   begin: Alignment.topLeft,
+                   end: Alignment.bottomRight,
+                 ).createShader(bounds),
+                 child: Icon(icon, size: 48, color: Colors.white),
+               ),
          ),
       ),
     );
   }
+
+  Widget _buildCustomNoteGraphic() {
+    return const CustomNoteIcon();
+  }
+
+  /* 
+  Widget _buildCustomNoteGraphic() { ... } 
+  Removed custom graphic to use standard icons
+  */
 
   Widget _buildPlatformIconWidget(String source) {
     final s = source.toLowerCase();

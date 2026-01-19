@@ -24,8 +24,14 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 class AddContentScreen extends StatefulWidget {
   final String? initialText;
   final String? preSelectedCategoryId;
+  final ItemModel? editItem; // For editing existing items
 
-  const AddContentScreen({super.key, this.initialText, this.preSelectedCategoryId});
+  const AddContentScreen({
+    super.key, 
+    this.initialText, 
+    this.preSelectedCategoryId,
+    this.editItem,
+  });
 
   @override
   State<AddContentScreen> createState() => _AddContentScreenState();
@@ -43,11 +49,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   late Animation<double> _textAnimation;
   late AnimationController _loadingController;
   late AnimationController _rotationController;
+  late AnimationController _arrowAnimationController;
 
   // State
   bool _isSaving = false;
   bool _isLoadingMetadata = false;
   bool _isManualEntry = true; // Default to true (Skip splash)
+  bool _isNoteMode = false; // Toggle between Note and Link mode
 
   // Clipboard State
   bool _hasClipboardContent = false;
@@ -103,6 +111,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     )..repeat();
     _textAnimation = Tween<double>(begin: 0, end: 1).animate(_textAnimationController);
 
+    // Arrow shimmer animation for toggle
+    _arrowAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+
     // Listeners for UI updates (Delete icon opacity)
     _titleController.addListener(() => setState(() {}));
     _noteController.addListener(() => setState(() {}));
@@ -110,7 +124,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
     // Check clipboard on open to show notice (auto: true just sets the flag)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+       // 4. Handle Edit Mode Initialization
+       if (widget.editItem != null) {
+         _initializeEditMode();
+       } else if (widget.initialText != null && widget.initialText!.isNotEmpty) {
          _processUrl(widget.initialText!);
        } else {
          _checkClipboardAndProcess(auto: true);
@@ -139,7 +156,39 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     _textAnimationController.dispose();
     _loadingController.dispose();
     _rotationController.dispose();
+    _arrowAnimationController.dispose();
     super.dispose();
+  }
+
+  void _initializeEditMode() {
+    final item = widget.editItem!;
+    
+    // Set Mode
+    _isNoteMode = item.type == ItemType.note;
+    
+    // Set Text Fields
+    _titleController.text = item.displayTitle;
+    _noteController.text = item.note ?? "";
+    
+    // Set Link
+    if (item.url != null && item.url!.isNotEmpty) {
+      _linkController.text = item.url!;
+      _detectedLink = item.url!;
+      _hasLink = true;
+      _isManualEntry = false;
+      // Pre-fill metadata from item
+      _ogMetadata = item.ogMetadata;
+       if (_ogMetadata?.imageUrl != null) {
+          _resolveImageSize(_ogMetadata!.imageUrl!);
+       }
+    }
+
+    // Set Category
+    if (item.categoryId != null) {
+      _selectedCategoryIds.add(item.categoryId!);
+    }
+    
+    if (mounted) setState(() {}); 
   }
 
   // ============== BUSINESS LOGIC ==============
@@ -385,7 +434,17 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   }
 
   Future<void> _saveContent() async {
-    if (_titleController.text.isEmpty &&
+    // Validation: Note mode requires both title and note
+    if (_isNoteMode) {
+      if (_titleController.text.trim().isEmpty) {
+        _showError("Başlık zorunludur");
+        return;
+      }
+      if (_noteController.text.trim().isEmpty) {
+        _showError("Not zorunludur");
+        return;
+      }
+    } else if (_titleController.text.isEmpty &&
         _noteController.text.isEmpty &&
         !_hasLink) {
       return;
@@ -438,27 +497,78 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           ? _noteController.text
           : _titleController.text;
 
-      final futures = _selectedCategoryIds.map((catId) {
-        final newItem = ItemModel(
-          id: '',
-          userId: userId,
-          categoryId: catId,
-          type: _hasLink ? ItemType.link : ItemType.note,
-          url: _hasLink ? _detectedLink : null,
-          note: noteText,
-          ogMetadata: _ogMetadata,
-          createdAt: now,
-          updatedAt: now,
-        );
-        return _itemRepository.createItem(newItem);
-      });
+      // --- EDIT MODE START ---
+      if (widget.editItem != null) {
+          final originalCatId = widget.editItem!.categoryId;
+          final Set<String> targetIds = Set.from(_selectedCategoryIds);
+          String primaryTargetId;
 
-      await Future.wait(futures);
+          if (originalCatId != null && targetIds.contains(originalCatId)) {
+            primaryTargetId = originalCatId;
+            targetIds.remove(originalCatId);
+          } else {
+             primaryTargetId = targetIds.first;
+             targetIds.remove(primaryTargetId);
+          }
+          
+          final updatedItem = widget.editItem!.copyWith(
+              categoryId: primaryTargetId,
+              // If switched to note mode, force Note type. If in content mode (link), ensure Link type if link exists
+              type: _isNoteMode ? ItemType.note : (_hasLink ? ItemType.link : ItemType.note),
+              url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
+              note: noteText,
+              ogMetadata: _isNoteMode ? null : _ogMetadata,
+              // Update title if needed? Usually ItemModel uses ogTitle or sets displayTitle logic.
+              // Note: We don't have a 'title' field in ItemModel root exposed openly besides what's inside ogMetadata? 
+              // Actually ItemModel is flexible.
+              updatedAt: DateTime.now(),
+          );
 
-      if (mounted) {
-        Navigator.pop(context, true);
-        _showSuccess("${_selectedCategoryIds.length} koleksiyona eklendi");
+          await _itemRepository.updateItem(updatedItem);
+          
+          // Create clones for other selected categories
+          if (targetIds.isNotEmpty) {
+            final futures = targetIds.map((catId) {
+              final clone = updatedItem.copyWith(
+                id: '', // New ID
+                categoryId: catId,
+                createdAt: now,
+                updatedAt: now,
+              );
+              return _itemRepository.createItem(clone);
+            });
+            await Future.wait(futures);
+          }
+          
+          if (mounted) {
+            Navigator.pop(context, true); // Return success
+          }
+      } 
+      // --- CREATE MODE START ---
+      else {
+        final futures = _selectedCategoryIds.map((catId) {
+          final newItem = ItemModel(
+            id: '',
+            userId: userId,
+            categoryId: catId,
+            type: _isNoteMode ? ItemType.note : (_hasLink ? ItemType.link : ItemType.note),
+            url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
+            note: noteText,
+            ogMetadata: _isNoteMode ? null : _ogMetadata,
+            createdAt: now,
+            updatedAt: now,
+          );
+          return _itemRepository.createItem(newItem);
+        });
+
+        await Future.wait(futures);
+
+        if (mounted) {
+          Navigator.pop(context, true);
+          _showSuccess("${_selectedCategoryIds.length} koleksiyona eklendi");
+        }
       }
+
     } catch (e) {
       debugPrint("Save error: $e");
       if (mounted) _showError("Bir hata oluştu");
@@ -493,6 +603,122 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     );
   }
 
+  Future<void> _deleteItem() async {
+    try {
+      if (widget.editItem != null) {
+        await _itemRepository.deleteItem(widget.editItem!.id);
+        if (mounted) {
+          Navigator.pop(context, true); // Return success (true indicates update/delete)
+        }
+      }
+    } catch (e) {
+      debugPrint("Delete error: $e");
+      if (mounted) _showError("Silme işlemi başarısız");
+    }
+  }
+
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Center(
+            child: Text(
+              "Silme Onayı",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: context.colors.headline,
+              ),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Bu içeriği silmek istediğinize emin misiniz?",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: context.colors.body,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: context.colors.surfaceWhite,
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.grey.shade300, Colors.grey.shade400],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Vazgeç",
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context); // Close dialog
+                      _deleteItem();
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Sil",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // ============== UI BUILD ==============
 
   @override
@@ -508,12 +734,15 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       maxChildSize: 1.0,
       snap: true,
       builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: context.colors.surfaceWhite,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Stack(
+        return Material(
+          color: Colors.transparent, // Material typically needs a color or transparent
+          type: MaterialType.transparency, // Important for overlay
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Stack(
             children: [
               // Main Content
               SingleChildScrollView(
@@ -521,8 +750,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 physics: const AlwaysScrollableScrollPhysics(), // Ensure drag works even if content is short
                 child: Column(
                   children: [
-                    _buildHeroStage(),
-                    if (_hasLink || _isManualEntry) _buildControlCenter(),
+                    // Hide hero stage in Note mode
+                    if (!_isNoteMode) _buildHeroStage(),
+                    if (_hasLink || _isManualEntry || _isNoteMode) _buildControlCenter(),
                     const SizedBox(height: 140),
                   ],
                 ),
@@ -536,7 +766,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
               ),
 
               // Sticky Trash Button (Moved from HeroStage)
-              if ((_hasLink || _isManualEntry) && !_isLoadingMetadata)
+              if ((_hasLink || _isManualEntry || _isNoteMode) && !_isLoadingMetadata)
                 Positioned(
                   top: 56, // Matched Left button
                   right: 16,
@@ -547,11 +777,17 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                                           _noteController.text.isNotEmpty ||
                                           _linkController.text.isNotEmpty;
                        
+                       // In edit mode, trash button is always enabled (delete item)
+                       final isEditMode = widget.editItem != null;
+                       final isEnabled = isEditMode || hasContent;
+
                        return Opacity(
-                          opacity: hasContent ? 1.0 : 0.4,
+                          opacity: isEnabled ? 1.0 : 0.4,
                           child: _buildCircleButton(
                             icon: PhosphorIconsLight.trash, 
-                            onTap: hasContent ? _clearContent : () {}, 
+                            onTap: isEditMode 
+                                ? _showDeleteConfirmation 
+                                : (hasContent ? _clearContent : () {}), 
                           ),
                         );
                     }
@@ -559,8 +795,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 ),
 
               // Floating CTA Dock
-              // Show dock if we have a link OR we are in manual entry mode
-              if (_hasLink || _isManualEntry)
+              // Show dock if we have a link OR manual entry mode OR note mode
+              if (_hasLink || _isManualEntry || _isNoteMode)
                 Positioned(
                   bottom: 40,
                   left: 24,
@@ -569,7 +805,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 ),
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -800,10 +1037,15 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          // Extra top spacing in Note mode (since hero is hidden)
+          SizedBox(height: _isNoteMode ? 110 : 24),
 
-          // Link Preview / Input (Show if link detected OR manual entry mode)
-          if (_hasLink || _isManualEntry) ...[
+          // MODE TOGGLE: Type selector
+          _buildModeToggle(),
+          const SizedBox(height: 18), // Slightly more spacing
+
+          // Link Preview / Input (Hide if Note Mode is active)
+          if (!_isNoteMode && (_hasLink || _isManualEntry)) ...[
              _buildLinkPreview(),
              const SizedBox(height: 16),
           ],
@@ -812,21 +1054,21 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           _buildInputField(
             controller: _titleController,
             icon: PhosphorIconsThin.pencilSimple, // Thin
-            hint: "Başlık ekle (opsiyonel)",
+            hint: _isNoteMode ? "Başlık *" : "Başlık ekle (opsiyonel)",
             isTitle: true,
           ),
           
           const SizedBox(height: 12),
 
-          // Note Input
+          // Note Input (Larger in Note Mode - but keep collection visible)
           _buildInputField(
             controller: _noteController,
             icon: PhosphorIconsThin.notePencil, // Thin
-            hint: "Kişisel not ekle (opsiyonel)",
-            maxLines: 3,
+            hint: _isNoteMode ? "Not *" : "Kişisel not ekle (opsiyonel)",
+            maxLines: _isNoteMode ? 10 : 3, // Balanced size to show collection
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 18), // Equal spacing
 
           // Category Section Header
           Text(
@@ -860,19 +1102,6 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           ),
 
           const SizedBox(height: 16),
-
-          // Selected Count
-          if (_selectedCategoryIds.isNotEmpty)
-            Center(
-              child: Text(
-                "${_selectedCategoryIds.length} koleksiyon seçildi",
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: context.colors.primary,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -931,7 +1160,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 contentPadding: EdgeInsets.zero, 
               ),
               maxLines: maxLines,
-              minLines: maxLines > 1 ? 2 : 1,
+              minLines: maxLines > 3 ? maxLines : (maxLines > 1 ? 2 : 1),
             ),
           ),
         ],
@@ -1098,6 +1327,175 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     );
   }
 
+  // ============== MODE TOGGLE (Slide Action Style) ==============
+
+  Widget _buildModeToggle() {
+    // If in edit mode, show static title instead of toggle
+    if (widget.editItem != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Text(
+            _isNoteMode ? "Notu Düzenle" : "İçeriği Düzenle",
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: context.colors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _isNoteMode = !_isNoteMode;
+              if (_isNoteMode) {
+                _hasLink = false;
+                _detectedLink = "";
+                _ogMetadata = null;
+              }
+            });
+          },
+          child: Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: context.colors.body.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: context.colors.body.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
+            child: Stack(
+              children: [
+                // Center Text
+                Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Text(
+                      _isNoteMode ? "İçerik Moduna Geç" : "Not Moduna Geç",
+                      key: ValueKey(_isNoteMode),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: context.colors.body.withOpacity(0.6),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Right Arrows (when in content mode) - ANIMATED
+                Positioned(
+                  right: 16,
+                  top: 0,
+                  bottom: 0,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: !_isNoteMode ? 1.0 : 0.0,
+                    child: Center(
+                      child: AnimatedBuilder(
+                        animation: _arrowAnimationController,
+                        builder: (context, child) {
+                          final offset = _arrowAnimationController.value * 4;
+                          return Transform.translate(
+                            offset: Offset(offset, 0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(PhosphorIconsBold.caretRight, size: 12, color: context.colors.body.withOpacity(0.25)),
+                                Icon(PhosphorIconsBold.caretRight, size: 12, color: context.colors.body.withOpacity(0.4)),
+                                Icon(PhosphorIconsBold.caretRight, size: 12, color: context.colors.body.withOpacity(0.55)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Left Arrows (when in note mode) - ANIMATED
+                Positioned(
+                  left: 16,
+                  top: 0,
+                  bottom: 0,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _isNoteMode ? 1.0 : 0.0,
+                    child: Center(
+                      child: AnimatedBuilder(
+                        animation: _arrowAnimationController,
+                        builder: (context, child) {
+                          final offset = _arrowAnimationController.value * -4;
+                          return Transform.translate(
+                            offset: Offset(offset, 0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(PhosphorIconsBold.caretLeft, size: 12, color: context.colors.body.withOpacity(0.55)),
+                                Icon(PhosphorIconsBold.caretLeft, size: 12, color: context.colors.body.withOpacity(0.4)),
+                                Icon(PhosphorIconsBold.caretLeft, size: 12, color: context.colors.body.withOpacity(0.25)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Sliding Circle Indicator
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOutBack,
+                  left: _isNoteMode ? totalWidth - 52 : 4,
+                  top: 4,
+                  bottom: 4,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [context.colors.primary, context.colors.secondary],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: context.colors.primary.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          _isNoteMode ? PhosphorIconsBold.link : PhosphorIconsBold.notePencil,
+                          key: ValueKey(_isNoteMode ? 'link' : 'note'),
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // ============== FLOATING DOCK ==============
 
   Widget _buildFloatingDock() {
@@ -1134,13 +1532,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      PhosphorIconsBold.plus, 
+                      widget.editItem != null ? PhosphorIconsBold.floppyDisk : PhosphorIconsBold.plus, 
                       size: 20,
                       color: Colors.white, 
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "Koleksiyona Ekle",
+                      widget.editItem != null ? "Kaydet" : "Koleksiyona Ekle",
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
