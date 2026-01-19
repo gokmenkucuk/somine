@@ -133,7 +133,14 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     if (s.contains('youtube')) return 'YouTube';
     if (s.contains('x.com') || s.contains('twitter')) return 'X';
     if (s.contains('pinterest')) return 'Pinterest';
-    return 'Uygulama';
+    if (s.contains('tiktok')) return 'TikTok';
+    if (s.contains('linkedin')) return 'LinkedIn';
+    if (s.contains('spotify')) return 'Spotify';
+    if (s.contains('reddit')) return 'Reddit';
+    if (s.contains('medium.com')) return 'Medium';
+    if (s.contains('behance')) return 'Behance';
+    if (s.contains('dribbble')) return 'Dribbble';
+    return 'Tarayıcı'; // Generic web = Browser
   }
 
   IconData _getPlatformIcon(String? url) {

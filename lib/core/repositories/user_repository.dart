@@ -99,7 +99,18 @@ class UserRepository {
       if (displayName != null) updates['displayName'] = displayName;
       if (photoURL != null) updates['photoURL'] = photoURL;
 
+      // 1. Update Firestore
       await _usersCollection.doc(uid).update(updates);
+      
+      // 2. Update Firebase Auth (Sync)
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null && currentUser.uid == uid) {
+        if (displayName != null) await currentUser.updateDisplayName(displayName);
+        if (photoURL != null) await currentUser.updatePhotoURL(photoURL);
+        // Force reload to propagate changes to listeners
+        await currentUser.reload(); 
+      }
+
       debugPrint('✅ [UserRepository] User profile updated: $uid');
     } catch (e) {
       debugPrint('❌ [UserRepository] Error updating user profile: $e');

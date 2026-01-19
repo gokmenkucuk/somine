@@ -439,16 +439,28 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
               ),
-              child: Container(
                 alignment: Alignment.center,
                 height: 56,
-                child: Text(
-                  'Kaynağa Git',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Dynamic Platform Icon
+                    Icon(
+                      _getPlatformIcon(widget.item.platform),
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    // Dynamic Text
+                    Text(
+                      _getPlatformActionText(widget.item.platform),
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -456,5 +468,29 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         ),
       ),
     );
+  }
+
+  // Helper for dynamic icon
+  IconData _getPlatformIcon(String platform) {
+    switch (platform) {
+      case 'Instagram': return PhosphorIconsBold.instagramLogo;
+      case 'YouTube': return PhosphorIconsBold.youtubeLogo;
+      case 'X': return PhosphorIconsBold.xLogo;
+      case 'TikTok': return PhosphorIconsBold.tiktokLogo;
+      case 'LinkedIn': return PhosphorIconsBold.linkedinLogo;
+      case 'Spotify': return PhosphorIconsBold.spotifyLogo;
+      case 'Pinterest': return PhosphorIconsBold.pinterestLogo;
+      case 'Reddit': return PhosphorIconsBold.redditLogo;
+      case 'Medium': return PhosphorIconsBold.mediumLogo;
+      case 'Behance': return PhosphorIconsBold.behanceLogo;
+      case 'Dribbble': return PhosphorIconsBold.dribbbleLogo;
+      default: return PhosphorIconsBold.link; // Generic link icon for Web
+    }
+  }
+
+  // Helper for dynamic text
+  String _getPlatformActionText(String platform) {
+    if (platform == 'Web') return 'Tarayıcıda Aç';
+    return '$platform\'da Aç'; // e.g. "Instagram'da Aç"
   }
 }

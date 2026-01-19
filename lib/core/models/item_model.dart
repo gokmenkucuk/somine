@@ -181,6 +181,27 @@ class ItemModel {
     return ogMetadata?.imageUrl ?? imageUrl;
   }
 
+  /// Get platform name based on URL
+  String get platform {
+    if (url == null) return 'Web';
+    final lowerUrl = url!.toLowerCase();
+    
+    if (lowerUrl.contains('instagram.com')) return 'Instagram';
+    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) return 'YouTube';
+    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) return 'X';
+    if (lowerUrl.contains('tiktok.com')) return 'TikTok';
+    if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
+    if (lowerUrl.contains('spotify.com')) return 'Spotify';
+    if (lowerUrl.contains('pinterest.com')) return 'Pinterest';
+    if (lowerUrl.contains('reddit.com')) return 'Reddit';
+    if (lowerUrl.contains('medium.com')) return 'Medium';
+    if (lowerUrl.contains('behance.net')) return 'Behance';
+    if (lowerUrl.contains('dribbble.com')) return 'Dribbble';
+    
+    // Explicitly check for generic web
+    return 'Web';
+  }
+
   @override
   String toString() {
     return 'ItemModel(id: $id, type: $type, url: $url)';

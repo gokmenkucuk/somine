@@ -12,6 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:somine_app/core/services/storage_service.dart';
+import 'package:somine_app/core/services/metadata_service.dart';
 
 
 import 'dart:math' as math;
@@ -301,45 +302,24 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   Future<void> _fetchMetadata(String url) async {
     setState(() => _isLoadingMetadata = true);
     try {
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final document = parser.parse(response.body);
-        final metaTags = document.getElementsByTagName('meta');
+      // Use centralized MetadataService with all fallbacks
+      final metadata = await MetadataService.fetchMetadata(url);
 
-        String? title, description, image, siteName;
-
-        for (var tag in metaTags) {
-          final property = tag.attributes['property'];
-          final name = tag.attributes['name'];
-          final content = tag.attributes['content'];
-
-          if (content == null) continue;
-
-          if (property == 'og:title' || name == 'title') title = content;
-          if (property == 'og:description' || name == 'description') {
-            description = content;
+      if (mounted && metadata != null) {
+        setState(() {
+          _ogMetadata = OGMetadata(
+            title: metadata.title,
+            description: metadata.description,
+            imageUrl: metadata.imageUrl,
+            siteName: metadata.siteName ?? _detectedPlatform,
+          );
+          if (metadata.title != null && _titleController.text.isEmpty) {
+            _titleController.text = metadata.title!;
           }
-          if (property == 'og:image' || name == 'image') image = content;
-          if (property == 'og:site_name') siteName = content;
-        }
-
-        if (mounted) {
-          setState(() {
-            _ogMetadata = OGMetadata(
-              title: title,
-              description: description,
-              imageUrl: image,
-              siteName: siteName ?? _detectedPlatform,
-            );
-            if (title != null && _titleController.text.isEmpty) {
-              _titleController.text = title;
-            }
-            if (image != null) {
-              _resolveImageSize(image);
-            }
-          });
-        }
+          if (metadata.imageUrl != null) {
+            _resolveImageSize(metadata.imageUrl!);
+          }
+        });
       }
     } catch (e) {
       debugPrint("Metadata fetch error: $e");
@@ -445,14 +425,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         
         if (!mounted) return;
 
-        if (persistentUrl != null) {
-           _ogMetadata = OGMetadata(
-             title: _ogMetadata!.title,
-             description: _ogMetadata!.description,
-             imageUrl: persistentUrl, // Use new Firebase Storage URL
-             siteName: _ogMetadata!.siteName,
-           );
-        }
+        // Use Firebase Storage URL if upload succeeded, otherwise KEEP original URL
+        _ogMetadata = OGMetadata(
+          title: _ogMetadata!.title,
+          description: _ogMetadata!.description,
+          imageUrl: persistentUrl ?? _ogMetadata!.imageUrl, // Fallback to original!
+          siteName: _ogMetadata!.siteName,
+        );
       }
       
       final noteText = _noteController.text.isNotEmpty

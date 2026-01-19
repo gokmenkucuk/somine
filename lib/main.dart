@@ -148,7 +148,12 @@ class AuthWrapper extends ConsumerWidget {
           // If explicit onboarding state is set, respect it
           if (isOnboarding) return const SoMineLoadingWidget();
           
-          // Heuristic for new user detection
+          // 1. Check if name is already set (Onboarding Complete)
+          if (user.displayName != null && user.displayName!.isNotEmpty) {
+             return const HomeScreen();
+          }
+          
+          // 2. Heuristic for new user detection (Only if name is missing)
           final metadata = user.metadata;
           if (metadata.creationTime != null && metadata.lastSignInTime != null) {
             final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();

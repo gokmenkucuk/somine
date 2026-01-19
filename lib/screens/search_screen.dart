@@ -216,21 +216,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
         // Platform Filter
         if (_selectedPlatform != null) {
-          final url = item.url?.toLowerCase() ?? '';
-          final siteName = item.ogMetadata?.siteName?.toLowerCase() ?? '';
-          final filter = _selectedPlatform!.toLowerCase();
-
-          // Simple contains check
-          if (filter == 'web') {
-             // Web matches if NOT specific social
-             final isSocial = url.contains('youtube') || 
-                              url.contains('instagram') || 
-                              url.contains('tiktok') || 
-                              url.contains('twitter') || 
-                              url.contains('x.com');
-             matchesPlatform = !isSocial; 
+          final filter = _selectedPlatform!; // No lowercase needed, we match exact platform name from model
+          
+          if (filter == 'Web') {
+            matchesPlatform = item.platform == 'Web';
           } else {
-             matchesPlatform = url.contains(filter) || siteName.contains(filter);
+            matchesPlatform = item.platform == filter;
           }
         }
         
@@ -317,11 +308,25 @@ class _SearchScreenState extends State<SearchScreen> {
                                   const SizedBox(width: 8),
                                   _buildPlatformFilterChip("YouTube", PhosphorIconsBold.youtubeLogo),
                                   const SizedBox(width: 8),
-                                  _buildPlatformFilterChip("Web", PhosphorIconsBold.globe),
+                                  _buildPlatformFilterChip("X", PhosphorIconsBold.xLogo),
                                   const SizedBox(width: 8),
                                   _buildPlatformFilterChip("TikTok", PhosphorIconsBold.tiktokLogo),
                                   const SizedBox(width: 8),
-                                  _buildPlatformFilterChip("X", PhosphorIconsBold.xLogo),
+                                  _buildPlatformFilterChip("Spotify", PhosphorIconsBold.spotifyLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("LinkedIn", PhosphorIconsBold.linkedinLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Pinterest", PhosphorIconsBold.pinterestLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Reddit", PhosphorIconsBold.redditLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Medium", PhosphorIconsBold.mediumLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Behance", PhosphorIconsBold.behanceLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Dribbble", PhosphorIconsBold.dribbbleLogo),
+                                  const SizedBox(width: 8),
+                                  _buildPlatformFilterChip("Web", PhosphorIconsBold.globe),
                                 ],
                               ),
                             ),
