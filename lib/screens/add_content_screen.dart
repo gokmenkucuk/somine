@@ -77,7 +77,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   // ============== COLORS ==============
 
   void _resolveImageSize(String imageUrl) {
-    if (imageUrl.isEmpty) return;
+    if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
     
     // Reset first
     setState(() => _imageAspectRatio = null);
@@ -840,7 +840,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       stageHeight = size.height * 0.75;
     }
 
-    final hasImage = _ogMetadata?.imageUrl != null;
+    final hasImage = _ogMetadata?.imageUrl != null && !_ogMetadata!.imageUrl!.toLowerCase().contains('.svg');
 
     return GestureDetector(
       // Only check clipboard if we are in the initial empty state

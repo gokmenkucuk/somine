@@ -57,7 +57,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
   double? _imageAspectRatio;
 
   void _resolveImageSize(String imageUrl) {
-    if (imageUrl.isEmpty) return;
+    if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
     
     // Reset first
     setState(() => _imageAspectRatio = null);
@@ -583,7 +583,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
     // Use ogMetadata image first, fallback to original item image
     final imageUrl = _ogMetadata?.imageUrl ?? widget.item.displayImage;
-    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty && !imageUrl.toLowerCase().contains('.svg');
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),

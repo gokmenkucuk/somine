@@ -657,7 +657,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildResultCard(ItemModel item, String badgeText) {
     // Masonry Aspect Ratio Logic from HomeScreen
     final aspectRatio = (item.id.codeUnitAt(0) % 3 == 0) ? 0.75 : (item.id.codeUnitAt(0) % 3 == 1) ? 1.0 : 1.2;
-    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
+    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty && !item.displayImage!.toLowerCase().contains('.svg');
     final source = item.url ?? '';
 
     Widget buildImage() {

@@ -108,7 +108,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
   void _resolveImageSize() {
     final imageUrl = widget.item.displayImage;
-    if (imageUrl == null || imageUrl.isEmpty) return;
+    if (imageUrl == null || imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
 
     ImageProvider? provider;
     if (imageUrl.startsWith('http')) {
@@ -260,7 +260,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = widget.item.displayImage != null && widget.item.displayImage!.isNotEmpty;
+    final hasImage = widget.item.displayImage != null && widget.item.displayImage!.isNotEmpty && !widget.item.displayImage!.toLowerCase().contains('.svg');
     final platformName = _getPlatformName(widget.item.url);
     final platformIcon = _getPlatformIcon(widget.item.url);
     
