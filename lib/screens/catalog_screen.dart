@@ -28,7 +28,9 @@ final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => nu
 final isReorderingProvider = StateProvider.autoDispose<bool>((ref) => false);
 
 class CatalogScreen extends ConsumerStatefulWidget {
-  const CatalogScreen({super.key});
+  final String? initialCategoryId;
+
+  const CatalogScreen({super.key, this.initialCategoryId});
 
   @override
   ConsumerState<CatalogScreen> createState() => _CatalogScreenState();
@@ -39,6 +41,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
 
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCategoryId != null) {
+      // Delay to allow provider to be ready/listened? 
+      // Actually with Riverpod we can set it immediately but avoid build phase issues.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(selectedCatalogIdProvider.notifier).state = widget.initialCategoryId;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -349,7 +363,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       final isLocked = cat.isVault && !isVaultUnlocked;
                       final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
                       final coverItem = catItems.firstWhere(
-                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
+                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty && !i.displayImage!.toLowerCase().endsWith('.svg'),
                         orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
                       );
 
@@ -391,7 +405,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       final isLocked = cat.isVault && !isVaultUnlocked;
                       final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
                       final coverItem = catItems.firstWhere(
-                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty,
+                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty && !i.displayImage!.toLowerCase().endsWith('.svg'),
                         orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
                       );
 

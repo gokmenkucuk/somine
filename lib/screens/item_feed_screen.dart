@@ -533,7 +533,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   Widget _buildContentCardRefactored(ItemModel item, String badgeText, List<CategoryModel> categories, {required bool isGrid, bool forceSquare = false}) {
     // Notes always show empty/fallback view with note icon
     final isNote = item.type == ItemType.note;
-    final hasImage = !isNote && item.displayImage != null && item.displayImage!.isNotEmpty;
+    final hasImage = !isNote && item.displayImage != null && item.displayImage!.isNotEmpty && !item.displayImage!.toLowerCase().endsWith('.svg');
     final source = item.url ?? '';
 
     // --- FALLBACK VIEW (UNIFIED with Catalog) ---

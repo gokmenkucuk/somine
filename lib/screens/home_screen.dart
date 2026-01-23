@@ -11,6 +11,7 @@ import 'package:somine_app/widgets/vibe_background.dart';
 import 'package:somine_app/screens/item_feed_screen.dart';
 import 'package:somine_app/screens/search_screen.dart';
 import 'package:somine_app/screens/profile_screen.dart';
+import 'package:somine_app/core/providers/navigation_providers.dart'; // Added
 import 'package:somine_app/screens/catalog_screen.dart';
 import 'package:somine_app/screens/add_content_screen.dart';
 
@@ -22,7 +23,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _selectedIndex = 0;
+  // Removed local _selectedIndex
 
   // Sharing Subscription
   late StreamSubscription _intentDataStreamSubscription;
@@ -40,9 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    ref.read(homeTabIndexProvider.notifier).state = index;
   }
 
   void _setupSharingIntent() {
@@ -60,8 +59,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _openAddContentScreen({String? initialText}) async {
     // Get selected catalog category if on Catalog tab (index 2)
+    final selectedIndex = ref.read(homeTabIndexProvider);
     String? preSelectedCategoryId;
-    if (_selectedIndex == 2) {
+    if (selectedIndex == 2) {
       preSelectedCategoryId = ref.read(selectedCatalogIdProvider);
       // Don't pre-select special values like 'uncategorized' or null (Tümü)
       if (preSelectedCategoryId == 'uncategorized') {
@@ -91,9 +91,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = ref.watch(homeTabIndexProvider);
+
     // Determine active color for tabs
     Color getIconColor(int index) {
-      return _selectedIndex == index ? context.colors.primary : context.colors.iconInactive; 
+      return selectedIndex == index ? context.colors.primary : context.colors.iconInactive; 
     }
 
     // Check if Vibe theme is active
@@ -154,7 +156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               alignment: Alignment.topCenter,
               onPressed: () => _onItemTapped(0), 
               icon: Icon(
-                _selectedIndex == 0 ? PhosphorIconsFill.house : PhosphorIconsLight.house, 
+                selectedIndex == 0 ? PhosphorIconsFill.house : PhosphorIconsLight.house, 
                 color: getIconColor(0), 
                 size: 26
               ),
@@ -165,7 +167,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               alignment: Alignment.topCenter,
               onPressed: () => _onItemTapped(1),
               icon: Icon(
-                 _selectedIndex == 1 ? PhosphorIconsFill.magnifyingGlass : PhosphorIconsLight.magnifyingGlass,
+                 selectedIndex == 1 ? PhosphorIconsFill.magnifyingGlass : PhosphorIconsLight.magnifyingGlass,
                  color: getIconColor(1), 
                  size: 26
               ),
@@ -178,7 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               alignment: Alignment.topCenter,
               onPressed: () => _onItemTapped(2),
               icon: Icon(
-                _selectedIndex == 2 ? PhosphorIconsFill.squaresFour : PhosphorIconsLight.squaresFour,
+                selectedIndex == 2 ? PhosphorIconsFill.squaresFour : PhosphorIconsLight.squaresFour,
                 color: getIconColor(2), 
                 size: 26
               ),
@@ -189,7 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               alignment: Alignment.topCenter,
               onPressed: () => _onItemTapped(3),
               icon: Icon(
-                _selectedIndex == 3 ? PhosphorIconsFill.user : PhosphorIconsLight.user,
+                selectedIndex == 3 ? PhosphorIconsFill.user : PhosphorIconsLight.user,
                 color: getIconColor(3), 
                 size: 26
               ),
@@ -199,13 +201,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
 
       // Main Content Switching
-      body: _buildBody(isVibeTheme),
+      body: _buildBody(isVibeTheme, selectedIndex),
     );
   }
 
-  Widget _buildBody(bool isVibeTheme) {
+  Widget _buildBody(bool isVibeTheme, int selectedIndex) {
     final content = IndexedStack(
-      index: _selectedIndex,
+      index: selectedIndex,
       children: [
         // 0: Feed
         ItemFeedScreen(

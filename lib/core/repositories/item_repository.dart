@@ -246,21 +246,87 @@ class ItemRepository {
   /// Get item count for a user
   Future<int> getItemCount(String userId) async {
     try {
-      // Note: Count is harder to filter client-side without fetching all.
-      // For now, we will fetch all metadata (less efficient but correct) or live with inaccurate count.
-      // Fetching all to be correct:
       final snapshot = await _itemsCollection
           .where('userId', isEqualTo: userId)
+          .count()
           .get();
       
-      return snapshot.docs
-          .map((doc) => ItemModel.fromFirestore(doc))
-          .where((item) => !item.isDeleted)
-          .length;
+      return snapshot.count ?? 0;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting item count: $e');
       return 0;
     }
+  }
+
+  /// Get Uncategorized (Quick) item count
+  Future<int> getUncategorizedItemCount(String userId) async {
+    try {
+      int count = 0;
+
+      // 1. Check for literal NULL (legacy uncategorized)
+      final nullSnap = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('categoryId', isNull: true)
+          .where('isDeleted', isEqualTo: false)
+          .count()
+          .get();
+      count += (nullSnap.count ?? 0);
+
+      // 2. Check for "Hızlı" (Quick) category items
+      try {
+        final categorySnap = await _firestore.collection('categories')
+            .where('userId', isEqualTo: userId)
+            .where('name', isEqualTo: 'Hızlı')
+            .limit(1)
+            .get();
+            
+        if (categorySnap.docs.isNotEmpty) {
+          final quickCatId = categorySnap.docs.first.id;
+          final quickSnap = await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('categoryId', isEqualTo: quickCatId)
+              .where('isDeleted', isEqualTo: false)
+              .count()
+              .get();
+          count += (quickSnap.count ?? 0);
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error fetching Quick category count: $e');
+      }
+
+      return count;
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error getting pending item count: $e');
+      return 0;
+    }
+  }
+
+  /// Get Recent Items for Activity Feed
+  Future<List<ItemModel>> getRecentItems(String userId, {int limit = 5}) async {
+    try {
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error getting recent items: $e');
+      return [];
+    }
+  }
+
+  /// Stream Recent Items for Activity Feed
+  Stream<List<ItemModel>> streamRecentItems(String userId, {int limit = 5}) {
+    return _itemsCollection
+        .where('userId', isEqualTo: userId)
+        .where('isDeleted', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList());
   }
 
   /// Move all items from one category to another (or to Uncategorized if newCategoryId is null)
