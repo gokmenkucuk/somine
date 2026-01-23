@@ -514,7 +514,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         return SliverMasonryGrid.count(
           // key: ValueKey(items.length), // Removed to prevent full rebuild flash
           crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childCount: items.length,
-          itemBuilder: (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true),
+          itemBuilder: (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true, forceSquare: true),
         );
       case ViewMode.feed:
         return SliverList(
@@ -567,28 +567,29 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     Widget cardContent;
 
     if (!hasImage) {
-      // Empty content: Always Square, Note icon for notes
-      // USER REQUEST: Notes should be rectangular to fit screen better (Feed only)
-      // Grid view (forceSquare) must remain 1.0
+      // STANDARDIZED: All cards without images use same aspect ratio
+      // Feed view: 1.5 (compact, fits screen better)
+      // Grid view (forceSquare): 1.0 (square)
       cardContent = AspectRatio(
-        aspectRatio: forceSquare ? 1.0 : (isNote ? 1.5 : 1.0), 
+        aspectRatio: forceSquare ? 1.0 : 1.5, 
         child: _buildFallbackView(source, isNote: isNote),
       );
     } else {
       // Has Image: Natural or Forced Square, With Icon
       cardContent = Stack(
-        fit: forceSquare ? StackFit.expand : StackFit.loose,
+        fit: StackFit.expand, // Always expand to fill AspectRatio
         children: [
            buildImage(),
            Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
         ],
       );
 
-      // Only wrap in AspectRatio if we are FORCING square.
-      // Otherwise, let the image define the size.
-      if (forceSquare) {
-         cardContent = AspectRatio(aspectRatio: 1.0, child: cardContent);
-      }
+      // ALWAYS wrap in AspectRatio for consistent sizing
+      // Feed: 1.5 (compact), Grid: 1.0 (square)
+      cardContent = AspectRatio(
+        aspectRatio: forceSquare ? 1.0 : 1.5, 
+        child: ClipRect(child: cardContent),
+      );
     }
 
     return FadeInUp(
@@ -623,8 +624,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   cardContent,
+                  // Thin grey line above text area
+                  Container(
+                    height: 1,
+                    color: Colors.grey.withOpacity(0.15),
+                  ),
                   Padding(
-                    padding: const EdgeInsets.all(12), // Increased padding
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -757,9 +763,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   Widget _buildFallbackView(String source, {bool isNote = false}) {
     IconData icon;
     
-    // Note icon for notes, platform icon for others
+    // UNIFIED: Same icon style for notes and links
     if (isNote) {
-      icon = PhosphorIconsLight.file;
+      icon = PhosphorIconsBold.noteBlank; // Note icon
     } else if (source.contains('x.com') || source.contains('twitter')) {
       icon = PhosphorIconsBold.xLogo;
     } else if (source.contains('instagram')) {
@@ -769,40 +775,68 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     } else if (source.contains('pinterest')) {
       icon = PhosphorIconsBold.pinterestLogo;
     } else {
-      icon = PhosphorIconsLight.link;
+      icon = PhosphorIconsBold.link;
     }
     
     // Unified Green Gradient for all Empty State Icons
     List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
 
-    return AspectRatio(
-      aspectRatio: 1.0, // Square container for equal spacing
-      child: Container(
-         decoration: BoxDecoration(
-           gradient: LinearGradient(
-             colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
-             begin: Alignment.topLeft,
-             end: Alignment.bottomRight,
-           ),
+    // Return container only - parent handles AspectRatio
+    return Container(
+       decoration: BoxDecoration(
+         gradient: LinearGradient(
+           colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
+           begin: Alignment.topLeft,
+           end: Alignment.bottomRight,
          ),
-         child: Center(
-           child: isNote 
-             ? _buildCustomNoteGraphic()
-             : ShaderMask(
-                 shaderCallback: (bounds) => LinearGradient(
-                   colors: gradientColors,
-                   begin: Alignment.topLeft,
-                   end: Alignment.bottomRight,
-                 ).createShader(bounds),
-                 child: Icon(icon, size: 48, color: Colors.white),
-               ),
-         ),
-      ),
+       ),
+       alignment: Alignment.center,
+       // Simple gradient icon (no container background)
+       child: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Icon(isNote ? PhosphorIconsBold.noteBlank : icon, size: 48, color: Colors.white),
+        ),
     );
   }
 
-  Widget _buildCustomNoteGraphic() {
-    return const CustomNoteIcon();
+  // Custom notepad icon with text lines inside
+  Widget _buildNotepadGraphic(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [context.colors.primary, context.colors.secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: context.colors.primary.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+           // Text lines mimicking written content
+           Container(height: 2, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(1))),
+           const SizedBox(height: 4),
+           Container(height: 2, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withOpacity(0.7), borderRadius: BorderRadius.circular(1))),
+           const SizedBox(height: 4),
+           Container(height: 2, width: 16, decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(1))),
+        ],
+      ),
+    );
   }
 
   /* 

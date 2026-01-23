@@ -52,11 +52,14 @@ class ItemCard extends StatelessWidget {
                   top: 12,
                   left: 12,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    width: 32, 
+                    height: 32,
+                    padding: EdgeInsets.zero,
                     decoration: BoxDecoration(
-                      color: context.colors.surfaceWhite.withValues(alpha: 0.9),
+                      color: context.colors.surfaceWhite.withOpacity(0.9),
                       shape: BoxShape.circle,
                     ),
+                    alignment: Alignment.center,
                     child: _getSourceIcon(item.url),
                   ),
                 ),
@@ -169,7 +172,9 @@ class _CardImage extends StatelessWidget {
   Widget _buildPlaceholder() {
      IconData icon = Icons.link;
      Color iconColor = Colors.white;
-     double iconSize = 48;
+     // User Request: Reduce icon size only for Note types (approx 50%)
+     // "Note" type is inferred here by url being null (internal content)
+     double iconSize = (url == null) ? 24 : 48; // 24 is 50% of 48
      
      if (url != null) {
        if (url!.contains('instagram')) {

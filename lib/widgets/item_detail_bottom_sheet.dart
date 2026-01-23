@@ -388,39 +388,16 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                child: Column(
                                  crossAxisAlignment: CrossAxisAlignment.start,
                                  children: [
-                                    // Title Display
-                                    Text('Başlık', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)),
-                                    const SizedBox(height: 8),
+                                    // 1. TITLE (No Label)
                                     Text(
                                       widget.item.displayTitle,
-                                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: context.colors.headline),
+                                      style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: context.colors.headline),
                                     ),
 
-                                    const SizedBox(height: 24),
+                                    const SizedBox(height: 20),
 
-                                    // Category Display
-                                    Text('Koleksiyon', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)),
-                                    const SizedBox(height: 12),
-                                    
-                                    // Single Category Text
-                                    Text(
-                                      assignedCategory.name,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                        color: context.colors.headline,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 32),
-
-                                    // Note Content (Always show if present)
+                                    // 2. CONTENT/NOTE (No Label)
                                     if (widget.item.note != null && widget.item.note!.isNotEmpty) ...[
-                                       Text(
-                                         widget.item.type == ItemType.note ? 'İçerik' : 'Not', // Label changes based on type
-                                         style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: context.colors.hint)
-                                       ),
-                                       const SizedBox(height: 8),
                                        Align(
                                          alignment: Alignment.centerLeft,
                                          child: Linkify(
@@ -431,13 +408,41 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                              }
                                            },
                                            textAlign: TextAlign.start,
-                                           style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
-                                           linkStyle: GoogleFonts.poppins(fontSize: 14, color: context.colors.primary, fontWeight: FontWeight.bold),
+                                           style: GoogleFonts.poppins(fontSize: 15, color: context.colors.body, height: 1.6),
+                                           linkStyle: GoogleFonts.poppins(fontSize: 15, color: context.colors.primary, fontWeight: FontWeight.bold),
                                          ),
                                        ),
-                                       const SizedBox(height: 32),
+                                       const SizedBox(height: 24),
                                     ],
-                                    
+
+                                    // 3. COLLECTION (No Label, just a subtle chip at the bottom)
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: context.colors.primary.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(PhosphorIconsRegular.folder, size: 14, color: context.colors.primary),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              assignedCategory.name,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: context.colors.primary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 24),
                                     
                                     // Footer Text (Hide for notes)
                                     if (widget.item.type != ItemType.note)

@@ -1121,26 +1121,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       );
     }
     
-    // --- FALLBACK VIEW For Grid (Matches ItemFeedScreen exactly) ---
+    // --- FALLBACK VIEW For Grid (UNIFIED with ItemFeedScreen) ---
     Widget buildFallbackView() {
-       // Custom Note Icon View
-       if (item.type == ItemType.note) {
-          return AspectRatio(
-            aspectRatio: 1.0,
-            child: Container(
-              color: context.colors.surfaceWhite,
-              child: const Center(
-                child: CustomNoteIcon(),
-              ),
-            ),
-          );
-       }
-
-       IconData icon = PhosphorIconsBold.link;
-       List<Color> gradientColors = [context.colors.primary, context.colors.secondary]; // Oil Green Gradient
+       IconData icon;
+       List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
        final s = source.toLowerCase();
        
-       if (s.contains('twitter') || s.contains('x.com')) {
+       // UNIFIED: Same icon style for notes and links
+       if (item.type == ItemType.note) {
+          icon = PhosphorIconsBold.noteBlank;
+       } else if (s.contains('twitter') || s.contains('x.com')) {
           icon = PhosphorIconsBold.xLogo;
        } else if (s.contains('instagram')) {
           icon = PhosphorIconsBold.instagramLogo;
@@ -1154,10 +1144,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           icon = PhosphorIconsBold.spotifyLogo;
        } else if (s.contains('linkedin')) {
           icon = PhosphorIconsBold.linkedinLogo;
+       } else {
+          icon = PhosphorIconsBold.link;
        }
 
+       // STANDARDIZED CARD SIZE: Square (1.0) for catalog grid
        return AspectRatio(
-         aspectRatio: 1.0, // Square container for equal spacing
+         aspectRatio: 1.0,
          child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1166,15 +1159,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Center(
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-                child: Icon(icon, size: 48, color: Colors.white),
-              ),
+            alignment: Alignment.center,
+            // Simple gradient icon (no container background)
+            child: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: gradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(item.type == ItemType.note ? PhosphorIconsBold.noteBlank : icon, size: 48, color: Colors.white),
             ),
          ),
        );
@@ -1197,7 +1190,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                      child: Center(child: Icon(PhosphorIconsLight.image, size: 32, color: Colors.grey[300])),
                    ),
                  ),
-                 errorWidget: (context, url, error) => const SizedBox.shrink(),
+                 // Show fallback view when image fails to load
+                 errorWidget: (context, url, error) => buildFallbackView(),
                )
              : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
           
@@ -1205,16 +1199,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ],
       );
     } else {
-      // No Image: AspectRatio wrapper for Fallback View
-      contentHeader = AspectRatio(
-        aspectRatio: 1.0, 
-        child: Stack(
-          children: [
-             Positioned.fill(child: buildFallbackView()),
-             // We DO NOT add the small platform icon here as the big one is enough/cleaner
-          ],
-        ),
-      );
+      // No Image: Use buildFallbackView directly (already has AspectRatio inside)
+      contentHeader = buildFallbackView();
     }
 
     return GestureDetector(
@@ -1245,9 +1231,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               // 1. Image / Fallback Header
               contentHeader,
   
+              // Thin grey line above text area
+              Container(
+                height: 1,
+                color: Colors.grey.withOpacity(0.15),
+              ),
               // 2. Footer Info (Text Below)
               Padding(
-                 padding: const EdgeInsets.all(12), // Increased padding
+                 padding: const EdgeInsets.all(12),
                  child: Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
                    mainAxisSize: MainAxisSize.min,
@@ -1263,7 +1254,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                        ),
                      ),
                      Text(
-                       categoryName, // Restored Category Name
+                       categoryName,
                        maxLines: 1,
                        overflow: TextOverflow.ellipsis,
                        style: GoogleFonts.poppins(

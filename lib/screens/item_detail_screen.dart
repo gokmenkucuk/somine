@@ -293,97 +293,31 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                child: Column(
                  crossAxisAlignment: CrossAxisAlignment.start,
                  children: [
-                   // Metadata
-                   Row(
-                     children: [
-                       Container(
-                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                         decoration: BoxDecoration(
-                           color: DesignTokens.primary.withValues(alpha: 0.1),
-                           borderRadius: BorderRadius.circular(DesignTokens.radiusSM),
-                         ),
-                         child: Text(
-                           categoryName,
-                           style: GoogleFonts.poppins(
-                             color: DesignTokens.primary,
-                             fontSize: 12,
-                             fontWeight: FontWeight.w600,
-                           ),
-                         ),
-                       ),
-                       const Spacer(),
-                       // Date
-                       Text(
-                         'Added recently', // Placeholder for relative time
-                         style: GoogleFonts.poppins(
-                           color: DesignTokens.textTertiary,
-                           fontSize: 12,
-                         ),
-                       ),
-                     ],
-                   ),
-                   
-                   const SizedBox(height: DesignTokens.spacingMD),
-                   
                    // Title (H1)
                    Text(
                      widget.item.displayTitle,
                      style: GoogleFonts.poppins(
                        fontSize: 24,
-                       fontWeight: FontWeight.w500,
+                       fontWeight: FontWeight.w600, // Slightly bolder for hierarchy
                        color: DesignTokens.textPrimary,
                        height: 1.3,
                      ),
                    ),
-                   
-                   if (widget.item.url != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.item.url!,
-                        style: GoogleFonts.poppins(
-                          color: context.colors.hint,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                   ],
 
                    const SizedBox(height: DesignTokens.spacingLG),
-                   const Divider(color: DesignTokens.border),
-                   const SizedBox(height: DesignTokens.spacingLG),
 
-                   // Note Section
+                   // Note Section (Content) - No Label, just text
                    if (widget.item.note != null && widget.item.note!.isNotEmpty)
                      Container(
                        width: double.infinity,
-                       padding: const EdgeInsets.all(DesignTokens.spacingMD),
-                       decoration: BoxDecoration(
-                         color: DesignTokens.background,
-                         borderRadius: BorderRadius.circular(DesignTokens.radiusMD),
-                         border: Border.all(color: DesignTokens.border),
-                       ),
-                       child: Column(
-                         crossAxisAlignment: CrossAxisAlignment.start,
-                         children: [
-                           Text(
-                             'Notun:',
-                             style: GoogleFonts.poppins(
-                               fontSize: 12,
-                               fontWeight: FontWeight.bold,
-                               color: DesignTokens.textSecondary,
-                             ),
-                           ),
-                           const SizedBox(height: 8),
-                           Text(
-                             widget.item.note!,
-                             style: GoogleFonts.kalam(
-                               fontSize: 16,
-                               color: DesignTokens.textPrimary,
-                               height: 1.5,
-                             ),
-                           ),
-                         ],
+                       padding: const EdgeInsets.symmetric(horizontal: 4), // Minimal padding shift
+                       child: Text(
+                         widget.item.note!,
+                         style: GoogleFonts.kalam(
+                           fontSize: 18, // Larger for readability since it's the main content
+                           color: DesignTokens.textPrimary,
+                           height: 1.6,
+                         ),
                        ),
                      )
                    else
@@ -400,6 +334,36 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         ),
                       ),
                       
+                   const SizedBox(height: DesignTokens.spacingXXL), // More breathing room
+
+                   // Metadata (Collection) - Subtle footer
+                   Align(
+                     alignment: Alignment.centerLeft,
+                     child: Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                       decoration: BoxDecoration(
+                         color: DesignTokens.background, // Very subtle background
+                         borderRadius: BorderRadius.circular(DesignTokens.radiusXLarge),
+                         border: Border.all(color: DesignTokens.border),
+                       ),
+                       child: Row(
+                         mainAxisSize: MainAxisSize.min,
+                         children: [
+                           Icon(PhosphorIconsRegular.folder, size: 14, color: DesignTokens.textSecondary),
+                           const SizedBox(width: 8),
+                           Text(
+                             categoryName,
+                             style: GoogleFonts.poppins(
+                               color: DesignTokens.textSecondary,
+                               fontSize: 13,
+                               fontWeight: FontWeight.w500,
+                              ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ),
+                   
                    const SizedBox(height: 100), // Spacing for sticky button
                  ],
                ),

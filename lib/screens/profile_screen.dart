@@ -14,6 +14,7 @@ import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:somine_app/core/providers/firestore_providers.dart'; // Import for dynamic stats
 import 'package:somine_app/screens/paywall_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -22,6 +23,11 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPro = ref.watch(isPremiumProvider);
+    final itemCountAsync = ref.watch(itemCountProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
+    
+    final itemCount = itemCountAsync.valueOrNull ?? 0;
+    final collectionCount = categoriesAsync.valueOrNull?.length ?? 0;
     
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -162,11 +168,9 @@ class ProfileScreen extends ConsumerWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildStatItem(context, "İçerik", "142"),
+                            _buildStatItem(context, "İçerik", itemCount.toString(), CupertinoIcons.doc_text),
                             _buildVerticalDivider(context),
-                            _buildStatItem(context, "Koleksiyon", "12"),
-                            _buildVerticalDivider(context),
-                            _buildStatItem(context, "Favori", "5"),
+                            _buildStatItem(context, "Koleksiyon", collectionCount.toString(), CupertinoIcons.folder),
                           ],
                         ),
                       ),
@@ -183,20 +187,7 @@ class ProfileScreen extends ConsumerWidget {
                           _buildMenuSection(
                             context,
                             children: [
-                              _buildMenuItem(
-                                context,
-                                icon: CupertinoIcons.person,
-                                title: "Hesap Bilgileri",
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const AccountInfoScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildDivider(context),
+                              // Removed "Hesap Bilgileri" as per request
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.paintbrush,
@@ -640,16 +631,23 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value) {
+  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon) {
     return Column(
       children: [
-        Text(
-          value,
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: context.colors.headline,
-          ),
+        Row(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+             Icon(icon, size: 16, color: context.colors.headline),
+             const SizedBox(width: 8),
+             Text(
+              value,
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: context.colors.headline,
+              ),
+            ),
+           ],
         ),
         Text(
           label,
