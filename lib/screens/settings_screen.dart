@@ -141,22 +141,24 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
 
-            // Versiyon
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(SoMineTokens.spacingXXL),
-                child: Center(
-                  child: Text(
-                    'So Mine v1.0.0',
-                    style: Theme.of(context).textTheme.bodySmall,
+            // Versiyon - her zaman en altta
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(SoMineTokens.spacingXXL),
+                    child: Center(
+                      child: Text(
+                        'So Mine v1.0.0',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 100), // Bottom nav bar space
+                ],
               ),
-            ),
-
-            // Alt boşluk
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
             ),
           ],
         ),

@@ -514,7 +514,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         return SliverMasonryGrid.count(
           // key: ValueKey(items.length), // Removed to prevent full rebuild flash
           crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childCount: items.length,
-          itemBuilder: (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true, forceSquare: true),
+          itemBuilder: (context, index) => _buildContentCardRefactored(items[index], getBadge(items[index]), categories, isGrid: true, forceSquare: false),
         );
       case ViewMode.feed:
         return SliverList(
@@ -536,60 +536,135 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final hasImage = !isNote && item.displayImage != null && item.displayImage!.isNotEmpty;
     final source = item.url ?? '';
 
-    Widget buildImage() {
-      if (hasImage) {
-        // Use BoxFit.cover for Square mode, fitWidth (natural) for others
-        final fit = forceSquare ? BoxFit.cover : BoxFit.fitWidth;
-        
-        return item.displayImage!.startsWith('http') 
-          ? CachedNetworkImage(
-              imageUrl: item.displayImage!,
-              fit: fit, 
-              alignment: Alignment.center,
-              // Shimmer placeholder instead of static grey
-              placeholder: (context, url) => AspectRatio(
-                aspectRatio: 1.0,
-                child: _ImageShimmerPlaceholder(),
+    // --- FALLBACK VIEW (UNIFIED with Catalog) ---
+    Widget buildFallbackView() {
+       IconData icon;
+       List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
+       final s = source.toLowerCase();
+       
+       if (isNote) {
+          icon = PhosphorIconsBold.note;
+       } else if (s.contains('twitter') || s.contains('x.com')) {
+          icon = PhosphorIconsBold.xLogo;
+       } else if (s.contains('instagram')) {
+          icon = PhosphorIconsBold.instagramLogo;
+       } else if (s.contains('youtube')) {
+          icon = PhosphorIconsBold.youtubeLogo;
+       } else if (s.contains('pinterest')) {
+          icon = PhosphorIconsBold.pinterestLogo;
+       } else if (s.contains('tiktok')) {
+          icon = PhosphorIconsBold.tiktokLogo;
+       } else if (s.contains('spotify')) {
+          icon = PhosphorIconsBold.spotifyLogo;
+       } else if (s.contains('linkedin')) {
+          icon = PhosphorIconsBold.linkedinLogo;
+       } else {
+          icon = PhosphorIconsBold.link;
+       }
+
+       // STANDARDIZED CARD SIZE: Square (1.0) for grid
+       return AspectRatio(
+         aspectRatio: 1.0,
+         child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              errorWidget: (context, url, error) => _buildFallbackView(source, isNote: isNote),
-            )
-          : Image.asset(
-              item.displayImage!,
-              fit: fit,
-              alignment: Alignment.center,
-              errorBuilder: (context, error, stackTrace) => _buildFallbackView(source, isNote: isNote),
-            );
-      } else {
-        return _buildFallbackView(source, isNote: isNote);
-      }
+            ),
+            alignment: Alignment.center,
+            child: isNote 
+              ? const CustomNoteIcon(size: 48)
+              : ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Icon(icon, size: 48, color: Colors.white),
+              ),
+         ),
+       );
     }
 
-    Widget cardContent;
+    // Helper to build Platform Icon
+    Widget buildPlatformIcon() {
+      IconData icon = PhosphorIconsBold.link;
+      final s = source.toLowerCase();
 
-    if (!hasImage) {
-      // STANDARDIZED: All cards without images use same aspect ratio
-      // Feed view: 1.5 (compact, fits screen better)
-      // Grid view (forceSquare): 1.0 (square)
-      cardContent = AspectRatio(
-        aspectRatio: forceSquare ? 1.0 : 1.5, 
-        child: _buildFallbackView(source, isNote: isNote),
+      if (s.contains('instagram')) {
+        icon = PhosphorIconsBold.instagramLogo;
+      } else if (s.contains('youtube')) {
+        icon = PhosphorIconsBold.youtubeLogo;
+      } else if (s.contains('twitter') || s.contains('x.com')) {
+        icon = PhosphorIconsBold.xLogo;
+      } else if (s.contains('pinterest')) {
+        icon = PhosphorIconsBold.pinterestLogo;
+      } else if (s.contains('tiktok')) {
+        icon = PhosphorIconsBold.tiktokLogo;
+      } else if (s.contains('spotify')) {
+        icon = PhosphorIconsBold.spotifyLogo;
+      } else if (s.contains('linkedin')) {
+        icon = PhosphorIconsBold.linkedinLogo;
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          shape: BoxShape.circle,
+        ),
+        child: Center(child: Icon(icon, size: 14, color: context.colors.primary)),
       );
+    }
+
+    Widget contentHeader;
+    
+    if (hasImage) {
+      if (forceSquare) {
+        // SQUARE MODE: Use AspectRatio with cover fit
+        contentHeader = AspectRatio(
+          aspectRatio: 1.0,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              item.displayImage!.startsWith('http') 
+                 ? CachedNetworkImage(
+                     imageUrl: item.displayImage!, 
+                     fit: BoxFit.cover,
+                     placeholder: (context, url) => _ImageShimmerPlaceholder(),
+                     errorWidget: (context, url, error) => buildFallbackView(),
+                   )
+                 : Image.asset(item.displayImage!, fit: BoxFit.cover),
+              
+              Positioned(top: 8, right: 8, child: buildPlatformIcon()),
+            ],
+          ),
+        );
+      } else {
+        // MASONRY MODE: Use natural image height
+        contentHeader = Stack(
+          children: [
+            item.displayImage!.startsWith('http') 
+               ? CachedNetworkImage(
+                   imageUrl: item.displayImage!, 
+                   fit: BoxFit.fitWidth,
+                   placeholder: (context, url) => AspectRatio(
+                     aspectRatio: 1.0,
+                     child: _ImageShimmerPlaceholder(),
+                   ),
+                   errorWidget: (context, url, error) => buildFallbackView(),
+                 )
+               : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
+            
+            Positioned(top: 8, right: 8, child: buildPlatformIcon()),
+          ],
+        );
+      }
     } else {
-      // Has Image: Natural or Forced Square, With Icon
-      cardContent = Stack(
-        fit: StackFit.expand, // Always expand to fill AspectRatio
-        children: [
-           buildImage(),
-           Positioned(top: 8, right: 8, child: _buildPlatformIconWidget(source)),
-        ],
-      );
-
-      // ALWAYS wrap in AspectRatio for consistent sizing
-      // Feed: 1.5 (compact), Grid: 1.0 (square)
-      cardContent = AspectRatio(
-        aspectRatio: forceSquare ? 1.0 : 1.5, 
-        child: ClipRect(child: cardContent),
-      );
+      // No Image: Use buildFallbackView (already has AspectRatio inside)
+      contentHeader = buildFallbackView();
     }
 
     return FadeInUp(
@@ -623,7 +698,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  cardContent,
+                  contentHeader,
                   // Thin grey line above text area
                   Container(
                     height: 1,
@@ -713,7 +788,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            PhosphorIconsBold.noteBlank,
+                            PhosphorIconsBold.note,
                             size: 16,
                             color: context.colors.primary,
                           ),
@@ -765,7 +840,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     
     // UNIFIED: Same icon style for notes and links
     if (isNote) {
-      icon = PhosphorIconsBold.noteBlank; // Note icon
+      icon = PhosphorIconsBold.note; // Note icon
     } else if (source.contains('x.com') || source.contains('twitter')) {
       icon = PhosphorIconsBold.xLogo;
     } else if (source.contains('instagram')) {
@@ -791,15 +866,17 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
          ),
        ),
        alignment: Alignment.center,
-       // Simple gradient icon (no container background)
-       child: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: Icon(isNote ? PhosphorIconsBold.noteBlank : icon, size: 48, color: Colors.white),
-        ),
+       // Notes use CustomNoteIcon, links use gradient platform icon
+       child: isNote 
+         ? const CustomNoteIcon(size: 48)
+         : ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(bounds),
+            child: Icon(icon, size: 48, color: Colors.white),
+          ),
     );
   }
 

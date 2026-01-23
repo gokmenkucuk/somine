@@ -14,6 +14,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
+import 'package:somine_app/widgets/custom_note_icon.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
@@ -1129,7 +1130,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
        
        // UNIFIED: Same icon style for notes and links
        if (item.type == ItemType.note) {
-          icon = PhosphorIconsBold.noteBlank;
+          icon = PhosphorIconsBold.note;
        } else if (s.contains('twitter') || s.contains('x.com')) {
           icon = PhosphorIconsBold.xLogo;
        } else if (s.contains('instagram')) {
@@ -1160,15 +1161,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
             ),
             alignment: Alignment.center,
-            // Simple gradient icon (no container background)
-            child: ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ).createShader(bounds),
-              child: Icon(item.type == ItemType.note ? PhosphorIconsBold.noteBlank : icon, size: 48, color: Colors.white),
-            ),
+            // Notes use CustomNoteIcon, links use gradient platform icon
+            child: item.type == ItemType.note 
+              ? const CustomNoteIcon(size: 48)
+              : ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Icon(icon, size: 48, color: Colors.white),
+              ),
          ),
        );
     }

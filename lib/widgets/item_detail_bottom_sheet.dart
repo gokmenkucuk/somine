@@ -208,38 +208,53 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   }
 
   Widget _buildYoutubePlayer() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        YoutubePlayer(
-          controller: _youtubeController!,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: context.colors.primary,
-          progressColors: ProgressBarColors(
-            playedColor: context.colors.primary,
-            handleColor: context.colors.primary,
-          ),
-        ),
-        // Custom Play Button Overlay
-        if (!_isPlaying)
-          GestureDetector(
-            onTap: () => _youtubeController!.play(),
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                size: 48,
-                color: Colors.white,
-              ),
+    // Get status bar height to position video correctly
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    
+    return Container(
+      color: Colors.black, // Black background fills status bar area
+      child: Column(
+        children: [
+          // Status bar spacer - black background extends behind status bar
+          SizedBox(height: statusBarHeight),
+          // Actual YouTube Player
+          Expanded(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                YoutubePlayer(
+                  controller: _youtubeController!,
+                  showVideoProgressIndicator: true,
+                  progressIndicatorColor: context.colors.primary,
+                  progressColors: ProgressBarColors(
+                    playedColor: context.colors.primary,
+                    handleColor: context.colors.primary,
+                  ),
+                ),
+                // Custom Play Button Overlay
+                if (!_isPlaying)
+                  GestureDetector(
+                    onTap: () => _youtubeController!.play(),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -265,8 +280,11 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
       if (calculatedRatio < 0.35) calculatedRatio = 0.35; 
       headerRatio = calculatedRatio;
     }
+    // Status bar padding
+    final statusBarHeight = MediaQuery.of(context).padding.top;
     
-    final headerHeight = MediaQuery.of(context).size.height * headerRatio;
+    // Final header height includes status bar for full page effect
+    final headerHeight = (MediaQuery.of(context).size.height * headerRatio) + statusBarHeight;
 
     // Find assigned category
     final assignedCategory = widget.categories.firstWhere(
@@ -283,7 +301,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
         return Container(
           decoration: BoxDecoration(
             color: context.colors.surfaceWhite,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            // No border radius for full page effect
           ),
           child: Stack(
             children: [
@@ -295,7 +313,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                      height: headerHeight,
                      width: double.infinity,
                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        // No border radius for full page
                         child: _isYoutube && _youtubeController != null
                           ? _buildYoutubePlayer()
                           : hasImage
@@ -324,7 +342,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                        color: context.colors.surfaceWhite,
                        child: Column(
                          children: [
-                           const SizedBox(height: 12),
+                           const SizedBox(height: 20),
 
                            // DYNAMIC BUTTON: Edit for Notes, Open for Links
                            Padding(
@@ -444,21 +462,8 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
                                     const SizedBox(height: 24),
                                     
-                                    // Footer Text (Hide for notes)
-                                    if (widget.item.type != ItemType.note)
-                                      Center(
-                                        child: Text(
-                                          "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
-                                          textAlign: TextAlign.center,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 10,
-                                            color: context.colors.hint,
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                        ),
-                                      ),
-                                    
-                                    SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+                                    // Bottom padding for scroll content
+                                    const SizedBox(height: 24),
                                  ],
                                ),
                              ),
@@ -467,6 +472,25 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                        ),
                      ),
                    ),
+                   
+                   // Fixed Footer at Bottom
+                   if (widget.item.type != ItemType.note)
+                     Container(
+                       padding: EdgeInsets.fromLTRB(32, 8, 32, MediaQuery.of(context).padding.bottom + 4),
+                       color: context.colors.surfaceWhite,
+                       child: Align(
+                         alignment: Alignment.centerLeft,
+                         child: Text(
+                           "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
+                           textAlign: TextAlign.left,
+                           style: GoogleFonts.poppins(
+                             fontSize: 11,
+                             color: context.colors.body.withOpacity(0.9), // Darker text
+                             fontWeight: FontWeight.w400,
+                           ),
+                         ),
+                       ),
+                     ),
                 ],
               ),
 

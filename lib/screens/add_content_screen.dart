@@ -493,9 +493,18 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         );
       }
       
-      final noteText = _noteController.text.isNotEmpty
-          ? _noteController.text
-          : _titleController.text;
+      // FIX: Note mode should save title in ogMetadata.title and content in note field
+      final noteText = _noteController.text.trim();
+      final titleText = _titleController.text.trim();
+      
+      // For notes: use ogMetadata to store title
+      OGMetadata? finalMetadata;
+      if (_isNoteMode) {
+        // Store title in ogMetadata for notes
+        finalMetadata = OGMetadata(title: titleText.isNotEmpty ? titleText : null);
+      } else {
+        finalMetadata = _ogMetadata;
+      }
 
       // --- EDIT MODE START ---
       if (widget.editItem != null) {
@@ -513,14 +522,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           
           final updatedItem = widget.editItem!.copyWith(
               categoryId: primaryTargetId,
-              // If switched to note mode, force Note type. If in content mode (link), ensure Link type if link exists
               type: _isNoteMode ? ItemType.note : (_hasLink ? ItemType.link : ItemType.note),
               url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
-              note: noteText,
-              ogMetadata: _isNoteMode ? null : _ogMetadata,
-              // Update title if needed? Usually ItemModel uses ogTitle or sets displayTitle logic.
-              // Note: We don't have a 'title' field in ItemModel root exposed openly besides what's inside ogMetadata? 
-              // Actually ItemModel is flexible.
+              note: noteText.isNotEmpty ? noteText : null,
+              ogMetadata: finalMetadata,
               updatedAt: DateTime.now(),
           );
 
@@ -553,8 +558,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             categoryId: catId,
             type: _isNoteMode ? ItemType.note : (_hasLink ? ItemType.link : ItemType.note),
             url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
-            note: noteText,
-            ogMetadata: _isNoteMode ? null : _ogMetadata,
+            note: noteText.isNotEmpty ? noteText : null,
+            ogMetadata: finalMetadata,
             createdAt: now,
             updatedAt: now,
           );
