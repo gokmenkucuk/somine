@@ -34,34 +34,7 @@ class ProfileScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // --- CUSTOM HEADER ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Right Actions (Share)
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: context.colors.surfaceWhite,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: context.colors.premiumShadow.withOpacity(0.05), // Subtle shadow for secondary action
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Icon(CupertinoIcons.share, size: 22, color: context.colors.headline),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // --- CUSTOM HEADER ---\n            const SizedBox(height: 12),
 
             // --- SCROLLABLE CONTENT ---
             Expanded(

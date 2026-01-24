@@ -416,6 +416,33 @@ class ItemRepository {
       rethrow;
     }
   }
+
+  /// Cleanup items deleted more than 30 days ago (auto-expiry)
+  Future<int> cleanupExpiredDeletedItems(String userId) async {
+    try {
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+      
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('isDeleted', isEqualTo: true)
+          .where('deletedAt', isLessThan: Timestamp.fromDate(thirtyDaysAgo))
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return 0;
+      }
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      
+      debugPrint('✅ [ItemRepository] Cleaned up ${snapshot.docs.length} expired deleted items for user: $userId');
+      return snapshot.docs.length;
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error cleaning up expired items: $e');
+      return 0;
+    }
+  }
 }
-
-
