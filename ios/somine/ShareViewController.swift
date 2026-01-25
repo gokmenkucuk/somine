@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 class ShareViewController: SLComposeServiceViewController {
     
     private let appGroupId = "group.com.somine.app"
-    private let userDefaultsKey = "ShareKey"
+    private let userDefaultsKey = "sharedElements"
     private let urlScheme = "ShareMedia"
     
     override func isContentValid() -> Bool {
@@ -146,11 +146,7 @@ class ShareViewController: SLComposeServiceViewController {
     }
     
     private func openMainApp() {
-        // Get the host app bundle identifier
-        guard let bundleId = Bundle.main.bundleIdentifier else { return }
-        let hostAppId = String(bundleId.prefix(upTo: bundleId.lastIndex(of: ".")!))
-        
-        let urlString = "ShareMedia-\(hostAppId):share"
+        let urlString = "\(self.urlScheme)://data"
         guard let url = URL(string: urlString) else { return }
         
         var responder: UIResponder? = self
