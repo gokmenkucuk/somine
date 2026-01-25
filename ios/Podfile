@@ -35,13 +35,25 @@ target 'Runner' do
     inherit! :search_paths
   end
   
-  # target 'Share Extension' do
-  #   inherit! :search_paths
-  # end
+
+end
+
+target 'somine' do
+  use_frameworks!
+  inherit! :search_paths
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+  end
+  
+  # Fix for "Cycle inside Runner" error in Xcode 15/16
+  project = installer.pods_project
+  project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
+    end
   end
 end
