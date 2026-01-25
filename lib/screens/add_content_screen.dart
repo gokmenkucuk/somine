@@ -742,11 +742,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         return Material(
           color: Colors.transparent, // Material typically needs a color or transparent
           type: MaterialType.transparency, // Important for overlay
-          child: Container(
-            decoration: BoxDecoration(
-              color: context.colors.surfaceWhite,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.colors.surfaceWhite,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
             child: Stack(
             children: [
               // Main Content
@@ -809,6 +811,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                   child: _buildFloatingDock(),
                 ),
             ],
+          ),
           ),
         ),
       );

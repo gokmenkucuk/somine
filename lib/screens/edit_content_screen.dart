@@ -518,7 +518,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
-      body: Stack(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
         children: [
           // Main Content
           SingleChildScrollView(
@@ -557,6 +559,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             child: _buildFloatingDock(),
           ),
         ],
+      ),
       ),
     );
   }
