@@ -35,6 +35,9 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
   // Animation Controller for smooth progress bar
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
+  
+  // Animation Controller for Text Shimmer
+  late AnimationController _shimmerController;
 
   @override
   void initState() {
@@ -45,6 +48,12 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       duration: const Duration(milliseconds: 300),
     );
     _progressAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(_progressController);
+    
+    // Initialize Shimmer Controller
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: false);
 
     // Start Content Preparation
     _prepareContent();
@@ -53,6 +62,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
   @override
   void dispose() {
     _progressController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -192,21 +202,39 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
               const Spacer(flex: 3),
               
               // Title with Gradient
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [AppColors.secondary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-                child: Text(
-                  'Koleksiyonlar Hazırlanıyor',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white, // Required for ShaderMask
-                  ),
-                ),
+              // Title with Shimmer Effect
+              AnimatedBuilder(
+                animation: _shimmerController,
+                builder: (context, child) {
+                  return ShaderMask(
+                    shaderCallback: (bounds) {
+                      return LinearGradient(
+                        colors: const [
+                          AppColors.secondary,
+                          AppColors.primary,
+                          AppColors.secondary,
+                        ],
+                        stops: const [
+                          0.0,
+                          0.5,
+                          1.0,
+                        ],
+                        // Soldan sağa hareket için:
+                        transform: _SlidingGradientTransform(slidePercent: _shimmerController.value),
+                        tileMode: TileMode.repeated, // Sürekli akış için repeated
+                      ).createShader(bounds);
+                    },
+                    child: Text(
+                      'Koleksiyonlar Hazırlanıyor',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, 
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               
@@ -318,5 +346,23 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
         ),
       ),
     );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  @override
+  Matrix4 transform(Rect bounds, {TextDirection? textDirection}) {
+    // Soldan sağa hareket (slidePercent 0 -> 1)
+    // 0 iken translasyon 0
+    // 1 iken translasyon bounds.width kadar (veya biraz daha fazla)
+    // Tam bir döngü için 2 katı kadar kaydırıp TileMode ile tekrar etmesini sağlayabiliriz
+    // Ama TileMode.mirror kullandık, o yüzden sürekli kayması lazım
+    
+    // Basit bir x ekseni translasyonu
+    return Matrix4.translationValues(bounds.width * slidePercent * 2.0 - bounds.width, 0.0, 0.0);
   }
 }

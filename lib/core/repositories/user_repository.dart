@@ -90,6 +90,7 @@ class UserRepository {
   Future<void> updateUserProfile({
     required String uid,
     String? displayName,
+    String? username,
     String? photoURL,
   }) async {
     try {
@@ -97,6 +98,7 @@ class UserRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       };
       if (displayName != null) updates['displayName'] = displayName;
+      if (username != null) updates['username'] = username;
       if (photoURL != null) updates['photoURL'] = photoURL;
 
       // 1. Update Firestore
@@ -138,6 +140,151 @@ class UserRepository {
       return null;
     });
   }
+
+  // ============= USERNAME FUNCTIONS =============
+
+  /// İsimden benzersiz kullanıcı adı oluştur
+  Future<String> generateUniqueUsername(String name) async {
+    // Türkçe karakterleri dönüştür
+    String base = _normalizeTurkish(name.toLowerCase().trim());
+    
+    // Sadece alfanumerik ve alt çizgi bırak
+    base = base.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+    
+    // Birden fazla alt çizgiyi teke indir
+    base = base.replaceAll(RegExp(r'_+'), '_');
+    
+    // Baş ve sondaki alt çizgileri kaldır
+    base = base.replaceAll(RegExp(r'^_+|_+$'), '');
+    
+    // Eğer çok kısa ise, farklı kombinasyonlar dene
+    if (base.length < 3) {
+      // İsim çok kısa, rastgele sayı ekle
+      base = '${base}${DateTime.now().millisecondsSinceEpoch % 1000}';
+    }
+    
+    // Maksimum 20 karakter
+    if (base.length > 20) {
+      base = base.substring(0, 20);
+    }
+    
+    // Benzersiz olana kadar numara ekle
+    String candidate = base;
+    int suffix = 1;
+    
+    while (!await isUsernameAvailable(candidate)) {
+      final suffixStr = '_$suffix';
+      if (base.length + suffixStr.length > 20) {
+        candidate = '${base.substring(0, 20 - suffixStr.length)}$suffixStr';
+      } else {
+        candidate = '$base$suffixStr';
+      }
+      suffix++;
+      
+      // Sonsuz döngüyü önle
+      if (suffix > 1000) {
+        candidate = '${base}_${DateTime.now().millisecondsSinceEpoch % 100000}';
+        break;
+      }
+    }
+    
+    return candidate;
+  }
+
+  /// Kullanıcı adı müsait mi kontrol et
+  Future<bool> isUsernameAvailable(String username) async {
+    try {
+      final normalized = username.toLowerCase().trim();
+      
+      // Geçerlilik kontrolü
+      if (!_isValidUsername(normalized)) {
+        return false;
+      }
+      
+      final snapshot = await _usersCollection
+          .where('username', isEqualTo: normalized)
+          .limit(1)
+          .get();
+      
+      return snapshot.docs.isEmpty;
+    } catch (e) {
+      debugPrint('❌ [UserRepository] Error checking username: $e');
+      return false;
+    }
+  }
+
+  /// Kullanıcı adını güncelle
+  Future<bool> updateUsername(String uid, String username) async {
+    try {
+      final normalized = username.toLowerCase().trim();
+      
+      // Geçerlilik kontrolü
+      if (!_isValidUsername(normalized)) {
+        throw Exception('Geçersiz kullanıcı adı formatı');
+      }
+      
+      // Müsaitlik kontrolü (kendi kullanıcı adı hariç)
+      final existing = await _usersCollection
+          .where('username', isEqualTo: normalized)
+          .limit(1)
+          .get();
+      
+      if (existing.docs.isNotEmpty && existing.docs.first.id != uid) {
+        throw Exception('Bu kullanıcı adı zaten alınmış');
+      }
+      
+      await _usersCollection.doc(uid).update({
+        'username': normalized,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      debugPrint('✅ [UserRepository] Username updated: $normalized');
+      return true;
+    } catch (e) {
+      debugPrint('❌ [UserRepository] Error updating username: $e');
+      rethrow;
+    }
+  }
+
+  /// Kullanıcı adı ile kullanıcı bul
+  Future<UserModel?> findUserByUsername(String username) async {
+    try {
+      final normalized = username.toLowerCase().trim().replaceAll('@', '');
+      
+      final snapshot = await _usersCollection
+          .where('username', isEqualTo: normalized)
+          .limit(1)
+          .get();
+      
+      if (snapshot.docs.isEmpty) return null;
+      
+      return UserModel.fromFirestore(snapshot.docs.first);
+    } catch (e) {
+      debugPrint('❌ [UserRepository] Error finding user by username: $e');
+      return null;
+    }
+  }
+
+  /// Türkçe karakterleri ASCII'ye dönüştür
+  String _normalizeTurkish(String input) {
+    const turkishChars = 'ğüşıöçĞÜŞİÖÇ';
+    const asciiChars = 'gusiocGUSIOC';
+    
+    String result = input;
+    for (int i = 0; i < turkishChars.length; i++) {
+      result = result.replaceAll(turkishChars[i], asciiChars[i]);
+    }
+    
+    // Boşlukları alt çizgiye çevir
+    result = result.replaceAll(' ', '_');
+    
+    return result;
+  }
+
+  /// Kullanıcı adı formatı geçerli mi
+  bool _isValidUsername(String username) {
+    // 3-20 karakter, sadece küçük harf, rakam ve alt çizgi
+    final regex = RegExp(r'^[a-z0-9_]{3,20}$');
+    return regex.hasMatch(username);
+  }
 }
-
-

@@ -47,6 +47,15 @@ class AuthRepository {
     }
   }
 
+  /// Get user changes stream (fires on profile update)
+  Stream<User?> get userChanges {
+    try {
+      return _auth.userChanges();
+    } catch (e) {
+      return Stream.value(null);
+    }
+  }
+
   /// Sign in with Google
   Future<({UserCredential? userCredential, bool isNewUser})> signInWithGoogle() async {
     try {

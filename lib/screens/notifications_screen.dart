@@ -1,478 +1,290 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
-import 'package:somine_app/core/providers/item_providers.dart';
+import 'package:somine_app/core/models/notification_model.dart';
+import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
-import 'package:somine_app/core/providers/firestore_providers.dart'; // Added
-import 'package:somine_app/core/models/item_model.dart';
-import 'package:somine_app/screens/catalog_screen.dart'; // Added
-import 'package:somine_app/core/providers/navigation_providers.dart'; // Added
+import 'package:somine_app/screens/share_requests_screen.dart';
+import 'package:somine_app/screens/my_shares_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class NotificationsScreen extends ConsumerStatefulWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
-}
-
-class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-
-  @override
-  void initState() {
-    super.initState();
-    // Set locale messages for Turkish timeago if needed, 
-    // usually done in main.dart but good to remember.
-    timeago.setLocaleMessages('tr', timeago.TrMessages());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final user = ref.watch(authStateProvider).value;
-    final userId = user?.uid;
-
-    if (userId == null) return const SizedBox.shrink();
-
-    // 1. Uncategorized Count Provider (We need a specialized future/stream for this)
-    final pendingCountAsync = ref.watch(uncategorizedCountProvider(userId));
-    
-    // 2. Recent Items for Activity Feed
-    final recentItemsAsync = ref.watch(recentItemsProvider(userId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationsAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
-      backgroundColor: context.colors.backgroundTop,
+      backgroundColor: context.colors.backgroundBottom,
       appBar: AppBar(
         backgroundColor: context.colors.backgroundTop,
-        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.colors.headline, size: 20),
+          icon: Icon(CupertinoIcons.back, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Bilgilendirme Merkezi",
-          style: GoogleFonts.poppins(
+          'Bildirimler',
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold,
             color: context.colors.headline,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
           ),
         ),
+        centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: () => _markAllAsRead(context, ref),
+            child: Text(
+              'Tümünü Oku',
+              style: GoogleFonts.poppins(
+                color: context.colors.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(uncategorizedCountProvider(userId));
-          ref.invalidate(recentItemsProvider(userId));
+      body: notificationsAsync.when(
+        data: (notifications) {
+          if (notifications.isEmpty) {
+            return _buildEmptyState(context);
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notification = notifications[index];
+              return Dismissible(
+                key: Key(notification.id ?? UniqueKey().toString()),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(PhosphorIconsRegular.trash, color: Colors.white),
+                ),
+                onDismissed: (direction) {
+                  _deleteNotification(context, ref, notification.id!);
+                },
+                child: _NotificationCard(notification: notification),
+              );
+            },
+          );
         },
-        child: ListView(
-          padding: const EdgeInsets.all(24),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Hata: $e')),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            PhosphorIconsRegular.bellSlash,
+            size: 64,
+            color: context.colors.iconInactive,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Bildirim Yok',
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: context.colors.headline,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Yeni bildirimler geldiğinde burada görünecek.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: context.colors.body.withOpacity(0.7),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _markAllAsRead(BuildContext context, WidgetRef ref) async {
+    try {
+      final user = ref.read(authStateProvider).valueOrNull;
+      if (user == null) return;
+      
+      await ref.read(notificationRepositoryProvider).markAllAsRead(user.uid);
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  Future<void> _deleteNotification(BuildContext context, WidgetRef ref, String notificationId) async {
+    try {
+      await ref.read(notificationRepositoryProvider).deleteNotification(notificationId);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Silinemedi: $e')));
+      }
+    }
+  }
+}
+
+class _NotificationCard extends ConsumerWidget {
+  final NotificationModel notification;
+
+  const _NotificationCard({required this.notification});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    IconData icon;
+    Color iconColor;
+
+    switch (notification.type) {
+      case NotificationType.shareRequest:
+        icon = PhosphorIconsRegular.shareNetwork;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.shareAccepted:
+        icon = PhosphorIconsRegular.checkCircle;
+        iconColor = Colors.green;
+        break;
+      case NotificationType.shareRejected:
+        icon = PhosphorIconsRegular.xCircle;
+        iconColor = Colors.red;
+        break;
+    }
+
+    return GestureDetector(
+      onTap: () => _handleTap(context, ref),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: notification.isRead
+              ? context.colors.surfaceWhite
+              : context.colors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: notification.isRead
+              ? null
+              : Border.all(color: context.colors.primary.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- SECTION 1: PENDING ACTIONS (Dynamic) ---
-            pendingCountAsync.when(
-              data: (count) {
-                if (count > 0) {
-                  return Column(
-                    children: [
-                      _buildPendingActionCard(context, count),
-                      const SizedBox(height: 24),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              loading: () => _buildPendingActionSkeleton(context),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-
-            // --- SECTION 2: RECENT ACTIVITY (Dynamic/Mock Hybrid) ---
-            Text(
-              "Son Hareketler",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.colors.headline.withOpacity(0.6),
+            // Icon
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(icon, color: iconColor, size: 22),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(width: 12),
             
-            recentItemsAsync.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return _buildEmptyActivityState(context);
-                }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _buildActivityItem(context, item);
-                  },
-                );
-              },
-              loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CupertinoActivityIndicator())),
-              error: (err, stack) {
-                debugPrint("Activity Feed Error: $err");
-                return _buildEmptyActivityState(context, error: err.toString());
-              },
-            ),
-
-            const SizedBox(height: 32),
-
-            // --- SECTION 3: TIPS & GUIDES (Static) ---
-            Text(
-              "İpuçları & Rehber",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.colors.headline.withOpacity(0.6),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          notification.title,
+                          style: GoogleFonts.outfit(
+                            fontSize: 15,
+                            fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
+                            color: context.colors.headline,
+                          ),
+                        ),
+                      ),
+                      if (!notification.isRead)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: context.colors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    notification.message,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: context.colors.body,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    timeago.format(notification.createdAt, locale: 'tr'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: context.colors.hint,
+                      // Tarih formatını 24 saatlik yapmak isterseniz locale dosyasını kontrol etmek gerekebilir
+                      // timeago varsayılan 'tr' kullanır
+                   ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            _buildTipCard(
-              context,
-              icon: PhosphorIconsFill.instagramLogo,
-              color: const Color(0xFFE1306C),
-              title: "Instagram'dan Kaydet",
-              subtitle: "Beğendiğiniz Reels veya gönderileri 'Paylaş > SoMine' diyerek anında buraya taşıyın.",
-            ),
-            const SizedBox(height: 12),
-            _buildTipCard(
-              context,
-              icon: PhosphorIconsFill.folders,
-              color: const Color(0xFF3B82F6),
-              title: "Düzenli Olun",
-              subtitle: "Kategorilerinizi ihtiyaçlarınıza göre özelleştirin ve içeriklerinizi kolayca bulun.",
-            ),
-             const SizedBox(height: 12),
-            _buildTipCard(
-              context,
-              icon: PhosphorIconsFill.magicWand,
-              color: const Color(0xFF8B5CF6),
-              title: "Akıllı Notlar",
-              subtitle: "Link eklerken düşüncelerinizi de not alın, daha sonra hatırlamak kolay olsun.",
-            ),
-             const SizedBox(height: 48), // Bottom padding
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPendingActionCard(BuildContext context, int count) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [context.colors.primary, const Color(0xFF6FBFAC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.primary.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(PhosphorIconsFill.tray, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Düzenlenmeyi Bekleyenler",
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Koleksiyonunuza eklenmeyi bekleyen $count içerik var.",
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () async {
-              // 1. Find 'Hızlı' category ID
-              final categories = ref.read(categoriesProvider).value ?? [];
-              final quickCat = categories.where((c) => c.name == 'Hızlı').firstOrNull;
-              
-              if (quickCat != null) {
-                // 2. Set Selected Category for Catalog Screen
-                // Note: using selectedCatalogIdProvider from catalog_screen.dart
-                ref.read(selectedCatalogIdProvider.notifier).state = quickCat.id;
-              } else {
-                 // Fallback: Default view
-                 ref.read(selectedCatalogIdProvider.notifier).state = null;
-              }
-
-              // 3. Switch Main Tab to Catalog (Index 2)
-              ref.read(homeTabIndexProvider.notifier).state = 2;
-
-              // 4. Return to HomeScreen
-              Navigator.popUntil(context, (route) => route.isFirst);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "İncele",
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.colors.primary,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(BuildContext context, ItemModel item) {
-    // Determine detailed message based on item type/context if we had more implementation
-    // For now, simple "Added" message
-    String actionText = "Yeni içerik eklendi";
-    if (item.categoryId == null) {
-      actionText = "Hızlı kayıtlara eklendi";
-    } else {
-      // If we had category name mapped, we'd say "Added to X"
-      // Since mapping is complex here without fetching all cats, we keep it simple or generic
-      actionText = "Koleksiyona eklendi";
+  Future<void> _handleTap(BuildContext context, WidgetRef ref) async {
+    // Mark as read
+    if (!notification.isRead) {
+      await ref.read(notificationRepositoryProvider).markAsRead(notification.id!);
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.colors.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.hint.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _getIconForType(item.type),
-              color: context.colors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.displayTitle.isNotEmpty ? item.displayTitle : "İsimsiz İçerik",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: context.colors.headline,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  actionText,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: context.colors.body,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            timeago.format(item.createdAt, locale: 'tr', allowFromNow: true),
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              color: context.colors.hint,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _getIconForType(ItemType type) {
-    switch (type) {
-      case ItemType.link:
-        return PhosphorIconsRegular.link;
-      case ItemType.note:
-        return PhosphorIconsRegular.note;
-      case ItemType.image:
-        return PhosphorIconsRegular.image;
+    // Navigate based on type
+    if (context.mounted) {
+      if (notification.type == NotificationType.shareRequest) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ShareRequestsScreen()),
+        );
+      } else if (notification.type == NotificationType.shareAccepted || 
+                 notification.type == NotificationType.shareRejected) {
+        // Eğer kabul edildiyse veya reddedildiyse "Paylaştıklarım" ekranına gitmek mantıklı olabilir
+        // Çünkü siz paylaştınız ve sonuçlandı
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MySharesScreen()),
+        );
+      }
     }
-  }
-
-  Widget _buildTipCard(BuildContext context, {required IconData icon, required Color color, required String title, required String subtitle}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.colors.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.hint.withOpacity(0.2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: context.colors.headline,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: context.colors.body,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyActivityState(BuildContext context, {String? error}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      decoration: BoxDecoration(
-        color: context.colors.surfaceWhite.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.colors.hint.withOpacity(0.2), style: BorderStyle.none),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(PhosphorIconsRegular.clockCounterClockwise, color: context.colors.hint, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                "Hareket yok",
-                style: GoogleFonts.poppins(fontSize: 13, color: context.colors.hint),
-              ),
-            ],
-          ),
-          if (error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              "Hata: $error", // Expose error for debugging
-              style: GoogleFonts.poppins(fontSize: 11, color: Colors.redAccent),
-              textAlign: TextAlign.center,
-            ),
-          ]
-        ],
-      ),
-    );
-  }
-
-  // Skeleton Loader to prevent layout shift
-  Widget _buildPendingActionSkeleton(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: context.colors.surfaceWhite.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: context.colors.hint.withOpacity(0.1)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(
-                  color: context.colors.hint.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 150, height: 16,
-                      decoration: BoxDecoration(
-                        color: context.colors.hint.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 200, height: 12,
-                      decoration: BoxDecoration(
-                        color: context.colors.hint.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
   }
 }

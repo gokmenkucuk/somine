@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:somine_app/widgets/user_avatar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -10,11 +11,18 @@ import 'package:somine_app/screens/account_info_screen.dart';
 import 'package:somine_app/screens/notification_settings_screen.dart';
 import 'package:somine_app/screens/invite_friend_screen.dart';
 import 'package:somine_app/screens/help_support_screen.dart';
+import 'package:somine_app/screens/my_shares_screen.dart';
+import 'package:somine_app/screens/shared_with_me_screen.dart';
+import 'package:somine_app/screens/share_requests_screen.dart';
+import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
-import 'package:somine_app/core/providers/firestore_providers.dart'; // Import for dynamic stats
+import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/share_providers.dart';
+import 'package:somine_app/core/providers/notification_providers.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/screens/paywall_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -29,12 +37,15 @@ class ProfileScreen extends ConsumerWidget {
     final itemCount = itemCountAsync.valueOrNull ?? 0;
     final collectionCount = categoriesAsync.valueOrNull?.length ?? 0;
     
+    final user = ref.watch(authStateProvider).valueOrNull;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
-            // --- CUSTOM HEADER ---\n            const SizedBox(height: 12),
+            // --- CUSTOM HEADER ---
+            const SizedBox(height: 12),
 
             // --- SCROLLABLE CONTENT ---
             Expanded(
@@ -49,43 +60,13 @@ class ProfileScreen extends ConsumerWidget {
                       duration: const Duration(milliseconds: 600),
                       child: Column(
                         children: [
-                          // Avatar
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [context.colors.primary, context.colors.secondary], // Oil Green
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: context.colors.primary.withOpacity(0.25),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const CircleAvatar(
-                                radius: 55,
-                                backgroundImage: NetworkImage(
-                                  'https://picsum.photos/seed/avatar_gokmen/200/200',
-                                ),
-                              ),
-                            ),
-                          ),
+                            // Avatar
+                            const UserAvatar(radius: 55, showBorder: true),
                           const SizedBox(height: 16),
 
                           // Name
                           Text(
-                            "Gökmen Küçük",
+                            user?.displayName ?? "isimsiz",
                             style: GoogleFonts.outfit(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -141,9 +122,9 @@ class ProfileScreen extends ConsumerWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildStatItem(context, "İçerik", itemCount.toString(), CupertinoIcons.doc_text),
+                            _buildStatItem(context, "İçerik", itemCount.toString(), PhosphorIconsRegular.article),
                             _buildVerticalDivider(context),
-                            _buildStatItem(context, "Koleksiyon", collectionCount.toString(), CupertinoIcons.folder),
+                            _buildStatItem(context, "Koleksiyon", collectionCount.toString(), PhosphorIconsRegular.cards),
                           ],
                         ),
                       ),
@@ -160,13 +141,24 @@ class ProfileScreen extends ConsumerWidget {
                           _buildMenuSection(
                             context,
                             children: [
-                              // Removed "Hesap Bilgileri" as per request
+                              _buildMenuItem(
+                                context,
+                                icon: CupertinoIcons.person_circle,
+                                title: "Hesap Bilgileri",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AccountInfoScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildDivider(context),
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.paintbrush,
                                 title: "Görünüm & App İkonu",
-                                badge: "YENİ",
-                                badgeColor: Colors.blue,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -182,7 +174,62 @@ class ProfileScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
 
                           // Membership Plan (Standalone Highlighted)
-                          _buildMembershipCard(context, isPro: isPro, ref: ref), // Real subscription status
+                          _buildMembershipCard(context, isPro: isPro, ref: ref),
+
+                          const SizedBox(height: 20),
+
+                          // Group: Sharing
+                          _buildMenuSection(
+                            context,
+                            children: [
+                              _buildMenuItem(
+                                context,
+                                icon: PhosphorIconsRegular.cards,
+                                title: "Paylaştıklarım",
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const MySharesScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildDivider(context),
+                              _buildMenuItemWithBadge(
+                                context,
+                                icon: PhosphorIconsRegular.cards,
+                                title: "Benimle Paylaşılanlar",
+                                badgeCount: ref.watch(pendingShareRequestCountProvider),
+                                onTap: () {
+                                  final pendingCount = ref.read(pendingShareRequestCountProvider);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => pendingCount > 0 
+                                          ? const ShareRequestsScreen()
+                                          : const SharedWithMeScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildDivider(context),
+                              _buildMenuItemWithBadge(
+                                context,
+                                icon: PhosphorIconsRegular.bell,
+                                title: "Bildirimler",
+                                badgeCount: ref.watch(unreadNotificationCountProvider).valueOrNull ?? 0,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const NotificationsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
 
                           const SizedBox(height: 20),
 
@@ -206,7 +253,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildDivider(context),
                               _buildMenuItem(
                                 context,
-                                icon: CupertinoIcons.bell,
+                                icon: CupertinoIcons.gear,
                                 title: "Bildirim Ayarları",
                                 onTap: () {
                                   Navigator.push(
@@ -605,30 +652,39 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildStatItem(BuildContext context, String label, String value, IconData icon) {
-    return Column(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-           mainAxisSize: MainAxisSize.min,
-           children: [
-             Icon(icon, size: 16, color: context.colors.headline),
-             const SizedBox(width: 8),
-             Text(
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: context.colors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 20, color: context.colors.primary),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
               value,
               style: GoogleFonts.outfit(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: context.colors.headline,
+                height: 1.1,
               ),
             ),
-           ],
-        ),
-        Text(
-          label,
-          style: GoogleFonts.outfit(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: context.colors.hint,
-          ),
+             Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: context.colors.hint,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -734,6 +790,77 @@ class ProfileScreen extends ConsumerWidget {
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: badgeColor ?? Colors.blue,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItemWithBadge(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required int badgeCount,
+    required VoidCallback onTap,
+  }) {
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              // Icon Box
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: context.colors.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: context.colors.primary.withOpacity(0.8), size: 20),
+              ),
+              const SizedBox(width: 16),
+
+              // Text
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: context.colors.headline,
+                  ),
+                ),
+              ),
+
+              // Badge
+              if (badgeCount > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: context.colors.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : badgeCount.toString(),
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),

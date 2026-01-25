@@ -56,7 +56,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authStateProvider = StreamProvider<User?>((ref) async* {
   try {
     final authRepository = ref.watch(authRepositoryProvider);
-    await for (final user in authRepository.authStateChanges) {
+    await for (final user in authRepository.userChanges) {
       yield user;
     }
   } catch (e, stack) {

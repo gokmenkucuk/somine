@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
@@ -136,7 +137,6 @@ class AuthWrapper extends ConsumerWidget {
     final isOnboarding = ref.watch(onboardingStateProvider);
     
     // If user is in onboarding flow, don't override navigation
-    // The LoginScreen will handle navigation to onboarding screens
     if (isOnboarding) {
       return const SoMineLoadingWidget();
     }
@@ -148,24 +148,41 @@ class AuthWrapper extends ConsumerWidget {
           // If explicit onboarding state is set, respect it
           if (isOnboarding) return const SoMineLoadingWidget();
           
-          // 1. Check if name is already set (Onboarding Complete)
-          if (user.displayName != null && user.displayName!.isNotEmpty) {
-             return const HomeScreen();
-          }
-          
-          // 2. Heuristic for new user detection (Only if name is missing)
-          final metadata = user.metadata;
-          if (metadata.creationTime != null && metadata.lastSignInTime != null) {
-            final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();
-            if (diff.inSeconds < 10) {
+          // Check Firestore for profile completion (username)
+          return FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+            builder: (context, snapshot) {
+              // While checking...
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                 return const SoMineLoadingWidget();
+              }
+              
+              if (snapshot.hasData && snapshot.data!.exists) {
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+                final hasUsername = data != null && 
+                                  data.containsKey('username') && 
+                                  data['username'] != null && 
+                                  (data['username'] as String).isNotEmpty;
+                
+                final hasName = data != null && 
+                              data.containsKey('displayName') && 
+                              data['displayName'] != null && 
+                              (data['displayName'] as String).isNotEmpty;
+                
+                // If profile is complete (has username & name), go home
+                if (hasUsername && hasName) {
+                  return const HomeScreen();
+                }
+              }
+              
+              // If missing data, force onboarding
               return OnboardingNameScreen(userId: user.uid);
-            }
-          }
-           
-          return const HomeScreen();
+            },
+          );
         }
 
         // 2. Unauthenticated User (Guest or Login)
+        // Note: Guest mode is practically disabled/hidden in UI but logic remains just in case
         if (guestState.isGuest && guestState.hasPerformedAction) {
           return const LoginScreen(forceLogin: true);
         }

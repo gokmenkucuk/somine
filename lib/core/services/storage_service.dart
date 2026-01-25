@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instanceFor(bucket: 'gs://somineapp-57b41.firebasestorage.app');
 
   /// Uploads an image from a URL to Firebase Storage
   /// Returns the download URL or null if failed
@@ -68,6 +68,45 @@ class StorageService {
       case '.webp': return 'image/webp';
       case '.gif': return 'image/gif';
       default: return 'image/jpeg';
+    }
+  }
+  Future<String?> uploadProfileImage(File file, String userId) async {
+    try {
+      final filename = 'users/$userId/profile.jpg';
+      final ref = _storage.ref().child(filename);
+      
+      debugPrint('🔵 [StorageService] Starting upload to: $filename');
+      
+      final metadata = SettableMetadata(
+        contentType: 'image/jpeg',
+        customMetadata: {
+          'uploadedBy': userId,
+          'type': 'profile_photo',
+        },
+      );
+
+      final bytes = await file.readAsBytes();
+      
+      // Perform upload
+      final uploadTask = ref.putData(bytes, metadata);
+      final snapshot = await uploadTask;
+
+      if (snapshot.state == TaskState.success) {
+         debugPrint('✅ [StorageService] Upload task success. Bytes: ${snapshot.totalBytes}');
+         
+         final downloadUrl = await ref.getDownloadURL();
+         debugPrint('✅ [StorageService] Got download URL: $downloadUrl');
+         
+         // Cache busting param
+         return '$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+      } else {
+         debugPrint('❌ [StorageService] Upload failed or cancelled. State: ${snapshot.state}');
+         return null;
+      }
+
+    } catch (e) {
+      debugPrint('❌ [StorageService] Error uploading profile image: $e');
+      return null;
     }
   }
 }

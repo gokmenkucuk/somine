@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemUiOverlayStyle için gerekli
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
-import 'package:somine_app/screens/somine_loading_screen.dart';
 import 'package:somine_app/screens/onboarding_name_screen.dart';
 
 import 'package:somine_app/screens/home_screen.dart';
@@ -30,27 +30,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authRepository = ref.read(authRepositoryProvider);
       final result = await authRepository.signInWithGoogle();
       
-      // Manual navigation to ensure we don't get stuck on loading
-      // caused by AuthWrapper stream latency
-      if (mounted) {
-        final user = result.userCredential?.user;
-        if (user != null) {
-           final metadata = user.metadata;
-           bool isNewUser = true;
-           
-           if (metadata.creationTime != null && metadata.lastSignInTime != null) {
-              final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();
-              isNewUser = diff.inSeconds < 10;
-           }
-
-           Navigator.of(context).pushReplacement(
-             MaterialPageRoute(
-               builder: (_) => isNewUser 
-                   ? OnboardingNameScreen(userId: user.uid)
-                   : const HomeScreen(),
-             ),
-           );
-        }
+      if (mounted && result.userCredential?.user != null) {
+        final user = result.userCredential!.user!;
+        
+        // Check if user has completed onboarding by checking username in Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        final hasUsername = userDoc.exists && 
+            userDoc.data()?['username'] != null &&
+            (userDoc.data()?['username'] as String).isNotEmpty;
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => hasUsername 
+                ? const HomeScreen()
+                : OnboardingNameScreen(userId: user.uid),
+          ),
+        );
       }
       
     } catch (e) {
@@ -71,26 +70,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final authRepository = ref.read(authRepositoryProvider);
       final result = await authRepository.signInWithApple();
       
-      // Manual navigation
-      if (mounted) {
-        final user = result.userCredential?.user;
-        if (user != null) {
-           final metadata = user.metadata;
-           bool isNewUser = true;
-           
-           if (metadata.creationTime != null && metadata.lastSignInTime != null) {
-              final diff = metadata.creationTime!.difference(metadata.lastSignInTime!).abs();
-              isNewUser = diff.inSeconds < 10;
-           }
-
-           Navigator.of(context).pushReplacement(
-             MaterialPageRoute(
-               builder: (_) => isNewUser 
-                   ? OnboardingNameScreen(userId: user.uid)
-                   : const HomeScreen(),
-             ),
-           );
-        }
+      if (mounted && result.userCredential?.user != null) {
+        final user = result.userCredential!.user!;
+        
+        // Check if user has completed onboarding by checking username in Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        final hasUsername = userDoc.exists && 
+            userDoc.data()?['username'] != null &&
+            (userDoc.data()?['username'] as String).isNotEmpty;
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => hasUsername 
+                ? const HomeScreen()
+                : OnboardingNameScreen(userId: user.uid),
+          ),
+        );
       }
       
     } catch (e) {
@@ -101,14 +100,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ).showSnackBar(SnackBar(content: Text('Giriş hatası: $e')));
       }
     }
-  }
-
-  void _continueAsGuest() {
-    final guestNotifier = ref.read(guestUserStateProvider.notifier);
-    guestNotifier.setGuestMode(true);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const SoMineLoadingScreen()),
-    );
   }
 
   @override
@@ -188,22 +179,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         hasShadow: true,
                         useBorderOnWhite: true, // Yeni parametre
                       ),
-
-                      // Misafir Girişi
-                      if (!widget.forceLogin) ...[
-                        const SizedBox(height: DesignTokens.spacingLG),
-                        TextButton(
-                          onPressed: _continueAsGuest,
-                          child: Text(
-                            'Üyelik olmadan devam et',
-                            style: GoogleFonts.poppins(
-                              color: DesignTokens.textTertiary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
 
                       const Spacer(flex: 1),
                     ],

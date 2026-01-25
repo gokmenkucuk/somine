@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,13 +14,14 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/custom_note_icon.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
-import 'package:somine_app/widgets/custom_note_icon.dart';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => null);
@@ -960,6 +962,35 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               },
             ),
             Divider(color: Colors.grey[100]),
+            // Share Collection - Disabled for Vaults (moved above Vault toggle)
+            Opacity(
+              opacity: category.isVault ? 0.4 : 1.0,
+              child: _buildOptionTile(
+                icon: PhosphorIconsRegular.shareNetwork,
+                title: "Koleksiyonu Paylaş",
+                color: category.isVault ? Colors.grey : null, // Default primary when null
+                trailing: category.isVault ? Text(
+                  "Gizli Kasa",
+                  style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
+                ) : null,
+                onTap: () {
+                  if (category.isVault) {
+                    // Show info that vaults cannot be shared
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Gizli kasalar paylaşılamaz", style: GoogleFonts.poppins()),
+                        backgroundColor: Colors.grey[700],
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  _showShareCollectionDialog(category);
+                },
+              ),
+            ),
+            Divider(color: Colors.grey[100]),
             // Vault Toggle - Premium Feature
             _buildOptionTile(
               icon: category.isVault ? PhosphorIconsRegular.lockSimpleOpen : PhosphorIconsRegular.lock,
@@ -1032,6 +1063,572 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
+
+  void _showShareCollectionDialog(CategoryModel category) {
+    final searchController = TextEditingController();
+    Map<String, dynamic>? foundUser;
+    bool isSearching = false;
+    bool hasSearched = false;
+    String? errorMessage;
+    List<Map<String, dynamic>> recentUsers = [];
+    bool isLoadingRecent = true;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Title
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(
+                      "Koleksiyonu Paylaş",
+                      style: GoogleFonts.outfit(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: context.colors.headline,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      category.name,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: context.colors.body,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Search Field
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: "@kullaniciadi veya e-posta",
+                    hintStyle: TextStyle(color: context.colors.hint),
+                    prefixIcon: Icon(PhosphorIconsRegular.at, color: context.colors.hint),
+                    suffixIcon: isSearching 
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                        )
+                      : IconButton(
+                          icon: Icon(PhosphorIconsRegular.arrowRight, color: context.colors.primary),
+                          onPressed: () async {
+                            if (searchController.text.trim().isEmpty) return;
+                            setState(() {
+                              isSearching = true;
+                              hasSearched = false;
+                              foundUser = null;
+                              errorMessage = null;
+                            });
+                            try {
+                              // Kullanıcı adı veya e-posta ile ara
+                              final result = await ref.read(shareRepositoryProvider).findUser(searchController.text.trim());
+                              setState(() {
+                                foundUser = result;
+                                hasSearched = true;
+                                isSearching = false;
+                              });
+                            } catch (e) {
+                              setState(() {
+                                errorMessage = e.toString();
+                                isSearching = false;
+                              });
+                            }
+                          },
+                        ),
+                    filled: true,
+                    fillColor: context.colors.backgroundTop,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                  onSubmitted: (value) async {
+                    if (value.trim().isEmpty) return;
+                    setState(() {
+                      isSearching = true;
+                      hasSearched = false;
+                      foundUser = null;
+                      errorMessage = null;
+                    });
+                    try {
+                      // Kullanıcı adı veya e-posta ile ara
+                      final result = await ref.read(shareRepositoryProvider).findUser(value.trim());
+                      setState(() {
+                        foundUser = result;
+                        hasSearched = true;
+                        isSearching = false;
+                      });
+                    } catch (e) {
+                      setState(() {
+                        errorMessage = e.toString();
+                        isSearching = false;
+                      });
+                    }
+                  },
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Info Banner
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: context.colors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: context.colors.primary.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      PhosphorIconsRegular.info,
+                      color: context.colors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Paylaştığınız kişi içerikleri görüntüleyebilir ve kendi koleksiyonuna kopyalayabilir.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: context.colors.headline,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Search Results or Recent Users
+              Expanded(
+                child: hasSearched 
+                  ? foundUser != null 
+                    ? _buildUserResult(context, ctx, foundUser!, category, setState)
+                    : _buildNoUserFound(context)
+                  : _buildRecentUsers(context, ctx, category, setState, (user) {
+                      setState(() {
+                        foundUser = user;
+                        hasSearched = true;
+                      });
+                    }),
+              ),
+              
+              // Error Message
+              if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    errorMessage!,
+                    style: GoogleFonts.poppins(color: Colors.red, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserResult(BuildContext context, BuildContext dialogContext, Map<String, dynamic> user, CategoryModel category, StateSetter setState) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.colors.backgroundTop,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                // Profile Photo or Initials
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: user['photoBase64'] == null 
+                      ? LinearGradient(colors: [context.colors.primary, context.colors.secondary])
+                      : null,
+                    shape: BoxShape.circle,
+                    image: user['photoBase64'] != null 
+                      ? DecorationImage(
+                          image: MemoryImage(base64Decode(user['photoBase64'])),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  ),
+                  child: user['photoBase64'] == null 
+                    ? Center(
+                        child: Text(
+                          (user['displayName'] as String? ?? 'U')[0].toUpperCase(),
+                          style: GoogleFonts.outfit(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user['displayName'] ?? 'Kullanıcı',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.headline,
+                        ),
+                      ),
+                      if (user['username'] != null)
+                        Text(
+                          '@${user['username']}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: context.colors.primary,
+                          ),
+                        ),
+                      Text(
+                        user['email'] ?? '',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: context.colors.hint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final currentUser = ref.read(authStateProvider).valueOrNull;
+                    if (currentUser == null) return;
+                    
+                    await ref.read(shareRepositoryProvider).createShare(
+                      fromUserId: currentUser.uid,
+                      fromUserName: currentUser.displayName ?? currentUser.email ?? 'Kullanıcı',
+                      fromUserEmail: currentUser.email ?? '',
+                      toUserEmail: user['email'],
+                      categoryId: category.id!,
+                      categoryName: category.name,
+                    );
+                    
+                    Navigator.pop(dialogContext);
+                    
+                    if (mounted) {
+                      SuccessNotificationSheet.show(
+                        context,
+                        title: 'Paylaşım Gönderildi',
+                        message: '${user['displayName']} paylaşım isteğinizi aldı.',
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.colors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(PhosphorIconsRegular.paperPlaneTilt, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Paylaşım İsteği Gönder',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoUserFound(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            PhosphorIconsRegular.userCircle,
+            size: 48,
+            color: context.colors.iconInactive,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Kullanıcı Bulunamadı',
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: context.colors.headline,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Bu e-posta ile kayıtlı kullanıcı yok.',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: context.colors.body,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchHint(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            PhosphorIconsRegular.magnifyingGlass,
+            size: 48,
+            color: context.colors.iconInactive,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Arkadaş Ara',
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: context.colors.headline,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Paylaşmak istediğiniz kişinin e-posta adresini girin.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: context.colors.body,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentUsers(
+    BuildContext context, 
+    BuildContext dialogContext, 
+    CategoryModel category, 
+    StateSetter setState, 
+    Function(Map<String, dynamic>) onUserSelected,
+  ) {
+    final currentUser = ref.read(authStateProvider).valueOrNull;
+    if (currentUser == null) return _buildSearchHint(context);
+
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: ref.read(shareRepositoryProvider).getRecentlySharedUsers(currentUser.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final recentUsers = snapshot.data ?? [];
+        
+        if (recentUsers.isEmpty) {
+          return _buildSearchHint(context);
+        }
+        
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Son Paylaşılanlar',
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: context.colors.body,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: recentUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = recentUsers[index];
+                    return _buildRecentUserTile(context, dialogContext, user, category);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRecentUserTile(BuildContext context, BuildContext dialogContext, Map<String, dynamic> user, CategoryModel category) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          try {
+            final currentUser = ref.read(authStateProvider).valueOrNull;
+            if (currentUser == null) return;
+            
+            await ref.read(shareRepositoryProvider).createShare(
+              fromUserId: currentUser.uid,
+              fromUserName: currentUser.displayName ?? currentUser.email ?? 'Kullanıcı',
+              fromUserEmail: currentUser.email ?? '',
+              toUserEmail: user['email'],
+              categoryId: category.id!,
+              categoryName: category.name,
+            );
+            
+            Navigator.pop(dialogContext);
+            
+            if (mounted) {
+              SuccessNotificationSheet.show(
+                context,
+                title: 'Paylaşım Gönderildi',
+                message: '${user['displayName']} paylaşım isteğinizi aldı.',
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(e.toString())),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              // Profile Photo or Initials
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: user['photoBase64'] == null 
+                    ? LinearGradient(colors: [context.colors.primary, context.colors.secondary])
+                    : null,
+                  shape: BoxShape.circle,
+                  image: user['photoBase64'] != null 
+                    ? DecorationImage(
+                        image: MemoryImage(base64Decode(user['photoBase64'])),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                ),
+                child: user['photoBase64'] == null 
+                  ? Center(
+                      child: Text(
+                        (user['displayName'] as String? ?? 'U')[0].toUpperCase(),
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user['displayName'] ?? 'Kullanıcı',
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.headline,
+                      ),
+                    ),
+                    if (user['username'] != null)
+                      Text(
+                        '@${user['username']}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: context.colors.primary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                PhosphorIconsRegular.paperPlaneTilt,
+                color: context.colors.primary,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   void _showRenameDialog(String categoryId, String currentName) {
     final controller = TextEditingController(text: currentName);

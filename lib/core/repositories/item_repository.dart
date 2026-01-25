@@ -445,4 +445,62 @@ class ItemRepository {
       return 0;
     }
   }
+
+  /// Belirtilen öğeleri başka bir kullanıcının koleksiyonuna kopyala (bağımsız kopya)
+  Future<int> copyItemsToCollection({
+    required List<String> itemIds,
+    required String targetUserId,
+    required String targetCategoryId,
+  }) async {
+    try {
+      int copiedCount = 0;
+      final batch = _firestore.batch();
+
+      for (final itemId in itemIds) {
+        final originalDoc = await _itemsCollection.doc(itemId).get();
+        if (!originalDoc.exists) continue;
+
+        final originalItem = ItemModel.fromFirestore(originalDoc);
+        
+        // Bağımsız kopya oluştur
+        final copiedItem = originalItem.copyWith(
+          userId: targetUserId,
+          categoryId: targetCategoryId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          isDeleted: false,
+          deletedAt: null,
+        );
+
+        final newDocRef = _itemsCollection.doc();
+        batch.set(newDocRef, copiedItem.toFirestore());
+        copiedCount++;
+      }
+
+      await batch.commit();
+      debugPrint('✅ [ItemRepository] Copied $copiedCount items to collection: $targetCategoryId');
+      return copiedCount;
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error copying items: $e');
+      rethrow;
+    }
+  }
+
+  /// Belirli bir koleksiyondaki tüm öğeleri getir (paylaşım görüntüleme için)
+  Future<List<ItemModel>> getItemsByCategory(String userId, String categoryId) async {
+    try {
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('categoryId', isEqualTo: categoryId)
+          .where('isDeleted', isEqualTo: false)
+          .get();
+
+      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return items;
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error getting items by category: $e');
+      rethrow;
+    }
+  }
 }

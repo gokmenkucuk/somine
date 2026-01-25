@@ -21,6 +21,7 @@ import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/item_card.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/screens/notifications_screen.dart';
+import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:somine_app/screens/search_screen.dart';
 
 enum ViewMode { square, masonry, feed }
@@ -159,10 +160,38 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                               const SizedBox(width: 8),
                               GestureDetector(
                                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
-                                child: Container(
-                                  width: 48, height: 48,
-                                  decoration: BoxDecoration(color: context.colors.surfaceWhite.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: context.colors.surfaceWhite, width: 1.5)),
-                                  child: Icon(PhosphorIconsLight.bell, color: context.colors.headline, size: 24),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Container(
+                                      width: 48, height: 48,
+                                      decoration: BoxDecoration(color: context.colors.surfaceWhite.withOpacity(0.6), shape: BoxShape.circle, border: Border.all(color: context.colors.surfaceWhite, width: 1.5)),
+                                      child: Icon(PhosphorIconsLight.bell, color: context.colors.headline, size: 24),
+                                    ),
+                                    // Notification Badge
+                                    Consumer(
+                                      builder: (context, ref, child) {
+                                        final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+                                        final unreadCount = unreadCountAsync.valueOrNull ?? 0;
+                                        
+                                        if (unreadCount > 0) {
+                                          return Positioned(
+                                            top: 4,
+                                            right: 4,
+                                            child: Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return const SizedBox.shrink();
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
