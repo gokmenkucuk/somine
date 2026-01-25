@@ -10,54 +10,6 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIcons</key>
 	<dict>
-		<key>CFBundleAlternateIcons</key>
-		<dict>
-			<key>dark</key>
-			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>icon_dark</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
-			</dict>
-			<key>gold</key>
-			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>icon_gold</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
-			</dict>
-			<key>light</key>
-			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>icon_light</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
-			</dict>
-			<key>neon</key>
-			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>icon_neon</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
-			</dict>
-			<key>retro</key>
-			<dict>
-				<key>CFBundleIconFiles</key>
-				<array>
-					<string>icon_retro</string>
-				</array>
-				<key>UIPrerenderedIcon</key>
-				<false/>
-			</dict>
-		</dict>
 		<key>CFBundlePrimaryIcon</key>
 		<dict>
 			<key>CFBundleIconFiles</key>
