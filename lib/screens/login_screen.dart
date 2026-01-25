@@ -50,6 +50,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 : OnboardingNameScreen(userId: user.uid),
           ),
         );
+      } else {
+        // User canceled or failed without exception
+        if (mounted) {
+           setState(() => _isLoading = false);
+        }
       }
       
     } catch (e) {
@@ -90,6 +95,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 : OnboardingNameScreen(userId: user.uid),
           ),
         );
+      } else {
+        // User canceled or failed without exception
+        if (mounted) {
+           setState(() => _isLoading = false);
+        }
       }
       
     } catch (e) {

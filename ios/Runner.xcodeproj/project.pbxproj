@@ -436,27 +436,27 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F8407FB92F98E98048728F76 /* icon_dark.png in Resources */,
+
 				518F013C3C53B230A136792B /* icon_dark@2x.png in Resources */,
 				570CF1BCF5306FFF34210B17 /* icon_dark@3x.png in Resources */,
 				FB7D01573636749ACB5782C5 /* icon_dark~ipad.png in Resources */,
 				423A4E5FC52945A6EC31F4A1 /* icon_dark@2x~ipad.png in Resources */,
-				1FE70FB82D65A09AE460A1FF /* icon_gold.png in Resources */,
+
 				1DCDD4BC8A78B62C01FA790A /* icon_gold@2x.png in Resources */,
 				6CE62D99B34C0830B79605EA /* icon_gold@3x.png in Resources */,
 				F5472D2B4F777ECD05C87D2D /* icon_gold~ipad.png in Resources */,
 				324A3822B4BA250D74CE72A9 /* icon_gold@2x~ipad.png in Resources */,
-				FD10BD7CC34E2775B4B931EE /* icon_light.png in Resources */,
+
 				616E128E2359FE61FC582807 /* icon_light@2x.png in Resources */,
 				7AF79C99A23464F729756AED /* icon_light@3x.png in Resources */,
 				9089E7C857464B1FD9CD11C5 /* icon_light~ipad.png in Resources */,
 				CDF61DB897AEA741275FD75B /* icon_light@2x~ipad.png in Resources */,
-				4AB2A7360E451C4EF6EE846B /* icon_neon.png in Resources */,
+
 				1315A1D41C8F936D4F623F1F /* icon_neon@2x.png in Resources */,
 				BDCBB59787785EEF736305B2 /* icon_neon@3x.png in Resources */,
 				D35809812C27BC2FFDF10DC1 /* icon_neon~ipad.png in Resources */,
 				8094083FD3B5F3F3B67EC4D2 /* icon_neon@2x~ipad.png in Resources */,
-				1039CD62C4DE7EBCF133C5C2 /* icon_retro.png in Resources */,
+
 				EB7BCAF77FB4A6CB292DD2CF /* icon_retro@2x.png in Resources */,
 				F089F71244D9F1143327E2CE /* icon_retro@3x.png in Resources */,
 				0EF02416BF1D30DEEE2E899F /* icon_retro~ipad.png in Resources */,
