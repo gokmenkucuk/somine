@@ -207,42 +207,226 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
     }
   }
 
-  void _confirmDelete(BuildContext context, CategoryModel category) {
+  Future<void> _confirmDelete(BuildContext context, CategoryModel category) async {
+    // Check item count directly from repository (Source of Truth)
+    // Providers might be filtered or not listening
+    try {
+      final itemRepo = ref.read(itemRepositoryProvider);
+      final count = await itemRepo.getActiveItemCountInCategory(category.userId, category.id);
+
+      debugPrint("Delete check for ${category.name}: found $count items (Direct Repo)");
+
+      if (!mounted) return;
+
+      if (count == 0) {
+        // Empty category - Standard delete
+        _showStandardDeleteDialog(context, category);
+      } else {
+        // Non-empty category - Advanced actions
+        _showAdvancedDeleteDialog(context, category, count);
+      }
+    } catch (e) {
+      debugPrint("Error checking category items: $e");
+      // Fallback to standard dialog if check fails, but maybe warn
+      if (mounted) _showStandardDeleteDialog(context, category);
+    }
+  }
+
+  void _showStandardDeleteDialog(BuildContext context, CategoryModel category) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SoMineTokens.radiusLarge),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Kategoriyi Sil'),
-        content: Text(
-          '"${category.name}" kategorisini silmek istediğine emin misin?\n\nBu kategorideki içerikler silinmeyecek, sadece kategorisiz kalacak.',
-        ),
+        content: Text('"${category.name}" kategorisini silmek istediğine emin misin?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _deleteCategory(category);
+              _deleteCategory(category, deleteItems: false); // Empty anyway
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: const Text('Sil'),
+            child: const Text('Sil', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _deleteCategory(CategoryModel category) async {
+  void _showAdvancedDeleteDialog(BuildContext context, CategoryModel category, int count) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+            ),
+            Text(
+              'Kategoriyi Sil',
+              style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: context.colors.headline),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '"${category.name}" içinde $count adet içerik var. Bu içerikleri ne yapmak istersin?',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
+            ),
+            const SizedBox(height: 32),
+            
+            // Move Option
+            _buildActionButton(
+              context,
+              icon: PhosphorIconsLight.folderNotchPlus,
+              text: 'İçerikleri Başka Koleksiyona Taşı',
+              color: context.colors.primary,
+              onTap: () {
+                Navigator.pop(context);
+                _showMoveTargetSelector(context, category);
+              },
+            ),
+            const SizedBox(height: 12),
+            
+            // Delete All Option
+            _buildActionButton(
+              context,
+              icon: PhosphorIconsLight.trash,
+              text: 'Kategori ve İçerikleri Sil',
+              color: Colors.red,
+              isDestructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                _deleteCategory(category, deleteItems: true);
+              },
+            ),
+            const SizedBox(height: 12),
+            
+            // Cancel
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Vazgeç', style: GoogleFonts.poppins(color: context.colors.hint, fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, {required IconData icon, required String text, required Color color, required VoidCallback onTap, bool isDestructive = false}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isDestructive ? Colors.red.withOpacity(0.08) : context.colors.backgroundTop,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDestructive ? Colors.red.withOpacity(0.2) : Colors.transparent),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(text, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: isDestructive ? Colors.red : context.colors.headline)),
+            ),
+            Icon(PhosphorIconsLight.caretRight, size: 16, color: isDestructive ? Colors.red.withOpacity(0.5) : context.colors.hint),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMoveTargetSelector(BuildContext context, CategoryModel sourceCategory) {
+    final categories = ref.read(categoriesProvider).value ?? [];
+    // Exclude current category
+    final targets = categories.where((c) => c.id != sourceCategory.id).toList();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text('Hedef Koleksiyon Seç', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: targets.length,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemBuilder: (context, index) {
+                  final cat = targets[index];
+                  return ListTile(
+                    leading: Text(cat.emoji ?? '📁', style: const TextStyle(fontSize: 24)),
+                    title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _moveItemsAndDelete(sourceCategory, cat.id);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _moveItemsAndDelete(CategoryModel source, String targetId) async {
+    try {
+      final itemRepo = ref.read(itemRepositoryProvider);
+      final catRepo = ref.read(categoryRepositoryProvider);
+      
+      // 1. Move items
+      await itemRepo.updateItemsCategory(source.userId, source.id, targetId);
+      
+      // 2. Delete category
+      await catRepo.deleteCategory(source.id);
+      
+      _showSuccessSnackbar('İçerikler taşındı ve kategori silindi');
+    } catch (e) {
+      _showErrorSnackbar('İşlem başarısız oldu');
+    }
+  }
+
+  Future<void> _deleteCategory(CategoryModel category, {required bool deleteItems}) async {
     try {
       final categoryRepo = ref.read(categoryRepositoryProvider);
+      final itemRepo = ref.read(itemRepositoryProvider);
+      
+      // 1. Delete items if requested
+      if (deleteItems) {
+        await itemRepo.deleteItemsInCategory(category.id);
+      }
+      
+      // 2. Delete category
       await categoryRepo.deleteCategory(category.id);
-      _showSuccessSnackbar('Kategori silindi');
+      
+      _showSuccessSnackbar('Kategori ${deleteItems ? "ve içerikler" : ""} silindi');
     } catch (e) {
       _showErrorSnackbar('Kategori silinemedi');
     }

@@ -481,10 +481,45 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
   Widget _buildSliverContent(List<ItemModel> items, List<CategoryModel> categories, bool isLoading) {
     if (items.isEmpty && !isLoading) {
-       return SliverToBoxAdapter(
-         child: Padding(
-           padding: const EdgeInsets.only(top: 40),
-           child: Center(child: Text("Henüz içerik yok", style: GoogleFonts.poppins(color: context.colors.hint))),
+       return SliverFillRemaining(
+         hasScrollBody: false,
+         child: Center(
+           child: Padding(
+             padding: const EdgeInsets.symmetric(horizontal: 40),
+             child: Column(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                 Container(
+                   width: 120, height: 120,
+                   decoration: BoxDecoration(
+                     color: context.colors.surfaceWhite,
+                     shape: BoxShape.circle,
+                     boxShadow: [
+                       BoxShadow(color: context.colors.premiumShadow.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))
+                     ]
+                   ),
+                   child: Icon(PhosphorIconsDuotone.folderPlus, size: 60, color: context.colors.primary),
+                 ),
+                 const SizedBox(height: 24),
+                 Text(
+                   "Koleksiyonun Boş",
+                   style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: context.colors.headline),
+                 ),
+                 const SizedBox(height: 12),
+                 Text(
+                   "Henüz hiç içerik eklememişsin.\nLinklerini ve notlarını kaydetmeye başla!",
+                   textAlign: TextAlign.center,
+                   style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body, height: 1.5),
+                 ),
+                 const SizedBox(height: 32),
+                 // Note: We don't have a direct callback for Add Content here easily without passing it down, 
+                 // but we can guide user to the FAB or Search if needed.
+                 // For now, simple directional text is good, or a button if we had the callback.
+                 // Since the FAB/BottomBar handles add, maybe just an arrow down?
+                 // Or better, let's make it actionable if possible.
+               ],
+             ),
+           ),
          ),
        );
     }

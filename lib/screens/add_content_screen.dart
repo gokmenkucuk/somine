@@ -497,13 +497,18 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       final noteText = _noteController.text.trim();
       final titleText = _titleController.text.trim();
       
-      // For notes: use ogMetadata to store title
+      // Determine final metadata: Prioritize USER INPUT over fetched metadata
       OGMetadata? finalMetadata;
+      
       if (_isNoteMode) {
-        // Store title in ogMetadata for notes
+        // Note mode: Title is just title
         finalMetadata = OGMetadata(title: titleText.isNotEmpty ? titleText : null);
       } else {
-        finalMetadata = _ogMetadata;
+        // Link mode: Use existing metadata BUT override with user title if provided
+        finalMetadata = _ogMetadata?.copyWith(
+          title: titleText.isNotEmpty ? titleText : _ogMetadata?.title,
+          // Keep other fields (image, description, etc.) from fetched metadata
+        ) ?? OGMetadata(title: titleText.isNotEmpty ? titleText : null);
       }
 
       // --- EDIT MODE START ---

@@ -301,6 +301,23 @@ class ItemRepository {
     }
   }
 
+  /// Get active item count in a specific category
+  Future<int> getActiveItemCountInCategory(String userId, String categoryId) async {
+    try {
+      final snapshot = await _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('categoryId', isEqualTo: categoryId)
+          .where('isDeleted', isEqualTo: false)
+          .count()
+          .get();
+      
+      return snapshot.count ?? 0;
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error getting category item count: $e');
+      return 0;
+    }
+  }
+
   /// Get Recent Items for Activity Feed
   Future<List<ItemModel>> getRecentItems(String userId, {int limit = 5}) async {
     try {

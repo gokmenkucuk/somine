@@ -54,6 +54,22 @@ class OGMetadata {
   String toString() {
     return 'OGMetadata(title: $title, siteName: $siteName)';
   }
+
+  OGMetadata copyWith({
+    String? title,
+    String? description,
+    String? imageUrl,
+    String? siteName,
+    String? faviconUrl,
+  }) {
+    return OGMetadata(
+      title: title ?? this.title,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      siteName: siteName ?? this.siteName,
+      faviconUrl: faviconUrl ?? this.faviconUrl,
+    );
+  }
 }
 
 class ItemModel {
