@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>AppGroupId</key>
+	<string>group.com.somine.app</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleDisplayName</key>
@@ -155,6 +157,7 @@
 			<array>
 				<string>com.googleusercontent.apps.1056446356536-5h06gjgaukp8bfte8hrtudodkf5j1rfd</string>
 				<string>ShareMedia</string>
+				<string>ShareMedia-com.somine.app</string>
 			</array>
 		</dict>
 	</array>

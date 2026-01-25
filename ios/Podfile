@@ -35,12 +35,10 @@ target 'Runner' do
     inherit! :search_paths
   end
   
-
-end
-
-target 'somine' do
-  use_frameworks!
-  inherit! :search_paths
+  # Share Extension needs to inherit from Runner to access receive_sharing_intent
+  target 'somine' do
+    inherit! :search_paths
+  end
 end
 
 post_install do |installer|

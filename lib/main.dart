@@ -8,7 +8,6 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
 import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/services/share_service.dart';
-import 'package:somine_app/screens/add_content_screen.dart';
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/splash_screen.dart';
@@ -18,56 +17,48 @@ import 'package:somine_app/widgets/somine_loading_widget.dart';
 import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:somine_app/core/utils/native_logger.dart';
+
+import 'dart:async';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('tr', null);
-  timeago.setLocaleMessages('tr', timeago.TrMessages());
-  timeago.setDefaultLocale('tr');
-  
-  // Global error handling
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    debugPrint('Flutter Error: ${details.exception}');
-  };
-  
-  // Platform error handling
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Platform Error: $error');
-    return true;
-  };
-  
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        throw Exception('Firebase initialization timeout');
-      },
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('tr', null);
+    timeago.setLocaleMessages('tr', timeago.TrMessages());
+    timeago.setDefaultLocale('tr');
+    
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      
+      // Pass all uncaught "fatal" errors from the framework to Crashlytics
+      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+      
+      debugPrint('Firebase & Crashlytics initialized successfully');
+    } catch (e, stack) {
+      debugPrint('Firebase initialization error: $e');
+    }
+
+    // Initialize Share Service AFTER Firebase and with error handling
+    try {
+      ShareService().initialize();
+      debugPrint('ShareService initialized successfully');
+    } catch (e, stack) {
+      debugPrint('ShareService initialization error: $e');
+    }
+
+    // Print native logs from previous run (Crash debugging)
+    NativeLogger.printNativeLogs();
+    
+    runApp(
+      const ProviderScope(
+        child: SoMineApp(),
+      ),
     );
-    debugPrint('Firebase initialized successfully');
-  } catch (e, stack) {
-    debugPrint('Firebase initialization error: $e');
-    debugPrint('Stack trace: $stack');
-    // Continue anyway for now
-  }
-
-  // Initialize Share Service
-  ShareService().initialize();
-  
-  // Debug Assets
-  try {
-     // We need services import for rootBundle
-     // But let's just use a simple try/catch around the run logic or inside the first widget?
-     // Actually rootBundle is global in services.
-  } catch (e) {}
-
-  runApp(
-    const ProviderScope(
-      child: SoMineApp(),
-    ),
-  );
+  }, (error, stack) => FirebaseCrashlytics.instance.recordError(error, stack, fatal: true));
 }
 
 class SoMineApp extends ConsumerStatefulWidget {
@@ -84,27 +75,11 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
   @override
   void initState() {
     super.initState();
-    ShareService().sharedUrlNotifier.addListener(_handleSharedUrl);
+    // Share handling moved to HomeScreen to ensure auth & data is ready
   }
 
-  @override
-  void dispose() {
-    ShareService().sharedUrlNotifier.removeListener(_handleSharedUrl);
-    super.dispose();
-  }
-
-  void _handleSharedUrl() {
-    final url = ShareService().sharedUrlNotifier.value;
-    if (url != null) {
-      // Clear immediately to prevent re-processing
-      ShareService().sharedUrlNotifier.value = null;
-      
-      _navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          builder: (context) => AddContentScreen(initialText: url),
-        ),
-      );
-    }
+  void _onSplashComplete() {
+    setState(() => _isSplashFinished = true);
   }
 
   @override
@@ -113,15 +88,13 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'So Mine', // Updated title
+      title: 'So Mine', 
       theme: AppTheme.getTheme(currentTheme),
       debugShowCheckedModeBanner: false,
       home: _isSplashFinished
           ? const AuthWrapper()
           : SplashScreen(
-              onAnimationComplete: () {
-                setState(() => _isSplashFinished = true);
-              },
+              onAnimationComplete: _onSplashComplete,
             ),
     );
   }

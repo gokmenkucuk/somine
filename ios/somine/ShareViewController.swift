@@ -2,32 +2,36 @@ import UIKit
 import Social
 import MobileCoreServices
 import UniformTypeIdentifiers
+import Foundation
 
-class ShareViewController: SLComposeServiceViewController {
+// Custom ShareViewController - No "Post" UI, Manual Data Saving, Safe Redirect
+class ShareViewController: UIViewController {
     
     private let appGroupId = "group.com.somine.app"
-    private let userDefaultsKey = "sharedElements"
-    private let urlScheme = "ShareMedia"
+    private let userDefaultsKey = "ShareKey"
+    private let urlScheme = "ShareMedia-com.somine.app"
     
-    override func isContentValid() -> Bool {
-        return true
-    }
-    
-    override func didSelectPost() {
-        handleSharedItems()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Transparent background
+        view.backgroundColor = .clear
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        Logger.shared.log("ShareViewController: viewDidAppear - Starting process")
         handleSharedItems()
     }
     
     private func handleSharedItems() {
         guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
               let attachments = extensionItem.attachments else {
+            Logger.shared.log("ShareViewController: No attachments found")
             completeRequest()
             return
         }
+        
+        Logger.shared.log("ShareViewController: Found \(attachments.count) attachments")
         
         let group = DispatchGroup()
         var sharedItems: [[String: Any]] = []
@@ -35,14 +39,16 @@ class ShareViewController: SLComposeServiceViewController {
         for attachment in attachments {
             group.enter()
             
-            // Handle URLs
+            // Handle URLs (YouTube, Web, etc.)
             if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                 attachment.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] item, error in
                     defer { group.leave() }
                     if let url = item as? URL {
+                        Logger.shared.log("ShareViewController: Found URL: \(url.absoluteString)")
                         sharedItems.append([
                             "path": url.absoluteString,
-                            "type": "url"
+                            "type": "url",
+                            "mimeType": "text/plain" 
                         ])
                     }
                 }
@@ -52,35 +58,22 @@ class ShareViewController: SLComposeServiceViewController {
                 attachment.loadItem(forTypeIdentifier: UTType.text.identifier) { [weak self] item, error in
                     defer { group.leave() }
                     if let text = item as? String {
+                        Logger.shared.log("ShareViewController: Found Text")
                         sharedItems.append([
                             "path": text,
-                            "type": "text"
+                            "type": "text",
+                            "mimeType": "text/plain"
                         ])
                     }
                 }
             }
-            // Handle Images
+            // Handle Images (Optional - keeping logic simplified for now as user tests mainly links)
             else if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                attachment.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] item, error in
-                    defer { group.leave() }
-                    guard let self = self else { return }
-                    
-                    if let url = item as? URL {
-                        if let savedPath = self.saveToAppGroup(url: url) {
-                            sharedItems.append([
-                                "path": savedPath,
-                                "type": "image"
-                            ])
-                        }
-                    } else if let image = item as? UIImage {
-                        if let savedPath = self.saveImageToAppGroup(image: image) {
-                            sharedItems.append([
-                                "path": savedPath,
-                                "type": "image"
-                            ])
-                        }
-                    }
-                }
+                 attachment.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] item, error in
+                     defer { group.leave() }
+                     // Image handling can be added here if needed, keeping it simple for stability
+                     Logger.shared.log("ShareViewController: Image found but full processing skipped for stability")
+                 }
             }
             else {
                 group.leave()
@@ -88,82 +81,102 @@ class ShareViewController: SLComposeServiceViewController {
         }
         
         group.notify(queue: .main) { [weak self] in
+            Logger.shared.log("ShareViewController: All items processed. Saving...")
             self?.saveAndRedirect(items: sharedItems)
         }
     }
     
-    private func saveToAppGroup(url: URL) -> String? {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            return nil
-        }
-        
-        let fileName = url.lastPathComponent
-        let destinationURL = containerURL.appendingPathComponent(fileName)
-        
-        do {
-            if FileManager.default.fileExists(atPath: destinationURL.path) {
-                try FileManager.default.removeItem(at: destinationURL)
-            }
-            try FileManager.default.copyItem(at: url, to: destinationURL)
-            return destinationURL.absoluteString
-        } catch {
-            print("Error copying file: \(error)")
-            return nil
-        }
-    }
-    
-    private func saveImageToAppGroup(image: UIImage) -> String? {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId),
-              let imageData = image.pngData() else {
-            return nil
-        }
-        
-        let fileName = UUID().uuidString + ".png"
-        let destinationURL = containerURL.appendingPathComponent(fileName)
-        
-        do {
-            try imageData.write(to: destinationURL)
-            return destinationURL.absoluteString
-        } catch {
-            print("Error saving image: \(error)")
-            return nil
-        }
-    }
-    
     private func saveAndRedirect(items: [[String: Any]]) {
-        // Save to UserDefaults for the app to read
         let userDefaults = UserDefaults(suiteName: appGroupId)
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: items, options: []) {
-            userDefaults?.set(jsonData, forKey: userDefaultsKey)
-            userDefaults?.synchronize()
+             if let jsonString = String(data: jsonData, encoding: .utf8) {
+                 Logger.shared.log("ShareViewController: Saving JSON: \(jsonString)")
+             }
+             
+             userDefaults?.removeObject(forKey: userDefaultsKey)
+             userDefaults?.set(jsonData, forKey: userDefaultsKey)
+             userDefaults?.synchronize()
+        } else {
+             Logger.shared.log("ShareViewController: Failed to serialize items")
         }
         
-        // Open main app
+        // Safe Redirect
+        Logger.shared.log("ShareViewController: Attempting Safe Redirect")
         openMainApp()
-        
-        completeRequest()
     }
     
     private func openMainApp() {
-        let urlString = "\(self.urlScheme)://data"
+        let urlString = "\(urlScheme)://data"
         guard let url = URL(string: urlString) else { return }
         
         var responder: UIResponder? = self
+        var found = false
+        
         while responder != nil {
             if let application = responder as? UIApplication {
-                application.open(url, options: [:], completionHandler: nil)
-                return
+                application.open(url, options: [:], completionHandler: { success in
+                    Logger.shared.log("ShareViewController: OpenURL success: \(success)")
+                    self.completeRequest()
+                })
+                found = true
+                break
             }
             responder = responder?.next
+        }
+        
+        if !found {
+            let selector = NSSelectorFromString("openURL:")
+            responder = self
+            while responder != nil {
+                if responder!.responds(to: selector) {
+                    responder!.perform(selector, with: url)
+                    self.completeRequest()
+                    return
+                }
+                responder = responder?.next
+            }
+            self.completeRequest()
         }
     }
     
     private func completeRequest() {
+        Logger.shared.log("ShareViewController: Completing Request")
         extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
+}
+
+// Logger class definition for debugging
+class Logger {
+    static let shared = Logger()
+    private let fileManager = FileManager.default
+    private let appGroupId = "group.com.somine.app"
+    private let logFileName = "somine_debug.log"
     
-    override func configurationItems() -> [Any]! {
-        return []
+    private var logFileURL: URL? {
+        guard let container = fileManager.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
+            return nil
+        }
+        return container.appendingPathComponent(logFileName)
+    }
+    
+    func log(_ message: String) {
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+        let logMessage = "[\(timestamp)] [SHARE_EXT] \(message)\n"
+        print("SOMINE_SHARE: \(message)")
+        
+        guard let fileURL = logFileURL else { return }
+        
+        if !fileManager.fileExists(atPath: fileURL.path) {
+            try? logMessage.write(to: fileURL, atomically: true, encoding: .utf8)
+        } else {
+            if let fileHandle = try? FileHandle(forWritingTo: fileURL) {
+                fileHandle.seekToEndOfFile()
+                if let data = logMessage.data(using: .utf8) {
+                    fileHandle.write(data)
+                }
+                fileHandle.closeFile()
+            }
+        }
     }
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
-import 'dart:async';
 
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
@@ -14,6 +12,7 @@ import 'package:somine_app/screens/profile_screen.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart'; // Added
 import 'package:somine_app/screens/catalog_screen.dart';
 import 'package:somine_app/screens/add_content_screen.dart';
+import 'package:somine_app/core/services/share_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -22,39 +21,57 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  // Removed local _selectedIndex
-
-  // Sharing Subscription
-  late StreamSubscription _intentDataStreamSubscription;
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+  // Removed duplicate share intent listener - ShareService handles this centrally
 
   @override
   void initState() {
     super.initState();
-    _setupSharingIntent();
+    WidgetsBinding.instance.addObserver(this); // Register observer
+    
+    // Listen for share intents (Moved from main.dart for safe loading)
+    ShareService().sharedUrlNotifier.addListener(_handleSharedUrl);
+    
+    // Check initial value (Cold start) - Fetch manually from native
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       _checkShareData();
+    });
   }
 
   @override
   void dispose() {
-    _intentDataStreamSubscription.cancel();
+    WidgetsBinding.instance.removeObserver(this); // Unregister observer
+    ShareService().sharedUrlNotifier.removeListener(_handleSharedUrl);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came to foreground - check for new share data
+      _checkShareData();
+    }
+  }
+
+  void _checkShareData() {
+     // First check native storage, populate notifier, then handle
+     ShareService().checkInitialShare().then((_) {
+         if (mounted) _handleSharedUrl();
+     });
+  }
+
+  void _handleSharedUrl() {
+    final url = ShareService().sharedUrlNotifier.value;
+    if (url != null && mounted) {
+      // Clear immediately to prevent re-processing
+      ShareService().sharedUrlNotifier.value = null;
+      
+      _openAddContentScreen(initialText: url);
+    }
   }
 
   void _onItemTapped(int index) {
     ref.read(homeTabIndexProvider.notifier).state = index;
-  }
-
-  void _setupSharingIntent() {
-     _intentDataStreamSubscription = ReceiveSharingIntent.instance
-        .getMediaStream()
-        .listen((List<SharedMediaFile> value) {
-            if (value.isNotEmpty && value.first.path.isNotEmpty) {
-              if (mounted) _openAddContentScreen(initialText: value.first.path);
-            }
-          }, onError: (err) => debugPrint("getMediaStream error: $err"));
-
-    // Note: getInitialMedia is handled by ShareService with proper reset()
-    // to prevent duplicate processing on cold starts
   }
 
   void _openAddContentScreen({String? initialText}) async {
