@@ -106,6 +106,12 @@
 	<string>Gizli kasayı açmak için Face ID kullanılır.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app uses the local network to discover devices and services.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Paylaşmak istediğiniz fotoğraf ve videoları seçmek için galeri erişimi gereklidir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Fotoğraf ve video çekmek için kamera erişimi gereklidir.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Video kaydederken ses için mikrofon erişimi gereklidir.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
