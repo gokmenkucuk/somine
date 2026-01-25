@@ -24,7 +24,8 @@ class AccountInfoScreen extends StatefulWidget {
 class _AccountInfoScreenState extends State<AccountInfoScreen> {
   String? _currentUsername;
   String? _currentDisplayName;
-  String? _currentPhotoUrl;
+  String? _currentPhotoUrl; // Keeps legacy/auth URL support mainly for internal logic
+  String? _currentPhotoBase64; // New: To check if we have a custom photo
   bool _isLoading = true;
   bool _isUploadingColor = false; // Is uploading photo
 
@@ -43,6 +44,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           _currentUsername = doc.data()?['username'] as String?;
           _currentDisplayName = user.displayName;
           _currentPhotoUrl = user.photoURL;
+          _currentPhotoBase64 = doc.data()?['photoBase64'] as String?;
           _isLoading = false;
         });
       }
@@ -144,6 +146,38 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     }
   }
 
+  void _showProfilePhotoOptions(BuildContext context) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickAndUploadImage();
+            },
+            child: const Text('Fotoğraf Seç'),
+          ),
+          // Check if we have a custom photo (Base64 from Firestore)
+          // We ignore FirebaseAuth.currentUser.photoURL because we disabled auto-import
+          if (_currentPhotoBase64 != null) 
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.pop(context);
+                _removeProfilePhoto();
+              },
+              child: const Text('Fotoğrafı Kaldır'),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Vazgeç'),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -172,7 +206,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           // Profile Avatar - Direct tap to pick photo
           Center(
             child: GestureDetector(
-              onTap: _pickAndUploadImage,
+              onTap: () => _showProfilePhotoOptions(context),
               child: Stack(
                 children: [
                   const UserAvatar(radius: 50, showBorder: true),

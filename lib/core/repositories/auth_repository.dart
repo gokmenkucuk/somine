@@ -321,20 +321,29 @@ class AuthRepository {
         debugPrint('⚠️ [AuthRepository] Error deleting user doc: $e');
       }
       
-      // 4. Reauthenticate before deleting (required by Firebase)
-      await _reauthenticateUser(user);
-      
-      // 5. Sign out from Google
+      // 4. Try to delete Firebase Auth account (handle re-auth if needed)
+      try {
+        await user.delete();
+        debugPrint('✅ [AuthRepository] Firebase Auth account deleted');
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          debugPrint('⚠️ [AuthRepository] Delete requires recent login, reauthenticating...');
+          await _reauthenticateUser(user);
+          // Retry deletion
+          await user.delete();
+          debugPrint('✅ [AuthRepository] Firebase Auth account deleted (after re-auth)');
+        } else {
+          rethrow;
+        }
+      }
+
+      // 5. Clean up Google Sign In (after successful deletion)
       try {
         await _googleSignIn.signOut();
         await _googleSignIn.disconnect();
       } catch (e) {
         debugPrint('⚠️ [AuthRepository] Google signOut error: $e');
       }
-      
-      // 6. Delete Firebase Auth account
-      await user.delete();
-      debugPrint('✅ [AuthRepository] Firebase Auth account deleted');
       
     } catch (e) {
       debugPrint('❌ [AuthRepository] Error deleting account: $e');

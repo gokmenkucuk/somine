@@ -290,6 +290,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     try {
       // 1. Fetch ALL items (Simple Query, No Index needed)
       var allItems = await _repository.getItems(_userId!, categoryId: _categoryId);
+      if (!mounted) return;
       
       // Filter out Vault items if viewing "All" (null categoryId)
       if (_categoryId == null) {
@@ -309,6 +310,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       
       // 4. Precache images before showing content
       await _precacheImages(initialBatch);
+      if (!mounted) return;
       
       state = state.copyWith(
         items: initialBatch,
@@ -317,7 +319,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
         lastDocument: null, 
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, hasMore: false);
+      if (mounted) state = state.copyWith(isLoading: false, hasMore: false);
     }
   }
   
@@ -358,6 +360,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       
       // Precache images before showing
       await _precacheImages(nextBatch);
+      if (!mounted) return;
       
       state = state.copyWith(
         items: [...state.items, ...nextBatch],
@@ -365,7 +368,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
         hasMore: (state.items.length + nextBatch.length) < _allCachedItems.length,
       );
     } catch (e) {
-       state = state.copyWith(isLoading: false);
+       if (mounted) state = state.copyWith(isLoading: false);
     }
   }
 }

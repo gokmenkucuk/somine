@@ -83,8 +83,8 @@ class ProfileScreen extends ConsumerWidget {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ).createShader(bounds),
-                              child: Text(
-                                "It is so mine!",
+                                child: Text(
+                                "İşte benim dijital dünyam!",
                                 style: GoogleFonts.outfit(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -433,6 +433,9 @@ class ProfileScreen extends ConsumerWidget {
                                   );
 
                                   if (shouldDelete == true && context.mounted) {
+                                    // Capture navigator before async operation
+                                    final navigator = Navigator.of(context);
+                                    
                                     try {
                                       // Show loading
                                       showDialog(
@@ -446,19 +449,17 @@ class ProfileScreen extends ConsumerWidget {
                                       // Perform account deletion
                                       await AuthRepository().deleteAccount();
 
-                                      // Close loading
-                                      if (context.mounted) Navigator.pop(context);
+                                      // Close loading using captured navigator
+                                      navigator.pop();
 
                                       // Navigate to Login Screen
-                                      if (context.mounted) {
-                                        Navigator.of(context).pushAndRemoveUntil(
-                                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                          (route) => false,
-                                        );
-                                      }
+                                      navigator.pushAndRemoveUntil(
+                                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                        (route) => false,
+                                      );
                                     } catch (e) {
                                       // Close loading
-                                      if (context.mounted) Navigator.pop(context);
+                                      navigator.pop();
                                       
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(

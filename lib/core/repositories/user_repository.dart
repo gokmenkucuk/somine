@@ -58,7 +58,7 @@ class UserRepository {
           // Only update displayName if existing is null/empty or new one is provided
           if (existingDisplayName == null || existingDisplayName.isEmpty)
             'displayName': displayName,
-          'photoURL': firebaseUser.photoURL,
+          // 'photoURL': firebaseUser.photoURL, // DISABLED: Don't auto-update photo
           'updatedAt': FieldValue.serverTimestamp(),
         });
         debugPrint('✅ [UserRepository] User updated: ${firebaseUser.uid}');
@@ -69,7 +69,7 @@ class UserRepository {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: displayName,
-          photoURL: firebaseUser.photoURL,
+          photoURL: null, // DISABLED: Start with no photo
           createdAt: now,
           updatedAt: now,
         );

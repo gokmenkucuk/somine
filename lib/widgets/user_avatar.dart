@@ -41,9 +41,12 @@ class UserAvatar extends ConsumerWidget {
     
     // Priority 2: PhotoURL from Auth (Google) - ONLY IF NO Base64
     // Note: We deliberately prioritize Base64 to allow overriding Google photo
+    // DISABLED Fallback: We don't want to show Google photo if user hasn't explicitly set one in Firestore
+    /* 
     if (imageProvider == null && authUser?.photoURL != null && authUser!.photoURL!.isNotEmpty) {
       imageProvider = NetworkImage(authUser.photoURL!);
     }
+    */
 
     // Initials Logic
     final String initials = _getInitials(userModel?.displayName ?? authUser?.displayName ?? userModel?.email ?? authUser?.email ?? 'U');
@@ -70,12 +73,19 @@ class UserAvatar extends ConsumerWidget {
                 backgroundImage: imageProvider,
                 backgroundColor: Colors.transparent,
               )
-            : Text(
-                initials,
-                style: GoogleFonts.outfit(
-                  fontSize: radius * 0.8,
-                  fontWeight: FontWeight.bold,
-                  color: context.colors.headline,
+            : ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [context.colors.primary, context.colors.secondary], // "Oil Green" Gradient
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Text(
+                  initials,
+                  style: GoogleFonts.outfit(
+                    fontSize: radius * 0.8,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white, // Required for ShaderMask
+                  ),
                 ),
               ),
       ),
