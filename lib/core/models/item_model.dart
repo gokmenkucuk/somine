@@ -82,6 +82,7 @@ class ItemModel {
   final String? imageUrl;
   final OGMetadata? ogMetadata;
   final bool isFavorite;
+  final int order;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isDeleted;
@@ -97,6 +98,7 @@ class ItemModel {
     this.imageUrl,
     this.ogMetadata,
     this.isFavorite = false,
+    this.order = 0,
     required this.createdAt,
     required this.updatedAt,
     this.isDeleted = false,
@@ -119,6 +121,7 @@ class ItemModel {
       imageUrl: data['imageUrl'] as String?,
       ogMetadata: OGMetadata.fromMap(data['ogMetadata'] as Map<String, dynamic>?),
       isFavorite: data['isFavorite'] as bool? ?? false,
+      order: data['order'] as int? ?? 0,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isDeleted: data['isDeleted'] as bool? ?? false,
@@ -137,6 +140,7 @@ class ItemModel {
       'imageUrl': imageUrl,
       'ogMetadata': ogMetadata?.toMap(),
       'isFavorite': isFavorite,
+      'order': order,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isDeleted': isDeleted,
@@ -155,6 +159,7 @@ class ItemModel {
     String? imageUrl,
     OGMetadata? ogMetadata,
     bool? isFavorite,
+    int? order,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
@@ -170,6 +175,7 @@ class ItemModel {
       imageUrl: imageUrl ?? this.imageUrl,
       ogMetadata: ogMetadata ?? this.ogMetadata,
       isFavorite: isFavorite ?? this.isFavorite,
+      order: order ?? this.order,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,

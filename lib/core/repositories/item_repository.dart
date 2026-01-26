@@ -25,7 +25,15 @@ class ItemRepository {
           .map((doc) => ItemModel.fromFirestore(doc))
           .where((item) => !item.isDeleted) // Client-side filter for legacy data
           .toList();
-      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      // Sort: Priority to 'order' field (ASC), fallback to 'createdAt' (DESC)
+      items.sort((a, b) {
+         final orderDiff = a.order.compareTo(b.order);
+         if (orderDiff != 0) return orderDiff;
+         return b.createdAt.compareTo(a.createdAt);
+      });
+      
+      // Legacy code was: items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting items: $e');
@@ -43,8 +51,8 @@ class ItemRepository {
         query = query.where('categoryId', isEqualTo: categoryId);
       }
       
-      // Order by createdAt desc for feed
-      query = query.orderBy('createdAt', descending: true);
+      // Order by 'order' (custom sort) then by 'createdAt' desc
+      query = query.orderBy('order').orderBy('createdAt', descending: true);
 
       if (startAfter != null) {
           query = query.startAfterDocument(startAfter);
@@ -124,6 +132,11 @@ class ItemRepository {
   }
 
   /// Move item to a different category
+  Future<void> moveItemToCategory(String itemId, String categoryId) async {
+    return moveToCategory(itemId, categoryId);
+  }
+
+  /// Move item to a different category (Internal implementation)
   Future<void> moveToCategory(String itemId, String? categoryId) async {
     try {
       await _itemsCollection.doc(itemId).update({
@@ -133,6 +146,24 @@ class ItemRepository {
       debugPrint('✅ [ItemRepository] Item moved to category: $itemId -> $categoryId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error moving item: $e');
+      rethrow;
+    }
+  }
+
+  /// Move multiple items to a different category
+  Future<void> moveItemsToCategory(List<String> itemIds, String targetCategoryId) async {
+    try {
+      final batch = _firestore.batch();
+      for (final id in itemIds) {
+        batch.update(_itemsCollection.doc(id), {
+          'categoryId': targetCategoryId,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      debugPrint('✅ [ItemRepository] Moved ${itemIds.length} items to $targetCategoryId');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error batch moving items: $e');
       rethrow;
     }
   }
@@ -148,6 +179,23 @@ class ItemRepository {
       debugPrint('✅ [ItemRepository] Item soft deleted: $itemId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error deleting item: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> batchUpdateItemOrders(List<ItemModel> items) async {
+    try {
+      final batch = _firestore.batch();
+      for (final item in items) {
+        batch.update(_itemsCollection.doc(item.id), {
+          'order': item.order,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      debugPrint('✅ [ItemRepository] Updated order for ${items.length} items');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error updating item orders: $e');
       rethrow;
     }
   }
@@ -264,7 +312,14 @@ class ItemRepository {
           .map((doc) => ItemModel.fromFirestore(doc))
           .where((item) => !item.isDeleted)
           .toList();
-      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      // Sort: Priority to 'order' field (ASC), fallback to 'createdAt' (DESC)
+      items.sort((a, b) {
+         final orderDiff = a.order.compareTo(b.order);
+         if (orderDiff != 0) return orderDiff;
+         return b.createdAt.compareTo(a.createdAt);
+      });
+      
       return items;
     });
   }

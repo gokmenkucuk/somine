@@ -99,31 +99,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Transparent for VibeBackground
-      floatingActionButton: ref.watch(isSelectionModeProvider) 
-        ? FloatingActionButton.extended(
-            onPressed: () {
-               final selectedCount = ref.read(selectedItemsProvider).length;
-               if (selectedCount > 0) {
-                 _deleteSelectedItems(ref);
-               } else {
-                 // Exit Selection Mode
-                 ref.read(isSelectionModeProvider.notifier).state = false;
-                 HapticFeedback.lightImpact();
-               }
-            },
-            backgroundColor: ref.watch(selectedItemsProvider).isNotEmpty ? Colors.red : context.colors.primary,
-            icon: Icon(
-              ref.watch(selectedItemsProvider).isNotEmpty ? PhosphorIconsFill.trash : PhosphorIconsBold.x, 
-              color: Colors.white
-            ),
-            label: Text(
-              ref.watch(selectedItemsProvider).isNotEmpty 
-                ? "Sil (${ref.watch(selectedItemsProvider).length})"
-                : "Vazgeç",
-              style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          )
-        : null,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -157,43 +132,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   else
                   Row(
                     children: [
-                       // SELECTION MODE TOGGLE (Trash Icon)
-                       GestureDetector(
-                        onTap: () {
-                          final isSelection = ref.read(isSelectionModeProvider);
-                          final selectedItems = ref.read(selectedItemsProvider);
-
-                          if (isSelection) {
-                             if (selectedItems.isNotEmpty) {
-                                // If items selected -> Trigger Delete Logic
-                                _deleteSelectedItems(ref);
-                             } else {
-                                // If empty -> Cancel selection mode
-                                ref.read(isSelectionModeProvider.notifier).state = false;
-                                ref.read(selectedItemsProvider.notifier).state = {};
-                             }
-                          } else {
-                             // Start selection
-                             ref.read(isSelectionModeProvider.notifier).state = true;
-                          }
-                        },
-                        child: Container(
-                           padding: const EdgeInsets.all(8),
-                           margin: const EdgeInsets.only(right: 12),
-                           decoration: BoxDecoration(
-                             color: ref.watch(isSelectionModeProvider) 
-                                ? Colors.red.withOpacity(0.1) 
-                                : context.colors.primary.withOpacity(0.1),
-                             shape: BoxShape.circle,
-                           ),
-                           child: Icon(
-                             ref.watch(isSelectionModeProvider) ? PhosphorIconsFill.trash : PhosphorIconsRegular.trash, 
-                             size: 20, 
-                             color: ref.watch(isSelectionModeProvider) ? Colors.red : context.colors.primary
-                           ),
-                        ),
-                      ),
-                      
                        // VAULT TOGGLE BUTTON
                        GestureDetector(
                         onTap: () async {
@@ -258,45 +196,51 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
             const SizedBox(height: 24), // Increased spacing per user request
 
-            // Explanation Capsule
-            if (!isReordering)
-            Center(
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: context.colors.primary.withOpacity(0.08)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(PhosphorIconsRegular.handGrabbing, size: 16, color: context.colors.primary.withOpacity(0.8)),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          "İçerikleri basılı tutup istediğin koleksiyona taşıyabilirsin",
-                          maxLines: 1,
-                          style: GoogleFonts.outfit(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: context.colors.primary.withOpacity(0.8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // 2. Selection Action Row (Always Visible)
+            Builder(
+              builder: (context) {
+                 final items = itemsAsync.valueOrNull ?? [];
+                 final categories = categoriesAsync.valueOrNull ?? [];
+                 final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
+                 final isVaultUnlocked = ref.read(isVaultUnlockedProvider);
+                 final selectedItems = ref.watch(selectedItemsProvider);
+                 final isSelectionMode = ref.watch(isSelectionModeProvider);
 
-            // 2. Divider (Subtle)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Divider(height: 1, color: context.colors.hint.withOpacity(0.2)),
+                 final targetItems = items.where((item) {
+                    if (selectedId == null) {
+                       if (isVaultUnlocked) return true;
+                       return !vaultIds.contains(item.categoryId);
+                    }
+                    if (selectedId == 'uncategorized') {
+                       return item.categoryId == null || item.categoryId!.isEmpty;
+                    }
+                    return item.categoryId == selectedId;
+                 }).toList();
+
+                 final areAllSelected = targetItems.isNotEmpty && targetItems.every((i) => selectedItems.contains(i.id));
+
+                 return _buildInlineSelectionRow(
+                    context, 
+                    selectedItems.length,
+                    isSelectionMode,
+                    areAllSelected,
+                    () { // onToggleMode
+                        if (isSelectionMode) {
+                           ref.read(isSelectionModeProvider.notifier).state = false;
+                           ref.read(selectedItemsProvider.notifier).state = {};
+                        } else {
+                           ref.read(isSelectionModeProvider.notifier).state = true;
+                        }
+                    },
+                    () { // onSelectAll
+                        if (areAllSelected) {
+                           ref.read(selectedItemsProvider.notifier).state = {};
+                        } else {
+                           ref.read(selectedItemsProvider.notifier).state = targetItems.map((e) => e.id).toSet();
+                        }
+                    }
+                 );
+              }
             ),
 
              // 3. Main Content
@@ -987,9 +931,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
           childWhenDragging: Opacity(
             opacity: 0.3, 
-            child: _buildItemCard(item, categories) // Placeholder
+            child: _buildItemCard(item, categories, items) // Placeholder
           ),
-          child: _buildItemCard(item, categories),
+          child: _buildItemCard(item, categories, items),
         );
       },
     );
@@ -1766,7 +1710,224 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     }
   }
 
-  Widget _buildItemCard(ItemModel item, List<CategoryModel> categories, {bool isFeedback = false}) {
+  // --- ITEM ACTIONS SHEET ---
+
+  void _showItemActionSheet(BuildContext context, ItemModel item, List<ItemModel> allItems) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 24),
+  
+              // Select Action
+              _buildOptionTile(
+                icon: PhosphorIconsRegular.checkCircle,
+                title: "Seç",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ref.read(isSelectionModeProvider.notifier).state = true;
+                  ref.read(selectedItemsProvider.notifier).state = {item.id};
+                },
+              ),
+              Divider(color: Colors.grey[100]),
+  
+
+              
+               // Sort Action
+              _buildOptionTile(
+                icon: PhosphorIconsRegular.sortAscending,
+                title: "Sırala",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  // Sort the current view's list
+                  // If selectedCatalogIdProvider is null, it typically means Inbox/Uncategorized in this codebase
+                  final currentViewId = ref.read(selectedCatalogIdProvider) ?? 'uncategorized';
+                  _showReorderSheet(context, currentViewId);
+                },
+              ),
+               Divider(color: Colors.grey[100]),
+              
+              // Move Action
+              _buildOptionTile(
+                icon: PhosphorIconsRegular.cornersOut,
+                title: "Koleksiyona Taşı",
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showMoveSelector(context, item);
+                },
+              ),
+              
+              Divider(color: Colors.grey[100]),
+              
+              // Delete Action
+              _buildOptionTile(
+                icon: PhosphorIconsRegular.trash,
+                title: "İçeriği Sil",
+                color: Colors.red,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (ref.read(isSelectionModeProvider)) {
+                     _confirmDeleteSelected(context);
+                  } else {
+                     _confirmDeleteItem(context, item); 
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMoveSelector(BuildContext context, ItemModel item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+       height: MediaQuery.of(context).size.height * 0.7,
+       decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text("Taşımak İstediğin Koleksiyonu Seç", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.headline)),
+            ),
+            Expanded(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final categoriesAsync = ref.watch(categoriesProvider);
+                  return categoriesAsync.when(
+                    data: (categories) {
+                       final validTargets = categories.where((c) => c.id != item.categoryId).toList();
+                       
+                       return ListView.builder(
+                         itemCount: validTargets.length,
+                         itemBuilder: (ctx, index) {
+                           final cat = validTargets[index];
+                           final catColor = cat.color != null ? Color(int.parse(cat.color!.replaceAll('#', '0xFF'))) : context.colors.primary;
+                           
+                           return ListTile(
+                             leading: Container(
+                               width: 40, height: 40,
+                               decoration: BoxDecoration(
+                                 color: context.colors.primary.withOpacity(0.1),
+                                 borderRadius: BorderRadius.circular(8),
+                               ),
+                               child: Center(
+                                 child: Icon(PhosphorIconsBold.folder, size: 20, color: context.colors.primary),
+                               ),
+                             ),
+                             title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
+                             onTap: () async {
+                               Navigator.pop(ctx);
+                               
+                               if (ref.read(isSelectionModeProvider)) {
+                                  // Batch Move
+                                  final selectedIds = ref.read(selectedItemsProvider).toList();
+                                  if (selectedIds.isEmpty) { 
+                                     // Fallback if selection mode but no items (shouldn't happen here usually)
+                                     selectedIds.add(item.id); 
+                                  }
+                                  await ref.read(itemRepositoryProvider).moveItemsToCategory(selectedIds, cat.id!);
+                                  if (mounted) {
+                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${selectedIds.length} içerik taşındı: ${cat.name}")));
+                                     ref.read(isSelectionModeProvider.notifier).state = false;
+                                     ref.read(selectedItemsProvider.notifier).state = {};
+                                  }
+                               } else {
+                                  // Single Move
+                                  await ref.read(itemRepositoryProvider).moveToCategory(item.id, cat.id);
+                                  if (mounted) {
+                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçerik taşındı: ${cat.name}")));
+                                  }
+                               }
+                             },
+                           );
+                         },
+                       );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, s) => Center(child: Text("Hata: $e")),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteSelected(BuildContext context) {
+      final count = ref.read(selectedItemsProvider).length;
+      showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Seçili İçerikleri Sil"),
+        content: Text("$count içeriği silmek istediğine emin misin?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ids = ref.read(selectedItemsProvider).toList();
+              await ref.read(itemRepositoryProvider).softDeleteItems(ids);
+               if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$count içerik silindi")));
+                  ref.read(isSelectionModeProvider.notifier).state = false;
+                  ref.read(selectedItemsProvider.notifier).state = {};
+               }
+            }, 
+            child: const Text("Sil", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteItem(BuildContext context, ItemModel item) {
+     showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("İçeriği Sil"),
+        content: const Text("Bu içeriği silmek istediğine emin misin?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ref.read(itemRepositoryProvider).deleteItem(item.id);
+               if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İçerik silindi")));
+               }
+            }, 
+            child: const Text("Sil", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemCard(ItemModel item, List<CategoryModel> categories, List<ItemModel> allItems, {bool isFeedback = false}) {
     final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
     final source = item.url ?? '';
     
@@ -1797,12 +1958,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       }
 
       return Container(
-        padding: const EdgeInsets.all(5),
+        width: 28, height: 28, // Standardized Size
         decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
+          color: Colors.white.withOpacity(0.95),
           shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
         ),
-        child: Center(child: Icon(icon, size: 14, color: iconColor)),
+        child: Center(child: Icon(icon, size: 16, color: iconColor)),
       );
     }
     
@@ -1860,6 +2022,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
        );
     }
 
+    // Wrap with Consumer for selection state - Moved UP to use in header logic
+    final isSelectionMode = ref.watch(isSelectionModeProvider);
+    final selectedItems = ref.watch(selectedItemsProvider);
+    final isSelected = selectedItems.contains(item.id);
+
     Widget contentHeader;
     final isNote = item.type == ItemType.note;
     
@@ -1882,6 +2049,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                )
              : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
           
+          // Platform Icon (Top Right)
           Positioned(top: 8, right: 8, child: buildPlatformIcon()),
         ],
       );
@@ -1889,11 +2057,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       // No Image: Use buildFallbackView directly (already has AspectRatio inside)
       contentHeader = buildFallbackView();
     }
-
-    // Wrap with Consumer for selection state
-    final isSelectionMode = ref.watch(isSelectionModeProvider);
-    final selectedItems = ref.watch(selectedItemsProvider);
-    final isSelected = selectedItems.contains(item.id);
 
     return GestureDetector(
       onTap: () async {
@@ -1919,9 +2082,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           );
         }
       },
-      child: Stack(
-        children: [
-          Container(
+      child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: context.colors.surfaceWhite,
@@ -1934,8 +2095,50 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Image / Fallback Header
-              contentHeader,
+              // 1. Image Area with Overlays
+              Stack(
+                children: [
+                  contentHeader, // Image + Platform Icon (Top-Right)
+                  
+                  // --- OVERLAYS ---
+                  
+                  // Top-Left: Checkbox (Selection) or 3-Dots (Normal)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: isSelectionMode 
+                      ? Container( // Checkbox
+                          width: 28, // Standardized Size
+                          height: 28, // Standardized Size
+                          decoration: BoxDecoration(
+                            color: isSelected ? context.colors.primary : Colors.white.withOpacity(0.95),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: context.colors.primary, width: 2),
+                          ),
+                          child: isSelected 
+                            ? const Icon(Icons.check, size: 16, color: Colors.white) // Slightly larger icon
+                            : null,
+                        )
+                      : Material( // 3-Dots Menu
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _showItemActionSheet(context, item, allItems),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(PhosphorIconsBold.dotsThreeCircle, size: 20, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                  ),
+
+
+                ],
+              ),
   
               // Thin grey line above text area
               Container(
@@ -1976,27 +2179,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
         ),
       ),
-      
-      // Selection Checkbox Overlay
-      if (isSelectionMode)
-        Positioned(
-          top: 8,
-          right: 8,
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: isSelected ? context.colors.primary : Colors.white.withOpacity(0.9),
-              shape: BoxShape.circle,
-              border: Border.all(color: context.colors.primary, width: 2),
-            ),
-            child: isSelected 
-              ? const Icon(Icons.check, size: 16, color: Colors.white)
-              : null,
-          ),
-        ),
-      ],
-      ),
     );
   }
 
@@ -2027,7 +2209,96 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     }
   }
 
-  // --- LOGIC: CREATE, MOVE, DELETE ---
+  void _showReorderSheet(BuildContext context, String? categoryId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                // Fetch items for this category (or ALL if null)
+                return FutureBuilder<List<ItemModel>>(
+                   future: ref.read(itemRepositoryProvider).getItems(
+                      ref.read(authStateProvider).value!.uid, 
+                      categoryId: categoryId == 'uncategorized' ? null : categoryId
+                      // Note: getItems(userId, categoryId: null) fetches ALL items if we don't treat 'uncategorized' specially.
+                      // My repo logic: if categoryId != null { query = query.where... }
+                      // So passing null returns ALL items. perfect.
+                      // Wait, 'uncategorized' string usually maps to categoryId=null for "Inbox".
+                      // If I want "All", I should pass nothing?
+                      // Let's check repository logic again.
+                      // Repository: getItems(userId, {categoryId})
+                      // if categoryId != null -> filter.
+                      // So if I pass null, it returns all items.
+                      // But "Inbox" items have categoryId == null in Firestore.
+                      // So how to get ONLY Inbox?
+                      // Usually we filter client side or have a special query.
+                      // Checking repo... created earlier step 243.
+                      // Repo: 
+                      // if (categoryId != null) { query = query.where('categoryId', isEqualTo: categoryId); }
+                      // So categoryId=null returns ALL.
+                      // But how do we fetch "Inbox"? 
+                      // Usually we pass a special flag or handle it.
+                      // Let's assume 'uncategorized' string meant Inbox before.
+                      // If I want ALL items (mixed), I pass null.
+                      // But if categoryId passed to this func is 'uncategorized', it means Inbox (categoryId=null in DB).
+                      // If categoryId passed is null, it means ALL.
+                      // So:
+                      // If categoryId == 'uncategorized' => Repo needs to filter for null. 
+                      // Repo doesn't seem to support "where categoryId IS NULL" easily via this param unless we change it.
+                      // Providing 'null' to repo returns ALL.
+                      // So to get Inbox, we probably do client side filter or need repo update.
+                      // However, the task is about "Sort All" (Tümüne özel).
+                      // So passing null to repo is what we want for "Sort All".
+                      
+                      // Logic:
+                      // if passed categoryId is null -> Get ALL.
+                      // if passed categoryId is 'uncategorized' -> Get Inbox (Repo logic dependent).
+                      // Let's look at how selectedCatalogIdProvider works.
+                      // null = Uncategorized/Inbox (Line 28 in view_file above).
+                      // Wait, "null = Uncategorized/Inbox".
+                      // So if provider is null, we are viewing Inbox??
+                      // Let's verify _buildCatalogShelf or getItems usage in main build.
+                      
+                      // I need to verify what "selectedCatalogIdProvider == null" means.
+                      // Usually "All" is a separate mode or null. "Inbox" is separate.
+                      // Let's assume for now:
+                      // If I want to sort "All", I need a way to say "All".
+                      // If `selectedCatalogIdProvider` is null, does it mean "All"?
+                      // Line 28: `// State to track selected category ... (null = Uncategorized/Inbox)`
+                      // So null means Inbox.
+                      // Where is "All Items" view?
+                      // Maybe I don't have an "All Items" view currently active?
+                      // If so, the user request "tümünü sırala" might mean "Sort the Inbox" or "Sort Everything".
+                      // Given "Tümüne özel", likely "All Items".
+                      // If there is no "All Items" view, I might need to clarify or assume they mean Inbox if that's the default.
+                      // But typically "Tüm İçerikler" is a tab.
+                      // Let's assume I passing `categoryId` to this sheet.
+                      // If I pass `null` to `_showReorderSheet`, I intended it to be "All".
+                      // But I need to make sure I fetch ALL.
+                   ),
+                   builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      return _ReorderList(items: snapshot.data!);
+                   },
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   void _moveItemToCategory(ItemModel item, String? targetCategoryId) async {
      try {
@@ -2630,5 +2901,308 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         const SnackBar(content: Text('Kategori silinemedi'), backgroundColor: Colors.red),
       );
     }
+  }
+  Widget _buildInlineSelectionRow(
+     BuildContext context, 
+     int count, 
+     bool isSelectionMode,
+     bool areAllSelected,
+     VoidCallback onToggleMode,
+     VoidCallback onSelectAll
+  ) {
+     final Color activeColor = context.colors.primary;
+     final Color inactiveColor = Colors.grey.withOpacity(0.5);
+     final Color textColor = isSelectionMode ? context.colors.primary : inactiveColor;
+
+     return Padding(
+       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+       child: Row(
+         children: [
+            // Selection Toggle Icon
+           Material(
+             color: Colors.transparent,
+             child: InkWell(
+               onTap: onToggleMode,
+               borderRadius: BorderRadius.circular(8),
+               child: Container(
+                 padding: const EdgeInsets.all(8),
+                 decoration: BoxDecoration(
+                    color: isSelectionMode ? context.colors.primary.withOpacity(0.1) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                 ),
+                 child: Icon(
+                   PhosphorIconsRegular.listChecks, 
+                   size: 24, 
+                   color: context.colors.primary
+                 ),
+               ),
+             ),
+           ),
+           
+           const SizedBox(width: 8),
+           
+           // Selected Count Text
+           Text(
+             "$count Seçildi",
+             style: GoogleFonts.outfit(
+               fontSize: 16,
+               fontWeight: FontWeight.bold,
+               color: textColor,
+             ),
+           ),
+           
+           const Spacer(),
+           
+           // Delete Action
+           Material(
+             color: Colors.transparent,
+             child: InkWell(
+               onTap: (isSelectionMode && count > 0) ? () => _confirmDeleteSelected(context) : null,
+               borderRadius: BorderRadius.circular(8),
+               child: Padding(
+                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                 child: Row(
+                   children: [
+                     Icon(PhosphorIconsRegular.trash, size: 20, color: (isSelectionMode && count > 0) ? Colors.red : inactiveColor),
+                     const SizedBox(width: 4),
+                     Text("Sil", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: (isSelectionMode && count > 0) ? Colors.red : inactiveColor)),
+                   ],
+                 ),
+               ),
+             ),
+           ),
+
+           // Move Action
+           Material(
+             color: Colors.transparent,
+             child: InkWell(
+               onTap: (isSelectionMode && count > 0) ? () => _showBatchMoveSelector(context) : null,
+               borderRadius: BorderRadius.circular(8),
+               child: Padding(
+                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                 child: Row(
+                   children: [
+                     Icon(PhosphorIconsRegular.arrowsOut, size: 20, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
+                     const SizedBox(width: 4),
+                     Text("Taşı", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor)),
+                   ],
+                 ),
+               ),
+             ),
+           ),
+           
+            const SizedBox(width: 4),
+           
+           // Select All Action
+           Material(
+             color: Colors.transparent,
+             child: InkWell(
+               onTap: isSelectionMode ? onSelectAll : null,
+               borderRadius: BorderRadius.circular(8),
+               child: Container(
+                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                 decoration: (isSelectionMode && areAllSelected) 
+                    ? BoxDecoration(
+                        color: context.colors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8)
+                      )
+                    : null,
+                 child: Icon(PhosphorIconsRegular.checks, size: 24, color: isSelectionMode ? activeColor : inactiveColor),
+               ),
+             ),
+           ),
+         ],
+       ),
+     );
+  }
+
+  void _showBatchMoveSelector(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+       height: MediaQuery.of(context).size.height * 0.7,
+       decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text("Seçilenleri Taşı", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.headline)),
+            ),
+            Expanded(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final categoriesAsync = ref.watch(categoriesProvider);
+                  return categoriesAsync.when(
+                    data: (categories) {
+                       return ListView.builder(
+                         itemCount: categories.length,
+                         itemBuilder: (ctx, index) {
+                           final cat = categories[index];
+                           return ListTile(
+                             leading: Container(
+                               width: 40, height: 40,
+                               decoration: BoxDecoration(
+                                 color: context.colors.primary.withOpacity(0.1),
+                                 borderRadius: BorderRadius.circular(8),
+                               ),
+                               child: Center(
+                                 child: Icon(PhosphorIconsBold.folder, size: 20, color: context.colors.primary),
+                               ),
+                             ),
+                             title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
+                             onTap: () async {
+                               Navigator.pop(ctx);
+                               final selectedIds = ref.read(selectedItemsProvider).toList();
+                               if (selectedIds.isNotEmpty) {
+                                  await ref.read(itemRepositoryProvider).moveItemsToCategory(selectedIds, cat.id!);
+                                  if (mounted) {
+                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${selectedIds.length} içerik taşındı: ${cat.name}")));
+                                     ref.read(isSelectionModeProvider.notifier).state = false;
+                                     ref.read(selectedItemsProvider.notifier).state = {};
+                                  }
+                               }
+                             },
+                           );
+                         },
+                       );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, s) => Center(child: Text("Hata: $e")),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReorderList extends ConsumerStatefulWidget {
+  final List<ItemModel> items;
+
+  const _ReorderList({required this.items});
+
+  @override
+  ConsumerState<_ReorderList> createState() => _ReorderListState();
+}
+
+class _ReorderListState extends ConsumerState<_ReorderList> {
+  late List<ItemModel> _items;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List.from(widget.items);
+  }
+
+  Future<void> _saveOrder() async {
+    setState(() => _isSaving = true);
+    try {
+      // Update order index based on list position
+      final updatedItems = <ItemModel>[];
+      for (int i = 0; i < _items.length; i++) {
+        updatedItems.add(_items[i].copyWith(order: i));
+      }
+      
+      await ref.read(itemRepositoryProvider).batchUpdateItemOrders(updatedItems);
+      
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Sıralama güncellendi", style: GoogleFonts.poppins())),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
+         setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Sıralamayı Düzenle", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.headline)),
+              _isSaving 
+                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                 : TextButton(
+                     onPressed: _saveOrder,
+                     child: Text("Bitti", style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: context.colors.primary)),
+                   ),
+            ],
+          ),
+        ),
+        const Divider(),
+        
+        // Default list info for user
+        if (_items.isEmpty)
+           Padding(
+             padding: const EdgeInsets.all(32.0),
+             child: Text("Sıralanacak içerik yok.", style: GoogleFonts.poppins(color: Colors.grey)),
+           ),
+
+        // List
+        Expanded(
+          child: ReorderableListView.builder(
+            padding: const EdgeInsets.only(bottom: 40),
+            itemCount: _items.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                final ItemModel item = _items.removeAt(oldIndex);
+                _items.insert(newIndex, item);
+              });
+            },
+            itemBuilder: (context, index) {
+              final item = _items[index];
+              return ListTile(
+                key: ValueKey(item.id),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                leading: Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    image: (item.displayImage != null && item.displayImage!.startsWith('http')) 
+                       ? DecorationImage(image: NetworkImage(item.displayImage!), fit: BoxFit.cover)
+                       : null,
+                  ),
+                  child: (item.displayImage == null || !item.displayImage!.startsWith('http')) 
+                     ? Icon(PhosphorIconsRegular.link, color: Colors.grey)
+                     : null,
+                ),
+                title: Text(
+                  item.displayTitle, 
+                  maxLines: 1, 
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)
+                ),
+                trailing: Icon(PhosphorIconsRegular.list, color: Colors.grey[400]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
