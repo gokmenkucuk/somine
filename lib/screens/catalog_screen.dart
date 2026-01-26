@@ -1833,7 +1833,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                  borderRadius: BorderRadius.circular(8),
                                ),
                                child: Center(
-                                 child: Icon(PhosphorIconsRegular.cornersOut, size: 20, color: context.colors.primary),
+                                 child: Icon(PhosphorIconsRegular.arrowRight, size: 20, color: context.colors.primary),
                                ),
                              ),
                              title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
@@ -2705,7 +2705,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             // Move Option
             _buildActionButton(
               context,
-              icon: PhosphorIconsLight.folderPlus,
+              icon: PhosphorIconsRegular.cornersOut,
               text: 'İçerikleri Başka Koleksiyona Taşı',
               color: context.colors.primary,
               onTap: () {
@@ -3011,109 +3011,93 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
      return Padding(
        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-       child: Row(
-         children: [
-            // Selection Toggle Icon
-           Material(
-             color: Colors.transparent,
-             child: InkWell(
-               onTap: onToggleMode,
-               borderRadius: BorderRadius.circular(8),
-               child: Container(
-                 padding: const EdgeInsets.all(8),
-                 decoration: BoxDecoration(
-                    color: isSelectionMode ? context.colors.primary.withOpacity(0.1) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                 ),
-                 child: Icon(
-                   PhosphorIconsRegular.listChecks, 
-                   size: 24, 
-                   color: context.colors.primary
-                 ),
-               ),
-             ),
-           ),
-           
-           const SizedBox(width: 8),
-           
-           // Selected Count Text
-           Text(
-             "$count Seçildi",
-             style: GoogleFonts.outfit(
-               fontSize: 13,
-               fontWeight: FontWeight.bold,
-               color: textColor,
-             ),
-           ),
-           
-           const Spacer(),
-           
-           // Delete Action
-           Material(
-             color: Colors.transparent,
-             child: InkWell(
-               onTap: (isSelectionMode && count > 0) ? () => _confirmDeleteSelected(context) : null,
-               borderRadius: BorderRadius.circular(8),
-               child: Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                 child: Row(
-                   children: [
-                     Icon(PhosphorIconsRegular.trash, size: 20, color: (isSelectionMode && count > 0) ? Colors.red : inactiveColor),
-                     const SizedBox(width: 4),
-                     Text("Sil", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: (isSelectionMode && count > 0) ? Colors.red : inactiveColor)),
-                   ],
-                 ),
-               ),
-             ),
-           ),
-
-           // Move Action
-           Material(
-             color: Colors.transparent,
-             child: InkWell(
-               onTap: (isSelectionMode && count > 0) ? () => _showBatchMoveSelector(context) : null,
-               borderRadius: BorderRadius.circular(8),
-               child: Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                 child: Row(
-                   children: [
-                     Icon(PhosphorIconsRegular.cornersOut, size: 20, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
-                     const SizedBox(width: 4),
-                     Text("Taşı", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor)),
-                   ],
-                 ),
-               ),
-             ),
-           ),
-           
+        child: Row(
+          children: [
+             // Selection Toggle Icon (Circle style)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onToggleMode,
+                borderRadius: BorderRadius.circular(99),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                     color: isSelectionMode ? context.colors.primary : context.colors.primary.withOpacity(0.1),
+                     shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    PhosphorIconsRegular.listChecks, 
+                    size: 20, 
+                    color: isSelectionMode ? Colors.white : context.colors.primary
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Selected Count Text
+            Text(
+              "$count Seçildi",
+              style: GoogleFonts.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            
+            const Spacer(),
+            
+            // Delete Action (Icon Only)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: (isSelectionMode && count > 0) ? () => _confirmDeleteSelected(context) : null,
+                borderRadius: BorderRadius.circular(99),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(PhosphorIconsRegular.trash, size: 20, color: (isSelectionMode && count > 0) ? Colors.red : inactiveColor),
+                ),
+              ),
+            ),
+            
             const SizedBox(width: 4),
-           
-           // Select All Action
-           Material(
-             color: Colors.transparent,
-             child: InkWell(
-               onTap: isSelectionMode ? onSelectAll : null,
-               borderRadius: BorderRadius.circular(8),
-               child: Container(
-                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                 decoration: (isSelectionMode && areAllSelected) 
-                    ? BoxDecoration(
-                        color: context.colors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8)
-                      )
-                    : null,
-                 child: Row(
-                   children: [
-                     Icon(PhosphorIconsRegular.checks, size: 24, color: isSelectionMode ? activeColor : inactiveColor),
-                     const SizedBox(width: 4),
-                     Text("Hepsini Seç", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: isSelectionMode ? activeColor : inactiveColor)),
-                   ],
-                 ),
-               ),
-             ),
-           ),
-         ],
-       ),
+
+            // Move Action (Icon Only)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: (isSelectionMode && count > 0) ? () => _showBatchMoveSelector(context) : null,
+                borderRadius: BorderRadius.circular(99),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(PhosphorIconsRegular.cornersOut, size: 20, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
+                ),
+              ),
+            ),
+            
+             const SizedBox(width: 4),
+            
+            // Select All Action (Icon Only)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isSelectionMode ? onSelectAll : null,
+                borderRadius: BorderRadius.circular(99),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: (isSelectionMode && areAllSelected) 
+                     ? BoxDecoration(
+                         color: context.colors.primary.withOpacity(0.1),
+                         shape: BoxShape.circle
+                       )
+                     : null,
+                  child: Icon(PhosphorIconsRegular.checks, size: 24, color: isSelectionMode ? activeColor : inactiveColor),
+                ),
+              ),
+            ),
+          ],
+        ),
      );
   }
 
@@ -3154,7 +3138,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                  borderRadius: BorderRadius.circular(8),
                                ),
                                child: Center(
-                                 child: Icon(PhosphorIconsRegular.cornersOut, size: 20, color: context.colors.primary),
+                                 child: Icon(PhosphorIconsRegular.arrowRight, size: 20, color: context.colors.primary),
                                ),
                              ),
                              title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
@@ -3250,7 +3234,13 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Sıralamayı Düzenle", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.headline)),
+              Row(
+                children: [
+                   Icon(PhosphorIconsRegular.sortAscending, size: 24, color: context.colors.headline),
+                   const SizedBox(width: 8),
+                   Text("Sıralamayı Düzenle", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.headline)),
+                ],
+              ),
               _isSaving 
                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                  : TextButton(
