@@ -152,22 +152,48 @@ class ItemRepository {
     }
   }
 
-  /// Delete all items in a category
+  /// Delete all items in a category (SOFT DELETE - moves to Recently Deleted)
   Future<void> deleteItemsInCategory(String categoryId) async {
     try {
       final snapshot = await _itemsCollection
           .where('categoryId', isEqualTo: categoryId)
+          .where('isDeleted', isEqualTo: false)
           .get();
+
+      if (snapshot.docs.isEmpty) return;
 
       final batch = _firestore.batch();
       for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
+        batch.update(doc.reference, {
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+        });
       }
       await batch.commit();
 
-      debugPrint('✅ [ItemRepository] Items in category deleted: $categoryId');
+      debugPrint('✅ [ItemRepository] Items in category SOFT deleted: $categoryId (${snapshot.docs.length} items)');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error deleting items in category: $e');
+      rethrow;
+    }
+  }
+
+  /// Soft delete multiple items by IDs (for bulk selection delete)
+  Future<void> softDeleteItems(List<String> itemIds) async {
+    try {
+      if (itemIds.isEmpty) return;
+      
+      final batch = _firestore.batch();
+      for (final id in itemIds) {
+        batch.update(_itemsCollection.doc(id), {
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      debugPrint('✅ [ItemRepository] Batch soft deleted ${itemIds.length} items');
+    } catch (e) {
+      debugPrint('❌ [ItemRepository] Error batch deleting items: $e');
       rethrow;
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -28,6 +29,10 @@ final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => nu
 
 // State to track reordering mode
 final isReorderingProvider = StateProvider.autoDispose<bool>((ref) => false);
+
+// Selection Mode State
+final isSelectionModeProvider = StateProvider.autoDispose<bool>((ref) => false);
+final selectedItemsProvider = StateProvider.autoDispose<Set<String>>((ref) => {});
 
 class CatalogScreen extends ConsumerStatefulWidget {
   final String? initialCategoryId;
@@ -94,6 +99,31 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Transparent for VibeBackground
+      floatingActionButton: ref.watch(isSelectionModeProvider) 
+        ? FloatingActionButton.extended(
+            onPressed: () {
+               final selectedCount = ref.read(selectedItemsProvider).length;
+               if (selectedCount > 0) {
+                 _deleteSelectedItems(ref);
+               } else {
+                 // Exit Selection Mode
+                 ref.read(isSelectionModeProvider.notifier).state = false;
+                 HapticFeedback.lightImpact();
+               }
+            },
+            backgroundColor: ref.watch(selectedItemsProvider).isNotEmpty ? Colors.red : context.colors.primary,
+            icon: Icon(
+              ref.watch(selectedItemsProvider).isNotEmpty ? PhosphorIconsFill.trash : PhosphorIconsBold.x, 
+              color: Colors.white
+            ),
+            label: Text(
+              ref.watch(selectedItemsProvider).isNotEmpty 
+                ? "Sil (${ref.watch(selectedItemsProvider).length})"
+                : "Vazgeç",
+              style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          )
+        : null,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -127,6 +157,43 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   else
                   Row(
                     children: [
+                       // SELECTION MODE TOGGLE (Trash Icon)
+                       GestureDetector(
+                        onTap: () {
+                          final isSelection = ref.read(isSelectionModeProvider);
+                          final selectedItems = ref.read(selectedItemsProvider);
+
+                          if (isSelection) {
+                             if (selectedItems.isNotEmpty) {
+                                // If items selected -> Trigger Delete Logic
+                                _deleteSelectedItems(ref);
+                             } else {
+                                // If empty -> Cancel selection mode
+                                ref.read(isSelectionModeProvider.notifier).state = false;
+                                ref.read(selectedItemsProvider.notifier).state = {};
+                             }
+                          } else {
+                             // Start selection
+                             ref.read(isSelectionModeProvider.notifier).state = true;
+                          }
+                        },
+                        child: Container(
+                           padding: const EdgeInsets.all(8),
+                           margin: const EdgeInsets.only(right: 12),
+                           decoration: BoxDecoration(
+                             color: ref.watch(isSelectionModeProvider) 
+                                ? Colors.red.withOpacity(0.1) 
+                                : context.colors.primary.withOpacity(0.1),
+                             shape: BoxShape.circle,
+                           ),
+                           child: Icon(
+                             ref.watch(isSelectionModeProvider) ? PhosphorIconsFill.trash : PhosphorIconsRegular.trash, 
+                             size: 20, 
+                             color: ref.watch(isSelectionModeProvider) ? Colors.red : context.colors.primary
+                           ),
+                        ),
+                      ),
+                      
                        // VAULT TOGGLE BUTTON
                        GestureDetector(
                         onTap: () async {
@@ -196,7 +263,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             Center(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: context.colors.primary.withOpacity(0.04),
                   borderRadius: BorderRadius.circular(20),
@@ -206,13 +273,19 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(PhosphorIconsRegular.handGrabbing, size: 16, color: context.colors.primary.withOpacity(0.8)),
-                    const SizedBox(width: 8),
-                    Text(
-                      "İçerikleri basılı tutup istediğin koleksiyona taşıyabilirsin",
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: context.colors.primary.withOpacity(0.8),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          "İçerikleri basılı tutup istediğin koleksiyona taşıyabilirsin",
+                          maxLines: 1,
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: context.colors.primary.withOpacity(0.8),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -721,35 +794,32 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
      Color badgeText = Colors.black87; // Always dark text for readability
      
      return Stack(
+       fit: StackFit.expand,
        children: [
           // Badge Label (Top Left)
           Positioned(
             top: 10,
             left: 10,
-            right: 10,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: badgeBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      name.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.outfit(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: badgeText,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 100),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  name.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: badgeText,
+                    letterSpacing: 0.5,
                   ),
                 ),
-              ],
+              ),
             ),
           ),
 
@@ -932,6 +1002,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Allow dynamic height beyond half-screen
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
@@ -939,7 +1010,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
@@ -1047,7 +1119,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildOptionTile({required IconData icon, required String title, Color? color, Widget? trailing, required VoidCallback onTap}) {
@@ -1685,9 +1758,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       );
       await repo.updateCategory(category);
       ref.invalidate(categoriesProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Koleksiyon adı güncellendi", style: GoogleFonts.poppins()), backgroundColor: context.colors.primary),
-      );
+      if (mounted) {
+        SuccessNotificationSheet.show(context, title: "Başarılı", message: "Koleksiyon adı güncellendi");
+      }
     } catch (e) {
       debugPrint("Rename error: $e");
     }
@@ -1817,19 +1890,38 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       contentHeader = buildFallbackView();
     }
 
+    // Wrap with Consumer for selection state
+    final isSelectionMode = ref.watch(isSelectionModeProvider);
+    final selectedItems = ref.watch(selectedItemsProvider);
+    final isSelected = selectedItems.contains(item.id);
+
     return GestureDetector(
       onTap: () async {
-        if (isFeedback) return; // Don't tap drag feedback
-        await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            enableDrag: true, 
-            builder: (context) => ItemDetailBottomSheet(item: item, categoryName: categoryName, categories: categories),
-        );
-        // Catalog uses StreamProvider, so updates propagate automatically.
+        if (isFeedback) return;
+        
+        if (isSelectionMode) {
+          // Toggle selection
+          final current = Set<String>.from(ref.read(selectedItemsProvider));
+          if (current.contains(item.id)) {
+            current.remove(item.id);
+          } else {
+            current.add(item.id);
+          }
+          ref.read(selectedItemsProvider.notifier).state = current;
+        } else {
+          // Normal behavior: open detail sheet
+          await showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              enableDrag: true, 
+              builder: (context) => ItemDetailBottomSheet(item: item, categoryName: categoryName, categories: categories),
+          );
+        }
       },
-      child: Container(
+      child: Stack(
+        children: [
+          Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: context.colors.surfaceWhite,
@@ -1883,6 +1975,27 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             ],
           ),
         ),
+      ),
+      
+      // Selection Checkbox Overlay
+      if (isSelectionMode)
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: isSelected ? context.colors.primary : Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
+              border: Border.all(color: context.colors.primary, width: 2),
+            ),
+            child: isSelected 
+              ? const Icon(Icons.check, size: 16, color: Colors.white)
+              : null,
+          ),
+        ),
+      ],
       ),
     );
   }
@@ -2357,13 +2470,137 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ref.read(selectedCatalogIdProvider.notifier).state = null;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('İçerikler taşındı ve kategori silindi'), backgroundColor: context.colors.primary),
-      );
+      if (mounted) {
+        SuccessNotificationSheet.show(context, title: "Taşındı", message: "İçerikler taşındı ve kategori silindi");
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('İşlem başarısız oldu'), backgroundColor: Colors.red),
       );
+    }
+  }
+
+  Future<void> _deleteSelectedItems(WidgetRef ref) async {
+    final selectedIds = ref.read(selectedItemsProvider);
+    if (selectedIds.isEmpty) return;
+
+    // Custom Bottom Sheet Confirmation
+    final confirm = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                PhosphorIconsFill.trash,
+                size: 32,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Title
+            Text(
+              "Seçilenleri Sil?",
+              style: GoogleFonts.outfit(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: context.colors.headline,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            
+            // Message
+            Text(
+              "${selectedIds.length} içerik Son Silinenler'e taşınacak.\nİstediğin zaman geri alabilirsin.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                 fontSize: 15,
+                 color: context.colors.body,
+                 height: 1.5
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Delete Action
+            GestureDetector(
+              onTap: () => Navigator.pop(context, true),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))
+                  ]
+                ),
+                child: Center(
+                  child: Text(
+                    "Sil",
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Cancel Action
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                "Vazgeç",
+                style: GoogleFonts.outfit(
+                  color: context.colors.hint,
+                  fontWeight: FontWeight.w600
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final repo = ref.read(itemRepositoryProvider);
+      await repo.softDeleteItems(selectedIds.toList());
+      
+      // Reset Selection
+      ref.read(isSelectionModeProvider.notifier).state = false;
+      ref.read(selectedItemsProvider.notifier).state = {};
+      
+      if (mounted) {
+        // Custom Success Toast
+        SuccessNotificationSheet.show(
+          context, 
+          title: "Silindi", 
+          message: "${selectedIds.length} içerik Son Silinenler'e taşındı."
+        );
+      }
+    } catch (e) {
+      debugPrint("Bulk delete error: $e");
     }
   }
 
