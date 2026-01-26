@@ -421,6 +421,7 @@ class ItemRepository {
     return _itemsCollection
         .where('userId', isEqualTo: userId)
         .where('isDeleted', isEqualTo: false)
+        .orderBy('order')
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()

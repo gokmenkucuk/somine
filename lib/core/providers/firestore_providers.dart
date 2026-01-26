@@ -301,7 +301,11 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       }
       
       // 2. Sort in memory (just to be safe, repo does it too)
-      allItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      allItems.sort((a, b) {
+         final orderDiff = a.order.compareTo(b.order);
+         if (orderDiff != 0) return orderDiff;
+         return b.createdAt.compareTo(a.createdAt);
+      });
       
       _allCachedItems = allItems;
       

@@ -1833,7 +1833,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                  borderRadius: BorderRadius.circular(8),
                                ),
                                child: Center(
-                                 child: Icon(PhosphorIconsBold.folder, size: 20, color: context.colors.primary),
+                                 child: Icon(PhosphorIconsRegular.cornersOut, size: 20, color: context.colors.primary),
                                ),
                              ),
                              title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
@@ -1844,23 +1844,30 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   // Batch Move
                                   final selectedIds = ref.read(selectedItemsProvider).toList();
                                   if (selectedIds.isEmpty) { 
-                                     // Fallback if selection mode but no items (shouldn't happen here usually)
                                      selectedIds.add(item.id); 
                                   }
                                   await ref.read(itemRepositoryProvider).moveItemsToCategory(selectedIds, cat.id!);
                                   if (mounted) {
-                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${selectedIds.length} içerik taşındı: ${cat.name}")));
+                                     SuccessNotificationSheet.show(
+                                       context,
+                                       title: 'Taşındı',
+                                       message: '${selectedIds.length} içerik "${cat.name}" koleksiyonuna taşındı.'
+                                     );
                                      ref.read(isSelectionModeProvider.notifier).state = false;
                                      ref.read(selectedItemsProvider.notifier).state = {};
                                   }
-                               } else {
-                                  // Single Move
-                                  await ref.read(itemRepositoryProvider).moveToCategory(item.id, cat.id);
-                                  if (mounted) {
-                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İçerik taşındı: ${cat.name}")));
-                                  }
-                               }
-                             },
+                                } else {
+                                   // Single Move
+                                   await ref.read(itemRepositoryProvider).moveToCategory(item.id, cat.id);
+                                   if (mounted) {
+                                      SuccessNotificationSheet.show(
+                                        context,
+                                        title: 'Taşındı',
+                                        message: 'İçerik "${cat.name}" koleksiyonuna taşındı.'
+                                      );
+                                   }
+                                }
+                              },
                            );
                          },
                        );
@@ -1877,55 +1884,139 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
-  void _confirmDeleteSelected(BuildContext context) {
-      final count = ref.read(selectedItemsProvider).length;
-      showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Seçili İçerikleri Sil"),
-        content: Text("$count içeriği silmek istediğine emin misin?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final ids = ref.read(selectedItemsProvider).toList();
-              await ref.read(itemRepositoryProvider).softDeleteItems(ids);
-               if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$count içerik silindi")));
-                  ref.read(isSelectionModeProvider.notifier).state = false;
-                  ref.read(selectedItemsProvider.notifier).state = {};
-               }
-            }, 
-            child: const Text("Sil", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+   void _confirmDeleteSelected(BuildContext context) async {
+       final count = ref.read(selectedItemsProvider).length;
+       final confirmed = await showDialog<bool>(
+         context: context,
+         builder: (context) => AlertDialog(
+           title: Center(
+             child: Text(
+               'Seçili İçerikleri Sil',
+               style: GoogleFonts.poppins(
+                 fontWeight: FontWeight.bold,
+                 fontSize: 20,
+                 color: context.colors.headline,
+               ),
+             ),
+           ),
+           content: Text(
+             '$count içeriği silmek istediğine emin misin?',
+             textAlign: TextAlign.center,
+             style: GoogleFonts.poppins(
+               color: context.colors.body,
+               fontSize: 14,
+             ),
+           ),
+           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+           backgroundColor: context.colors.surfaceWhite,
+           actions: [
+             Row(
+               children: [
+                 Expanded(
+                   child: TextButton(
+                     onPressed: () => Navigator.pop(context, false),
+                     child: Text(
+                       'İptal',
+                       style: GoogleFonts.poppins(color: context.colors.hint),
+                     ),
+                   ),
+                 ),
+                 Expanded(
+                   child: ElevatedButton(
+                     onPressed: () => Navigator.pop(context, true),
+                     style: ElevatedButton.styleFrom(
+                       backgroundColor: Colors.red,
+                       shape: RoundedRectangleBorder(
+                         borderRadius: BorderRadius.circular(12),
+                       ),
+                     ),
+                     child: Text(
+                       'Sil',
+                       style: GoogleFonts.poppins(color: Colors.white),
+                     ),
+                   ),
+                 ),
+               ],
+             ),
+           ],
+         ),
+       );
 
-  void _confirmDeleteItem(BuildContext context, ItemModel item) {
-     showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("İçeriği Sil"),
-        content: const Text("Bu içeriği silmek istediğine emin misin?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("İptal")),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(itemRepositoryProvider).deleteItem(item.id);
-               if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İçerik silindi")));
-               }
-            }, 
-            child: const Text("Sil", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+       if (confirmed == true) {
+          final ids = ref.read(selectedItemsProvider).toList();
+          await ref.read(itemRepositoryProvider).softDeleteItems(ids);
+          if (mounted) {
+             SuccessNotificationSheet.show(
+               context, 
+               title: 'Silindi', 
+               message: '$count içerik başarıyla silindi.'
+             );
+             ref.read(isSelectionModeProvider.notifier).state = false;
+             ref.read(selectedItemsProvider.notifier).state = {};
+          }
+       }
+   }
+
+   void _confirmDeleteItem(BuildContext context, ItemModel item) async {
+      final confirmed = await showDialog<bool>(
+       context: context,
+       builder: (ctx) => AlertDialog(
+         title: Center(
+           child: Text(
+             "İçeriği Sil",
+             style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: context.colors.headline,
+             ),
+           ),
+         ),
+         content: Text(
+           "Bu içeriği silmek istediğine emin misin?",
+           textAlign: TextAlign.center,
+           style: GoogleFonts.poppins(
+             color: context.colors.body, 
+             fontSize: 14,
+           ),
+         ),
+         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+         backgroundColor: context.colors.surfaceWhite,
+         actions: [
+           Row(
+             children: [
+               Expanded(
+                 child: TextButton(
+                   onPressed: () => Navigator.pop(ctx, false),
+                   child: Text("İptal", style: GoogleFonts.poppins(color: context.colors.hint)),
+                 ),
+               ),
+               Expanded(
+                 child: ElevatedButton(
+                   onPressed: () => Navigator.pop(ctx, true),
+                   style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                   ),
+                   child: Text("Sil", style: GoogleFonts.poppins(color: Colors.white)),
+                 ),
+               ),
+             ],
+           ),
+         ],
+       ),
+     );
+     
+     if (confirmed == true) {
+        await ref.read(itemRepositoryProvider).deleteItem(item.id);
+        if (mounted) {
+           SuccessNotificationSheet.show(
+             context,
+             title: 'Silindi',
+             message: 'İçerik başarıyla silindi.',
+           );
+        }
+     }
+   }
 
   Widget _buildItemCard(ItemModel item, List<CategoryModel> categories, List<ItemModel> allItems, {bool isFeedback = false}) {
     final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
@@ -2893,9 +2984,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ref.read(selectedCatalogIdProvider.notifier).state = null;
       }
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Kategori ${deleteItems ? "ve içerikler" : ""} silindi'), backgroundColor: context.colors.primary),
-      );
+      if (mounted) {
+        SuccessNotificationSheet.show(
+          context,
+          title: 'Silindi',
+          message: 'Kategori ${deleteItems ? "ve içerikleriyle birlikte" : ""} silindi.'
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kategori silinemedi'), backgroundColor: Colors.red),
@@ -2945,7 +3040,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
            Text(
              "$count Seçildi",
              style: GoogleFonts.outfit(
-               fontSize: 16,
+               fontSize: 13,
                fontWeight: FontWeight.bold,
                color: textColor,
              ),
@@ -2982,7 +3077,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                  child: Row(
                    children: [
-                     Icon(PhosphorIconsRegular.arrowsOut, size: 20, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
+                     Icon(PhosphorIconsRegular.cornersOut, size: 20, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
                      const SizedBox(width: 4),
                      Text("Taşı", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor)),
                    ],
@@ -3007,7 +3102,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         borderRadius: BorderRadius.circular(8)
                       )
                     : null,
-                 child: Icon(PhosphorIconsRegular.checks, size: 24, color: isSelectionMode ? activeColor : inactiveColor),
+                 child: Row(
+                   children: [
+                     Icon(PhosphorIconsRegular.checks, size: 24, color: isSelectionMode ? activeColor : inactiveColor),
+                     const SizedBox(width: 4),
+                     Text("Hepsini Seç", style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: isSelectionMode ? activeColor : inactiveColor)),
+                   ],
+                 ),
                ),
              ),
            ),
@@ -3053,7 +3154,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                  borderRadius: BorderRadius.circular(8),
                                ),
                                child: Center(
-                                 child: Icon(PhosphorIconsBold.folder, size: 20, color: context.colors.primary),
+                                 child: Icon(PhosphorIconsRegular.cornersOut, size: 20, color: context.colors.primary),
                                ),
                              ),
                              title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
@@ -3063,7 +3164,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                if (selectedIds.isNotEmpty) {
                                   await ref.read(itemRepositoryProvider).moveItemsToCategory(selectedIds, cat.id!);
                                   if (mounted) {
-                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${selectedIds.length} içerik taşındı: ${cat.name}")));
+                                     SuccessNotificationSheet.show(
+                                       context,
+                                       title: 'Taşındı',
+                                       message: '${selectedIds.length} içerik "${cat.name}" koleksiyonuna taşındı.'
+                                     );
                                      ref.read(isSelectionModeProvider.notifier).state = false;
                                      ref.read(selectedItemsProvider.notifier).state = {};
                                   }
@@ -3116,11 +3221,16 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
       
       await ref.read(itemRepositoryProvider).batchUpdateItemOrders(updatedItems);
       
+      // Force refresh of Home Feed to reflect new order immediately
+      ref.invalidate(paginatedFeedProvider);
+      
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Sıralama güncellendi", style: GoogleFonts.poppins())),
-        );
+         SuccessNotificationSheet.show(
+           context,
+           title: 'Başarılı',
+           message: 'Sıralama güncellendi.'
+         );
       }
     } catch (e) {
       if (mounted) {
