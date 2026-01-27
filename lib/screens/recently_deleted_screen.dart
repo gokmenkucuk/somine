@@ -422,6 +422,8 @@ class _DeletedItemCard extends ConsumerWidget {
       // Also refresh main lists
       ref.invalidate(itemsProvider);
       ref.invalidate(catalogItemsProvider);
+      ref.invalidate(paginatedFeedProvider); // Home Screen update
+      ref.invalidate(itemCountProvider);     // Count update
       
       if (context.mounted) {
         SuccessNotificationSheet.show(

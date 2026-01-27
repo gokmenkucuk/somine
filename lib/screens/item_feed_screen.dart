@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/widgets/custom_note_icon.dart';
@@ -13,7 +14,9 @@ import 'dart:ui' as ui;
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/navigation_providers.dart'; // Added for drag state
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/utils/demo_seeder.dart';
@@ -43,6 +46,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   // For smooth skeleton-to-content transition
   double _contentOpacity = 0.0;
   int _lastItemCount = 0;
+  
+
+  
+  // DRAG-TO-DELETE STATE (Moved to Provider)
+  // bool _isDragging = false;
+  // bool _isHoveringTrash = false;
 
   @override
   void initState() {
@@ -348,7 +357,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                       ),
                     ),
                     
-                    // LAYER 2: Skeleton Overlay (visible until content fades in)
+          // LAYER 2: Skeleton Overlay (visible until content fades in)
                     if (_contentOpacity < 1.0)
                       AnimatedOpacity(
                         opacity: 1.0 - _contentOpacity,
@@ -361,6 +370,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                           ),
                         ),
                       ),
+                      
+                    // LAYER 3: TRASH ZONE OVERLAY -> MOVED TO HOME SCREEN FAB
                   ],
                 ),
               ),
@@ -731,63 +742,121 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       contentHeader = buildFallbackView();
     }
 
-    return FadeInUp(
-      duration: const Duration(milliseconds: 400),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: context.colors.surfaceWhite,
-          boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+    // WRAP WITH LONG PRESS DRAGGABLE
+    return LongPressDraggable<ItemModel>(
+      data: item,
+      delay: const Duration(milliseconds: 300), // Short delay to prevent accidental drags
+      feedback: Transform.translate(
+        offset: const Offset(0, -100), // Shift up to show target under finger
+        child: Material(
+          color: Colors.transparent,
+          child: Opacity(
+            opacity: 0.9,
+            child: SizedBox(
+              width: 140, // Smaller width for dragging feedback
+              height: 140,
+              child: ClipRRect(
+                 borderRadius: BorderRadius.circular(16),
+                 child: Stack(
+                   fit: StackFit.expand,
+                   children: [
+                      Container(color: Colors.white), // Background
+                      if (isNote) 
+                        const Center(child: Icon(PhosphorIconsBold.note, size: 40, color: Colors.grey))
+                      else if (hasImage)
+                         item.displayImage!.startsWith('http')
+                          ? CachedNetworkImage(imageUrl: item.displayImage!, fit: BoxFit.cover)
+                          : Image.asset(item.displayImage!, fit: BoxFit.cover)
+                      else 
+                         const Center(child: Icon(PhosphorIconsBold.link, size: 40, color: Colors.grey)),
+                   ],
+                 ),
+              ),
+            ),
+          ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () async {
-                final result = await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    enableDrag: true, 
-                    builder: (context) => ItemDetailBottomSheet(item: item, categoryName: badgeText, categories: categories),
-                );
-                
-                if (result == true) {
-                   ref.invalidate(paginatedFeedProvider);
-                   ref.invalidate(itemCountProvider);
-                }
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  contentHeader,
-                  // Thin grey line above text area
-                  Container(
-                    height: 1,
-                    color: Colors.grey.withOpacity(0.15),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          item.displayTitle, 
-                          maxLines: 1, 
-                          overflow: TextOverflow.ellipsis, 
-                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.headline)
-                        ),
-                        Text(
-                          badgeText, 
-                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: context.colors.hint)
-                        ),
-                      ],
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: FadeInUp(
+          // Reuse same container but faded
+           child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: context.colors.surfaceWhite,
+            ),
+            child: const SizedBox(height: 100), // Placeholder
+           ),
+        ),
+      ),
+      onDragStarted: () {
+        ref.read(isDraggingProvider.notifier).state = true;
+        HapticFeedback.selectionClick();
+      },
+      onDragEnd: (details) {
+         ref.read(isDraggingProvider.notifier).state = false;
+      },
+      onDraggableCanceled: (velocity, offset) {
+         ref.read(isDraggingProvider.notifier).state = false;
+      },
+      child: FadeInUp(
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: context.colors.surfaceWhite,
+            boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  final result = await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      enableDrag: true, 
+                      builder: (context) => ItemDetailBottomSheet(item: item, categoryName: badgeText, categories: categories),
+                  );
+                  
+                  if (result == true) {
+                     ref.invalidate(paginatedFeedProvider);
+                     ref.invalidate(itemCountProvider);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    contentHeader,
+                    // Thin grey line above text area
+                    Container(
+                      height: 1,
+                      color: Colors.grey.withOpacity(0.15),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.displayTitle, 
+                            maxLines: 1, 
+                            overflow: TextOverflow.ellipsis, 
+                            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.headline)
+                          ),
+                          Text(
+                            badgeText, 
+                            style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w400, color: context.colors.hint)
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -800,96 +869,144 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   Widget _buildNoteCard(ItemModel item, String badgeText, List<CategoryModel> categories) {
     final notePreview = item.note ?? item.displayTitle;
     
-    return FadeInUp(
-      duration: const Duration(milliseconds: 400),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          // Warm paper-like gradient for notes
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFFFFFBF5), // Warm cream
-              const Color(0xFFF5F0E8), // Soft beige
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return LongPressDraggable<ItemModel>(
+       data: item,
+       delay: const Duration(milliseconds: 300),
+       feedback: Transform.translate(
+         offset: const Offset(0, -100), // Shift up to show target under finger
+         child: Material(
+          color: Colors.transparent,
+          child: Opacity(
+            opacity: 0.9,
+            child: SizedBox(
+              width: 140, // Smaller width
+              height: 140,
+              child: Container(
+                 decoration: BoxDecoration(
+                   color: const Color(0xFFFFFBF5), // Note color
+                   borderRadius: BorderRadius.circular(16),
+                 ),
+                 child: const Center(
+                   child: Icon(PhosphorIconsBold.note, size: 40, color: Colors.orange),
+                 ),
+              ),
+            ),
           ),
-          boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () async {
-                final result = await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    enableDrag: true, 
-                    builder: (context) => ItemDetailBottomSheet(item: item, categoryName: badgeText, categories: categories),
-                );
-                
-                if (result == true) {
-                   ref.invalidate(paginatedFeedProvider);
-                   ref.invalidate(itemCountProvider);
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Note Icon Row
-                    Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: context.colors.primary.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: FadeInUp(
+           child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: context.colors.surfaceWhite,
+            ),
+            child: const SizedBox(height: 100),
+           ),
+        ),
+      ),
+      onDragStarted: () {
+         ref.read(isDraggingProvider.notifier).state = true;
+        HapticFeedback.selectionClick();
+      },
+      onDragEnd: (details) {
+         ref.read(isDraggingProvider.notifier).state = false;
+      },
+      onDraggableCanceled: (velocity, offset) {
+         ref.read(isDraggingProvider.notifier).state = false;
+      },
+       child: FadeInUp(
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            // Warm paper-like gradient for notes
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFFFFFBF5), // Warm cream
+                const Color(0xFFF5F0E8), // Soft beige
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  final result = await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      enableDrag: true, 
+                      builder: (context) => ItemDetailBottomSheet(item: item, categoryName: badgeText, categories: categories),
+                  );
+                  
+                  if (result == true) {
+                     ref.invalidate(paginatedFeedProvider);
+                     ref.invalidate(itemCountProvider);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Note Icon Row
+                      Row(
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: context.colors.primary.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              PhosphorIconsBold.note,
+                              size: 16,
+                              color: context.colors.primary,
+                            ),
                           ),
-                          child: Icon(
-                            PhosphorIconsBold.note,
-                            size: 16,
-                            color: context.colors.primary,
+                          const SizedBox(width: 8),
+                          Text(
+                            badgeText,
+                            style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: context.colors.hint),
                           ),
-                        ),
-                        const SizedBox(width: 8),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Title
+                      if (item.displayTitle.isNotEmpty)
                         Text(
-                          badgeText,
-                          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: context.colors.hint),
+                          item.displayTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: context.colors.headline),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Title
-                    if (item.displayTitle.isNotEmpty)
+                      
+                      const SizedBox(height: 6),
+                      
+                      // Note Preview
                       Text(
-                        item.displayTitle,
-                        maxLines: 1,
+                        notePreview,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: context.colors.headline),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: context.colors.body,
+                          height: 1.4,
+                        ),
                       ),
-                    
-                    const SizedBox(height: 6),
-                    
-                    // Note Preview
-                    Text(
-                      notePreview,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: context.colors.body,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

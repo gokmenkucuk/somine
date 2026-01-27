@@ -60,7 +60,7 @@ void main() async {
     }
 
     // Print native logs from previous run (Crash debugging)
-    NativeLogger.printNativeLogs();
+    // NativeLogger.printNativeLogs();
     
     runApp(
       const ProviderScope(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart'; // Added for HapticFeedback
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:somine_app/core/design/app_colors_extension.dart';
@@ -14,6 +15,8 @@ import 'package:somine_app/screens/catalog_screen.dart';
 import 'package:somine_app/screens/add_content_screen.dart';
 import 'package:somine_app/core/services/share_service.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
+import 'package:somine_app/core/models/item_model.dart';
+import 'package:google_fonts/google_fonts.dart'; // For snackbar text
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -131,39 +134,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       backgroundColor: isVibeTheme ? const Color(0xFF0A0A12) : context.colors.backgroundBottom,
       extendBody: true, // Important for floating dock style
 
-      // FAB for Adding Content
-      floatingActionButton: Container(
-        width: 64, 
-        height: 64,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [context.colors.primary, context.colors.secondary],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: context.colors.surfaceWhite.withOpacity(0.2), // Subtle midnight-like border
-            width: 1.5,
-          ),
-          boxShadow: [
-             BoxShadow(
-              color: context.colors.primary.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _openAddContentScreen(),
-            customBorder: const CircleBorder(),
-            splashColor: Colors.white.withOpacity(0.3),
-            child: const Icon(PhosphorIconsLight.plus, color: Colors.white, size: 28),
-          ),
-        ),
-      ),
+      // FAB for Adding Content OR Trash Zone
+      floatingActionButton: _buildFabOrTrashZone(context, ref),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       // Bottom Navigation Bar
@@ -257,5 +229,133 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       return VibeBackground(child: content);
     }
     return content;
+  }
+
+  Widget _buildFabOrTrashZone(BuildContext context, WidgetRef ref) {
+     final isDragging = ref.watch(isDraggingProvider);
+
+     if (!isDragging) {
+       // NORMAL FAB
+       return Container(
+        width: 64, 
+        height: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [context.colors.primary, context.colors.secondary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: context.colors.surfaceWhite.withOpacity(0.2), // Subtle midnight-like border
+            width: 1.5,
+          ),
+          boxShadow: [
+             BoxShadow(
+              color: context.colors.primary.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _openAddContentScreen(),
+            customBorder: const CircleBorder(),
+            splashColor: Colors.white.withOpacity(0.3),
+            child: const Icon(PhosphorIconsLight.plus, color: Colors.white, size: 28),
+          ),
+        ),
+      );
+     }
+
+     // TRASH ZONE FAB
+     return DragTarget<ItemModel>(
+        onWillAccept: (item) {
+          // Provide feedback when dragging enters zone
+          HapticFeedback.lightImpact(); 
+          return true;
+        },
+        onAccept: (item) async {
+           HapticFeedback.mediumImpact();
+
+           // Reset drag state
+           ref.read(isDraggingProvider.notifier).state = false;
+
+           final repo = ref.read(itemRepositoryProvider);
+           
+           // Show Undo Snackbar
+           // Show Undo Bottom Sheet (Using the exact same component as Add Content)
+            if (mounted) {
+              SuccessNotificationSheet.show(
+                context,
+                title: "Silindi",
+                message: "${item.displayTitle.isEmpty ? 'İçerik' : item.displayTitle} silindi",
+                onUndo: () async {
+                   await repo.createItem(item.copyWith(id: '')); 
+                   ref.invalidate(paginatedFeedProvider);
+                   ref.invalidate(itemCountProvider);
+                },
+              );
+            }
+           
+           // Actual Delete
+           await repo.deleteItem(item.id);
+           ref.invalidate(paginatedFeedProvider);
+           ref.invalidate(itemCountProvider);
+        },
+        builder: (context, candidateData, rejectedData) {
+           final isHovering = candidateData.isNotEmpty;
+           
+           return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              width: 64, 
+              height: 64,
+              // Restore Container Scaling (Vacuum Effect)
+              transform: isHovering 
+                  ? (Matrix4.identity()..scale(0.75)) // Shrink Container
+                  : Matrix4.identity(),
+              transformAlignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // Clean Light Oil Green & White Gradient
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFD4E6D2), // Very Light Oil Green / Sage
+                    Colors.white,            // Towards White
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                   BoxShadow(
+                    color: const Color(0xFF88A885).withOpacity(0.4), 
+                    blurRadius: isHovering ? 2 : 15, // Shadow decreases on shrink
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+                border: Border.all(
+                  // NO RED COLOR, consistent visual
+                  color: Colors.white, 
+                  width: 2
+                ),
+              ),
+              child: Center(
+                child: AnimatedScale( 
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutBack,
+                  scale: isHovering ? 0.8 : 1.0, // Icon ALSO shrinks a bit more
+                  child: Icon(
+                    PhosphorIconsLight.trash, 
+                    color: isHovering ? const Color(0xFF333333) : const Color(0xFF556B2F), 
+                    size: 30, 
+                  ),
+                ),
+              ),
+           );
+        },
+     );
   }
 }

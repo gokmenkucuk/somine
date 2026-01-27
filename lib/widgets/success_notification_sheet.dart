@@ -7,14 +7,20 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 class SuccessNotificationSheet extends StatefulWidget {
   final String title;
   final String message;
+  final VoidCallback? onUndo;
 
   const SuccessNotificationSheet({
     super.key,
     required this.title,
     required this.message,
+    this.onUndo,
   });
 
-  static Future<void> show(BuildContext context, {required String title, required String message}) {
+  static Future<void> show(BuildContext context, {
+    required String title, 
+    required String message,
+    VoidCallback? onUndo,
+  }) {
     return showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -22,6 +28,7 @@ class SuccessNotificationSheet extends StatefulWidget {
       builder: (context) => SuccessNotificationSheet(
         title: title,
         message: message,
+        onUndo: onUndo,
       ),
     );
   }
@@ -34,8 +41,8 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
   @override
   void initState() {
     super.initState();
-    // Auto-dismiss after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    // Auto-dismiss after 4 seconds if undo is present, else 2
+    Future.delayed(Duration(seconds: widget.onUndo != null ? 4 : 2), () {
       if (mounted) {
         Navigator.pop(context);
       }
@@ -119,6 +126,34 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
                     height: 1.5,
                   ),
                 ),
+                if (widget.onUndo != null) ...[
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        widget.onUndo!();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: context.colors.primary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        "Geri Al",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
               ],
             ),
