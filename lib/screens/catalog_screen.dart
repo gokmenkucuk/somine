@@ -23,7 +23,7 @@ import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
-
+import 'package:somine_app/core/providers/navigation_providers.dart';
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>((ref) => null);
 
@@ -512,7 +512,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               image: DecorationImage(
                 image: imageProvider,
                 fit: BoxFit.cover,
-                colorFilter: isSelected 
+                colorFilter: (isSelected || isHovered) 
                     ? null 
                     : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
               ),
@@ -934,6 +934,30 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             child: _buildItemCard(item, categories, items) // Placeholder
           ),
           child: _buildItemCard(item, categories, items),
+          onDragStarted: () {
+             ref.read(isDraggingProvider.notifier).state = true;
+             HapticFeedback.selectionClick();
+             
+             // Auto-Select on Long Press Drag Start (User Request)
+             if (!ref.read(isSelectionModeProvider)) {
+                ref.read(isSelectionModeProvider.notifier).state = true;
+                ref.read(selectedItemsProvider.notifier).state = {item.id};
+             } else {
+                // If already in selection mode, ensure this item is selected if user drags it
+                // (Optional enhancement, usually dragging valid "selection" is complex, 
+                // but simpler to just ensure 'this' item is selected)
+                final current = ref.read(selectedItemsProvider);
+                if (!current.contains(item.id)) {
+                   ref.read(selectedItemsProvider.notifier).state = {...current, item.id};
+                }
+             }
+          },
+          onDragEnd: (details) {
+             ref.read(isDraggingProvider.notifier).state = false;
+          },
+          onDraggableCanceled: (velocity, offset) {
+             ref.read(isDraggingProvider.notifier).state = false;
+          },
         );
       },
     );
@@ -1772,7 +1796,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               
               // Move Action
               _buildOptionTile(
-                icon: PhosphorIconsRegular.cornersOut,
+                icon: PhosphorIconsRegular.arrowsOutCardinal,
                 title: "Koleksiyona Taşı",
                 onTap: () {
                   Navigator.pop(ctx);
@@ -2214,16 +2238,26 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     top: 8,
                     left: 8,
                     child: isSelectionMode 
-                      ? Container( // Checkbox
-                          width: 28, // Standardized Size
-                          height: 28, // Standardized Size
+                      ? Container( // Checkbox - Refined Design
+                          width: 24, // Smaller size (User feedback: "too big")
+                          height: 24, 
                           decoration: BoxDecoration(
-                            color: isSelected ? context.colors.primary : Colors.white.withOpacity(0.95),
+                            color: isSelected ? context.colors.primary : Colors.black.withOpacity(0.1), // Transparent when unselected (User feedback: "no hole")
                             shape: BoxShape.circle,
-                            border: Border.all(color: context.colors.primary, width: 2),
+                            border: Border.all(
+                              color: isSelected ? context.colors.primary : Colors.white, 
+                              width: 2
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
                           ),
                           child: isSelected 
-                            ? const Icon(Icons.check, size: 16, color: Colors.white) // Slightly larger icon
+                            ? const Icon(PhosphorIconsBold.check, size: 14, color: Colors.white)
                             : null,
                         )
                       : Material( // 3-Dots Menu
@@ -2409,21 +2443,39 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   void _moveItemToCategory(ItemModel item, String? targetCategoryId) async {
      try {
-       await ref.read(itemRepositoryProvider).moveToCategory(
-         item.id, 
-         targetCategoryId
-       );
-       
-       // Optional: Haptic feedback here
-       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(
-           content: Text("İçerik taşındı", style: GoogleFonts.poppins()), 
-           backgroundColor: context.colors.primary,
-           duration: const Duration(milliseconds: 1000),
-           behavior: SnackBarBehavior.floating,
-           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-         ),
-       );
+       final isSelectionMode = ref.read(isSelectionModeProvider);
+       final selectedItems = ref.read(selectedItemsProvider);
+       final isBatchMove = isSelectionMode && selectedItems.contains(item.id);
+
+       if (isBatchMove && targetCategoryId != null) { // Batch Move requires valid target ID
+          final itemsToMove = selectedItems.toList();
+          await ref.read(itemRepositoryProvider).moveItemsToCategory(itemsToMove, targetCategoryId);
+          
+          if (mounted) {
+             SuccessNotificationSheet.show(
+               context,
+               title: "Taşındı",
+               message: "${itemsToMove.length} içerik taşındı",
+             );
+             // Clear selection
+             ref.read(isSelectionModeProvider.notifier).state = false;
+             ref.read(selectedItemsProvider.notifier).state = {};
+          }
+       } else {
+          // Single Move
+          await ref.read(itemRepositoryProvider).moveToCategory(
+            item.id, 
+            targetCategoryId
+          );
+          
+          if (mounted) {
+             SuccessNotificationSheet.show(
+               context,
+               title: "Taşındı",
+               message: "İçerik taşındı",
+             );
+          }
+       }
      } catch (e) {
        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
      }
@@ -2721,7 +2773,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             // Move Option
             _buildActionButton(
               context,
-              icon: PhosphorIconsRegular.cornersOut,
+              icon: PhosphorIconsRegular.arrowsOutCardinal,
               text: 'İçerikleri Başka Koleksiyona Taşı',
               color: context.colors.primary,
               onTap: () {
@@ -3064,7 +3116,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             
             const Spacer(),
             
-            // Delete Action (Icon Only)
+            // Delete Action (Icon Only - Monochrome)
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -3072,14 +3124,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 borderRadius: BorderRadius.circular(99),
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Icon(PhosphorIconsRegular.trash, size: 20, color: (isSelectionMode && count > 0) ? Colors.red : inactiveColor),
+                  child: Icon(PhosphorIconsRegular.trash, size: 22, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
                 ),
               ),
             ),
             
             const SizedBox(width: 4),
 
-            // Move Action (Icon Only)
+            // Move Action (Icon Only - Monochrome - Changed Icon)
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -3087,14 +3139,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 borderRadius: BorderRadius.circular(99),
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Icon(PhosphorIconsRegular.cornersOut, size: 20, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
+                  child: Icon(PhosphorIconsRegular.arrowsOutCardinal, size: 22, color: (isSelectionMode && count > 0) ? activeColor : inactiveColor),
                 ),
               ),
             ),
             
              const SizedBox(width: 4),
             
-            // Select All Action (Icon Only)
+            // Select All Action (Icon Only - Monochrome)
             Material(
               color: Colors.transparent,
               child: InkWell(

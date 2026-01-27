@@ -284,24 +284,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
            ref.read(isDraggingProvider.notifier).state = false;
 
            final repo = ref.read(itemRepositoryProvider);
+           final selectedItems = ref.read(selectedItemsProvider);
+           final isSelectionMode = ref.read(isSelectionModeProvider);
+           final isBatchDelete = isSelectionMode && selectedItems.contains(item.id);
+
+           if (isBatchDelete) {
+              // BATCH DELETE
+              final itemsToDelete = selectedItems.toList();
+              // Show Undo for Batch
+              if (mounted) {
+                SuccessNotificationSheet.show(
+                  context,
+                  title: "Silindi",
+                  message: "${itemsToDelete.length} içerik silindi",
+                  onUndo: () async {
+                     // Restore all (createItems logic needed or restore logic)
+                     // Since softDelete is used, we can restore by ID if we had them or just re-create.
+                     // IMPORTANT: softDeleteItems actually moves to trash (deletedAt != null).
+                     // So we can restore them using restoreItem(id).
+                     for (final id in itemsToDelete) {
+                        await repo.restoreItem(id);
+                     }
+                     ref.invalidate(paginatedFeedProvider);
+                     ref.invalidate(itemCountProvider);
+                  },
+                );
+              }
+              
+              await repo.softDeleteItems(itemsToDelete);
+              
+              // Clear selection
+              ref.read(isSelectionModeProvider.notifier).state = false;
+              ref.read(selectedItemsProvider.notifier).state = {};
+
+           } else {
+              // SINGLE DELETE
+              if (mounted) {
+                SuccessNotificationSheet.show(
+                  context,
+                  title: "Silindi",
+                  message: "${item.displayTitle.isEmpty ? 'İçerik' : item.displayTitle} silindi",
+                  onUndo: () async {
+                     await repo.createItem(item.copyWith(id: '')); 
+                     ref.invalidate(paginatedFeedProvider);
+                     ref.invalidate(itemCountProvider);
+                  },
+                );
+              }
+              // Note: Using softDelete for single item too for consistency? 
+              // Existing code used deleteItem (Permanent?). 
+              // User said "Trash Zone", usually implies Soft Delete.
+              // Let's use deleteItem logic as before to be safe, OR switch to softDelete?
+              // Existing code: await repo.deleteItem(item.id);
+              // I will stick to existing logic for single item to minimize risk, 
+              // BUT createItem(item.copyWith(id:'')) implies permanent delete was used before (re-creating).
+              // If I use softDelete, Undo just needs restoreItem.
+              // Let's keep single delete as it was (deleteItem) unless I'm sure.
+              // Actually, RecenlyDeletedScreen exists, so `deleteItem` likely performs Soft Delete in this repo?
+              // Let's check ItemRepository for deleteItem vs softDeleteItems. 
+              // Actually, to be safe, I'll keep the single delete logic identical to previous (deleteItem).
+              
+              await repo.deleteItem(item.id); 
+           }
            
-           // Show Undo Snackbar
-           // Show Undo Bottom Sheet (Using the exact same component as Add Content)
-            if (mounted) {
-              SuccessNotificationSheet.show(
-                context,
-                title: "Silindi",
-                message: "${item.displayTitle.isEmpty ? 'İçerik' : item.displayTitle} silindi",
-                onUndo: () async {
-                   await repo.createItem(item.copyWith(id: '')); 
-                   ref.invalidate(paginatedFeedProvider);
-                   ref.invalidate(itemCountProvider);
-                },
-              );
-            }
-           
-           // Actual Delete
-           await repo.deleteItem(item.id);
            ref.invalidate(paginatedFeedProvider);
            ref.invalidate(itemCountProvider);
         },
