@@ -575,7 +575,6 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
         if (mounted) {
           Navigator.pop(context, true);
-          _showSuccess("${_selectedCategoryIds.length} koleksiyona eklendi");
         }
       }
 

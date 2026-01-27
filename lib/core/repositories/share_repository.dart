@@ -130,12 +130,30 @@ class ShareRepository {
     required String fromUserName,
     required String fromUserEmail,
     required String toUserEmail,
+    String? toUserId,
     required String categoryId,
     required String categoryName,
   }) async {
     try {
-      // Alıcıyı bul
-      final targetUser = await findUserByEmail(toUserEmail);
+      // Alıcıyı bul (ID varsa ID ile, yoksa email ile)
+      Map<String, dynamic>? targetUser;
+      
+      if (toUserId != null && toUserId.isNotEmpty) {
+        final doc = await _usersCollection.doc(toUserId).get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          targetUser = {
+            'id': doc.id,
+            'email': data['email'],
+            'displayName': data['displayName'] ?? data['email'],
+            'username': data['username'],
+            'photoBase64': data['photoBase64'],
+          };
+        }
+      } else {
+         targetUser = await findUserByEmail(toUserEmail);
+      }
+
       if (targetUser == null) {
         throw Exception('Kullanıcı bulunamadı');
       }
@@ -162,7 +180,7 @@ class ShareRepository {
         fromUserName: fromUserName,
         fromUserEmail: fromUserEmail,
         toUserId: targetUser['id'],
-        toUserEmail: targetUser['email'],
+        toUserEmail: targetUser['email'] ?? '',
         categoryId: categoryId,
         categoryName: categoryName,
         status: ShareStatus.pending,

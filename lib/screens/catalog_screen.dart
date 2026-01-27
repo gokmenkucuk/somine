@@ -1368,13 +1368,25 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 onPressed: () async {
                   try {
                     final currentUser = ref.read(authStateProvider).valueOrNull;
-                    if (currentUser == null) return;
+                    if (currentUser == null) {
+                       throw Exception("Oturum açık değil");
+                    }
+                    
+                    if (category.id == null || category.id!.isEmpty) {
+                       throw Exception("Koleksiyon ID bulunamadı");
+                    }
+                    
+                    // Email zorunluluğunu kaldırdık, ID varsa yeterli
+                    if ((user['id'] == null || user['id'].isEmpty) && (user['email'] == null || user['email'].isEmpty)) {
+                       throw Exception("Kullanıcı bilgisi eksik (ID veya E-posta bulunamadı)");
+                    }
                     
                     await ref.read(shareRepositoryProvider).createShare(
                       fromUserId: currentUser.uid,
                       fromUserName: currentUser.displayName ?? currentUser.email ?? 'Kullanıcı',
                       fromUserEmail: currentUser.email ?? '',
-                      toUserEmail: user['email'],
+                      toUserEmail: user['email'] ?? '', // Email opsiyonel, boş gidebilir
+                      toUserId: user['id'], // ID öncelikli
                       categoryId: category.id!,
                       categoryName: category.name,
                     );
@@ -1951,6 +1963,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                title: 'Silindi', 
                message: '$count içerik başarıyla silindi.'
              );
+             ref.invalidate(paginatedFeedProvider);
+             ref.invalidate(itemCountProvider);
              ref.read(isSelectionModeProvider.notifier).state = false;
              ref.read(selectedItemsProvider.notifier).state = {};
           }
@@ -2008,6 +2022,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
      
      if (confirmed == true) {
         await ref.read(itemRepositoryProvider).deleteItem(item.id);
+        ref.invalidate(paginatedFeedProvider);
+        ref.invalidate(itemCountProvider);
         if (mounted) {
            SuccessNotificationSheet.show(
              context,

@@ -13,6 +13,7 @@ import 'package:somine_app/core/providers/navigation_providers.dart'; // Added
 import 'package:somine_app/screens/catalog_screen.dart';
 import 'package:somine_app/screens/add_content_screen.dart';
 import 'package:somine_app/core/services/share_service.dart';
+import 'package:somine_app/widgets/success_notification_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -103,6 +104,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       // Refresh feed content
       ref.invalidate(paginatedFeedProvider); 
       ref.invalidate(itemCountProvider);
+      
+      if (mounted) {
+         SuccessNotificationSheet.show(
+            context,
+            title: "Başarılı!",
+            message: "İçerik koleksiyona eklendi"
+         );
+      }
     }
   }
 

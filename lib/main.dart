@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +27,13 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    
+    // Lock orientation to Portrait
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     await initializeDateFormatting('tr', null);
     timeago.setLocaleMessages('tr', timeago.TrMessages());
     timeago.setDefaultLocale('tr');
@@ -91,6 +100,15 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
       title: 'So Mine', 
       theme: AppTheme.getTheme(currentTheme),
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('tr', ''),
+        Locale('en', ''),
+      ],
       home: _isSplashFinished
           ? const AuthWrapper()
           : SplashScreen(
