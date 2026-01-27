@@ -13,34 +13,36 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:somine_app/core/services/storage_service.dart';
 import 'package:somine_app/core/services/metadata_service.dart';
-
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
 import 'dart:math' as math;
-import 'dart:ui' as import_dart_ui;
 import 'dart:ui' as import_dart_ui;
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 
-class AddContentScreen extends StatefulWidget {
+class AddContentScreen extends ConsumerStatefulWidget {
   final String? initialText;
   final String? preSelectedCategoryId;
   final ItemModel? editItem; // For editing existing items
 
   const AddContentScreen({
-    super.key, 
-    this.initialText, 
+    super.key,
+    this.initialText,
     this.preSelectedCategoryId,
     this.editItem,
   });
 
   @override
-  State<AddContentScreen> createState() => _AddContentScreenState();
+  ConsumerState<AddContentScreen> createState() => _AddContentScreenState();
 }
 
-class _AddContentScreenState extends State<AddContentScreen> with TickerProviderStateMixin {
+class _AddContentScreenState extends ConsumerState<AddContentScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _linkController = TextEditingController(); // New Link Controller
+  final TextEditingController _linkController =
+      TextEditingController(); // New Link Controller
   final CategoryRepository _categoryRepository = CategoryRepository();
   final ItemRepository _itemRepository = ItemRepository();
 
@@ -70,7 +72,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   final Set<String> _selectedCategoryIds = {};
   List<CategoryModel> _categories = [];
   bool _isLoadingCategories = true;
-  
+
   // Dynamic Header Height
   double? _imageAspectRatio;
 
@@ -78,26 +80,30 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
   void _resolveImageSize(String imageUrl) {
     if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
-    
+
     // Reset first
     setState(() => _imageAspectRatio = null);
 
     final ImageProvider provider = CachedNetworkImageProvider(imageUrl);
-    
-    provider.resolve(const ImageConfiguration()).addListener(
-      ImageStreamListener((ImageInfo info, bool synchronousCall) {
-        if (!mounted) return;
-        final myImage = info.image;
-        setState(() {
-          _imageAspectRatio = myImage.width / myImage.height;
-        });
-      }, onError: (exception, stackTrace) {
-        debugPrint("Image resolution error: $exception");
-      }),
-    );
+
+    provider
+        .resolve(const ImageConfiguration())
+        .addListener(
+          ImageStreamListener(
+            (ImageInfo info, bool synchronousCall) {
+              if (!mounted) return;
+              final myImage = info.image;
+              setState(() {
+                _imageAspectRatio = myImage.width / myImage.height;
+              });
+            },
+            onError: (exception, stackTrace) {
+              debugPrint("Image resolution error: $exception");
+            },
+          ),
+        );
   }
   // Using AppColors constants directly now
-
 
   @override
   void initState() {
@@ -109,7 +115,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       vsync: this,
       duration: const Duration(seconds: 10), // Slow, smooth flow
     )..repeat();
-    _textAnimation = Tween<double>(begin: 0, end: 1).animate(_textAnimationController);
+    _textAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(_textAnimationController);
 
     // Arrow shimmer animation for toggle
     _arrowAnimationController = AnimationController(
@@ -124,22 +133,22 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
     // Check clipboard on open to show notice (auto: true just sets the flag)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       // 4. Handle Edit Mode Initialization
-       if (widget.editItem != null) {
-         _initializeEditMode();
-       } else if (widget.initialText != null && widget.initialText!.isNotEmpty) {
-         _processUrl(widget.initialText!);
-       } else {
-         _checkClipboardAndProcess(auto: true);
-       }
+      // 4. Handle Edit Mode Initialization
+      if (widget.editItem != null) {
+        _initializeEditMode();
+      } else if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+        _processUrl(widget.initialText!);
+      } else {
+        _checkClipboardAndProcess(auto: true);
+      }
     });
 
     // Loading Animation (Heartbeat effect)
     _loadingController = AnimationController(
-       vsync: this,
-       duration: const Duration(milliseconds: 1500),
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
+
     // Ambient Rotation
     _rotationController = AnimationController(
       vsync: this,
@@ -162,14 +171,14 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
   void _initializeEditMode() {
     final item = widget.editItem!;
-    
+
     // Set Mode
     _isNoteMode = item.type == ItemType.note;
-    
+
     // Set Text Fields
     _titleController.text = item.displayTitle;
     _noteController.text = item.note ?? "";
-    
+
     // Set Link
     if (item.url != null && item.url!.isNotEmpty) {
       _linkController.text = item.url!;
@@ -178,17 +187,17 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       _isManualEntry = false;
       // Pre-fill metadata from item
       _ogMetadata = item.ogMetadata;
-       if (_ogMetadata?.imageUrl != null) {
-          _resolveImageSize(_ogMetadata!.imageUrl!);
-       }
+      if (_ogMetadata?.imageUrl != null) {
+        _resolveImageSize(_ogMetadata!.imageUrl!);
+      }
     }
 
     // Set Category
     if (item.categoryId != null) {
       _selectedCategoryIds.add(item.categoryId!);
     }
-    
-    if (mounted) setState(() {}); 
+
+    if (mounted) setState(() {});
   }
 
   // ============== BUSINESS LOGIC ==============
@@ -202,30 +211,30 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
     try {
       var categories = await _categoryRepository.getCategories(userId);
-      
+
       // Auto-create "Hızlı" category if not exists
       CategoryModel? quickCategory;
       try {
-         quickCategory = categories.cast<CategoryModel?>().firstWhere(
-           (c) => c!.name.toLowerCase() == 'hızlı', 
-           orElse: () => null
-         );
+        quickCategory = categories.cast<CategoryModel?>().firstWhere(
+          (c) => c!.name.toLowerCase() == 'hızlı',
+          orElse: () => null,
+        );
 
-         if (quickCategory == null) {
-           // Create "Hızlı" category
-           final now = DateTime.now();
-           final newCategory = CategoryModel(
-             id: '', // Repo generates ID
-             userId: userId,
-             name: 'Hızlı',
-             icon: '⚡', // Lightning icon for Quick
-             createdAt: now,
-             updatedAt: now,
-           );
-           quickCategory = await _categoryRepository.createCategory(newCategory);
-           // Refresh list
-           categories = await _categoryRepository.getCategories(userId); 
-         }
+        if (quickCategory == null) {
+          // Create "Hızlı" category
+          final now = DateTime.now();
+          final newCategory = CategoryModel(
+            id: '', // Repo generates ID
+            userId: userId,
+            name: 'Hızlı',
+            icon: '⚡', // Lightning icon for Quick
+            createdAt: now,
+            updatedAt: now,
+          );
+          quickCategory = await _categoryRepository.createCategory(newCategory);
+          // Refresh list
+          categories = await _categoryRepository.getCategories(userId);
+        }
       } catch (e) {
         debugPrint("Error handling Quick category: $e");
       }
@@ -237,9 +246,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           setState(() {
             _categories = categories;
             _isLoadingCategories = false;
-            
+
             // Pre-select category if provided (e.g., from CatalogScreen)
-            if (widget.preSelectedCategoryId != null && widget.preSelectedCategoryId!.isNotEmpty) {
+            if (widget.preSelectedCategoryId != null &&
+                widget.preSelectedCategoryId!.isNotEmpty) {
               _selectedCategoryIds.add(widget.preSelectedCategoryId!);
             }
           });
@@ -255,15 +265,56 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     final now = DateTime.now();
     setState(() {
       _categories = [
-        CategoryModel(id: 'seyahat', userId: 'user_1', name: 'Seyahat', icon: '✈️', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'spor', userId: 'user_1', name: 'Spor', icon: '🏀', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'muzik', userId: 'user_1', name: 'Müzik', icon: '🎵', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'komik', userId: 'user_1', name: 'Komik', icon: '😂', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'tasarim', userId: 'user_1', name: 'Tasarım', icon: '🎨', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'fikir', userId: 'user_1', name: 'Fikir', icon: '💡', createdAt: now, updatedAt: now),
+        CategoryModel(
+          id: 'seyahat',
+          userId: 'user_1',
+          name: 'Seyahat',
+          icon: '✈️',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'spor',
+          userId: 'user_1',
+          name: 'Spor',
+          icon: '🏀',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'muzik',
+          userId: 'user_1',
+          name: 'Müzik',
+          icon: '🎵',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'komik',
+          userId: 'user_1',
+          name: 'Komik',
+          icon: '😂',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'tasarim',
+          userId: 'user_1',
+          name: 'Tasarım',
+          icon: '🎨',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'fikir',
+          userId: 'user_1',
+          name: 'Fikir',
+          icon: '💡',
+          createdAt: now,
+          updatedAt: now,
+        ),
       ];
       _isLoadingCategories = false;
-
     });
   }
 
@@ -274,11 +325,11 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       final hasContent = await Clipboard.hasStrings();
       if (hasContent) {
         setState(() {
-            _hasClipboardContent = true;
-            // _isManualEntry = false; // logic removed - keep manual entry active
+          _hasClipboardContent = true;
+          // _isManualEntry = false; // logic removed - keep manual entry active
         });
       }
-      return; 
+      return;
     }
 
     // Phase 2: Explicit Paste (User tapped button)
@@ -290,11 +341,11 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       _processUrl(text);
     } else {
       // No URL found or invalid
-       // If triggered manually by user (tapping button), open manual entry
-       setState(() {
-         _hasLink = false;
-         _hasClipboardContent = false;
-       });
+      // If triggered manually by user (tapping button), open manual entry
+      setState(() {
+        _hasLink = false;
+        _hasClipboardContent = false;
+      });
     }
   }
 
@@ -311,8 +362,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   String _detectPlatform(String url) {
     final lowerUrl = url.toLowerCase();
     if (lowerUrl.contains('instagram.com')) return 'Instagram';
-    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) return 'YouTube';
-    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) return 'X';
+    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be'))
+      return 'YouTube';
+    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com'))
+      return 'X';
     if (lowerUrl.contains('tiktok.com')) return 'TikTok';
     if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
     if (lowerUrl.contains('spotify.com')) return 'Spotify';
@@ -342,8 +395,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     } else {
       // Fallback to manual entry
       setState(() {
-         _isManualEntry = true;
-         _hasLink = false;
+        _isManualEntry = true;
+        _hasLink = false;
       });
     }
   }
@@ -390,32 +443,32 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       if (match != null) {
         String url = match.group(0)!;
         if (url != _detectedLink) {
-           setState(() {
-              _detectedLink = url;
-              _detectedPlatform = _detectPlatform(url);
-              _hasLink = true;
-              _isManualEntry = false;
-           });
-           _fetchMetadata(url);
+          setState(() {
+            _detectedLink = url;
+            _detectedPlatform = _detectPlatform(url);
+            _hasLink = true;
+            _isManualEntry = false;
+          });
+          _fetchMetadata(url);
         }
       }
     } else {
-       // Invalid URL, maybe reset platform to default?
-       setState(() {
-         _detectedPlatform = "Web"; 
-       });
+      // Invalid URL, maybe reset platform to default?
+      setState(() {
+        _detectedPlatform = "Web";
+      });
     }
   }
 
   void _clearLinkField() {
     setState(() {
-       _detectedLink = "";
-       _detectedPlatform = "";
-       _ogMetadata = null;
-       _hasLink = false;
-       _isManualEntry = true; // Keep manual entry active
-       _titleController.clear();
-       _noteController.clear();
+      _detectedLink = "";
+      _detectedPlatform = "";
+      _ogMetadata = null;
+      _hasLink = false;
+      _isManualEntry = true; // Keep manual entry active
+      _titleController.clear();
+      _noteController.clear();
     });
   }
 
@@ -469,91 +522,101 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     try {
       final now = DateTime.now();
       final userId = FirebaseAuth.instance.currentUser?.uid;
-      
+
       if (userId == null) {
         if (mounted) _showError("Oturum açmanız gerekiyor");
         return;
       }
 
       // Check for remote image and process if needed
-      if (_ogMetadata?.imageUrl != null && 
+      if (_ogMetadata?.imageUrl != null &&
           !_ogMetadata!.imageUrl!.contains('firebasestorage')) {
-          
         // Only attempt upload if it looks like an external URL
-        final persistentUrl = await storageService.uploadImageFromUrl(_ogMetadata!.imageUrl!, userId);
-        
+        final persistentUrl = await storageService.uploadImageFromUrl(
+          _ogMetadata!.imageUrl!,
+          userId,
+        );
+
         if (!mounted) return;
 
         // Use Firebase Storage URL if upload succeeded, otherwise KEEP original URL
         _ogMetadata = OGMetadata(
           title: _ogMetadata!.title,
           description: _ogMetadata!.description,
-          imageUrl: persistentUrl ?? _ogMetadata!.imageUrl, // Fallback to original!
+          imageUrl:
+              persistentUrl ?? _ogMetadata!.imageUrl, // Fallback to original!
           siteName: _ogMetadata!.siteName,
         );
       }
-      
+
       // FIX: Note mode should save title in ogMetadata.title and content in note field
       final noteText = _noteController.text.trim();
       final titleText = _titleController.text.trim();
-      
+
       // Determine final metadata: Prioritize USER INPUT over fetched metadata
       OGMetadata? finalMetadata;
-      
+
       if (_isNoteMode) {
         // Note mode: Title is just title
-        finalMetadata = OGMetadata(title: titleText.isNotEmpty ? titleText : null);
+        finalMetadata = OGMetadata(
+          title: titleText.isNotEmpty ? titleText : null,
+        );
       } else {
         // Link mode: Use existing metadata BUT override with user title if provided
-        finalMetadata = _ogMetadata?.copyWith(
-          title: titleText.isNotEmpty ? titleText : _ogMetadata?.title,
-          // Keep other fields (image, description, etc.) from fetched metadata
-        ) ?? OGMetadata(title: titleText.isNotEmpty ? titleText : null);
+        finalMetadata =
+            _ogMetadata?.copyWith(
+              title: titleText.isNotEmpty ? titleText : _ogMetadata?.title,
+              // Keep other fields (image, description, etc.) from fetched metadata
+            ) ??
+            OGMetadata(title: titleText.isNotEmpty ? titleText : null);
       }
 
       // --- EDIT MODE START ---
       if (widget.editItem != null) {
-          final originalCatId = widget.editItem!.categoryId;
-          final Set<String> targetIds = Set.from(_selectedCategoryIds);
-          String primaryTargetId;
+        final originalCatId = widget.editItem!.categoryId;
+        final Set<String> targetIds = Set.from(_selectedCategoryIds);
+        String primaryTargetId;
 
-          if (originalCatId != null && targetIds.contains(originalCatId)) {
-            primaryTargetId = originalCatId;
-            targetIds.remove(originalCatId);
-          } else {
-             primaryTargetId = targetIds.first;
-             targetIds.remove(primaryTargetId);
-          }
-          
-          final updatedItem = widget.editItem!.copyWith(
-              categoryId: primaryTargetId,
-              type: _isNoteMode ? ItemType.note : (_hasLink ? ItemType.link : ItemType.note),
-              url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
-              note: noteText.isNotEmpty ? noteText : null,
-              ogMetadata: finalMetadata,
-              updatedAt: DateTime.now(),
-          );
+        if (originalCatId != null && targetIds.contains(originalCatId)) {
+          primaryTargetId = originalCatId;
+          targetIds.remove(originalCatId);
+        } else {
+          primaryTargetId = targetIds.first;
+          targetIds.remove(primaryTargetId);
+        }
 
-          await _itemRepository.updateItem(updatedItem);
-          
-          // Create clones for other selected categories
-          if (targetIds.isNotEmpty) {
-            final futures = targetIds.map((catId) {
-              final clone = updatedItem.copyWith(
-                id: '', // New ID
-                categoryId: catId,
-                createdAt: now,
-                updatedAt: now,
-              );
-              return _itemRepository.createItem(clone);
-            });
-            await Future.wait(futures);
-          }
-          
-          if (mounted) {
-            Navigator.pop(context, true); // Return success
-          }
-      } 
+        final updatedItem = widget.editItem!.copyWith(
+          categoryId: primaryTargetId,
+          type:
+              _isNoteMode
+                  ? ItemType.note
+                  : (_hasLink ? ItemType.link : ItemType.note),
+          url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
+          note: noteText.isNotEmpty ? noteText : null,
+          ogMetadata: finalMetadata,
+          updatedAt: DateTime.now(),
+        );
+
+        await _itemRepository.updateItem(updatedItem);
+
+        // Create clones for other selected categories
+        if (targetIds.isNotEmpty) {
+          final futures = targetIds.map((catId) {
+            final clone = updatedItem.copyWith(
+              id: '', // New ID
+              categoryId: catId,
+              createdAt: now,
+              updatedAt: now,
+            );
+            return _itemRepository.createItem(clone);
+          });
+          await Future.wait(futures);
+        }
+
+        if (mounted) {
+          Navigator.pop(context, true); // Return success
+        }
+      }
       // --- CREATE MODE START ---
       else {
         final futures = _selectedCategoryIds.map((catId) {
@@ -561,7 +624,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             id: '',
             userId: userId,
             categoryId: catId,
-            type: _isNoteMode ? ItemType.note : (_hasLink ? ItemType.link : ItemType.note),
+            type:
+                _isNoteMode
+                    ? ItemType.note
+                    : (_hasLink ? ItemType.link : ItemType.note),
             url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
             note: noteText.isNotEmpty ? noteText : null,
             ogMetadata: finalMetadata,
@@ -577,7 +643,6 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           Navigator.pop(context, true);
         }
       }
-
     } catch (e) {
       debugPrint("Save error: $e");
       if (mounted) _showError("Bir hata oluştu");
@@ -591,11 +656,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => _AlertBottomSheet(
-        title: "Uyarı",
-        message: message,
-        type: _AlertType.warning,
-      ),
+      builder:
+          (context) => _AlertBottomSheet(
+            title: "Uyarı",
+            message: message,
+            type: _AlertType.warning,
+          ),
     );
   }
 
@@ -604,11 +670,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => _AlertBottomSheet(
-        title: "Başarılı!",
-        message: message,
-        type: _AlertType.success,
-      ),
+      builder:
+          (context) => _AlertBottomSheet(
+            title: "Başarılı!",
+            message: message,
+            type: _AlertType.success,
+          ),
     );
   }
 
@@ -617,7 +684,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       if (widget.editItem != null) {
         await _itemRepository.deleteItem(widget.editItem!.id);
         if (mounted) {
-          Navigator.pop(context, true); // Return success (true indicates update/delete)
+          Navigator.pop(
+            context,
+            true,
+          ); // Return success (true indicates update/delete)
         }
       }
     } catch (e) {
@@ -655,7 +725,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
               const SizedBox(height: 12),
             ],
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: context.colors.surfaceWhite,
           actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           actions: [
@@ -697,7 +769,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
+                          colors: [
+                            const Color(0xFFFF5252),
+                            const Color(0xFFD32F2F),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
@@ -732,10 +807,15 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            Theme.of(context).brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
+      ),
+    );
 
     return DraggableScrollableSheet(
       initialChildSize: 1.0,
@@ -744,81 +824,90 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       snap: true,
       builder: (context, scrollController) {
         return Material(
-          color: Colors.transparent, // Material typically needs a color or transparent
+          color:
+              Colors
+                  .transparent, // Material typically needs a color or transparent
           type: MaterialType.transparency, // Important for overlay
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: Container(
               decoration: BoxDecoration(
                 color: context.colors.surfaceWhite,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-            child: Stack(
-            children: [
-              // Main Content
-              SingleChildScrollView(
-                controller: scrollController, // Crucial for drag-to-dismiss
-                physics: const AlwaysScrollableScrollPhysics(), // Ensure drag works even if content is short
-                child: Column(
-                  children: [
-                    // Hide hero stage in Note mode
-                    if (!_isNoteMode) _buildHeroStage(),
-                    if (_hasLink || _isManualEntry || _isNoteMode) _buildControlCenter(),
-                    const SizedBox(height: 140),
-                  ],
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
                 ),
               ),
-
-              // Back Button (re-styled as Drag Handle/Close)
-              Positioned(
-                top: 56, // Matched ItemDetailBottomSheet hasImage state
-                left: 16,
-                child: _buildBackButton(),
-              ),
-
-              // Sticky Trash Button (Moved from HeroStage)
-              if ((_hasLink || _isManualEntry || _isNoteMode) && !_isLoadingMetadata)
-                Positioned(
-                  top: 56, // Matched Left button
-                  right: 16,
-                  child: Builder(
-                    builder: (context) {
-                       final hasContent = _hasLink || 
-                                          _titleController.text.isNotEmpty || 
-                                          _noteController.text.isNotEmpty ||
-                                          _linkController.text.isNotEmpty;
-                       
-                       // In edit mode, trash button is always enabled (delete item)
-                       final isEditMode = widget.editItem != null;
-                       final isEnabled = isEditMode || hasContent;
-
-                       return Opacity(
-                          opacity: isEnabled ? 1.0 : 0.4,
-                          child: _buildCircleButton(
-                            icon: PhosphorIconsLight.trash, 
-                            onTap: isEditMode 
-                                ? _showDeleteConfirmation 
-                                : (hasContent ? _clearContent : () {}), 
-                          ),
-                        );
-                    }
+              child: Stack(
+                children: [
+                  // Main Content
+                  SingleChildScrollView(
+                    controller: scrollController, // Crucial for drag-to-dismiss
+                    physics:
+                        const AlwaysScrollableScrollPhysics(), // Ensure drag works even if content is short
+                    child: Column(
+                      children: [
+                        // Hide hero stage in Note mode
+                        if (!_isNoteMode) _buildHeroStage(),
+                        if (_hasLink || _isManualEntry || _isNoteMode)
+                          _buildControlCenter(),
+                        const SizedBox(height: 140),
+                      ],
+                    ),
                   ),
-                ),
 
-              // Floating CTA Dock
-              // Show dock if we have a link OR manual entry mode OR note mode
-              if (_hasLink || _isManualEntry || _isNoteMode)
-                Positioned(
-                  bottom: 40,
-                  left: 24,
-                  right: 24,
-                  child: _buildFloatingDock(),
-                ),
-            ],
+                  // Back Button (re-styled as Drag Handle/Close)
+                  Positioned(
+                    top: 56, // Matched ItemDetailBottomSheet hasImage state
+                    left: 16,
+                    child: _buildBackButton(),
+                  ),
+
+                  // Sticky Trash Button (Moved from HeroStage)
+                  if ((_hasLink || _isManualEntry || _isNoteMode) &&
+                      !_isLoadingMetadata)
+                    Positioned(
+                      top: 56, // Matched Left button
+                      right: 16,
+                      child: Builder(
+                        builder: (context) {
+                          final hasContent =
+                              _hasLink ||
+                              _titleController.text.isNotEmpty ||
+                              _noteController.text.isNotEmpty ||
+                              _linkController.text.isNotEmpty;
+
+                          // In edit mode, trash button is always enabled (delete item)
+                          final isEditMode = widget.editItem != null;
+                          final isEnabled = isEditMode || hasContent;
+
+                          return Opacity(
+                            opacity: isEnabled ? 1.0 : 0.4,
+                            child: _buildCircleButton(
+                              icon: PhosphorIconsLight.trash,
+                              onTap:
+                                  isEditMode
+                                      ? _showDeleteConfirmation
+                                      : (hasContent ? _clearContent : () {}),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                  // Floating CTA Dock
+                  // Show dock if we have a link OR manual entry mode OR note mode
+                  if (_hasLink || _isManualEntry || _isNoteMode)
+                    Positioned(
+                      bottom: 40,
+                      left: 24,
+                      right: 24,
+                      child: _buildFloatingDock(),
+                    ),
+                ],
+              ),
+            ),
           ),
-          ),
-        ),
-      );
+        );
       },
     );
   }
@@ -833,46 +922,53 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     double stageHeight;
     if (_hasLink) {
       if (_imageAspectRatio != null) {
-        double calculatedRatio = (size.width / _imageAspectRatio!) / size.height;
+        double calculatedRatio =
+            (size.width / _imageAspectRatio!) / size.height;
         if (calculatedRatio > 0.65) calculatedRatio = 0.65;
         // Relaxing lower bound to allow landscape images to fit fully without zoom
-        if (calculatedRatio < 0.20) calculatedRatio = 0.20; 
+        if (calculatedRatio < 0.20) calculatedRatio = 0.20;
         stageHeight = size.height * calculatedRatio;
       } else {
-         stageHeight = size.height * 0.30; // Reduced default height to prevent excessive cropping during load
+        stageHeight =
+            size.height *
+            0.30; // Reduced default height to prevent excessive cropping during load
       }
     } else if (_isManualEntry) {
-      stageHeight = size.height * 0.40;  // Increased from 0.25 
+      stageHeight = size.height * 0.40; // Increased from 0.25
     } else {
       stageHeight = size.height * 0.75;
     }
 
-    final hasImage = _ogMetadata?.imageUrl != null && !_ogMetadata!.imageUrl!.toLowerCase().contains('.svg');
+    final hasImage =
+        _ogMetadata?.imageUrl != null &&
+        !_ogMetadata!.imageUrl!.toLowerCase().contains('.svg');
 
     return GestureDetector(
       // Only check clipboard if we are in the initial empty state
-      onTap: (!_hasLink && !_isManualEntry && !_isLoadingMetadata) ? () => _checkClipboardAndProcess(auto: false) : null,
+      onTap:
+          (!_hasLink && !_isManualEntry && !_isLoadingMetadata)
+              ? () => _checkClipboardAndProcess(auto: false)
+              : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
         height: stageHeight,
         width: double.infinity,
 
-        color: Colors.transparent, // Fix: Transparent to show underlying white surface at corners
+        color:
+            Colors
+                .transparent, // Fix: Transparent to show underlying white surface at corners
         child: Stack(
           fit: StackFit.expand,
           children: [
             // Background Layer
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
-              child: hasImage
+              child:
+                  hasImage
                       ? _buildImageBackground()
                       : _buildPlatformBackground(animate: _isLoadingMetadata),
             ),
-
-
-
-
 
             // Platform Icon removed as requested
           ],
@@ -885,7 +981,6 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   Widget _buildManualEntryHeader() {
     return _buildPlatformBackground(animate: false);
   }
-
 
   // Loading State (Filling Animation)
   Widget _buildLoadingState() {
@@ -908,10 +1003,13 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     end: Alignment.topCenter,
                     colors: [
                       context.colors.primary, // Filled Color (Green)
-                      context.colors.primary.withOpacity(0.15), // Empty Color (Light Green)
+                      context.colors.primary.withOpacity(
+                        0.15,
+                      ), // Empty Color (Light Green)
                     ],
                     stops: [
-                      _loadingController.value, // Fill level moves from 0.0 to 1.0
+                      _loadingController
+                          .value, // Fill level moves from 0.0 to 1.0
                       _loadingController.value + 0.05, // Smooth blurred edge
                     ],
                   ).createShader(bounds);
@@ -946,30 +1044,43 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       builder: (context, child) {
         // Subtle shimmer animation values
         final double shimmer = animate ? _loadingController.value : 0.0;
-        final startAlign = Alignment.lerp(Alignment.topLeft, Alignment.topCenter, shimmer)!;
-        final endAlign = Alignment.lerp(Alignment.bottomRight, Alignment.bottomCenter, shimmer)!;
-        
+        final startAlign =
+            Alignment.lerp(Alignment.topLeft, Alignment.topCenter, shimmer)!;
+        final endAlign =
+            Alignment.lerp(
+              Alignment.bottomRight,
+              Alignment.bottomCenter,
+              shimmer,
+            )!;
+
         return Container(
           key: const ValueKey('platform'),
           width: double.infinity,
-            decoration: BoxDecoration(
-              color: context.colors.surfaceWhite, // Fallback
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), // Fix: Square bottom to merge with content
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite, // Fallback
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
+            ), // Fix: Square bottom to merge with content
             gradient: LinearGradient(
-              colors: animate 
-                  ? [
-                      context.colors.primary, 
-                      Color.lerp(context.colors.secondary, Colors.white, shimmer * 0.3)!, // Subtle lighten
-                      context.colors.secondary
-                    ]
-                  : [context.colors.primary, context.colors.secondary],
+              colors:
+                  animate
+                      ? [
+                        context.colors.primary,
+                        Color.lerp(
+                          context.colors.secondary,
+                          Colors.white,
+                          shimmer * 0.3,
+                        )!, // Subtle lighten
+                        context.colors.secondary,
+                      ]
+                      : [context.colors.primary, context.colors.secondary],
               begin: startAlign,
               end: endAlign,
               stops: animate ? [0.0, 0.5 + (shimmer * 0.5), 1.0] : null,
             ),
             boxShadow: [
               BoxShadow(
-               color: context.colors.primary.withOpacity(0.25),
+                color: context.colors.primary.withOpacity(0.25),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -979,29 +1090,31 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                animate 
+                animate
                     ? SizedBox(
-                        height: 64,
-                        width: 64,
-                        child: Center(
-                          child: SizedBox(
-                            height: 48, 
-                            width: 48,
-                            child: CircularProgressIndicator(
-                              color: Colors.white.withOpacity(0.9),
-                              strokeWidth: 4,
-                            ),
+                      height: 64,
+                      width: 64,
+                      child: Center(
+                        child: SizedBox(
+                          height: 48,
+                          width: 48,
+                          child: CircularProgressIndicator(
+                            color: Colors.white.withOpacity(0.9),
+                            strokeWidth: 4,
                           ),
                         ),
-                      )
-                    : Icon(
-                        Icons.add_link_rounded,
-                        size: 64,
-                        color: Colors.white.withOpacity(0.9),
                       ),
+                    )
+                    : Icon(
+                      Icons.add_link_rounded,
+                      size: 64,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
                 const SizedBox(height: 12),
                 Text(
-                  animate ? "Bağlantı taranıyor..." : "Bağlantı önizlemesi burada görünecek",
+                  animate
+                      ? "Bağlantı taranıyor..."
+                      : "Bağlantı önizlemesi burada görünecek",
                   style: GoogleFonts.poppins(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,
@@ -1027,7 +1140,8 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           imageUrl: _ogMetadata!.imageUrl!,
           fit: BoxFit.cover,
           alignment: Alignment.center,
-          placeholder: (context, url) => _buildPlatformBackground(animate: true),
+          placeholder:
+              (context, url) => _buildPlatformBackground(animate: true),
           errorWidget: (context, url, error) => _buildPlatformBackground(),
         ),
       ],
@@ -1036,9 +1150,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
 
   // Reusable Ambient Animation Core (Liftoff Particles)
   Widget _buildAmbientAnimationCore({double scale = 1.0}) {
-      // Scale is ignored in Particle simulation (it fills space), 
-      // but if needed we could pass it. For now, filling space is better.
-      return _ParticleBackground(color: context.colors.primary);
+    // Scale is ignored in Particle simulation (it fills space),
+    // but if needed we could pass it. For now, filling space is better.
+    return _ParticleBackground(color: context.colors.primary);
   }
 
   // ============== CONTROL CENTER ==============
@@ -1055,13 +1169,12 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           // MODE TOGGLE: Type selector
           _buildModeToggle(),
           const SizedBox(height: 18), // Slightly more spacing
-
           // Link Preview / Input (Hide if Note Mode is active)
           if (!_isNoteMode && (_hasLink || _isManualEntry)) ...[
-             _buildLinkPreview(),
-             const SizedBox(height: 16),
+            _buildLinkPreview(),
+            const SizedBox(height: 16),
           ],
-          
+
           // Title Input
           _buildInputField(
             controller: _titleController,
@@ -1069,7 +1182,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
             hint: _isNoteMode ? "Başlık *" : "Başlık ekle (opsiyonel)",
             isTitle: true,
           ),
-          
+
           const SizedBox(height: 12),
 
           // Note Input (Larger in Note Mode - but keep collection visible)
@@ -1081,15 +1194,34 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           ),
 
           const SizedBox(height: 18), // Equal spacing
-
           // Category Section Header
-          Text(
-            "Koleksiyon Seç",
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade500,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Koleksiyon Seç",
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showAddCategoryDialog(context),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: context.colors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    PhosphorIconsBold.plus,
+                    size: 16,
+                    color: context.colors.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
@@ -1097,20 +1229,25 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
           // Category Chips
           SizedBox(
             height: 44,
-            child: _isLoadingCategories
-                ? const Center(child: CupertinoActivityIndicator())
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    clipBehavior: Clip.none,
-                    // Hide "Hızlı" from UI - it's used silently for uncategorized items
-                    itemCount: _categories.where((c) => c.name != 'Hızlı').length,
-                    itemBuilder: (context, index) {
-                      final visibleCategories = _categories.where((c) => c.name != 'Hızlı').toList();
-                      final cat = visibleCategories[index];
-                      return _buildCategoryChip(cat);
-                    },
-                  ),
+            child:
+                _isLoadingCategories
+                    ? const Center(child: CupertinoActivityIndicator())
+                    : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      clipBehavior: Clip.none,
+                      // Hide "Hızlı" from UI - it's used silently for uncategorized items
+                      itemCount:
+                          _categories.where((c) => c.name != 'Hızlı').length,
+                      itemBuilder: (context, index) {
+                        final visibleCategories =
+                            _categories
+                                .where((c) => c.name != 'Hızlı')
+                                .toList();
+                        final cat = visibleCategories[index];
+                        return _buildCategoryChip(cat);
+                      },
+                    ),
           ),
 
           const SizedBox(height: 16),
@@ -1118,6 +1255,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
       ),
     );
   }
+
   // Input Field
   Widget _buildInputField({
     required TextEditingController controller,
@@ -1127,13 +1265,22 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     int maxLines = 1,
   }) {
     return Container(
-      height: maxLines == 1 ? 52 : null, // Fix height for single line inputs (Title)
+      height:
+          maxLines == 1
+              ? 52
+              : null, // Fix height for single line inputs (Title)
       alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 14 : 0),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: maxLines > 1 ? 14 : 0,
+      ),
       decoration: BoxDecoration(
-        color: context.colors.surfaceWhite, 
+        color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1), 
+        border: Border.all(
+          color: context.colors.hint.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Row(
         crossAxisAlignment:
@@ -1141,11 +1288,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         children: [
           Padding(
             padding: EdgeInsets.only(top: maxLines > 1 ? 2 : 0),
-            child: Icon(
-              icon,
-              size: 18,
-              color: context.colors.body,
-            ),
+            child: Icon(icon, size: 18, color: context.colors.body),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1169,7 +1312,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 focusedBorder: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.zero, 
+                contentPadding: EdgeInsets.zero,
               ),
               maxLines: maxLines,
               minLines: maxLines > 3 ? maxLines : (maxLines > 1 ? 2 : 1),
@@ -1184,30 +1327,26 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
   Widget _buildLinkPreview() {
     final hasPlatform = _detectedPlatform.isNotEmpty;
     // Always use Primary Brand Color to match design, ignoring platform specific colors (e.g. Red for YouTube)
-    final themeColor = context.colors.primary; 
-    final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsThin.link;
+    final themeColor = context.colors.primary;
+    final platformIcon =
+        hasPlatform
+            ? _getPlatformIcon(_detectedPlatform)
+            : PhosphorIconsThin.link;
 
     return Container(
       height: 52, // Fixed height to match filled state stability
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 16), 
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: context.colors.surfaceWhite, 
+        color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
         // Always use Primary Color border
-        border: Border.all(
-          color: themeColor.withOpacity(0.5), 
-          width: 1.0
-        ),
+        border: Border.all(color: themeColor.withOpacity(0.5), width: 1.0),
       ),
       child: Row(
         children: [
           // Platform Icon
-          Icon(
-            platformIcon,
-            size: 18, 
-            color: themeColor,
-          ),
+          Icon(platformIcon, size: 18, color: themeColor),
           const SizedBox(width: 12),
 
           // Editable Link Field
@@ -1217,7 +1356,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
               onChanged: _onLinkChanged,
               onTap: () {
                 if (_linkController.text.isEmpty) {
-                   _checkClipboardAndProcess(auto: false); // Prompt paste if empty
+                  _checkClipboardAndProcess(
+                    auto: false,
+                  ); // Prompt paste if empty
                 }
               },
               cursorColor: context.colors.primary,
@@ -1271,47 +1412,58 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: GestureDetector(
-        onTap: () => setState(() {
-          if (isSelected) {
-            _selectedCategoryIds.remove(cat.id);
-          } else {
-            // If selecting a non-Quick category, auto-deselect "Hızlı"
-            if (cat.name != 'Hızlı') {
-              try {
-                 final quickCat = _categories.firstWhere((c) => c.name == 'Hızlı');
-                 _selectedCategoryIds.remove(quickCat.id);
-              } catch (_) {}
-            }
-            _selectedCategoryIds.add(cat.id);
-          }
-        }),
+        onTap:
+            () => setState(() {
+              if (isSelected) {
+                _selectedCategoryIds.remove(cat.id);
+              } else {
+                // If selecting a non-Quick category, auto-deselect "Hızlı"
+                if (cat.name != 'Hızlı') {
+                  try {
+                    final quickCat = _categories.firstWhere(
+                      (c) => c.name == 'Hızlı',
+                    );
+                    _selectedCategoryIds.remove(quickCat.id);
+                  } catch (_) {}
+                }
+                _selectedCategoryIds.add(cat.id);
+              }
+            }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : context.colors.surfaceWhite, // White/Dark Surface
+            gradient:
+                isSelected
+                    ? LinearGradient(
+                      colors: [
+                        context.colors.secondary.withOpacity(0.5),
+                        context.colors.surfaceWhite,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                    : null,
+            color:
+                isSelected
+                    ? null
+                    : context.colors.surfaceWhite, // White/Dark Surface
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
               color: isSelected ? Colors.transparent : context.colors.secondary,
               width: 1.5,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: context.colors.secondary.withOpacity(0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: context.colors.secondary.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1321,7 +1473,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? context.colors.headline : context.colors.body,
+                  color:
+                      isSelected
+                          ? context.colors.headline
+                          : context.colors.body,
                 ),
               ),
               if (isSelected) ...[
@@ -1358,11 +1513,11 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         ),
       );
     }
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
-        
+
         return GestureDetector(
           onTap: () {
             setState(() {
@@ -1401,7 +1556,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     ),
                   ),
                 ),
-                
+
                 // Right Arrows (when in content mode) - ANIMATED
                 Positioned(
                   right: 16,
@@ -1420,9 +1575,21 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(PhosphorIconsBold.caretRight, size: 12, color: context.colors.body.withOpacity(0.25)),
-                                Icon(PhosphorIconsBold.caretRight, size: 12, color: context.colors.body.withOpacity(0.4)),
-                                Icon(PhosphorIconsBold.caretRight, size: 12, color: context.colors.body.withOpacity(0.55)),
+                                Icon(
+                                  PhosphorIconsBold.caretRight,
+                                  size: 12,
+                                  color: context.colors.body.withOpacity(0.25),
+                                ),
+                                Icon(
+                                  PhosphorIconsBold.caretRight,
+                                  size: 12,
+                                  color: context.colors.body.withOpacity(0.4),
+                                ),
+                                Icon(
+                                  PhosphorIconsBold.caretRight,
+                                  size: 12,
+                                  color: context.colors.body.withOpacity(0.55),
+                                ),
                               ],
                             ),
                           );
@@ -1431,7 +1598,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     ),
                   ),
                 ),
-                
+
                 // Left Arrows (when in note mode) - ANIMATED
                 Positioned(
                   left: 16,
@@ -1450,9 +1617,21 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(PhosphorIconsBold.caretLeft, size: 12, color: context.colors.body.withOpacity(0.55)),
-                                Icon(PhosphorIconsBold.caretLeft, size: 12, color: context.colors.body.withOpacity(0.4)),
-                                Icon(PhosphorIconsBold.caretLeft, size: 12, color: context.colors.body.withOpacity(0.25)),
+                                Icon(
+                                  PhosphorIconsBold.caretLeft,
+                                  size: 12,
+                                  color: context.colors.body.withOpacity(0.55),
+                                ),
+                                Icon(
+                                  PhosphorIconsBold.caretLeft,
+                                  size: 12,
+                                  color: context.colors.body.withOpacity(0.4),
+                                ),
+                                Icon(
+                                  PhosphorIconsBold.caretLeft,
+                                  size: 12,
+                                  color: context.colors.body.withOpacity(0.25),
+                                ),
                               ],
                             ),
                           );
@@ -1461,7 +1640,7 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     ),
                   ),
                 ),
-                
+
                 // Sliding Circle Indicator
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 350),
@@ -1474,7 +1653,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                     height: 44,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [context.colors.primary, context.colors.secondary],
+                        colors: [
+                          context.colors.primary,
+                          context.colors.secondary,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -1491,7 +1673,9 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
                         child: Icon(
-                          _isNoteMode ? PhosphorIconsBold.link : PhosphorIconsBold.notePencil,
+                          _isNoteMode
+                              ? PhosphorIconsBold.link
+                              : PhosphorIconsBold.notePencil,
                           key: ValueKey(_isNoteMode ? 'link' : 'note'),
                           size: 18,
                           color: Colors.white,
@@ -1517,48 +1701,56 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [context.colors.primary, context.colors.secondary], // Slogan Gradient
+            colors: [
+              context.colors.primary,
+              context.colors.secondary,
+            ], // Slogan Gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: context.colors.secondary.withOpacity(0.3), // Matching shadow
+              color: context.colors.secondary.withOpacity(
+                0.3,
+              ), // Matching shadow
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Center(
-          child: _isSaving
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      widget.editItem != null ? PhosphorIconsBold.floppyDisk : PhosphorIconsBold.plus, 
-                      size: 20,
-                      color: Colors.white, 
+          child:
+              _isSaving
+                  ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.editItem != null ? "Kaydet" : "Koleksiyona Ekle",
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white, 
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        widget.editItem != null
+                            ? PhosphorIconsBold.floppyDisk
+                            : PhosphorIconsBold.plus,
+                        size: 20,
+                        color: Colors.white,
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.editItem != null ? "Kaydet" : "Koleksiyona Ekle",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
         ),
       ),
     );
@@ -1575,7 +1767,10 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           shape: BoxShape.circle, // Circular
-          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1), // Grey Border
+          border: Border.all(
+            color: context.colors.hint.withOpacity(0.3),
+            width: 1,
+          ), // Grey Border
           boxShadow: [
             BoxShadow(
               color: context.colors.premiumShadow.withOpacity(0.1),
@@ -1605,20 +1800,21 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           shape: BoxShape.circle, // Updated to Circle
-          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1), // Updated to grey border
+          border: Border.all(
+            color: context.colors.hint.withOpacity(0.3),
+            width: 1,
+          ), // Updated to grey border
           boxShadow: [
             BoxShadow(
-              color: context.colors.premiumShadow.withOpacity(0.1), // Updated opacity
+              color: context.colors.premiumShadow.withOpacity(
+                0.1,
+              ), // Updated opacity
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: context.colors.headline,
-        ),
+        child: Icon(icon, size: 18, color: context.colors.headline),
       ),
     );
   }
@@ -1685,6 +1881,133 @@ class _AddContentScreenState extends State<AddContentScreen> with TickerProvider
         return context.colors.primary;
     }
   }
+
+  void _showAddCategoryDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => _SimpleCategoryFormSheet(
+            onSave: (name) async {
+              try {
+                final categoryRepo = ref.read(categoryRepositoryProvider);
+                final newCategory = await categoryRepo.createCategory(
+                  CategoryModel(
+                    id: '',
+                    name: name,
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                    userId: ref.read(authStateProvider).value?.uid ?? '',
+                  ),
+                );
+
+                if (mounted) {
+                  Navigator.pop(context);
+                  // Auto-select the new category
+                  setState(() {
+                    _selectedCategoryIds.clear();
+                    _selectedCategoryIds.add(newCategory.id);
+                  });
+                  // Force refresh categories
+                  await _loadCategories();
+                }
+              } catch (e) {
+                // Handle error
+              }
+            },
+          ),
+    );
+  }
+} // End of _AddContentScreenState
+
+class _SimpleCategoryFormSheet extends StatefulWidget {
+  final Function(String name) onSave;
+
+  const _SimpleCategoryFormSheet({required this.onSave});
+
+  @override
+  State<_SimpleCategoryFormSheet> createState() =>
+      _SimpleCategoryFormSheetState();
+}
+
+class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.surfaceWhite,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Yeni Koleksiyon',
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: context.colors.headline,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Koleksiyon Adı',
+              filled: true,
+              fillColor: context.colors.backgroundTop,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                if (_nameController.text.trim().isNotEmpty) {
+                  widget.onSave(_nameController.text.trim());
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.colors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Oluştur',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 }
 
 // Custom Painter for Wavy Stream Effect (Flowing River)
@@ -1692,15 +2015,11 @@ class _WavyStreamPainter extends CustomPainter {
   final double animationValue;
   final Color streamColor;
 
-  _WavyStreamPainter({
-    required this.animationValue,
-    required this.streamColor,
-  });
+  _WavyStreamPainter({required this.animationValue, required this.streamColor});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
+    final paint = Paint()..style = PaintingStyle.fill;
 
     // Stream parameters
     final streamWidth = size.width * 0.15; // Width of the stream
@@ -1712,33 +2031,40 @@ class _WavyStreamPainter extends CustomPainter {
     // Draw multiple layers for soft glow effect
     for (int layer = 0; layer < 3; layer++) {
       final layerWidth = streamWidth + (layer * 15);
-      final layerOpacity = (0.15 - (layer * 0.04)) * (0.5 + animationValue * 0.5);
-      
+      final layerOpacity =
+          (0.15 - (layer * 0.04)) * (0.5 + animationValue * 0.5);
+
       final path = Path();
-      
+
       // Start from top center (slightly offset for each layer)
       path.moveTo(centerX - layerWidth / 2, 0);
-      
+
       // Draw left edge with sine wave
       for (double y = 0; y <= size.height; y += 5) {
         final progress = y / size.height;
         final fadeMultiplier = 1.0 - (progress * progress); // Quadratic fade
-        final wave = math.sin((progress * waveFrequency * math.pi) + phaseShift) * waveAmplitude * fadeMultiplier;
+        final wave =
+            math.sin((progress * waveFrequency * math.pi) + phaseShift) *
+            waveAmplitude *
+            fadeMultiplier;
         final x = centerX - (layerWidth / 2) * fadeMultiplier + wave;
         path.lineTo(x, y);
       }
-      
+
       // Draw right edge with sine wave (reverse)
       for (double y = size.height; y >= 0; y -= 5) {
         final progress = y / size.height;
         final fadeMultiplier = 1.0 - (progress * progress);
-        final wave = math.sin((progress * waveFrequency * math.pi) + phaseShift) * waveAmplitude * fadeMultiplier;
+        final wave =
+            math.sin((progress * waveFrequency * math.pi) + phaseShift) *
+            waveAmplitude *
+            fadeMultiplier;
         final x = centerX + (layerWidth / 2) * fadeMultiplier + wave;
         path.lineTo(x, y);
       }
-      
+
       path.close();
-      
+
       paint.color = streamColor.withOpacity(layerOpacity);
       canvas.drawPath(path, paint);
     }
@@ -1762,7 +2088,8 @@ class _ParticleBackground extends StatefulWidget {
   State<_ParticleBackground> createState() => _ParticleBackgroundState();
 }
 
-class _ParticleBackgroundState extends State<_ParticleBackground> with SingleTickerProviderStateMixin {
+class _ParticleBackgroundState extends State<_ParticleBackground>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   List<_Particle> _particles = [];
   Offset? _touchPosition;
@@ -1772,41 +2099,45 @@ class _ParticleBackgroundState extends State<_ParticleBackground> with SingleTic
   void initState() {
     super.initState();
     // Initialize Particles
-    _particles = List.generate(_particleCount, (index) => _ArticleFactory.createRandom());
-    
+    _particles = List.generate(
+      _particleCount,
+      (index) => _ArticleFactory.createRandom(),
+    );
+
     // Animation Loop
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 10))
-      ..addListener(_updateParticles)
-      ..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 10))
+          ..addListener(_updateParticles)
+          ..repeat();
   }
 
   void _updateParticles() {
     for (var p in _particles) {
       // 1. Upward Movement (Liftoff)
       p.y -= p.speed;
-      
+
       // 2. Interaction (Magnetic Repulsion)
       if (_touchPosition != null) {
         final double dx = p.x - _touchPosition!.dx;
-        
+
         // Aspect ratio correction for Y to make interaction circular
         // Otherwise repulsion is oval if screen is non-square.
         // Assuming roughly 9:16, but simple is fine for now.
         final double dy = p.y - _touchPosition!.dy;
-        
+
         final double dist = math.sqrt(dx * dx + dy * dy);
-        
+
         // Repulsion Radius in normalized space (0.0 to 1.0)
         // 0.2 = ~20% of screen width
-        const double repulsionRadius = 0.25; 
-        
+        const double repulsionRadius = 0.25;
+
         if (dist < repulsionRadius) {
           final double force = (repulsionRadius - dist) / repulsionRadius;
-          
+
           // Gentle Nudge (Velocity-ish)
           // Previously 5.0 caused teleportation. Now 0.02.
           final double strength = 0.02 * force;
-          
+
           p.x += (dx / dist) * strength;
           p.y += (dy / dist) * strength;
         }
@@ -1815,15 +2146,15 @@ class _ParticleBackgroundState extends State<_ParticleBackground> with SingleTic
       // 3. Reset loop
       if (p.y < -0.1) {
         p.y = 1.1; // Reset to bottom
-        p.x = math.Random().nextDouble(); 
+        p.x = math.Random().nextDouble();
       }
-      
+
       // Wrap X
       if (p.x < 0) p.x += 1.0;
       if (p.x > 1) p.x -= 1.0;
-      
+
       // Wrap Y Bottom (if pushed down)
-      if (p.y > 1.1) p.y = -0.1; 
+      if (p.y > 1.1) p.y = -0.1;
     }
   }
 
@@ -1842,28 +2173,28 @@ class _ParticleBackgroundState extends State<_ParticleBackground> with SingleTic
         // Model is 0..1 for easier resizing.
         return MouseRegion(
           onHover: (event) {
-             final size = context.size;
-             if (size != null) {
-                setState(() {
-                  _touchPosition = Offset(
-                    event.localPosition.dx / size.width,
-                    event.localPosition.dy / size.height
-                  );
-                });
-             }
+            final size = context.size;
+            if (size != null) {
+              setState(() {
+                _touchPosition = Offset(
+                  event.localPosition.dx / size.width,
+                  event.localPosition.dy / size.height,
+                );
+              });
+            }
           },
           onExit: (_) => setState(() => _touchPosition = null),
           child: GestureDetector(
             onPanUpdate: (details) {
-               final size = context.size;
-               if (size != null) {
-                  setState(() {
-                    _touchPosition = Offset(
-                      details.localPosition.dx / size.width,
-                      details.localPosition.dy / size.height
-                    );
-                  });
-               }
+              final size = context.size;
+              if (size != null) {
+                setState(() {
+                  _touchPosition = Offset(
+                    details.localPosition.dx / size.width,
+                    details.localPosition.dy / size.height,
+                  );
+                });
+              }
             },
             onPanEnd: (_) => setState(() => _touchPosition = null),
             child: CustomPaint(
@@ -1916,29 +2247,28 @@ class _ParticlePainter extends CustomPainter {
   final Color color;
 
   _ParticlePainter({
-    required this.particles, 
-    required this.color, 
+    required this.particles,
+    required this.color,
     required Listenable repaint,
   }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
+    final paint = Paint()..style = PaintingStyle.fill;
 
     for (var p in particles) {
       paint.color = color.withOpacity(p.opacity * 0.6); // Global dim
-      
+
       final dx = p.x * size.width;
       final dy = p.y * size.height;
-      
+
       canvas.drawCircle(Offset(dx, dy), p.size, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true; 
-}    
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true;
+}
 
 // ============== ALERT BOTTOM SHEET ==============
 enum _AlertType { success, warning, error }
@@ -1992,10 +2322,16 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
         children: [
           // Content
           Padding(
-            padding: const EdgeInsets.fromLTRB(32, 16, 32, 56), // Yanlardan padding artırıldı
+            padding: const EdgeInsets.fromLTRB(
+              32,
+              16,
+              32,
+              56,
+            ), // Yanlardan padding artırıldı
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center, // Kesinlikle ortala
+              crossAxisAlignment:
+                  CrossAxisAlignment.center, // Kesinlikle ortala
               children: [
                 // Drag Handle
                 Container(
@@ -2017,21 +2353,22 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: widget.type == _AlertType.success
-                        ? const Icon(
-                            PhosphorIconsBold.check,
-                            color: Colors.white,
-                            size: 32,
-                          )
-                        : Text(
-                            "!",
-                            style: GoogleFonts.poppins(
-                              fontSize: 32, // Biraz küçültüldü
-                              fontWeight: FontWeight.w700,
+                    child:
+                        widget.type == _AlertType.success
+                            ? const Icon(
+                              PhosphorIconsBold.check,
                               color: Colors.white,
-                              height: 1.0, // Dikey ortalama için
+                              size: 32,
+                            )
+                            : Text(
+                              "!",
+                              style: GoogleFonts.poppins(
+                                fontSize: 32, // Biraz küçültüldü
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                height: 1.0, // Dikey ortalama için
+                              ),
                             ),
-                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -2047,8 +2384,9 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
                     letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 12), // Mesaj ile başlık arası biraz açıldı
-
+                const SizedBox(
+                  height: 12,
+                ), // Mesaj ile başlık arası biraz açıldı
                 // Message
                 Text(
                   widget.message,
@@ -2056,7 +2394,9 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
                   style: GoogleFonts.poppins(
                     fontSize: 15, // Biraz daha okunur
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.9), // Hafif kırık beyaz mesaj
+                    color: Colors.white.withOpacity(
+                      0.9,
+                    ), // Hafif kırık beyaz mesaj
                     height: 1.5,
                   ),
                 ),
@@ -2090,5 +2430,3 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
     );
   }
 }
-
-
