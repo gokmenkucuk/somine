@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/navigation_providers.dart';
 import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -190,6 +191,7 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
+              ref.read(homeTabIndexProvider.notifier).state = 0; // Reset to Feed tab
               ref.read(authRepositoryProvider).signOut();
             },
             style: TextButton.styleFrom(

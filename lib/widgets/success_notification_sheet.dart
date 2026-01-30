@@ -44,9 +44,17 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
     // Auto-dismiss after 4 seconds if undo is present, else 2
     Future.delayed(Duration(seconds: widget.onUndo != null ? 4 : 2), () {
       if (mounted) {
-        Navigator.pop(context);
+        _safePop();
       }
     });
+  }
+
+  /// Safely pops the bottom sheet only if it's the current route
+  void _safePop() {
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent == true) {
+      Navigator.of(context).maybePop();
+    }
   }
 
   @override
@@ -134,7 +142,7 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
                     child: ElevatedButton(
                       onPressed: () {
                         widget.onUndo!();
-                        Navigator.pop(context);
+                        _safePop();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -166,7 +174,7 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => Navigator.pop(context),
+                onTap: _safePop,
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(8),

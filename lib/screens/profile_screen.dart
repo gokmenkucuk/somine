@@ -23,6 +23,7 @@ import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/navigation_providers.dart';
 import 'package:somine_app/screens/paywall_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -343,6 +344,9 @@ class ProfileScreen extends ConsumerWidget {
                                   );
 
                                   if (shouldLogout == true && context.mounted) {
+                                    // Reset tab index to Feed before logout
+                                    ref.read(homeTabIndexProvider.notifier).state = 0;
+                                    
                                     // Perform logout
                                     await AuthRepository().signOut();
 
@@ -433,6 +437,9 @@ class ProfileScreen extends ConsumerWidget {
                                   );
 
                                   if (shouldDelete == true && context.mounted) {
+                                    // Reset tab index to Feed before delete
+                                    ref.read(homeTabIndexProvider.notifier).state = 0;
+                                    
                                     // Capture navigator before async operation
                                     final navigator = Navigator.of(context);
                                     

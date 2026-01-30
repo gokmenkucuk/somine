@@ -153,6 +153,20 @@ class MetadataService {
           final titleTag = document.getElementsByTagName('title').firstOrNull;
           title = titleTag?.text;
         }
+        
+        // X.com (Twitter) Fallback: Extract username from URL if title still null
+        // X.com uses CSR so meta tags are often missing
+        if (title == null && (url.contains('x.com') || url.contains('twitter.com'))) {
+          final twitterRegex = RegExp(r'(?:x\.com|twitter\.com)/([A-Za-z0-9_]+)');
+          final match = twitterRegex.firstMatch(url);
+          if (match != null && match.group(1) != null) {
+            final username = match.group(1)!;
+            // Filter out system paths
+            if (!['i', 'intent', 'share', 'search', 'explore', 'home', 'notifications', 'messages'].contains(username.toLowerCase())) {
+              title = '@$username adlı kullanıcının gönderisi';
+            }
+          }
+        }
 
         // ULTIMATE FALLBACK (Inside 200 OK): Google Favicon Service
         // If parsing found nothing, we MUST return something.

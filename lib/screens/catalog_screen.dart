@@ -132,6 +132,24 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   else
                   Row(
                     children: [
+                       // GRID VIEW BUTTON - Opens all collections in a modal
+                       GestureDetector(
+                        onTap: () => _showCollectionsGridSheet(context),
+                        child: Container(
+                           padding: const EdgeInsets.all(8),
+                           margin: const EdgeInsets.only(right: 12),
+                           decoration: BoxDecoration(
+                             color: context.colors.primary.withOpacity(0.1),
+                             shape: BoxShape.circle,
+                           ),
+                           child: Icon(
+                             PhosphorIconsRegular.squaresFour, 
+                             size: 20, 
+                             color: context.colors.primary
+                           ),
+                        ),
+                      ),
+                       
                        // VAULT TOGGLE BUTTON
                        GestureDetector(
                         onTap: () async {
@@ -185,12 +203,23 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
             ),
             
-            SizedBox(
-              height: 140, // Height increased for new cards
-              child: itemsAsync.when(
-                 data: (items) => _buildCatalogShelf(categoriesAsync, selectedId, items, isReordering),
-                 loading: () => const Center(child: SizedBox()),
-                 error: (_,__) => const SizedBox(),
+            Listener(
+              onPointerMove: (event) {
+                // Auto-scroll during drag when user drags near edges
+                if (ref.read(isDraggingProvider)) {
+                  _handleDragUpdate(DragUpdateDetails(
+                    globalPosition: event.position,
+                    delta: event.delta,
+                  ));
+                }
+              },
+              child: SizedBox(
+                height: 140, // Height increased for new cards
+                child: itemsAsync.when(
+                   data: (items) => _buildCatalogShelf(categoriesAsync, selectedId, items, isReordering),
+                   loading: () => const Center(child: SizedBox()),
+                   error: (_,__) => const SizedBox(),
+                ),
               ),
             ),
 
@@ -335,26 +364,26 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
         return SizedBox(
           height: 160,
-          child: Row(
-            children: [
-              // 1. Fixed "Tümü" card (not reorderable)
-              Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: _buildImageCatalogCard(
-                  id: null,
-                  name: "Tümü",
-                  imageProvider: null,
-                  isSelected: selectedId == null,
-                  isSystem: true,
-                  itemCount: allItemsCount,
-                  isReordering: isReordering,
+          child: isReordering 
+          ? Row(
+              children: [
+                // 1. Fixed "Tümü" card (not reorderable)
+                Padding(
+                  padding: const EdgeInsets.only(left: 20),
+                  child: _buildImageCatalogCard(
+                    id: null,
+                    name: "Tümü",
+                    imageProvider: null,
+                    isSelected: selectedId == null,
+                    isSystem: true,
+                    itemCount: allItemsCount,
+                    isReordering: isReordering,
+                  ),
                 ),
-              ),
-              
-              // 2. Reorderable user categories OR Static ListView
-              Expanded(
-                child: isReordering 
-                ? ReorderableListView.builder(
+                
+                // 2. Reorderable user categories
+                Expanded(
+                  child: ReorderableListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.only(left: 8, right: 20),
                     buildDefaultDragHandles: false,
@@ -386,7 +415,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
                       );
 
-                        return ReorderableDelayedDragStartListener(
+                      return ReorderableDelayedDragStartListener(
                         key: ValueKey(cat.id),
                         index: index,
                         child: Stack(
@@ -414,37 +443,54 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         ),
                       );
                     },
-                  )
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.only(left: 8, right: 20),
-                    itemCount: sortedCategories.length,
-                    itemBuilder: (context, index) {
-                      final cat = sortedCategories[index];
-                      final isLocked = cat.isVault && !isVaultUnlocked;
-                      final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
-                      final coverItem = catItems.firstWhere(
-                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty && !i.displayImage!.toLowerCase().endsWith('.svg'),
-                        orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
-                      );
-
-                      return _buildImageCatalogCard(
-                        id: cat.id,
-                        name: cat.name,
-                        imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty)
-                            ? CachedNetworkImageProvider(coverItem.displayImage!)
-                            : null,
-                        isSelected: selectedId == cat.id,
-                        isLockedVault: isLocked,
-                        onLongPress: () => _showEditCategoryOptions(context, cat),
-                        itemCount: catItems.length,
-                        isReordering: false,
-                      );
-                    },
                   ),
-              ),
-            ],
-          ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 20, right: 20),
+              // +1 for "Tümü" card at index 0
+              itemCount: sortedCategories.length + 1,
+              itemBuilder: (context, index) {
+                // First item is "Tümü"
+                if (index == 0) {
+                  return _buildImageCatalogCard(
+                    id: null,
+                    name: "Tümü",
+                    imageProvider: null,
+                    isSelected: selectedId == null,
+                    isSystem: true,
+                    itemCount: allItemsCount,
+                    isReordering: false,
+                  );
+                }
+                
+                // Adjust index for categories (index - 1)
+                final catIndex = index - 1;
+                final cat = sortedCategories[catIndex];
+                final isLocked = cat.isVault && !isVaultUnlocked;
+                final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
+                final coverItem = catItems.firstWhere(
+                  (i) => i.displayImage != null && i.displayImage!.isNotEmpty && !i.displayImage!.toLowerCase().endsWith('.svg'),
+                  orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
+                );
+
+                return _buildImageCatalogCard(
+                  id: cat.id,
+                  name: cat.name,
+                  imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty)
+                      ? CachedNetworkImageProvider(coverItem.displayImage!)
+                      : null,
+                  isSelected: selectedId == cat.id,
+                  isLockedVault: isLocked,
+                  onLongPress: () => _showEditCategoryOptions(context, cat),
+                  itemCount: catItems.length,
+                  isReordering: false,
+                );
+              },
+            ),
         );
       },
       loading: () => const Center(child: SizedBox()),
@@ -913,15 +959,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           onDragUpdate: _handleDragUpdate, // Auto-scroll listener
           dragAnchorStrategy: pointerDragAnchorStrategy, // Makes drag follow finger exactly
           feedback: Transform.rotate(
-            angle: 0.1,
+            angle: 0.05, // Slight tilt for drag effect
             child: SizedBox(
-               width: 90, 
-               height: 90, // Smaller feedback (User Request)
+               width: 100, // Standardized size
+               height: 100,
                child: Material(
                  color: Colors.transparent,
                  borderRadius: BorderRadius.circular(16),
                  elevation: 8,
-                 shadowColor: Colors.black.withOpacity(0.2),
+                 shadowColor: Colors.black26,
                  child: ClipRRect(
                    borderRadius: BorderRadius.circular(16),
                    child: _buildSquareImageOnly(item), // New helper
@@ -2479,6 +2525,241 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
      } catch (e) {
        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
      }
+  }
+
+  // GRID VIEW MODAL - Shows all collections in a grid format
+  void _showCollectionsGridSheet(BuildContext context) {
+    final categoriesAsync = ref.read(categoriesProvider);
+    final allItems = ref.read(catalogItemsProvider).valueOrNull ?? [];
+    final isVaultUnlocked = ref.read(isVaultUnlockedProvider);
+    
+    categoriesAsync.whenData((categories) {
+      final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
+      
+      // Sort categories same as carousel
+      final sortedCategories = categories
+          .where((c) => c.name != 'Hızlı')
+          .toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
+      
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (_, scrollController) => Container(
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // Handle Bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Tüm Koleksiyonlar",
+                        style: GoogleFonts.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: context.colors.headline,
+                        ),
+                      ),
+                      Text(
+                        "${sortedCategories.length + 1} koleksiyon",
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: context.colors.hint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Grid
+                Expanded(
+                  child: GridView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: sortedCategories.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        final allItemsCount = isVaultUnlocked 
+                            ? allItems.length 
+                            : allItems.where((i) => !vaultIds.contains(i.categoryId)).length;
+                        
+                        return _buildGridCollectionCard(
+                          context: context,
+                          id: null,
+                          name: "Tümü",
+                          itemCount: allItemsCount,
+                          imageProvider: null,
+                          isVault: false,
+                          isLocked: false,
+                          onTap: () {
+                            ref.read(selectedCatalogIdProvider.notifier).state = null;
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      }
+                      
+                      final catIndex = index - 1;
+                      final cat = sortedCategories[catIndex];
+                      final isLocked = cat.isVault && !isVaultUnlocked;
+                      final catItems = allItems.where((i) => i.categoryId == cat.id).toList();
+                      final coverItem = catItems.firstWhere(
+                        (i) => i.displayImage != null && i.displayImage!.isNotEmpty && !i.displayImage!.toLowerCase().endsWith('.svg'),
+                        orElse: () => ItemModel(id: '', userId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(), type: ItemType.note),
+                      );
+                      
+                      return _buildGridCollectionCard(
+                        context: context,
+                        id: cat.id,
+                        name: cat.name,
+                        itemCount: catItems.length,
+                        imageProvider: (coverItem.displayImage != null && coverItem.displayImage!.isNotEmpty)
+                            ? CachedNetworkImageProvider(coverItem.displayImage!)
+                            : null,
+                        isVault: cat.isVault,
+                        isLocked: isLocked,
+                        onTap: () async {
+                          if (isLocked) {
+                            final result = await VaultService().authenticate(
+                              reason: '${cat.name} koleksiyonuna erişmek için doğrulama yapın',
+                            );
+                            if (result != VaultAuthResult.success) return;
+                            ref.read(isVaultUnlockedProvider.notifier).state = true;
+                          }
+                          ref.read(selectedCatalogIdProvider.notifier).state = cat.id;
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+  
+  Widget _buildGridCollectionCard({
+    required BuildContext context,
+    required String? id,
+    required String name,
+    required int itemCount,
+    required ImageProvider? imageProvider,
+    required bool isVault,
+    required bool isLocked,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.colors.secondary.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: context.colors.premiumShadow.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (imageProvider != null)
+                      Image(image: imageProvider, fit: BoxFit.cover)
+                    else
+                      Container(
+                        color: context.colors.backgroundTop,
+                        child: Center(
+                          child: ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: [context.colors.primary, context.colors.secondary],
+                            ).createShader(bounds),
+                            child: Icon(
+                              id == null ? PhosphorIconsBold.stack : (isVault ? PhosphorIconsBold.lockKey : PhosphorIconsBold.folder),
+                              size: 32,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (isLocked)
+                      Container(
+                        color: Colors.black.withOpacity(0.5),
+                        child: const Center(
+                          child: Icon(PhosphorIconsBold.lockKey, color: Colors.white, size: 24),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.headline,
+                    ),
+                  ),
+                  Text(
+                    "$itemCount içerik",
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: context.colors.hint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAddCategoryDialog() {

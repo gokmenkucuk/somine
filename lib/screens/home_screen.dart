@@ -365,25 +365,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               transformAlignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                // Clean Light Oil Green & White Gradient
+                // Theme-aware gradient
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFD4E6D2), // Very Light Oil Green / Sage
-                    Colors.white,            // Towards White
+                    context.colors.secondary.withOpacity(0.3), // Light secondary
+                    context.colors.surfaceWhite,                // Surface white
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                    BoxShadow(
-                    color: const Color(0xFF88A885).withOpacity(0.4), 
+                    color: context.colors.primary.withOpacity(0.3), 
                     blurRadius: isHovering ? 2 : 15, // Shadow decreases on shrink
                     offset: const Offset(0, 5),
                   ),
                 ],
                 border: Border.all(
-                  // NO RED COLOR, consistent visual
-                  color: Colors.white, 
+                  color: context.colors.surfaceWhite, 
                   width: 2
                 ),
               ),
@@ -394,7 +393,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   scale: isHovering ? 0.8 : 1.0, // Icon ALSO shrinks a bit more
                   child: Icon(
                     PhosphorIconsLight.trash, 
-                    color: isHovering ? const Color(0xFF333333) : const Color(0xFF556B2F), 
+                    color: isHovering ? context.colors.headline : context.colors.primary, 
                     size: 30, 
                   ),
                 ),

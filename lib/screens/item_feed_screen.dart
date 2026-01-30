@@ -746,15 +746,19 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     return LongPressDraggable<ItemModel>(
       data: item,
       delay: const Duration(milliseconds: 300), // Short delay to prevent accidental drags
-      feedback: Transform.translate(
-        offset: const Offset(0, -100), // Shift up to show target under finger
+      dragAnchorStrategy: pointerDragAnchorStrategy, // Makes drag follow finger exactly
+      feedback: Transform.rotate(
+        angle: 0.05, // Slight tilt for drag effect
         child: Material(
           color: Colors.transparent,
+          elevation: 8,
+          shadowColor: Colors.black26,
+          borderRadius: BorderRadius.circular(16),
           child: Opacity(
             opacity: 0.9,
             child: SizedBox(
-              width: 140, // Smaller width for dragging feedback
-              height: 140,
+              width: 100, // Standardized size
+              height: 100,
               child: ClipRRect(
                  borderRadius: BorderRadius.circular(16),
                  child: Stack(
@@ -872,15 +876,19 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     return LongPressDraggable<ItemModel>(
        data: item,
        delay: const Duration(milliseconds: 300),
-       feedback: Transform.translate(
-         offset: const Offset(0, -100), // Shift up to show target under finger
+       dragAnchorStrategy: pointerDragAnchorStrategy,
+       feedback: Transform.rotate(
+         angle: 0.05, // Slight tilt for drag effect
          child: Material(
           color: Colors.transparent,
+          elevation: 8,
+          shadowColor: Colors.black26,
+          borderRadius: BorderRadius.circular(16),
           child: Opacity(
             opacity: 0.9,
             child: SizedBox(
-              width: 140, // Smaller width
-              height: 140,
+              width: 100, // Standardized size
+              height: 100,
               child: Container(
                  decoration: BoxDecoration(
                    color: const Color(0xFFFFFBF5), // Note color
