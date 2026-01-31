@@ -166,17 +166,23 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Fixed Aspect Ratio Box + Small Centered Logo
-        // Forces the card to have a nice rectangular shape regardless of logo size
+        // LINK: Fixed Icon-Like Logo Style
+        // Forces the logo to be small and centered, exactly like an icon (64px max)
         content = AspectRatio(
-          aspectRatio: 1.6, // Fixed ratio (close to Golden Ratio / Standard Card)
+          aspectRatio: 1.6, // Fixed rectangular shape
           child: Container(
             color: const Color(0xFFF5F5F7), // Light grey background
-            padding: const EdgeInsets.all(48.0), // Very large padding to force logo to be small/centered
-            child: Center(
+            alignment: Alignment.center, // Strictly center content
+            child: Container(
+              // Constrain the logo box to icon size
+              constraints: BoxConstraints(
+                maxHeight: 56, // Fixed height limitation
+                maxWidth: MediaQuery.of(context).size.width * 0.3, // Don't let it be too wide
+              ),
               child: Image.network(
                 imageUrl!,
-                fit: BoxFit.contain, // Maintain logo aspect ratio
+                fit: BoxFit.contain, // Ensure logo fits inside the small box
+                alignment: Alignment.center,
                 loadingBuilder: (context, child, loadingProgress) {
                    if (loadingProgress == null) return child;
                    return const Center(child: LoadingIndicator(size: 20));
