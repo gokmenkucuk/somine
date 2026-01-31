@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 class StorageService {
-  // Use explicit bucket to ensure correct instance
-  final FirebaseStorage _storage = FirebaseStorage.instanceFor(bucket: 'gs://somineapp-57b41.firebasestorage.app');
+  // Use default instance - let auto-config handle the bucket
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   /// Uploads an image from a URL to Firebase Storage
   /// Returns the download URL or null if failed
@@ -26,13 +26,8 @@ class StorageService {
 
       // 3. Upload to Storage
       final ref = _storage.ref().child(filename);
-      final metadata = SettableMetadata(
-        contentType: _getContentType(extension),
-        customMetadata: {
-          'originalUrl': url,
-          'uploadedBy': userId,
-        },
-      );
+      // Simple metadata
+      final metadata = SettableMetadata(contentType: _getContentType(extension));
 
       await ref.putData(response.bodyBytes, metadata);
 
@@ -85,24 +80,30 @@ class StorageService {
       
       debugPrint('🔵 [StorageService] Uploading to: $path (${_storage.bucket})');
       
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg',
-        customMetadata: {'type': 'note_upload'},
-      );
-
       final bytes = await file.readAsBytes();
       
-      // Use putData with metadata
-      final uploadTask = ref.putData(bytes, metadata);
-      final snapshot = await uploadTask; // This throws on failure
+      // Upload without metadata to avoid any policy issues
+      // Use putData for reliability
+      final uploadTask = ref.putData(bytes);
+      
+      // Wait for completion
+      final snapshot = await uploadTask;
 
       if (snapshot.state == TaskState.success) {
-         debugPrint('✅ [StorageService] Upload success. Bytes: ${snapshot.totalBytes}');
+         debugPrint('✅ [StorageService] Upload success. Waiting for URL...');
          
-         final downloadUrl = await ref.getDownloadURL();
-         debugPrint('✅ [StorageService] URL: $downloadUrl');
-         
-         return downloadUrl;
+         // Retry logic for getDownloadURL (Consistency delay workaround)
+         for (int i = 0; i < 3; i++) {
+           try {
+             await Future.delayed(Duration(milliseconds: 1000 * (i + 1)));
+             final downloadUrl = await ref.getDownloadURL();
+             debugPrint('✅ [StorageService] Got URL: $downloadUrl');
+             return downloadUrl;
+           } catch (e) {
+             debugPrint('⚠️ [StorageService] Retry $i failed: $e');
+           }
+         }
+         return null;
       } else {
          debugPrint('❌ [StorageService] Upload failed. State: ${snapshot.state}');
          return null;

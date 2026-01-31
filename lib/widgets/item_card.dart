@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/app_colors.dart';
@@ -167,46 +166,21 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Use Blur Background + Centered Logo style
-        // This solves the issue with logos looking too big or cropped (Google, Adidas etc.)
-        content = Stack(
-          fit: StackFit.passthrough,
-           children: [
-             // 1. Background: Blurry & Darkened (Determines Height)
-             ImageFiltered(
-               imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-               child: ColorFiltered(
-                 colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.05), BlendMode.darken),
-                 child: Image.network(
-                   imageUrl!,
-                   fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                       if (loadingProgress == null) return child;
-                       return Container(
-                         height: 150,
-                         color: AppColors.backgroundBottom,
-                         child: const Center(child: LoadingIndicator(size: 20)),
-                       );
-                    },
-                   errorBuilder: (_,__,___) => const SizedBox(), 
-                 ),
-               ),
-             ),
-             
-             // 2. Foreground: Clean, Contained & Padded
-             Positioned.fill(
-               child: Center(
-                 child: Padding(
-                   padding: const EdgeInsets.all(28.0), // Generous padding for "logo" look
-                   child: Image.network(
-                     imageUrl!,
-                     fit: BoxFit.contain,
-                     errorBuilder: (_,__,___) => _buildPlaceholder(),
-                   ),
-                 ),
-               ),
-             ),
-           ],
+        // LINK: Clean Logo Style
+        // Simple light grey background with centered, padded logo
+        content = Container(
+          color: const Color(0xFFF5F5F7), // Light grey background (Apple style)
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(32.0), // Large padding to center small logos
+          child: Image.network(
+            imageUrl!,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+               if (loadingProgress == null) return child;
+               return const Center(child: LoadingIndicator(size: 20));
+            },
+            errorBuilder: (_,__,___) => _buildPlaceholder(),
+          ),
         );
       }
     } else {
