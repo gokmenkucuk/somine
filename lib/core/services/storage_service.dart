@@ -70,6 +70,46 @@ class StorageService {
       default: return 'image/jpeg';
     }
   }
+
+  /// Uploads a file to Firebase Storage
+  /// Returns the download URL or null if failed
+  Future<String?> uploadFile(File file, String path) async {
+    try {
+      final ref = _storage.ref().child(path);
+      
+      debugPrint('🔵 [StorageService] Starting file upload to: $path');
+      
+      // Determine content type from file extension
+      final extension = p.extension(file.path).toLowerCase();
+      final contentType = _getContentType(extension.isEmpty ? '.jpg' : extension);
+      
+      final metadata = SettableMetadata(
+        contentType: contentType,
+      );
+
+      final bytes = await file.readAsBytes();
+      
+      // Perform upload
+      final uploadTask = ref.putData(bytes, metadata);
+      final snapshot = await uploadTask;
+
+      if (snapshot.state == TaskState.success) {
+         debugPrint('✅ [StorageService] File upload success. Bytes: ${snapshot.totalBytes}');
+         
+         final downloadUrl = await ref.getDownloadURL();
+         debugPrint('✅ [StorageService] Got download URL: $downloadUrl');
+         
+         return downloadUrl;
+      } else {
+         debugPrint('❌ [StorageService] Upload failed or cancelled. State: ${snapshot.state}');
+         return null;
+      }
+
+    } catch (e) {
+      debugPrint('❌ [StorageService] Error uploading file: $e');
+      return null;
+    }
+  }
   Future<String?> uploadProfileImage(File file, String userId) async {
     try {
       final filename = 'users/$userId/profile.jpg';

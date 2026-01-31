@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -75,6 +77,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Dynamic Header Height
   double? _imageAspectRatio;
+
+  // Note Image State (optional image attachment for notes)
+  File? _selectedNoteImage;
+  String? _noteImageUrl; // For edit mode - existing image URL
+  bool _isUploadingImage = false;
 
   // ============== COLORS ==============
 
@@ -190,6 +197,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       if (_ogMetadata?.imageUrl != null) {
         _resolveImageSize(_ogMetadata!.imageUrl!);
       }
+    }
+
+    // Set Note Image (for notes with images)
+    if (_isNoteMode && item.ogMetadata?.imageUrl != null && item.ogMetadata!.imageUrl!.isNotEmpty) {
+      _noteImageUrl = item.ogMetadata!.imageUrl;
     }
 
     // Set Category
@@ -483,6 +495,158 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _linkController.clear(); // Clear link input
       _hasClipboardContent = false;
       _isManualEntry = true; // Always return to manual entry form
+      _selectedNoteImage = null;
+      _noteImageUrl = null;
+    });
+  }
+
+  /// Shows a bottom sheet to pick image from gallery or camera
+  void _pickNoteImage() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: context.colors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              "Görsel Ekle",
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: context.colors.headline,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                // Gallery Option
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickImage(ImageSource.gallery);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: context.colors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: context.colors.primary.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            PhosphorIconsBold.images,
+                            size: 32,
+                            color: context.colors.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Galeri",
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: context.colors.headline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Camera Option
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickImage(ImageSource.camera);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: context.colors.secondary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: context.colors.secondary.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            PhosphorIconsBold.camera,
+                            size: 32,
+                            color: context.colors.secondary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Kamera",
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: context.colors.headline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1080, // Compress to max 1080px width
+        maxHeight: 1080, // Compress to max 1080px height
+        imageQuality: 80, // 80% quality for good balance
+      );
+
+      if (pickedFile != null && mounted) {
+        setState(() {
+          _selectedNoteImage = File(pickedFile.path);
+          _noteImageUrl = null; // Clear any existing URL
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
+      if (mounted) {
+        _showError("Görsel seçilemedi");
+      }
+    }
+  }
+
+  void _removeNoteImage() {
+    setState(() {
+      _selectedNoteImage = null;
+      _noteImageUrl = null;
     });
   }
 
@@ -553,13 +717,32 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       final noteText = _noteController.text.trim();
       final titleText = _titleController.text.trim();
 
+      // Handle note image upload
+      String? noteImageUrl = _noteImageUrl; // Existing URL (edit mode)
+      
+      if (_isNoteMode && _selectedNoteImage != null) {
+        // Upload new image to Firebase Storage
+        setState(() => _isUploadingImage = true);
+        try {
+          final fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final path = 'users/$userId/notes/$fileName';
+          noteImageUrl = await storageService.uploadFile(_selectedNoteImage!, path);
+        } catch (e) {
+          debugPrint("Error uploading note image: $e");
+          // Continue without image if upload fails
+        } finally {
+          if (mounted) setState(() => _isUploadingImage = false);
+        }
+      }
+
       // Determine final metadata: Prioritize USER INPUT over fetched metadata
       OGMetadata? finalMetadata;
 
       if (_isNoteMode) {
-        // Note mode: Title is just title
+        // Note mode: Title + optional image
         finalMetadata = OGMetadata(
           title: titleText.isNotEmpty ? titleText : null,
+          imageUrl: noteImageUrl, // Include optional image
         );
       } else {
         // Link mode: Use existing metadata BUT override with user title if provided
@@ -1193,6 +1376,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             maxLines: _isNoteMode ? 10 : 3, // Balanced size to show collection
           ),
 
+          // Note Image Picker (Only in Note Mode)
+          if (_isNoteMode) ...[
+            const SizedBox(height: 16),
+            _buildNoteImagePicker(),
+          ],
+
           const SizedBox(height: 18), // Equal spacing
           // Category Section Header
           Row(
@@ -1251,6 +1440,180 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           ),
 
           const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the note image picker UI
+  Widget _buildNoteImagePicker() {
+    final hasImage = _selectedNoteImage != null || (_noteImageUrl != null && _noteImageUrl!.isNotEmpty);
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.body.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasImage ? context.colors.primary.withOpacity(0.3) : Colors.transparent,
+          width: hasImage ? 1.5 : 0,
+        ),
+      ),
+      child: hasImage ? _buildImagePreview() : _buildImagePlaceholder(),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return GestureDetector(
+      onTap: _pickNoteImage,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    context.colors.primary.withOpacity(0.15),
+                    context.colors.secondary.withOpacity(0.15),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                PhosphorIconsBold.image,
+                size: 24,
+                color: context.colors.primary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Görsel Ekle",
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.headline,
+                    ),
+                  ),
+                  Text(
+                    "Opsiyonel - Notuna görsel ekleyebilirsin",
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: context.colors.hint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              PhosphorIconsRegular.caretRight,
+              size: 20,
+              color: context.colors.hint,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          // Image Preview
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 80,
+              height: 80,
+              child: _selectedNoteImage != null
+                  ? Image.file(
+                      _selectedNoteImage!,
+                      fit: BoxFit.cover,
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: _noteImageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        color: context.colors.backgroundTop,
+                        child: const Center(child: CupertinoActivityIndicator()),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        color: context.colors.backgroundTop,
+                        child: Icon(PhosphorIconsBold.imageSquare, color: context.colors.hint),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Info & Actions
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Görsel Eklendi",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: context.colors.headline,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _selectedNoteImage != null ? "Yeni görsel seçildi" : "Mevcut görsel",
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: context.colors.hint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Action Buttons
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Change Image
+              GestureDetector(
+                onTap: _pickNoteImage,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: context.colors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    PhosphorIconsBold.pencilSimple,
+                    size: 18,
+                    color: context.colors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Remove Image
+              GestureDetector(
+                onTap: _removeNoteImage,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    PhosphorIconsBold.trash,
+                    size: 18,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
