@@ -76,42 +76,46 @@ class StorageService {
   /// Returns the download URL or null if failed
   Future<String?> uploadFile(File file, String path) async {
     try {
-      debugPrint('🔵 [StorageService] Step 1: Checking file');
-      if (!await file.exists()) {
-        debugPrint('❌ [StorageService] File does not exist: ${file.path}');
-        return null;
-      }
+      if (!await file.exists()) return null;
 
-      debugPrint('🔵 [StorageService] Step 2: Creating ref for path: $path');
+      final bytes = await file.readAsBytes();
+      
+      // Try simple path first for testing if deep path fails
+      // ignore: unused_local_variable
+      final simplePath = 'public/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      
+      // Use the requested path
       final ref = _storage.ref().child(path);
       
-      debugPrint('🔵 [StorageService] Step 3: Reading bytes');
-      final bytes = await file.readAsBytes();
-      debugPrint('🔵 [StorageService] Bytes read: ${bytes.length}');
-      
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg',
-      );
+      debugPrint('🔵 [StorageService] Uploading ${bytes.length} bytes to: $path');
 
-      debugPrint('🔵 [StorageService] Step 4: Starting putData');
-      final uploadTask = ref.putData(bytes, metadata);
+      // Upload without metadata first to eliminate that variable
+      final uploadTask = ref.putData(bytes);
       
-      final snapshot = await uploadTask.whenComplete(() {});
-      debugPrint('🔵 [StorageService] Step 5: Upload complete. State: ${snapshot.state}');
+      final snapshot = await uploadTask;
 
       if (snapshot.state == TaskState.success) {
-         debugPrint('🔵 [StorageService] Step 6: Getting Download URL');
-         final downloadUrl = await ref.getDownloadURL();
-         debugPrint('✅ [StorageService] Success! URL: $downloadUrl');
-         return downloadUrl;
+         debugPrint('✅ [StorageService] Upload success. Waiting for URL...');
+         
+         // Retry logic for getDownloadURL
+         for (int i = 0; i < 3; i++) {
+           try {
+             await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
+             final downloadUrl = await ref.getDownloadURL();
+             debugPrint('✅ [StorageService] Got URL: $downloadUrl');
+             return downloadUrl;
+           } catch (e) {
+             debugPrint('⚠️ [StorageService] Retry $i failed: $e');
+           }
+         }
+         return null;
       } else {
-         debugPrint('❌ [StorageService] Upload failed. State: ${snapshot.state}');
+         debugPrint('❌ [StorageService] Upload failed state: ${snapshot.state}');
          return null;
       }
 
     } catch (e, stackTrace) {
-      debugPrint('❌ [StorageService] Exception: $e');
-      debugPrint('❌ [StorageService] Stack: $stackTrace');
+      debugPrint('❌ [StorageService] Error: $e');
       return null;
     }
   }
