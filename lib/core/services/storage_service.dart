@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instanceFor(bucket: 'gs://somineapp-57b41.firebasestorage.app');
+  // Use default instance which picks up correct bucket from firebase_options.dart
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   /// Uploads an image from a URL to Firebase Storage
   /// Returns the download URL or null if failed
@@ -81,35 +82,22 @@ class StorageService {
         return null;
       }
 
-      debugPrint('🔵 [StorageService] File path: ${file.path}');
-      debugPrint('🔵 [StorageService] Target path: $path');
-      debugPrint('🔵 [StorageService] Bucket: ${_storage.bucket}');
-      
       final ref = _storage.ref().child(path);
-      debugPrint('🔵 [StorageService] Ref full path: ${ref.fullPath}');
+      debugPrint('🔵 [StorageService] Uploading to: $path');
       
       final metadata = SettableMetadata(
         contentType: 'image/jpeg',
       );
 
-      // Use putFile directly with the File object
-      debugPrint('🔵 [StorageService] Starting putFile...');
+      // Use putFile directly
       final uploadTask = ref.putFile(file, metadata);
-      
-      // Listen to upload progress
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        debugPrint('🔵 [StorageService] Upload progress: ${progress.toStringAsFixed(1)}%');
-      });
-      
       final snapshot = await uploadTask;
-      debugPrint('🔵 [StorageService] Upload completed. State: ${snapshot.state}');
 
       if (snapshot.state == TaskState.success) {
          debugPrint('✅ [StorageService] Upload success. Bytes: ${snapshot.totalBytes}');
          
          final downloadUrl = await ref.getDownloadURL();
-         debugPrint('✅ [StorageService] Download URL: $downloadUrl');
+         debugPrint('✅ [StorageService] URL: $downloadUrl');
          
          return downloadUrl;
       } else {
