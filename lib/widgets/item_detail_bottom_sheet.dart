@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -494,21 +495,41 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                 ],
               ),
 
-              // --- 3. STICKY ICONS (Top Layer) ---
+              // --- 3. STICKY ICONS (Top Layer) - Premium Glassmorphism Style ---
               // Close Button (Top Left)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 56, 
                 left: 16,
                 child: GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: context.colors.surfaceWhite,
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: context.colors.surfaceWhite.withOpacity(0.85),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: context.colors.primary.withOpacity(0.15),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: context.colors.primary.withOpacity(0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(PhosphorIconsBold.x, size: 20, color: context.colors.headline),
+                      ),
                     ),
-                    child: Icon(PhosphorIconsLight.x, size: 22, color: context.colors.headline),
                   ),
                 ),
               ),
@@ -519,14 +540,34 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                 right: 16,
                 child: GestureDetector(
                   onTap: _shareLink,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: context.colors.surfaceWhite,
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: context.colors.surfaceWhite.withOpacity(0.85),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: context.colors.primary.withOpacity(0.15),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: context.colors.primary.withOpacity(0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(PhosphorIconsBold.paperPlaneTilt, size: 20, color: context.colors.primary),
+                      ),
                     ),
-                    child: Icon(PhosphorIconsLight.paperPlaneTilt, size: 22, color: context.colors.headline),
                   ),
                 ),
               ),
@@ -534,17 +575,37 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
               // Edit Button (Left of Share)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 56, 
-                right: 16 + 40 + 12,
+                right: 16 + 48 + 12,
                 child: GestureDetector(
                   onTap: _openEditScreen,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: context.colors.surfaceWhite,
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 4))],
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: context.colors.surfaceWhite.withOpacity(0.85),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: context.colors.primary.withOpacity(0.15),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: context.colors.primary.withOpacity(0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(PhosphorIconsBold.pencilSimple, size: 20, color: context.colors.primary),
+                      ),
                     ),
-                    child: Icon(PhosphorIconsLight.pencilSimple, size: 22, color: context.colors.headline),
                   ),
                 ),
               ),

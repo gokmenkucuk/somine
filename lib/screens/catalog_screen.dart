@@ -90,6 +90,29 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     }
   }
 
+  /// Scrolls the carousel to make the selected category visible
+  void _scrollToCategory(int categoryIndex) {
+    if (!_scrollController.hasClients) return;
+    
+    // Each card is approximately 100px wide + 12px margin
+    const double cardWidth = 112.0;
+    const double leftPadding = 20.0;
+    
+    // Calculate target scroll position
+    final double targetOffset = (categoryIndex * cardWidth) - leftPadding;
+    
+    // Clamp to valid range
+    final double maxScroll = _scrollController.position.maxScrollExtent;
+    final double clampedOffset = targetOffset.clamp(0.0, maxScroll);
+    
+    // Animate to position
+    _scrollController.animateTo(
+      clampedOffset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedId = ref.watch(selectedCatalogIdProvider);
@@ -2606,6 +2629,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     ),
                     itemCount: sortedCategories.length + 1,
                     itemBuilder: (context, index) {
+                      final selectedId = ref.read(selectedCatalogIdProvider);
+                      
                       if (index == 0) {
                         final allItemsCount = isVaultUnlocked 
                             ? allItems.length 
@@ -2619,8 +2644,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           imageProvider: null,
                           isVault: false,
                           isLocked: false,
+                          isSelected: selectedId == null,
                           onTap: () {
                             ref.read(selectedCatalogIdProvider.notifier).state = null;
+                            _scrollToCategory(0); // Scroll to "Tümü" at index 0
                             Navigator.pop(ctx);
                           },
                         );
@@ -2645,6 +2672,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             : null,
                         isVault: cat.isVault,
                         isLocked: isLocked,
+                        isSelected: selectedId == cat.id,
                         onTap: () async {
                           if (isLocked) {
                             final result = await VaultService().authenticate(
@@ -2654,6 +2682,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ref.read(isVaultUnlockedProvider.notifier).state = true;
                           }
                           ref.read(selectedCatalogIdProvider.notifier).state = cat.id;
+                          _scrollToCategory(index); // Scroll carousel to selected category
                           Navigator.pop(ctx);
                         },
                       );
@@ -2676,6 +2705,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     required ImageProvider? imageProvider,
     required bool isVault,
     required bool isLocked,
+    required bool isSelected,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -2684,11 +2714,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.colors.secondary.withOpacity(0.3)),
+          border: Border.all(
+            color: isSelected ? context.colors.primary : context.colors.secondary.withOpacity(0.3),
+            width: isSelected ? 2.5 : 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: context.colors.premiumShadow.withOpacity(0.05),
-              blurRadius: 8,
+              color: isSelected 
+                  ? context.colors.primary.withOpacity(0.2) 
+                  : context.colors.premiumShadow.withOpacity(0.05),
+              blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),
           ],
@@ -2725,6 +2760,27 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         color: Colors.black.withOpacity(0.5),
                         child: const Center(
                           child: Icon(PhosphorIconsBold.lockKey, color: Colors.white, size: 24),
+                        ),
+                      ),
+                    // Selected indicator checkmark
+                    if (isSelected)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: context.colors.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: context.colors.primary.withOpacity(0.4),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(PhosphorIconsBold.check, size: 12, color: Colors.white),
                         ),
                       ),
                   ],
