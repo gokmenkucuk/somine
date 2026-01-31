@@ -75,9 +75,16 @@ class StorageService {
   /// Returns the download URL or null if failed
   Future<String?> uploadFile(File file, String path) async {
     try {
+      // Check if file exists
+      if (!await file.exists()) {
+        debugPrint('❌ [StorageService] File does not exist: ${file.path}');
+        return null;
+      }
+
       final ref = _storage.ref().child(path);
       
       debugPrint('🔵 [StorageService] Starting file upload to: $path');
+      debugPrint('🔵 [StorageService] File size: ${await file.length()} bytes');
       
       // Determine content type from file extension
       final extension = p.extension(file.path).toLowerCase();
@@ -87,29 +94,36 @@ class StorageService {
         contentType: contentType,
       );
 
+      // Read file bytes first
       final bytes = await file.readAsBytes();
+      debugPrint('🔵 [StorageService] Read ${bytes.length} bytes from file');
       
-      // Perform upload
+      // Upload using putData (more reliable than putFile)
       final uploadTask = ref.putData(bytes, metadata);
       final snapshot = await uploadTask;
+      
+      debugPrint('🔵 [StorageService] Upload state: ${snapshot.state}');
 
       if (snapshot.state == TaskState.success) {
          debugPrint('✅ [StorageService] File upload success. Bytes: ${snapshot.totalBytes}');
          
-         final downloadUrl = await ref.getDownloadURL();
+         // Get URL from snapshot ref directly
+         final downloadUrl = await snapshot.ref.getDownloadURL();
          debugPrint('✅ [StorageService] Got download URL: $downloadUrl');
          
          return downloadUrl;
       } else {
-         debugPrint('❌ [StorageService] Upload failed or cancelled. State: ${snapshot.state}');
+         debugPrint('❌ [StorageService] Upload failed. State: ${snapshot.state}');
          return null;
       }
 
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ [StorageService] Error uploading file: $e');
+      debugPrint('❌ [StorageService] Stack trace: $stackTrace');
       return null;
     }
   }
+
   Future<String?> uploadProfileImage(File file, String userId) async {
     try {
       final filename = 'users/$userId/profile.jpg';

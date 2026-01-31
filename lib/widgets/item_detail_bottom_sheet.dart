@@ -182,7 +182,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   }
 
   Widget _buildFallbackHeader(IconData icon) {
+    // For notes: Check if there's an image in ogMetadata, show CustomNoteIcon only if no image
     if (widget.item.type == ItemType.note) {
+      // If note has an image, it will be shown by the main image logic
+      // This fallback only shows when there's NO image
       return Container(
         width: double.infinity,
         height: double.infinity,

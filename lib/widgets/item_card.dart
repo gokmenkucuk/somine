@@ -16,6 +16,7 @@ class ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Unified Card Design (Book Cover Style)
     // Reference: Tall, Clean, Image dominant, Minimal text
+    final bool isNote = item.type == ItemType.note;
     
     return GestureDetector(
       onTap: onTap,
@@ -43,8 +44,9 @@ class ItemCard extends StatelessWidget {
                    imageUrl: item.displayImage, 
                    heroTag: item.id,
                    url: item.url, // Pass URL for fallback logic
+                   isNote: isNote, // Pass note type for special handling
                    // If no image, show a nice gradient placeholder
-                   placeholderGradient: _getGradientForType(item.url),
+                   placeholderGradient: _getGradientForType(item.url, isNote),
                 ),
                 
                 // Source Icon Badge (Subtle, Top Left)
@@ -60,7 +62,7 @@ class ItemCard extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: _getSourceIcon(item.url),
+                    child: _getSourceIcon(item.url, isNote),
                   ),
                 ),
               ],
@@ -87,7 +89,7 @@ class ItemCard extends StatelessWidget {
                    const SizedBox(height: 6),
                    // Source Name (Author style)
                    Text(
-                     _getSourceName(item.url),
+                     _getSourceName(item.url, isNote),
                      style: GoogleFonts.poppins(
                        fontWeight: FontWeight.w500,
                        fontSize: 12,
@@ -103,14 +105,16 @@ class ItemCard extends StatelessWidget {
     );
   }
   
-  LinearGradient? _getGradientForType(String? url) {
+  LinearGradient? _getGradientForType(String? url, bool isNote) {
+    if (isNote) return const LinearGradient(colors: [Color(0xFFF6D365), Color(0xFFFDA085)]); // Warm note gradient
     if (url == null) return null;
     if (url.contains('youtube')) return const LinearGradient(colors: [Color(0xFFFF9966), Color(0xFFFF5E62)]);
     if (url.contains('medium')) return const LinearGradient(colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)]);
     return const LinearGradient(colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)]);
   }
 
-  Widget _getSourceIcon(String? url) {
+  Widget _getSourceIcon(String? url, bool isNote) {
+     if (isNote) return const Icon(PhosphorIconsBold.notePencil, size: 14, color: Color(0xFFF97316)); // Orange for notes
      if (url == null) return const Icon(Icons.link, size: 14, color: Colors.blue);
      if (url.contains('youtube')) return const Icon(Icons.play_arrow_rounded, size: 16, color: Colors.red);
      if (url.contains('medium')) return const Icon(Icons.article_rounded, size: 14, color: Colors.black);
@@ -118,7 +122,8 @@ class ItemCard extends StatelessWidget {
      return const Icon(Icons.link_rounded, size: 16, color: Colors.blue);
   }
 
-  String _getSourceName(String? url) {
+  String _getSourceName(String? url, bool isNote) {
+     if (isNote) return 'Not';
      if (url == null) return 'Link';
      try {
        final uri = Uri.parse(url);
@@ -134,9 +139,10 @@ class _CardImage extends StatelessWidget {
   final String? imageUrl;
   final String? heroTag;
   final String? url; // Added to determine fallback type
+  final bool isNote; // Note type for special handling
   final LinearGradient? placeholderGradient;
 
-  const _CardImage({this.imageUrl, this.heroTag, this.url, this.placeholderGradient});
+  const _CardImage({this.imageUrl, this.heroTag, this.url, this.isNote = false, this.placeholderGradient});
 
   @override
   Widget build(BuildContext context) {
@@ -172,11 +178,12 @@ class _CardImage extends StatelessWidget {
   Widget _buildPlaceholder() {
      IconData icon = Icons.link;
      Color iconColor = Colors.white;
-     // User Request: Reduce icon size only for Note types (approx 50%)
-     // "Note" type is inferred here by url being null (internal content)
-     double iconSize = (url == null) ? 24 : 48; // 24 is 50% of 48
+     double iconSize = 48;
      
-     if (url != null) {
+     if (isNote) {
+       icon = PhosphorIconsBold.notePencil;
+       iconSize = 32; // Smaller for notes
+     } else if (url != null) {
        if (url!.contains('instagram')) {
          icon = PhosphorIconsBold.instagramLogo; 
        } else if (url!.contains('youtube')) {

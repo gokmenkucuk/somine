@@ -1012,6 +1012,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   .transparent, // Material typically needs a color or transparent
           type: MaterialType.transparency, // Important for overlay
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque, // Ensures taps on empty areas work
             onTap: () => FocusScope.of(context).unfocus(),
             child: Container(
               decoration: BoxDecoration(
@@ -1659,6 +1660,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               controller: controller,
               cursorColor: context.colors.primary,
               textAlignVertical: TextAlignVertical.center,
+              textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
+              onEditingComplete: () {
+                // Dismiss keyboard when Done is pressed
+                FocusScope.of(context).unfocus();
+              },
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
