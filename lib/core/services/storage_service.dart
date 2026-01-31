@@ -81,29 +81,35 @@ class StorageService {
         return null;
       }
 
-      final ref = _storage.ref().child(path);
+      debugPrint('🔵 [StorageService] File path: ${file.path}');
+      debugPrint('🔵 [StorageService] Target path: $path');
+      debugPrint('🔵 [StorageService] Bucket: ${_storage.bucket}');
       
-      debugPrint('🔵 [StorageService] Starting file upload to: $path');
+      final ref = _storage.ref().child(path);
+      debugPrint('🔵 [StorageService] Ref full path: ${ref.fullPath}');
       
       final metadata = SettableMetadata(
         contentType: 'image/jpeg',
-        customMetadata: {
-          'type': 'note_image',
-        },
       );
 
-      final bytes = await file.readAsBytes();
-      debugPrint('🔵 [StorageService] Read ${bytes.length} bytes');
+      // Use putFile directly with the File object
+      debugPrint('🔵 [StorageService] Starting putFile...');
+      final uploadTask = ref.putFile(file, metadata);
       
-      // Perform upload - same as uploadProfileImage
-      final uploadTask = ref.putData(bytes, metadata);
+      // Listen to upload progress
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        debugPrint('🔵 [StorageService] Upload progress: ${progress.toStringAsFixed(1)}%');
+      });
+      
       final snapshot = await uploadTask;
+      debugPrint('🔵 [StorageService] Upload completed. State: ${snapshot.state}');
 
       if (snapshot.state == TaskState.success) {
-         debugPrint('✅ [StorageService] Upload task success. Bytes: ${snapshot.totalBytes}');
+         debugPrint('✅ [StorageService] Upload success. Bytes: ${snapshot.totalBytes}');
          
          final downloadUrl = await ref.getDownloadURL();
-         debugPrint('✅ [StorageService] Got download URL: $downloadUrl');
+         debugPrint('✅ [StorageService] Download URL: $downloadUrl');
          
          return downloadUrl;
       } else {
@@ -112,7 +118,7 @@ class StorageService {
       }
 
     } catch (e, stackTrace) {
-      debugPrint('❌ [StorageService] Error uploading file: $e');
+      debugPrint('❌ [StorageService] Error: $e');
       debugPrint('❌ [StorageService] Stack: $stackTrace');
       return null;
     }
