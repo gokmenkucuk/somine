@@ -1699,22 +1699,40 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Visible "Tamam" button for multi-line fields
         if (isMultiLine)
           Positioned(
-            top: 8,
-            right: 8,
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Tamam',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: context.colors.primary,
+            top: 6,
+            right: 6,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => FocusScope.of(context).unfocus(),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: context.colors.primary, // Solid primary color
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: context.colors.primary.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check, size: 14, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Tamam',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

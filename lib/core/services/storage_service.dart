@@ -76,29 +76,33 @@ class StorageService {
   /// Returns the download URL or null if failed
   Future<String?> uploadFile(File file, String path) async {
     try {
-      // Check if file exists
+      debugPrint('🔵 [StorageService] Step 1: Checking file');
       if (!await file.exists()) {
         debugPrint('❌ [StorageService] File does not exist: ${file.path}');
         return null;
       }
 
+      debugPrint('🔵 [StorageService] Step 2: Creating ref for path: $path');
       final ref = _storage.ref().child(path);
-      debugPrint('🔵 [StorageService] Uploading to: $path');
+      
+      debugPrint('🔵 [StorageService] Step 3: Reading bytes');
+      final bytes = await file.readAsBytes();
+      debugPrint('🔵 [StorageService] Bytes read: ${bytes.length}');
       
       final metadata = SettableMetadata(
         contentType: 'image/jpeg',
       );
 
-      // Use putFile directly
-      final uploadTask = ref.putFile(file, metadata);
-      final snapshot = await uploadTask;
+      debugPrint('🔵 [StorageService] Step 4: Starting putData');
+      final uploadTask = ref.putData(bytes, metadata);
+      
+      final snapshot = await uploadTask.whenComplete(() {});
+      debugPrint('🔵 [StorageService] Step 5: Upload complete. State: ${snapshot.state}');
 
       if (snapshot.state == TaskState.success) {
-         debugPrint('✅ [StorageService] Upload success. Bytes: ${snapshot.totalBytes}');
-         
+         debugPrint('🔵 [StorageService] Step 6: Getting Download URL');
          final downloadUrl = await ref.getDownloadURL();
-         debugPrint('✅ [StorageService] URL: $downloadUrl');
-         
+         debugPrint('✅ [StorageService] Success! URL: $downloadUrl');
          return downloadUrl;
       } else {
          debugPrint('❌ [StorageService] Upload failed. State: ${snapshot.state}');
@@ -106,7 +110,7 @@ class StorageService {
       }
 
     } catch (e, stackTrace) {
-      debugPrint('❌ [StorageService] Error: $e');
+      debugPrint('❌ [StorageService] Exception: $e');
       debugPrint('❌ [StorageService] Stack: $stackTrace');
       return null;
     }
