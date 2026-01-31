@@ -166,20 +166,24 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Clean Logo Style
-        // Simple light grey background with centered, padded logo
-        content = Container(
-          color: const Color(0xFFF5F5F7), // Light grey background (Apple style)
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(32.0), // Large padding to center small logos
-          child: Image.network(
-            imageUrl!,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-               if (loadingProgress == null) return child;
-               return const Center(child: LoadingIndicator(size: 20));
-            },
-            errorBuilder: (_,__,___) => _buildPlaceholder(),
+        // LINK: Fixed Aspect Ratio Box + Small Centered Logo
+        // Forces the card to have a nice rectangular shape regardless of logo size
+        content = AspectRatio(
+          aspectRatio: 1.6, // Fixed ratio (close to Golden Ratio / Standard Card)
+          child: Container(
+            color: const Color(0xFFF5F5F7), // Light grey background
+            padding: const EdgeInsets.all(48.0), // Very large padding to force logo to be small/centered
+            child: Center(
+              child: Image.network(
+                imageUrl!,
+                fit: BoxFit.contain, // Maintain logo aspect ratio
+                loadingBuilder: (context, child, loadingProgress) {
+                   if (loadingProgress == null) return child;
+                   return const Center(child: LoadingIndicator(size: 20));
+                },
+                errorBuilder: (_,__,___) => _buildPlaceholder(),
+              ),
+            ),
           ),
         );
       }
