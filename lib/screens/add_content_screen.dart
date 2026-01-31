@@ -724,9 +724,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Upload new image to Firebase Storage
         setState(() => _isUploadingImage = true);
         try {
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          // Use 'items/' path which has working Firebase rules
-          final path = 'items/$userId/$timestamp.jpg';
+          final fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final path = 'users/$userId/notes/$fileName';
           noteImageUrl = await storageService.uploadFile(_selectedNoteImage!, path);
           debugPrint('📸 Note image uploaded: $noteImageUrl');
         } catch (e) {
