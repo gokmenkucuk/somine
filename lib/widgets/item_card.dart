@@ -166,26 +166,35 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Fixed Icon-Like Logo Style
-        // Forces the logo to be small and centered, exactly like an icon (64px max)
+        // LINK: Icon Bubble Style 🫧
+        // This is the "Foolproof" design: A white circle in the center containing the logo
+        // No matter what the image dimensions are, it will look like a neat app icon.
         content = AspectRatio(
-          aspectRatio: 1.6, // Fixed rectangular shape
+          aspectRatio: 1.6,
           child: Container(
             color: const Color(0xFFF5F5F7), // Light grey background
-            alignment: Alignment.center, // Strictly center content
+            alignment: Alignment.center,
             child: Container(
-              // Constrain the logo box to icon size
-              constraints: BoxConstraints(
-                maxHeight: 56, // Fixed height limitation
-                maxWidth: MediaQuery.of(context).size.width * 0.3, // Don't let it be too wide
+              width: 64, // Fixed small size
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
+              padding: const EdgeInsets.all(12.0), // Padding inside the bubble
               child: Image.network(
                 imageUrl!,
-                fit: BoxFit.contain, // Ensure logo fits inside the small box
-                alignment: Alignment.center,
+                fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                    if (loadingProgress == null) return child;
-                   return const Center(child: LoadingIndicator(size: 20));
+                   return const Center(child: LoadingIndicator(size: 16));
                 },
                 errorBuilder: (_,__,___) => _buildPlaceholder(),
               ),
