@@ -724,9 +724,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Upload new image to Firebase Storage
         setState(() => _isUploadingImage = true);
         try {
-          final fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final path = 'users/$userId/notes/$fileName';
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          // Use 'items/' path which has working Firebase rules
+          final path = 'items/$userId/$timestamp.jpg';
           noteImageUrl = await storageService.uploadFile(_selectedNoteImage!, path);
+          debugPrint('📸 Note image uploaded: $noteImageUrl');
         } catch (e) {
           debugPrint("Error uploading note image: $e");
           // Continue without image if upload fails
@@ -1628,67 +1630,97 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     bool isTitle = false,
     int maxLines = 1,
   }) {
-    return Container(
-      height:
-          maxLines == 1
-              ? 52
-              : null, // Fix height for single line inputs (Title)
-      alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
-      padding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: maxLines > 1 ? 14 : 0,
-      ),
-      decoration: BoxDecoration(
-        color: context.colors.surfaceWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: context.colors.hint.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment:
-            maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: maxLines > 1 ? 2 : 0),
-            child: Icon(icon, size: 18, color: context.colors.body),
+    final isMultiLine = maxLines > 1;
+    
+    return Stack(
+      children: [
+        Container(
+          height:
+              maxLines == 1
+                  ? 52
+                  : null, // Fix height for single line inputs (Title)
+          alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
+          padding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: isMultiLine ? 14 : 0,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              cursorColor: context.colors.primary,
-              textAlignVertical: TextAlignVertical.center,
-              textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
-              onEditingComplete: () {
-                // Dismiss keyboard when Done is pressed
-                FocusScope.of(context).unfocus();
-              },
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-                color: context.colors.headline,
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: context.colors.body.withOpacity(0.6),
-                ),
-                border: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              maxLines: maxLines,
-              minLines: maxLines > 3 ? maxLines : (maxLines > 1 ? 2 : 1),
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: context.colors.hint.withOpacity(0.3),
+              width: 1,
             ),
           ),
-        ],
-      ),
+          child: Row(
+            crossAxisAlignment:
+                isMultiLine ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: isMultiLine ? 2 : 0),
+                child: Icon(icon, size: 18, color: context.colors.body),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  cursorColor: context.colors.primary,
+                  textAlignVertical: TextAlignVertical.center,
+                  textInputAction: isMultiLine ? TextInputAction.newline : TextInputAction.done,
+                  onEditingComplete: () {
+                    // Dismiss keyboard when Done is pressed
+                    FocusScope.of(context).unfocus();
+                  },
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    color: context.colors.headline,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: context.colors.body.withOpacity(0.6),
+                    ),
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  maxLines: maxLines,
+                  minLines: maxLines > 3 ? maxLines : (maxLines > 1 ? 2 : 1),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Visible "Tamam" button for multi-line fields
+        if (isMultiLine)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: context.colors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Tamam',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: context.colors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
