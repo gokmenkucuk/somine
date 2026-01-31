@@ -84,31 +84,25 @@ class StorageService {
       final ref = _storage.ref().child(path);
       
       debugPrint('🔵 [StorageService] Starting file upload to: $path');
-      debugPrint('🔵 [StorageService] File size: ${await file.length()} bytes');
-      
-      // Determine content type from file extension
-      final extension = p.extension(file.path).toLowerCase();
-      final contentType = _getContentType(extension.isEmpty ? '.jpg' : extension);
       
       final metadata = SettableMetadata(
-        contentType: contentType,
+        contentType: 'image/jpeg',
+        customMetadata: {
+          'type': 'note_image',
+        },
       );
 
-      // Read file bytes first
       final bytes = await file.readAsBytes();
-      debugPrint('🔵 [StorageService] Read ${bytes.length} bytes from file');
+      debugPrint('🔵 [StorageService] Read ${bytes.length} bytes');
       
-      // Upload using putData (more reliable than putFile)
+      // Perform upload - same as uploadProfileImage
       final uploadTask = ref.putData(bytes, metadata);
       final snapshot = await uploadTask;
-      
-      debugPrint('🔵 [StorageService] Upload state: ${snapshot.state}');
 
       if (snapshot.state == TaskState.success) {
-         debugPrint('✅ [StorageService] File upload success. Bytes: ${snapshot.totalBytes}');
+         debugPrint('✅ [StorageService] Upload task success. Bytes: ${snapshot.totalBytes}');
          
-         // Get URL from snapshot ref directly
-         final downloadUrl = await snapshot.ref.getDownloadURL();
+         final downloadUrl = await ref.getDownloadURL();
          debugPrint('✅ [StorageService] Got download URL: $downloadUrl');
          
          return downloadUrl;
@@ -119,7 +113,7 @@ class StorageService {
 
     } catch (e, stackTrace) {
       debugPrint('❌ [StorageService] Error uploading file: $e');
-      debugPrint('❌ [StorageService] Stack trace: $stackTrace');
+      debugPrint('❌ [StorageService] Stack: $stackTrace');
       return null;
     }
   }
