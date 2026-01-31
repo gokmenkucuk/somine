@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/app_colors.dart';
@@ -142,29 +143,72 @@ class _CardImage extends StatelessWidget {
   final bool isNote; // Note type for special handling
   final LinearGradient? placeholderGradient;
 
-  const _CardImage({this.imageUrl, this.heroTag, this.url, this.isNote = false, this.placeholderGradient});
+  const _CardImage({super.key, this.imageUrl, this.heroTag, this.url, this.isNote = false, this.placeholderGradient});
 
   @override
   Widget build(BuildContext context) {
     Widget content;
     
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      content = Image.network(
-        imageUrl!,
-        fit: BoxFit.cover,
-         // Important: Allow height to be determined by image aspect ratio but constrained
-         // Actually for Masonry, we want the image to dictate height mostly
-         loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 150, // Placeholder height
-              color: AppColors.backgroundBottom, // Soft grey/mist
-              alignment: Alignment.center,
-              child: const LoadingIndicator(size: 20),
-            );
-         },
-        errorBuilder: (_,__,___) => _buildPlaceholder(),
-      );
+      if (isNote) {
+        // NOTE: Keep full cover for user photos
+        content = Image.network(
+          imageUrl!,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+             if (loadingProgress == null) return child;
+             return Container(
+               height: 150,
+               color: AppColors.backgroundBottom,
+               alignment: Alignment.center,
+               child: const LoadingIndicator(size: 20),
+             );
+          },
+          errorBuilder: (_,__,___) => _buildPlaceholder(),
+        );
+      } else {
+        // LINK: Use Blur Background + Centered Logo style
+        // This solves the issue with logos looking too big or cropped (Google, Adidas etc.)
+        content = Stack(
+          fit: StackFit.passthrough,
+           children: [
+             // 1. Background: Blurry & Darkened (Determines Height)
+             ImageFiltered(
+               imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+               child: ColorFiltered(
+                 colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.05), BlendMode.darken),
+                 child: Image.network(
+                   imageUrl!,
+                   fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                       if (loadingProgress == null) return child;
+                       return Container(
+                         height: 150,
+                         color: AppColors.backgroundBottom,
+                         child: const Center(child: LoadingIndicator(size: 20)),
+                       );
+                    },
+                   errorBuilder: (_,__,___) => const SizedBox(), 
+                 ),
+               ),
+             ),
+             
+             // 2. Foreground: Clean, Contained & Padded
+             Positioned.fill(
+               child: Center(
+                 child: Padding(
+                   padding: const EdgeInsets.all(28.0), // Generous padding for "logo" look
+                   child: Image.network(
+                     imageUrl!,
+                     fit: BoxFit.contain,
+                     errorBuilder: (_,__,___) => _buildPlaceholder(),
+                   ),
+                 ),
+               ),
+             ),
+           ],
+        );
+      }
     } else {
       content = _buildPlaceholder();
     }
