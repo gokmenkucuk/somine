@@ -222,6 +222,9 @@ class _CardImage extends StatelessWidget {
          icon = PhosphorIconsBold.youtubeLogo;
        } else if (url!.contains('twitter') || url!.contains('x.com')) {
          icon = PhosphorIconsBold.xLogo;
+       } else if (url!.contains('maps.app.goo') || url!.contains('goo.gl/maps') || url!.contains('google.com/maps') || url!.contains('maps.google')) {
+         // Google Maps - use map pin icon
+         icon = PhosphorIconsBold.mapPin;
        } else if (url!.contains('google')) {
          icon = PhosphorIconsBold.googleLogo;
        } else if (url!.contains('medium')) {

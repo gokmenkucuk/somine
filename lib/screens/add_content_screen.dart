@@ -401,6 +401,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (lowerUrl.contains('medium.com')) return 'Medium';
     if (lowerUrl.contains('behance.net')) return 'Behance';
     if (lowerUrl.contains('dribbble.com')) return 'Dribbble';
+    // Google Maps
+    if (lowerUrl.contains('maps.app.goo.gl') || 
+        lowerUrl.contains('goo.gl/maps') ||
+        lowerUrl.contains('google.com/maps') ||
+        lowerUrl.contains('maps.google.com')) return 'Maps';
     return 'Web';
   }
 
@@ -469,12 +474,30 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       final match = urlRegExp.firstMatch(value);
       if (match != null) {
         String url = match.group(0)!;
+        
+        // Extract place name from Google Maps shares
+        // Format: "Place Name\nhttps://maps.app.goo.gl/..." or "Place Name https://..."
+        String? extractedTitle;
+        if (_isGoogleMapsUrl(url)) {
+          final beforeUrl = value.substring(0, match.start).trim();
+          if (beforeUrl.isNotEmpty) {
+            // Clean up the title (remove newlines, extra spaces)
+            extractedTitle = beforeUrl.replaceAll('\n', ' ').trim();
+            debugPrint('📍 [AddContent] Extracted Maps place: $extractedTitle');
+          }
+        }
+        
         if (url != _detectedLink) {
           setState(() {
             _detectedLink = url;
             _detectedPlatform = _detectPlatform(url);
             _hasLink = true;
             _isManualEntry = false;
+            
+            // Pre-fill title for Google Maps
+            if (extractedTitle != null && _titleController.text.isEmpty) {
+              _titleController.text = extractedTitle;
+            }
           });
           _fetchMetadata(url);
         }
@@ -485,6 +508,14 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         _detectedPlatform = "Web";
       });
     }
+  }
+  
+  /// Check if URL is a Google Maps link
+  bool _isGoogleMapsUrl(String url) {
+    return url.contains('maps.app.goo.gl') || 
+           url.contains('goo.gl/maps') ||
+           url.contains('google.com/maps') ||
+           url.contains('maps.google.com');
   }
 
   void _clearLinkField() {
