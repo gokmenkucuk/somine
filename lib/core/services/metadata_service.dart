@@ -140,13 +140,8 @@ class MetadataService {
            }
         }
 
-        // ULTIMATE FALLBACK: Google Favicon Service
-        // Guaranteed to return something for valid domains
-        if (image == null) {
-           final uri = Uri.parse(url);
-           image = 'https://www.google.com/s2/favicons?domain=${uri.host}&sz=128';
-        }
-
+        // NO MORE FALLBACK - if no image found, return null and let UI show placeholder
+        // This prevents small/pixelated favicons from being displayed
         
         // Fallback to <title> tag if og:title not found
         if (title == null) {
@@ -168,17 +163,10 @@ class MetadataService {
           }
         }
 
-        // ULTIMATE FALLBACK (Inside 200 OK): Google Favicon Service
-        // If parsing found nothing, we MUST return something.
-        if (image == null) {
-           final uri = Uri.parse(url);
-           image = 'https://www.google.com/s2/favicons?domain=${uri.host}&sz=128';
-        }
-
         return OGMetadata(
           title: title,
           description: description,
-          imageUrl: image,
+          imageUrl: image, // Can be null - UI will show placeholder
           siteName: siteName,
         );
       }
@@ -186,36 +174,8 @@ class MetadataService {
       debugPrint('🔴 [MetadataService] Error fetching metadata: $e');
     }
 
-    // ULTIMATE FALLBACK: Run this OUTSIDE the try/catch block
-    // If we have an image, great. If not (because request failed or no image found), try Google Favicon.
-    // Note: We need 'title' and 'description' too if possible, but if request failed, we can only guess.
-    
-    // If request worked but no image found OR request failed completely:
-    OGMetadata? result;
-    
-    // We need to return what we found, OR construct a fallback.
-    // Since we can't easily access the variables from inside the try block if we return early,
-    // let's restructure slightly to ensure we always return something if possible.
-    
-    // Actually, simpler fix: Just return a basic object with the favicon if we are here and still have nothing.
-    // But we lost the 'title' etc. 
-    // Let's rely on the caller to handle null, BUT the user wants an image.
-    // If we return null, the UI shows default icon. 
-    // We should return an object with just the image if we failed.
-    
-    try {
-      final uri = Uri.parse(url);
-      final fallbackImage = 'https://www.google.com/s2/favicons?domain=${uri.host}&sz=128';
-      debugPrint('⚠️ [MetadataService] Returning Fallback Favicon: $fallbackImage');
-      
-      return OGMetadata(
-        title: null, // UI will use URL or user input
-        description: null,
-        imageUrl: fallbackImage,
-        siteName: uri.host,
-      );
-    } catch (e) {
-      return null;
-    }
+    // If request failed completely, return null
+    // UI will show placeholder with icon based on URL
+    return null;
   }
 }
