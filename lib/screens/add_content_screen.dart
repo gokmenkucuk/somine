@@ -1232,7 +1232,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   // Show image if:
                   // 1. Image exists AND it's NOT a known brand (they use logos as og:image)
                   // 2. OR it's a Maps URL (always show map preview)
-                  (hasImage && (!_isKnownBrandSite() || _isMapUrl(_linkController.text.toLowerCase())))
+                  // Use _detectedLink instead of _linkController.text because controller may contain "Place Name\nURL" format
+                  (hasImage && (!_isKnownBrandSite() || _isMapUrl(_detectedLink.toLowerCase())))
                       ? _buildImageBackground()
                       : _buildPlatformBackground(animate: _isLoadingMetadata),
             ),
