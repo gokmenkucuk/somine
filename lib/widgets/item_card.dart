@@ -296,8 +296,14 @@ class _CardImage extends StatelessWidget {
   
   /// Checks if the URL belongs to a known brand that uses logo as og:image
   /// These sites should show icon placeholder instead of their logo image
+  /// Maps services are excluded - they return actual map images
   bool _isKnownBrandSite(String? url) {
     if (url == null) return false;
+    
+    final lowerUrl = url.toLowerCase();
+    
+    // Exclude Maps services - they return real map images
+    if (_isMapUrl(lowerUrl)) return false;
     
     final knownBrands = [
       'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
@@ -306,7 +312,17 @@ class _CardImage extends StatelessWidget {
       'netflix', 'discord', 'slack', 'notion', 'figma', 'dribbble',
     ];
     
-    final lowerUrl = url.toLowerCase();
     return knownBrands.any((brand) => lowerUrl.contains(brand));
+  }
+  
+  /// Check if URL is a maps service
+  bool _isMapUrl(String url) {
+    return url.contains('maps.app.goo.gl') || 
+           url.contains('goo.gl/maps') ||
+           url.contains('google.com/maps') ||
+           url.contains('maps.google') ||
+           url.contains('yandex.com/maps') ||
+           url.contains('yandex.ru/maps') ||
+           url.contains('maps.apple.com');
   }
 }

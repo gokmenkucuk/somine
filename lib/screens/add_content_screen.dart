@@ -86,9 +86,13 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // ============== COLORS ==============
 
   /// Checks if the current URL belongs to a known brand that uses logo as og:image
+  /// Maps services are excluded - they return actual map images, not logos
   bool _isKnownBrandSite() {
     final url = _linkController.text.toLowerCase();
     if (url.isEmpty) return false;
+    
+    // Exclude Maps services - they return real map images
+    if (_isMapUrl(url)) return false;
     
     final knownBrands = [
       'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
