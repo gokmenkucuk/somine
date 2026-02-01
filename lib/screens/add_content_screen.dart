@@ -85,6 +85,21 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // ============== COLORS ==============
 
+  /// Checks if the current URL belongs to a known brand that uses logo as og:image
+  bool _isKnownBrandSite() {
+    final url = _linkController.text.toLowerCase();
+    if (url.isEmpty) return false;
+    
+    final knownBrands = [
+      'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
+      'linkedin', 'medium', 'spotify', 'github', 'pinterest', 'tiktok',
+      'amazon', 'apple', 'microsoft', 'adidas', 'nike', 'puma',
+      'netflix', 'discord', 'slack', 'notion', 'figma', 'dribbble',
+    ];
+    
+    return knownBrands.any((brand) => url.contains(brand));
+  }
+
   void _resolveImageSize(String imageUrl) {
     if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
 
@@ -1150,7 +1165,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
               child:
-                  hasImage
+                  // Show image only if it exists AND it's NOT a known brand (they use logos as og:image)
+                  (hasImage && !_isKnownBrandSite())
                       ? _buildImageBackground()
                       : _buildPlatformBackground(animate: _isLoadingMetadata),
             ),

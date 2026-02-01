@@ -169,9 +169,11 @@ class _CardImage extends StatelessWidget {
         // LINK with og:image
         // Check if it's a known brand (they often use logos instead of product images)
         final bool isKnownBrand = _isKnownBrandSite(url);
+        debugPrint('🔵 [ItemCard] URL: $url, isKnownBrand: $isKnownBrand, imageUrl: $imageUrl');
         
         if (isKnownBrand) {
           // Known brands: Show placeholder with appropriate icon
+          debugPrint('✅ [ItemCard] Showing placeholder for known brand');
           content = _buildPlaceholder();
         } else {
           // Unknown sites with og:image: Show the image (product photo, article image, etc.)
