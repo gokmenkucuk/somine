@@ -8,23 +8,36 @@ class MetadataService {
   /// Fetch OG metadata from a URL
   static Future<OGMetadata?> fetchMetadata(String url) async {
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'User-Agent':
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-        },
-      ).timeout(
-        const Duration(seconds: 10),
-      );
+      // Use http.Client for following redirects and getting final URL
+      final client = http.Client();
+      final request = http.Request('GET', Uri.parse(url));
+      request.headers.addAll({
+        'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      });
+      request.followRedirects = true;
+      
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 10));
+      final response = await http.Response.fromStream(streamedResponse);
+      final finalUrl = streamedResponse.request?.url.toString() ?? url;
+      
+      debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
       
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
         final metaTags = document.getElementsByTagName('meta');
 
         String? title, description, image, siteName;
+        
+        // For Maps URLs, try to extract place name from final URL first
+        if (_isMapUrl(url) || _isMapUrl(finalUrl)) {
+          title = _extractPlaceNameFromMapUrl(finalUrl);
+          if (title != null) {
+            debugPrint('📍 [MetadataService] Extracted place name: $title');
+          }
+        }
 
         for (var tag in metaTags) {
           final property = tag.attributes['property'];
@@ -199,5 +212,59 @@ class MetadataService {
            lower.contains('yandex.com/maps') ||
            lower.contains('yandex.ru/maps') ||
            lower.contains('maps.apple.com');
+  }
+  
+  /// Extract place name from Maps URL
+  /// Google Maps: /place/Place+Name/ or /place/Place%20Name/
+  /// Yandex: orgpage/Place+Name/ or ?text=Place
+  /// Apple: ?q=Place or place?...
+  static String? _extractPlaceNameFromMapUrl(String url) {
+    try {
+      final decoded = Uri.decodeComponent(url);
+      
+      // Google Maps: /place/Place+Name/@coordinates
+      final googlePlaceMatch = RegExp(r'/place/([^/@]+)').firstMatch(decoded);
+      if (googlePlaceMatch != null) {
+        String name = googlePlaceMatch.group(1)!;
+        // Replace + and _ with spaces
+        name = name.replaceAll('+', ' ').replaceAll('_', ' ').trim();
+        if (name.isNotEmpty && name.toLowerCase() != 'place') {
+          return name;
+        }
+      }
+      
+      // Yandex Maps: orgpage/Place+Name/ or /geo/Place+Name/
+      final yandexMatch = RegExp(r'(?:orgpage|geo)/([^/]+)').firstMatch(decoded);
+      if (yandexMatch != null) {
+        String name = yandexMatch.group(1)!;
+        name = name.replaceAll('+', ' ').replaceAll('_', ' ').trim();
+        if (name.isNotEmpty) {
+          return name;
+        }
+      }
+      
+      // Yandex text param: ?text=Place
+      final yandexTextMatch = RegExp(r'[?&]text=([^&]+)').firstMatch(decoded);
+      if (yandexTextMatch != null) {
+        String name = yandexTextMatch.group(1)!;
+        name = name.replaceAll('+', ' ').trim();
+        if (name.isNotEmpty) {
+          return name;
+        }
+      }
+      
+      // Apple Maps: ?q=Place or ?address=Place
+      final appleMatch = RegExp(r'[?&](?:q|address)=([^&]+)').firstMatch(decoded);
+      if (appleMatch != null) {
+        String name = appleMatch.group(1)!;
+        name = name.replaceAll('+', ' ').trim();
+        if (name.isNotEmpty) {
+          return name;
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Error extracting place name: $e');
+    }
+    return null;
   }
 }
