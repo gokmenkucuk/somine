@@ -1231,11 +1231,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               child:
                   // Show image if:
                   // 1. Image exists AND it's NOT a known brand (they use logos as og:image)
-                  // 2. OR it's a Maps URL (always show map preview)
-                  // Use _detectedLink instead of _linkController.text because controller may contain "Place Name\nURL" format
-                  (hasImage && (!_isKnownBrandSite() || _isMapUrl(_detectedLink.toLowerCase())))
+                  // 2. OR it's a Maps URL (always show map preview even if no image)
+                  (hasImage && !_isKnownBrandSite())
                       ? _buildImageBackground()
-                      : _buildPlatformBackground(animate: _isLoadingMetadata),
+                      : (_isMapUrl(_detectedLink.toLowerCase()) && !_isKnownBrandSite()) 
+                          ? _buildMapPreview() // New custom map preview
+                          : _buildPlatformBackground(animate: _isLoadingMetadata),
             ),
 
             // Platform Icon removed as requested
@@ -1403,6 +1404,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Image Background
   // Image Background (Cover)
+  // Image Background
+  // Image Background (Cover)
   Widget _buildImageBackground() {
     return Stack(
       key: const ValueKey('image'),
@@ -1419,6 +1422,61 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       ],
     );
   }
+  
+  // Custom Map Preview (Gradient + Icon) like ItemCard
+  Widget _buildMapPreview() {
+    final url = _detectedLink.toLowerCase();
+    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
+    IconData icon = PhosphorIconsBold.mapPin;
+    
+    if (url.contains('maps.app.goo') || url.contains('goo.gl/maps') || url.contains('google.com/maps') || url.contains('maps.google')) {
+      gradientColors = [const Color(0xFF34A853), const Color(0xFF1EA362)]; // Google Green
+    } else if (url.contains('yandex.com/maps') || url.contains('yandex.ru/maps') || url.contains('yandex.o/maps')) {
+      gradientColors = [const Color(0xFFFFCC00), const Color(0xFFFF9900)]; // Yandex Yellow/Orange
+    } else if (url.contains('maps.apple.com')) {
+      gradientColors = [const Color(0xFFAAAAAA), const Color(0xFF888888)]; // Apple Grey
+    }
+
+    return Container(
+      key: const ValueKey('map_preview'),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: context.colors.surfaceWhite,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors.first.withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 64, color: Colors.white.withOpacity(0.9)),
+            const SizedBox(height: 12),
+            Text(
+              "Harita Önizlemesi",
+              style: GoogleFonts.poppins(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Reusable Ambient Animation Core (Liftoff Particles)
 
   // Reusable Ambient Animation Core (Liftoff Particles)
   Widget _buildAmbientAnimationCore({double scale = 1.0}) {
