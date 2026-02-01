@@ -166,15 +166,15 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Check if it's a known brand that uses logo as og:image
-        // These sites put their logo as og:image, so we show icon instead
+        // LINK with og:image
+        // Check if it's a known brand (they often use logos instead of product images)
         final bool isKnownBrand = _isKnownBrandSite(url);
         
         if (isKnownBrand) {
-          // Known brands (Google, Adidas, etc): Show placeholder with icon (like X card)
+          // Known brands: Show placeholder with appropriate icon
           content = _buildPlaceholder();
         } else {
-          // Unknown sites: Show the og:image as product photo (cover style)
+          // Unknown sites with og:image: Show the image (product photo, article image, etc.)
           content = Image.network(
             imageUrl!,
             fit: BoxFit.cover,
@@ -192,6 +192,7 @@ class _CardImage extends StatelessWidget {
         }
       }
     } else {
+      // No image available: Show placeholder with icon
       content = _buildPlaceholder();
     }
 
@@ -202,7 +203,7 @@ class _CardImage extends StatelessWidget {
   }
   
   Widget _buildPlaceholder() {
-     IconData icon = Icons.link;
+     IconData icon = Icons.link; // Default: link icon
      Color iconColor = Colors.white;
      double iconSize = 48;
      
@@ -210,7 +211,7 @@ class _CardImage extends StatelessWidget {
        icon = PhosphorIconsBold.notePencil;
        iconSize = 32;
      } else if (url != null) {
-       // Known brand icons
+       // Known brand icons - only for sites we have specific logos for
        if (url!.contains('instagram')) {
          icon = PhosphorIconsBold.instagramLogo; 
        } else if (url!.contains('youtube')) {
@@ -237,10 +238,8 @@ class _CardImage extends StatelessWidget {
          icon = PhosphorIconsBold.amazonLogo;
        } else if (url!.contains('apple')) {
          icon = PhosphorIconsBold.appleLogo;
-       } else if (url!.contains('adidas') || url!.contains('nike') || url!.contains('puma')) {
-         // Sport brands - use generic shopping icon
-         icon = PhosphorIconsBold.sneaker;
        }
+       // All other sites (including Adidas, Nike, etc.): use default link icon
      }
 
      return Container(
