@@ -2,28 +2,30 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:somine_app/core/models/item_model.dart';
+import 'dart:io';
 
 /// Service to fetch Open Graph metadata from URLs
 class MetadataService {
   /// Fetch OG metadata from a URL
   static Future<OGMetadata?> fetchMetadata(String url) async {
     try {
-      // Use http.Client for following redirects and getting final URL
-      final client = http.Client();
-      final request = http.Request('GET', Uri.parse(url));
-      request.headers.addAll({
-        'User-Agent':
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      });
-      request.followRedirects = true;
+      // First, resolve redirects using dart:io HttpClient
+      String finalUrl = url;
+      if (_isMapUrl(url)) {
+        finalUrl = await _resolveRedirects(url) ?? url;
+        debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
+      }
       
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 10));
-      final response = await http.Response.fromStream(streamedResponse);
-      final finalUrl = streamedResponse.request?.url.toString() ?? url;
-      
-      debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
+      // Then fetch the page content
+      final response = await http.get(
+        Uri.parse(finalUrl),
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+      ).timeout(const Duration(seconds: 10));
       
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
@@ -266,5 +268,30 @@ class MetadataService {
       debugPrint('⚠️ [MetadataService] Error extracting place name: $e');
     }
     return null;
+  }
+  
+  /// Resolve redirects for short URLs (like maps.app.goo.gl)
+  /// Uses dart:io HttpClient to follow redirects and get final URL
+  static Future<String?> _resolveRedirects(String url) async {
+    try {
+      final client = HttpClient();
+      client.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15';
+      
+      final request = await client.getUrl(Uri.parse(url));
+      request.followRedirects = true;
+      request.maxRedirects = 10;
+      
+      final response = await request.close().timeout(const Duration(seconds: 10));
+      final finalUri = response.redirects.isNotEmpty 
+          ? response.redirects.last.location 
+          : request.uri;
+      
+      client.close();
+      
+      return finalUri.toString();
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Error resolving redirects: $e');
+      return null;
+    }
   }
 }
