@@ -41,17 +41,29 @@ class ShareService {
         try {
           // Parse JSON: [{"path": "...", "type": "url/text", "mimeType": ...}]
           final List<dynamic> items = jsonDecode(jsonString);
-          if (items.isNotEmpty) {
-             final item = items.first;
-             if (item is Map<String, dynamic>) {
-                final path = item['path'] as String?;
-                if (path != null && path.isNotEmpty) {
-                   sharedUrlNotifier.value = path;
-                   
-                   // Clear data from native storage after successful read
-                   await _channel.invokeMethod('clearSharedData');
-                }
-             }
+          
+          // Find first item with non-empty path (Google Maps sends multiple items)
+          String? foundUrl;
+          for (final item in items) {
+            if (item is Map<String, dynamic>) {
+              final path = item['path'] as String?;
+              final type = item['type'] as String?;
+              
+              // Prefer URL type items, but accept any non-empty path
+              if (path != null && path.isNotEmpty) {
+                foundUrl = path;
+                debugPrint("ShareService: Found valid path: $path (type: $type)");
+                
+                // If it's explicitly a URL type, use it immediately
+                if (type == 'url') break;
+              }
+            }
+          }
+          
+          if (foundUrl != null) {
+            sharedUrlNotifier.value = foundUrl;
+            // Clear data from native storage after successful read
+            await _channel.invokeMethod('clearSharedData');
           }
         } catch (e) {
            debugPrint("ShareService parsing error: $e");
