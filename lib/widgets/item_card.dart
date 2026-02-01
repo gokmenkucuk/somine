@@ -194,10 +194,13 @@ class _CardImage extends StatelessWidget {
         // Check if it's a known brand OR if image is a favicon (small, pixelated when enlarged)
         final bool isKnownBrand = _isKnownBrandSite(url);
         final bool isFavicon = imageUrl!.contains('favicon') || imageUrl!.contains('s2/favicons');
+        final bool isMaps = _isMapUrl(url?.toLowerCase() ?? '');
         
-        debugPrint('🔵 [ItemCard] URL: $url, isKnownBrand: $isKnownBrand, isFavicon: $isFavicon');
+        debugPrint('🔵 [ItemCard] URL: $url, isKnownBrand: $isKnownBrand, isFavicon: $isFavicon, isMaps: $isMaps');
         
-        if (isKnownBrand || isFavicon) {
+        // Maps URLs: Always show the image (even if it's a favicon - they return map previews)
+        // Known brands or favicons (non-maps): Show placeholder with appropriate icon
+        if ((isKnownBrand || isFavicon) && !isMaps) {
           // Known brands or favicons: Show placeholder with appropriate icon
           debugPrint('✅ [ItemCard] Showing placeholder (brand or favicon)');
           content = _buildPlaceholder();
