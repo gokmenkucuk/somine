@@ -166,36 +166,30 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Same style as placeholder (X card) - centered small logo
-        // Fixed height container with gradient, logo centered in white circle
-        content = Container(
-          height: 150, // Same height as placeholder
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFE8EDF2), Color(0xFFD4DEE8)], // Soft grey gradient
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: ClipOval(
-            child: Container(
-              width: 56,
-              height: 56,
-              color: Colors.white,
-              padding: const EdgeInsets.all(10),
-              child: Image.network(
-                imageUrl!,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                   if (loadingProgress == null) return child;
-                   return const Center(child: LoadingIndicator(size: 16));
-                },
-                errorBuilder: (_,__,___) => const Icon(Icons.link, size: 24, color: Colors.grey),
-              ),
-            ),
-          ),
-        );
+        // LINK: Check if it's a known brand that uses logo as og:image
+        // These sites put their logo as og:image, so we show icon instead
+        final bool isKnownBrand = _isKnownBrandSite(url);
+        
+        if (isKnownBrand) {
+          // Known brands (Google, Adidas, etc): Show placeholder with icon (like X card)
+          content = _buildPlaceholder();
+        } else {
+          // Unknown sites: Show the og:image as product photo (cover style)
+          content = Image.network(
+            imageUrl!,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+               if (loadingProgress == null) return child;
+               return Container(
+                 height: 150,
+                 color: AppColors.backgroundBottom,
+                 alignment: Alignment.center,
+                 child: const LoadingIndicator(size: 20),
+               );
+            },
+            errorBuilder: (_,__,___) => _buildPlaceholder(),
+          );
+        }
       }
     } else {
       content = _buildPlaceholder();
@@ -214,14 +208,38 @@ class _CardImage extends StatelessWidget {
      
      if (isNote) {
        icon = PhosphorIconsBold.notePencil;
-       iconSize = 32; // Smaller for notes
+       iconSize = 32;
      } else if (url != null) {
+       // Known brand icons
        if (url!.contains('instagram')) {
          icon = PhosphorIconsBold.instagramLogo; 
        } else if (url!.contains('youtube')) {
          icon = PhosphorIconsBold.youtubeLogo;
        } else if (url!.contains('twitter') || url!.contains('x.com')) {
          icon = PhosphorIconsBold.xLogo;
+       } else if (url!.contains('google')) {
+         icon = PhosphorIconsBold.googleLogo;
+       } else if (url!.contains('medium')) {
+         icon = PhosphorIconsBold.mediumLogo;
+       } else if (url!.contains('spotify')) {
+         icon = PhosphorIconsBold.spotifyLogo;
+       } else if (url!.contains('linkedin')) {
+         icon = PhosphorIconsBold.linkedinLogo;
+       } else if (url!.contains('github')) {
+         icon = PhosphorIconsBold.githubLogo;
+       } else if (url!.contains('facebook')) {
+         icon = PhosphorIconsBold.facebookLogo;
+       } else if (url!.contains('pinterest')) {
+         icon = PhosphorIconsBold.pinterestLogo;
+       } else if (url!.contains('tiktok')) {
+         icon = PhosphorIconsBold.tiktokLogo;
+       } else if (url!.contains('amazon')) {
+         icon = PhosphorIconsBold.amazonLogo;
+       } else if (url!.contains('apple')) {
+         icon = PhosphorIconsBold.appleLogo;
+       } else if (url!.contains('adidas') || url!.contains('nike') || url!.contains('puma')) {
+         // Sport brands - use generic shopping icon
+         icon = PhosphorIconsBold.sneaker;
        }
      }
 
@@ -238,5 +256,21 @@ class _CardImage extends StatelessWidget {
          ],
        ),
      );
+  }
+  
+  /// Checks if the URL belongs to a known brand that uses logo as og:image
+  /// These sites should show icon placeholder instead of their logo image
+  bool _isKnownBrandSite(String? url) {
+    if (url == null) return false;
+    
+    final knownBrands = [
+      'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
+      'linkedin', 'medium', 'spotify', 'github', 'pinterest', 'tiktok',
+      'amazon', 'apple', 'microsoft', 'adidas', 'nike', 'puma',
+      'netflix', 'discord', 'slack', 'notion', 'figma', 'dribbble',
+    ];
+    
+    final lowerUrl = url.toLowerCase();
+    return knownBrands.any((brand) => lowerUrl.contains(brand));
   }
 }
