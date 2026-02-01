@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/app_colors.dart';
@@ -171,24 +172,43 @@ class _CardImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget content;
-    
+
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       if (isNote) {
-        // NOTE: Keep full cover for user photos
-        content = Image.network(
-          imageUrl!,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-             if (loadingProgress == null) return child;
-             return Container(
-               height: 150,
-               color: AppColors.backgroundBottom,
-               alignment: Alignment.center,
-               child: const LoadingIndicator(size: 20),
-             );
-          },
-          errorBuilder: (_,__,___) => _buildPlaceholder(),
-        );
+        // NOTE: Check for base64 data URL or Storage URL
+        final isBase64 = imageUrl!.startsWith('data:');
+
+        if (isBase64) {
+          // Base64 encoded image - use Image.memory
+          final bytes = const Base64Decoder().convert(imageUrl!.substring(23));
+          content = SizedBox(
+            height: 200, // Fixed height for card display
+            child: Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              errorBuilder: (_,__,___) => _buildPlaceholder(),
+            ),
+          );
+        } else {
+          // Storage URL - use Image.network
+          content = SizedBox(
+            height: 200, // Fixed height for card display
+            child: Image.network(
+              imageUrl!,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                 if (loadingProgress == null) return child;
+                 return Container(
+                   height: 200,
+                   color: AppColors.backgroundBottom,
+                   alignment: Alignment.center,
+                   child: const LoadingIndicator(size: 20),
+                 );
+              },
+              errorBuilder: (_,__,___) => _buildPlaceholder(),
+            ),
+          );
+        }
       } else {
         // LINK with og:image
         // Check if it's a known brand OR if image is a favicon (small, pixelated when enlarged)
@@ -206,19 +226,22 @@ class _CardImage extends StatelessWidget {
           content = _buildPlaceholder();
         } else {
           // Unknown sites with og:image: Show the image (product photo, article image, etc.)
-          content = Image.network(
-            imageUrl!,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-               if (loadingProgress == null) return child;
-               return Container(
-                 height: 150,
-                 color: AppColors.backgroundBottom,
-                 alignment: Alignment.center,
-                 child: const LoadingIndicator(size: 20),
-               );
-            },
-            errorBuilder: (_,__,___) => _buildPlaceholder(),
+          content = SizedBox(
+            height: 200, // Fixed height for card display
+            child: Image.network(
+              imageUrl!,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                 if (loadingProgress == null) return child;
+                 return Container(
+                   height: 200,
+                   color: AppColors.backgroundBottom,
+                   alignment: Alignment.center,
+                   child: const LoadingIndicator(size: 20),
+                 );
+              },
+              errorBuilder: (_,__,___) => _buildPlaceholder(),
+            ),
           );
         }
       }
@@ -283,7 +306,7 @@ class _CardImage extends StatelessWidget {
      }
 
      return Container(
-       height: 150,
+       height: 200,
        decoration: BoxDecoration(
          gradient: placeholderGradient ?? const LinearGradient(colors: [Color(0xFFE0EAFC), Color(0xFFCFDEF3)]),
        ),

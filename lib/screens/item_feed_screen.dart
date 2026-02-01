@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -606,9 +607,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   }
 
   Widget _buildContentCardRefactored(ItemModel item, String badgeText, List<CategoryModel> categories, {required bool isGrid, bool forceSquare = false}) {
-    // Notes always show empty/fallback view with note icon
+    // Notes AND Links can have images now
     final isNote = item.type == ItemType.note;
-    final hasImage = !isNote && item.displayImage != null && item.displayImage!.isNotEmpty && !item.displayImage!.toLowerCase().endsWith('.svg');
+    final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty && !item.displayImage!.toLowerCase().endsWith('.svg');
     final source = item.url ?? '';
 
     // --- FALLBACK VIEW (UNIFIED with Catalog) ---
@@ -704,15 +705,21 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              item.displayImage!.startsWith('http') 
+              item.displayImage!.startsWith('http')
                  ? CachedNetworkImage(
-                     imageUrl: item.displayImage!, 
+                     imageUrl: item.displayImage!,
                      fit: BoxFit.cover,
                      placeholder: (context, url) => _ImageShimmerPlaceholder(),
                      errorWidget: (context, url, error) => buildFallbackView(),
                    )
+                 : item.displayImage!.startsWith('data:')
+                 ? Image.memory(
+                     const Base64Decoder().convert(item.displayImage!.substring(23)),
+                     fit: BoxFit.cover,
+                     errorBuilder: (context, url, error) => buildFallbackView(),
+                   )
                  : Image.asset(item.displayImage!, fit: BoxFit.cover),
-              
+
               Positioned(top: 8, right: 8, child: buildPlatformIcon()),
             ],
           ),
@@ -721,9 +728,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         // MASONRY MODE: Use natural image height
         contentHeader = Stack(
           children: [
-            item.displayImage!.startsWith('http') 
+            item.displayImage!.startsWith('http')
                ? CachedNetworkImage(
-                   imageUrl: item.displayImage!, 
+                   imageUrl: item.displayImage!,
                    fit: BoxFit.fitWidth,
                    placeholder: (context, url) => AspectRatio(
                      aspectRatio: 1.0,
@@ -731,8 +738,14 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                    ),
                    errorWidget: (context, url, error) => buildFallbackView(),
                  )
+               : item.displayImage!.startsWith('data:')
+               ? Image.memory(
+                   const Base64Decoder().convert(item.displayImage!.substring(23)),
+                   fit: BoxFit.fitWidth,
+                   errorBuilder: (context, url, error) => buildFallbackView(),
+                 )
                : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
-            
+
             Positioned(top: 8, right: 8, child: buildPlatformIcon()),
           ],
         );
@@ -765,13 +778,17 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                    fit: StackFit.expand,
                    children: [
                       Container(color: Colors.white), // Background
-                      if (isNote) 
+                      if (isNote && !hasImage)
                         const Center(child: Icon(PhosphorIconsBold.note, size: 40, color: Colors.grey))
                       else if (hasImage)
-                         item.displayImage!.startsWith('http')
+                        item.displayImage!.startsWith('http')
                           ? CachedNetworkImage(imageUrl: item.displayImage!, fit: BoxFit.cover)
-                          : Image.asset(item.displayImage!, fit: BoxFit.cover)
-                      else 
+                          : item.displayImage!.startsWith('data:')
+                              ? Image.memory(
+                                  const Base64Decoder().convert(item.displayImage!.substring(23)),
+                                  fit: BoxFit.cover)
+                              : Image.asset(item.displayImage!, fit: BoxFit.cover)
+                      else
                          const Center(child: Icon(PhosphorIconsBold.link, size: 40, color: Colors.grey)),
                    ],
                  ),

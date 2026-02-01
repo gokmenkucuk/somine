@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,18 +9,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/models/map_coordinate.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
+import 'dart:typed_data';
 import 'package:somine_app/core/services/storage_service.dart';
 import 'package:somine_app/core/services/metadata_service.dart';
+import 'package:somine_app/core/services/map_coordinate_service.dart';
+import 'package:somine_app/widgets/apple_map_preview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'dart:math' as math;
 import 'dart:ui' as import_dart_ui;
+import 'package:url_launcher/url_launcher.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 
@@ -78,8 +84,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // Dynamic Header Height
   double? _imageAspectRatio;
 
+  // Map Coordinate (for Google/Yandex maps displayed with Apple Maps)
+  MapCoordinate? _mapCoordinate;
+
   // Note Image State (optional image attachment for notes)
   File? _selectedNoteImage;
+  Uint8List? _noteImageBytes; // Store bytes to avoid File access issues
   String? _noteImageUrl; // For edit mode - existing image URL
   bool _isUploadingImage = false;
 
@@ -87,25 +97,52 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   /// Checks if the current URL belongs to a known brand that uses logo as og:image
   /// Maps services are excluded - they return actual map images, not logos
-  bool _isKnownBrandSite() {
-    final url = _linkController.text.toLowerCase();
+  /// Optionally accepts a custom URL to check instead of _linkController.text
+  bool _isKnownBrandSite([String? customUrl]) {
+    final url = (customUrl ?? _linkController.text).toLowerCase();
     if (url.isEmpty) return false;
-    
+
     // Exclude Maps services - they return real map images
     if (_isMapUrl(url)) return false;
-    
+
     final knownBrands = [
       'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
       'linkedin', 'medium', 'spotify', 'github', 'pinterest', 'tiktok',
       'amazon', 'apple', 'microsoft', 'adidas', 'nike', 'puma',
       'netflix', 'discord', 'slack', 'notion', 'figma', 'dribbble',
     ];
-    
+
     return knownBrands.any((brand) => url.contains(brand));
+  }
+
+  /// Checks if the URL is a social media platform where OG images are actual content, not logos
+  bool _isSocialPlatform([String? customUrl]) {
+    final url = (customUrl ?? _linkController.text).toLowerCase();
+    return url.contains('instagram.com') ||
+        url.contains('youtube.com') ||
+        url.contains('youtu.be') ||
+        url.contains('tiktok.com');
+  }
+
+  /// Checks if the image URL appears to be a favicon (small logo image)
+  bool _isFaviconUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return false;
+    final lowerUrl = imageUrl.toLowerCase();
+    return lowerUrl.contains('favicon') ||
+        lowerUrl.contains('s2/favicons') ||
+        lowerUrl.contains('/favicon.') ||
+        lowerUrl.contains('icon=') ||
+        lowerUrl.contains('googleusercontent.com/s2/favicons');
   }
 
   void _resolveImageSize(String imageUrl) {
     if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
+
+    // X ve Maps URL'leri için görsel çözümleme yapma (sadece ikon gösterilecek)
+    if (_isXUrl(_detectedLink.toLowerCase()) ||
+        _isMapUrl(_detectedLink.toLowerCase())) {
+      return;
+    }
 
     // Reset first
     setState(() => _imageAspectRatio = null);
@@ -454,31 +491,176 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   Future<void> _fetchMetadata(String url) async {
     setState(() => _isLoadingMetadata = true);
+    debugPrint('════════════════════════════════════════════════════════════');
+    debugPrint('📍 [AddContent] Starting metadata fetch for: $url');
+    debugPrint('📍 [AddContent] Is map URL: ${_isMapUrl(url)}');
+
     try {
-      // Use centralized MetadataService with all fallbacks
+      // Extract coordinates and place name from map URLs FIRST
+      // DISABLED: Coordinate extraction for Google/Yandex as per user request
+      // MapCoordinate? coordinate;
+
+      // if (_isMapUrl(url)) {
+      //   debugPrint('📍 [AddContent] Calling MapCoordinateService.extract()...');
+      //   final startTime = DateTime.now();
+
+      //   coordinate = await MapCoordinateService.extract(url);
+
+      //   final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+      //   debugPrint('📍 [AddContent] Extract took ${elapsed}ms');
+
+      //   if (coordinate != null) {
+      //     debugPrint('📍 [AddContent] Coordinate result:');
+      //     debugPrint('   - lat: ${coordinate.latitude}');
+      //     debugPrint('   - lng: ${coordinate.longitude}');
+      //     debugPrint('   - valid: ${coordinate.isValid}');
+      //     debugPrint('   - placeName: ${coordinate.placeName ?? "null"}');
+      //     debugPrint('   - provider: ${coordinate.provider}');
+
+      //     if (coordinate.isValid) {
+      //       setState(() => _mapCoordinate = coordinate);
+      //       debugPrint('✅ [AddContent] Coordinate state updated');
+      //     } else {
+      //       debugPrint('⚠️ [AddContent] Coordinate INVALID, not setting state');
+      //       setState(() => _mapCoordinate = null);
+      //     }
+      //   } else {
+      //     debugPrint('⚠️ [AddContent] Coordinate is NULL');
+      //     setState(() => _mapCoordinate = null);
+      //   }
+      // }
+
+      // Fetch OG metadata (includes place name extraction)
+      debugPrint('📄 [AddContent] Calling MetadataService.fetchMetadata()...');
       final metadata = await MetadataService.fetchMetadata(url);
 
-      if (mounted && metadata != null) {
+      if (mounted) {
         setState(() {
-          _ogMetadata = OGMetadata(
-            title: metadata.title,
-            description: metadata.description,
-            imageUrl: metadata.imageUrl,
-            siteName: metadata.siteName ?? _detectedPlatform,
-          );
-          if (metadata.title != null && _titleController.text.isEmpty) {
-            _titleController.text = metadata.title!;
+          if (metadata != null) {
+            debugPrint('📄 [AddContent] Metadata received:');
+            debugPrint('   - title: ${metadata.title ?? "null"}');
+            debugPrint('   - description: ${metadata.description?.substring(0, 50) ?? "null"}...');
+            debugPrint('   - imageUrl: ${metadata.imageUrl ?? "null"}');
+
+            _ogMetadata = OGMetadata(
+              title: metadata.title,
+              description: metadata.description,
+              imageUrl: metadata.imageUrl,
+              siteName: metadata.siteName ?? _detectedPlatform,
+            );
+
+            if (metadata.imageUrl != null) {
+              _resolveImageSize(metadata.imageUrl!);
+            }
+
+            // DISABLED: Fallback coordinate extraction from MapKit snapshots
+            // if (_mapCoordinate == null &&
+            //     metadata.imageUrl?.contains('apple-mapkit.com') == true) {
+            //   debugPrint('🗺️ [AddContent] Trying MapKit snapshot fallback...');
+
+            //   final match = RegExp(r'center=(-?\d+\.?\d*),(-?\d+\.?\d*)')
+            //       .firstMatch(metadata.imageUrl!);
+
+            //   if (match != null) {
+            //     final lat = double.tryParse(match.group(1) ?? '');
+            //     final lng = double.tryParse(match.group(2) ?? '');
+
+            //     if (lat != null && lng != null) {
+            //       debugPrint('✅ [AddContent] Extracted from snapshot: $lat, $lng');
+
+            //       // Detect provider from URL
+            //       MapProvider provider = MapProvider.unknown;
+            //       if (_isGoogleMapsUrl(url)) {
+            //         provider = MapProvider.googleMaps;
+            //       } else if (_isYandexMapsUrl(url)) {
+            //         provider = MapProvider.yandexMaps;
+            //       } else if (_isAppleMapsUrl(url)) {
+            //         provider = MapProvider.appleMaps;
+            //       }
+
+            //       _mapCoordinate = MapCoordinate(
+            //         latitude: lat,
+            //         longitude: lng,
+            //         originalUrl: url,
+            //         provider: provider,
+            //         placeName: null, // Will try to get from metadata title below
+            //       );
+            //       debugPrint('✅ [AddContent] Fallback coordinate set');
+            //     }
+            //   }
+            // }
+
+            // Note: If no coordinates found, HTML extraction will be attempted
+            // by MapCoordinateService as a fallback mechanism
+          } else {
+            debugPrint('⚠️ [AddContent] Metadata is NULL');
           }
-          if (metadata.imageUrl != null) {
-            _resolveImageSize(metadata.imageUrl!);
+
+          // UNIFIED TITLE LOGIC - Check all sources in priority order
+          if (_titleController.text.isEmpty) {
+            String? titleToUse;
+
+            // DISABLED: Priority 1: Coordinate place name (most specific)
+            // if (coordinate?.placeName != null &&
+            //     coordinate!.placeName!.isNotEmpty) {
+            //   titleToUse = coordinate.placeName;
+            //   debugPrint('📍 [AddContent] Using coordinate place name: $titleToUse');
+            // }
+            // Priority 1: Metadata title (may contain extracted place name)
+            if (metadata?.title != null && metadata!.title!.isNotEmpty) {
+              // Filter out generic titles for maps
+              final isGeneric = _isGenericMapsTitle(metadata.title!);
+              if (!isGeneric) {
+                titleToUse = metadata.title;
+                debugPrint('📄 [AddContent] Using metadata title: $titleToUse');
+              } else {
+                debugPrint('⚠️ [AddContent] Metadata title is generic, skipping: ${metadata.title}');
+              }
+            }
+
+            if (titleToUse != null) {
+              _titleController.text = titleToUse;
+            }
           }
         });
+
+        // debugPrint('📍 [AddContent] Final _mapCoordinate state: ${_mapCoordinate != null ? "SET" : "NULL"}');
+
+        // If no coordinates were found, log a helpful message
+        if (_mapCoordinate == null && metadata?.title != null) {
+          debugPrint('⚠️ [AddContent] Could not extract coordinates for: ${metadata!.title}');
+          debugPrint('⚠️ [AddContent] HTML extraction was attempted but no patterns matched');
+        }
       }
     } catch (e) {
-      debugPrint("Metadata fetch error: $e");
+      debugPrint("🔴 [AddContent] Metadata fetch error: $e");
+      debugPrint('════════════════════════════════════════════════════════════');
     } finally {
       if (mounted) setState(() => _isLoadingMetadata = false);
+      debugPrint('════════════════════════════════════════════════════════════');
     }
+  }
+
+  /// Checks if title is a generic maps title that should be ignored
+  bool _isGenericMapsTitle(String title) {
+    final genericTitles = [
+      'google',
+      'google maps',
+      'google haritalar',
+      'apple maps',
+      'yandex',
+      'yandex maps',
+      'yandex haritalar',
+      'maps',
+      'haritalar',
+      'harita',
+    ];
+
+    final lowerTitle = title.toLowerCase().trim();
+    return genericTitles.any((term) =>
+        lowerTitle == term ||
+        lowerTitle == '$term - harita' ||
+        lowerTitle.startsWith('$term '));
   }
 
   // Handle Link Edit
@@ -533,7 +715,19 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   bool _isMapUrl(String url) {
     return _isGoogleMapsUrl(url) || _isYandexMapsUrl(url) || _isAppleMapsUrl(url);
   }
-  
+
+  /// Check if URL is X (Twitter) link
+  bool _isXUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('twitter.com') ||
+           lower.contains('//x.com') ||
+           lower.contains('.x.com') ||
+           (lower.contains('x.com') &&
+            !lower.contains('yandex') &&
+            !lower.contains('netflix') &&
+            !lower.contains('box.com'));
+  }
+
   bool _isGoogleMapsUrl(String url) {
     return url.contains('maps.app.goo.gl') || 
            url.contains('goo.gl/maps') ||
@@ -560,6 +754,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _isManualEntry = true; // Keep manual entry active
       _titleController.clear();
       _noteController.clear();
+      _mapCoordinate = null; // Reset map coordinate
     });
   }
 
@@ -575,7 +770,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _hasClipboardContent = false;
       _isManualEntry = true; // Always return to manual entry form
       _selectedNoteImage = null;
+      _noteImageBytes = null;
       _noteImageUrl = null;
+      _mapCoordinate = null; // Reset map coordinate
     });
   }
 
@@ -709,8 +906,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       );
 
       if (pickedFile != null && mounted) {
+        // Read bytes immediately to avoid File access issues later
+        final bytes = await pickedFile.readAsBytes();
         setState(() {
           _selectedNoteImage = File(pickedFile.path);
+          _noteImageBytes = bytes; // Store bytes
           _noteImageUrl = null; // Clear any existing URL
         });
       }
@@ -723,8 +923,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   void _removeNoteImage() {
+    // Delete from Storage if it's a Storage URL (not base64)
+    if (_noteImageUrl != null && !_noteImageUrl!.startsWith('data:')) {
+      final storageService = StorageService();
+      storageService.deleteFile(_noteImageUrl!);
+      debugPrint('🗑️ Note image deleted from Storage');
+    }
+
     setState(() {
       _selectedNoteImage = null;
+      _noteImageBytes = null;
       _noteImageUrl = null;
     });
   }
@@ -798,18 +1006,23 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
       // Handle note image upload
       String? noteImageUrl = _noteImageUrl; // Existing URL (edit mode)
-      
-      if (_isNoteMode && _selectedNoteImage != null) {
-        // Upload new image to Firebase Storage
+
+      if (_isNoteMode && _noteImageBytes != null) {
+        // Upload to Firebase Storage
         setState(() => _isUploadingImage = true);
         try {
           final fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final path = 'users/$userId/notes/$fileName';
-          noteImageUrl = await storageService.uploadFile(_selectedNoteImage!, path);
+          final path = 'items/$userId/$fileName';
+          noteImageUrl = await storageService.uploadBytes(_noteImageBytes!, path);
           debugPrint('📸 Note image uploaded: $noteImageUrl');
+
+          // Delete old image from Storage if it was a Storage URL (not base64)
+          if (_noteImageUrl != null && !_noteImageUrl!.startsWith('data:')) {
+            await storageService.deleteFile(_noteImageUrl!);
+            debugPrint('🗑️ Old note image deleted from Storage');
+          }
         } catch (e) {
           debugPrint("Error uploading note image: $e");
-          // Continue without image if upload fails
         } finally {
           if (mounted) setState(() => _isUploadingImage = false);
         }
@@ -945,6 +1158,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Future<void> _deleteItem() async {
     try {
       if (widget.editItem != null) {
+        // Delete image from Storage if exists
+        final imageUrl = widget.editItem!.ogMetadata?.imageUrl;
+        if (imageUrl != null && !imageUrl.startsWith('data:')) {
+          final storageService = StorageService();
+          await storageService.deleteFile(imageUrl);
+          debugPrint('🗑️ Item image deleted from Storage');
+        }
+
+        // Delete item from Firestore
         await _itemRepository.deleteItem(widget.editItem!.id);
         if (mounted) {
           Navigator.pop(
@@ -1162,7 +1384,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   // Show dock if we have a link OR manual entry mode OR note mode
                   if (_hasLink || _isManualEntry || _isNoteMode)
                     Positioned(
-                      bottom: 40,
+                      bottom: 32,
                       left: 24,
                       right: 24,
                       child: _buildFloatingDock(),
@@ -1193,9 +1415,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         if (calculatedRatio < 0.20) calculatedRatio = 0.20;
         stageHeight = size.height * calculatedRatio;
       } else {
-        stageHeight =
-            size.height *
-            0.30; // Reduced default height to prevent excessive cropping during load
+        // Görsel yoksa minimum 180px garanti et (X, Maps ve normal linkler için)
+        final minHeight = 180.0;
+        final calculatedHeight = size.height * 0.30;
+        stageHeight = calculatedHeight < minHeight ? minHeight : calculatedHeight;
       }
     } else if (_isManualEntry) {
       stageHeight = size.height * 0.40; // Increased from 0.25
@@ -1229,14 +1452,24 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
               child:
-                  // Show image if:
-                  // 1. Image exists AND it's NOT a known brand (they use logos as og:image)
-                  // 2. OR it's a Maps URL (always show map preview even if no image)
-                  (hasImage && !_isKnownBrandSite())
-                      ? _buildImageBackground()
-                      : (_isMapUrl(_detectedLink.toLowerCase()) && !_isKnownBrandSite()) 
-                          ? _buildMapPreview() // New custom map preview
-                          : _buildPlatformBackground(animate: _isLoadingMetadata),
+                  // Priority order:
+                  // 1. Loading state - show animated platform background
+                  // 2. X (Twitter) URL - show X logo
+                  // 3. Map URL - show placeholder with logo
+                  // 4. Images - show if not a known brand OR if it's a social platform
+                  //    AND it's not a favicon URL
+                  // 5. Fallback - platform background
+                  _isLoadingMetadata
+                      ? _buildPlatformBackground(animate: true)
+                      : _isXUrl(_detectedLink.toLowerCase())
+                          ? _buildXPlaceholder()
+                          : _isMapUrl(_detectedLink.toLowerCase())
+                              ? _buildMapPlaceholder()
+                              : (hasImage &&
+                                 (!_isKnownBrandSite() || _isSocialPlatform()) &&
+                                 !_isFaviconUrl(_ogMetadata?.imageUrl))
+                                  ? _buildImageBackground()
+                                  : _buildPlatformBackground(animate: false),
             ),
 
             // Platform Icon removed as requested
@@ -1376,7 +1609,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                     )
                     : Icon(
                       _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
-                          ? Icons.image_not_supported_outlined // No preview found
+                          ? Icons.link_off // No preview found
                           : Icons.add_link_rounded,
                       size: 64,
                       color: Colors.white.withOpacity(0.9),
@@ -1386,7 +1619,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   animate
                       ? "Bağlantı taranıyor..."
                       : _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
-                          ? "Önizleme bulunamadı"
+                          ? "Önizleme yok"
                           : "Bağlantı önizlemesi burada görünecek",
                   style: GoogleFonts.poppins(
                     color: Colors.white.withOpacity(0.9),
@@ -1415,68 +1648,229 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           imageUrl: _ogMetadata!.imageUrl!,
           fit: BoxFit.cover,
           alignment: Alignment.center,
-          placeholder:
-              (context, url) => _buildPlatformBackground(animate: true),
-          errorWidget: (context, url, error) => _buildPlatformBackground(),
+          placeholder: (context, url) => const SizedBox.shrink(),
+          errorWidget: (context, url, error) => const SizedBox.shrink(),
         ),
       ],
     );
   }
   
   // Custom Map Preview (Gradient + Icon) like ItemCard
+  // If coordinates are available, show Apple Map preview
   Widget _buildMapPreview() {
-    final url = _detectedLink.toLowerCase();
-    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
-    IconData icon = PhosphorIconsBold.mapPin;
-    
-    if (url.contains('maps.app.goo') || url.contains('goo.gl/maps') || url.contains('google.com/maps') || url.contains('maps.google')) {
-      gradientColors = [const Color(0xFF34A853), const Color(0xFF1EA362)]; // Google Green
-    } else if (url.contains('yandex.com/maps') || url.contains('yandex.ru/maps') || url.contains('yandex.o/maps')) {
-      gradientColors = [const Color(0xFFFFCC00), const Color(0xFFFF9900)]; // Yandex Yellow/Orange
-    } else if (url.contains('maps.apple.com')) {
-      gradientColors = [const Color(0xFFAAAAAA), const Color(0xFF888888)]; // Apple Grey
+    // If we have valid coordinates
+    if (_mapCoordinate != null && _mapCoordinate!.isValid) {
+      // Sadece Apple Maps için harita göster
+      if (_mapCoordinate!.provider == MapProvider.appleMaps) {
+        return AppleMapPreview(
+          key: const ValueKey('apple_map_preview'),
+          coordinate: _mapCoordinate!,
+          onTap: _launchInAppleMaps,
+          height: 200,
+        );
+      }
+
+      // Google/Yandex için sadece gradient + ikon
+      return _buildMapIconPlaceholder();
     }
 
+    // Koordinat yoksa fallback
+    return _buildMapGradientFallback();
+  }
+
+  // Map placeholder - show logo only (like X/Twitter style)
+  Widget _buildMapPlaceholder() {
     return Container(
-      key: const ValueKey('map_preview'),
-      width: double.infinity,
+      key: const ValueKey('map_placeholder'),
       decoration: BoxDecoration(
-        color: context.colors.surfaceWhite,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         gradient: LinearGradient(
-          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [context.colors.primary, context.colors.secondary], // Tema renkleri
         ),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withOpacity(0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 64, color: Colors.white.withOpacity(0.9)),
-            const SizedBox(height: 12),
-            Text(
-              "Harita Önizlemesi",
-              style: GoogleFonts.poppins(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        child: Icon(
+          Icons.map,
+          size: 64,
+          color: Colors.white.withOpacity(0.9),
         ),
       ),
     );
   }
-  
-  // Reusable Ambient Animation Core (Liftoff Particles)
+
+  // X (Twitter) placeholder - show X logo
+  Widget _buildXPlaceholder() {
+    return Container(
+      key: const ValueKey('x_placeholder'),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [context.colors.primary, context.colors.secondary],
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Center(
+        child: Icon(
+          PhosphorIconsThin.xLogo,
+          size: 64,
+          color: Colors.white.withOpacity(0.9),
+        ),
+      ),
+    );
+  }
+
+  // Launch the original map URL in Google/Yandex Maps
+  Future<void> _launchOriginalUrl() async {
+    if (_detectedLink.isEmpty) return;
+
+    final uri = Uri.parse(_detectedLink);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  // Launch in Apple Maps when we have coordinates
+  Future<void> _launchInAppleMaps() async {
+    if (_mapCoordinate == null || !_mapCoordinate!.isValid) return;
+
+    final lat = _mapCoordinate!.latitude;
+    final lng = _mapCoordinate!.longitude;
+
+    // Apple Maps URL format
+    final appleMapsUrl = 'https://maps.apple.com/?ll=$lat,$lng&q=$lat,$lng';
+
+    final uri = Uri.parse(appleMapsUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  // Map icon placeholder for Google/Yandex (no map, just icon)
+  Widget _buildMapIconPlaceholder() {
+    final provider = _mapCoordinate!.provider;
+    final gradientColors = provider == MapProvider.googleMaps
+        ? [const Color(0xFF34A853), const Color(0xFF1EA362)] // Google Yeşil
+        : [const Color(0xFFFFCC00), const Color(0xFFFF9900)]; // Yandex Sarı
+
+    return Container(
+      key: const ValueKey('map_icon_placeholder'),
+      height: 200,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.map,
+                  size: 56,
+                  color: Colors.white.withOpacity(0.95),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  provider == MapProvider.googleMaps ? 'Google Maps' : 'Yandex Maps',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.95),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_mapCoordinate!.latitude.toStringAsFixed(4)}, ${_mapCoordinate!.longitude.toStringAsFixed(4)}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _launchOriginalUrl,
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Gradient fallback when no coordinates
+  Widget _buildMapGradientFallback() {
+    final url = _detectedLink.toLowerCase();
+    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
+
+    if (url.contains('maps.app.goo') ||
+        url.contains('goo.gl/maps') ||
+        url.contains('google.com/maps') ||
+        url.contains('maps.google')) {
+      gradientColors = [const Color(0xFF34A853), const Color(0xFF1EA362)];
+    } else if (url.contains('yandex.com/maps') ||
+        url.contains('yandex.ru/maps') ||
+        url.contains('yandex.o/maps')) {
+      gradientColors = [const Color(0xFFFFCC00), const Color(0xFFFF9900)];
+    } else if (url.contains('maps.apple.com')) {
+      gradientColors = [const Color(0xFFAAAAAA), const Color(0xFF888888)];
+    }
+
+    return GestureDetector(
+      onTap: _launchOriginalUrl,
+      child: Container(
+        key: const ValueKey('map_preview'),
+        height: 200,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.map,
+                size: 48,
+                color: Colors.white.withOpacity(0.9),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Harita Konumu',
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Launch the original map URL in Google/Yandex Maps
 
   // Reusable Ambient Animation Core (Liftoff Particles)
   Widget _buildAmbientAnimationCore({double scale = 1.0}) {
@@ -1810,7 +2204,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   controller: controller,
                   cursorColor: context.colors.primary,
                   textAlignVertical: TextAlignVertical.center,
-                  textInputAction: isMultiLine ? TextInputAction.newline : TextInputAction.done,
+                  textInputAction: TextInputAction.done,
                   onEditingComplete: () {
                     // Dismiss keyboard when Done is pressed
                     FocusScope.of(context).unfocus();
@@ -1840,48 +2234,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             ],
           ),
         ),
-        // Visible "Tamam" button for multi-line fields
-        if (isMultiLine)
-          Positioned(
-            top: 6,
-            right: 6,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => FocusScope.of(context).unfocus(),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: context.colors.primary, // Solid primary color
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: context.colors.primary.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check, size: 14, color: Colors.white),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Tamam',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

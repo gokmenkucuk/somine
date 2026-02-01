@@ -9,14 +9,35 @@ class MetadataService {
   /// Fetch OG metadata from a URL
   static Future<OGMetadata?> fetchMetadata(String url) async {
     try {
+      // FAST PATH: For Google Maps short links, try to extract title from URL FIRST
+      // This avoids the slow redirect + HTML fetch process
+      if (_isGoogleMapsShortLink(url)) {
+        final urlTitle = _extractTitleFromGoogleMapsUrl(url);
+        if (urlTitle != null && !_isGenericMapsTitle(urlTitle)) {
+          debugPrint('⚡ [MetadataService] Fast URL extraction: $urlTitle');
+          // Return early with just the title - no need for full metadata fetch
+          return OGMetadata(
+            title: urlTitle,
+            description: null,
+            imageUrl: null,
+            siteName: 'Google Maps',
+          );
+        }
+      }
+
       // First, resolve redirects using dart:io HttpClient
       String finalUrl = url;
       if (_isMapUrl(url)) {
         finalUrl = await _resolveRedirects(url) ?? url;
         debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
       }
-      
+
       // Then fetch the page content
+      // Google Maps için daha kısa timeout (5 saniye, normal 10)
+      final timeout = finalUrl.toLowerCase().contains('google')
+          ? const Duration(seconds: 5)
+          : const Duration(seconds: 10);
+
       final response = await http.get(
         Uri.parse(finalUrl),
         headers: {
@@ -25,14 +46,14 @@ class MetadataService {
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
         },
-      ).timeout(const Duration(seconds: 10));
-      
+      ).timeout(timeout);
+
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
         final metaTags = document.getElementsByTagName('meta');
 
         String? title, description, image, siteName;
-        
+
         // For Maps URLs, try to extract place name from final URL first
         if (_isMapUrl(url) || _isMapUrl(finalUrl)) {
           title = _extractPlaceNameFromMapUrl(finalUrl);
@@ -52,21 +73,21 @@ class MetadataService {
           if (property == 'og:title' || name == 'title' || name == 'twitter:title') {
              title ??= content; // Keep first found
           }
-          
+
           // Description
           if (property == 'og:description' || name == 'description' || name == 'twitter:description') {
             description ??= content;
           }
-          
+
           // Image
           if (property == 'og:image' || name == 'image' || name == 'twitter:image' || name == 'twitter:image:src') {
-             image ??= content; 
+             image ??= content;
           }
-          
+
           // Site Name
           if (property == 'og:site_name') siteName = content;
         }
-        
+
         // Fallback: Check <link rel="image_src"> (Common in some older CMS)
         if (image == null) {
           final linkTags = document.getElementsByTagName('link');
@@ -90,46 +111,46 @@ class MetadataService {
                if (imageMatch != null) {
                  image = imageMatch.group(1);
                  // Cleanup standard JSON-LD image arrays if needed, but regex usually catches first string
-                 break; 
+                 break;
                }
              }
            }
         }
 
-        // Fallback: Check first significant <img> tag 
+        // Fallback: Check first significant <img> tag
         if (image == null) {
            final imgs = document.getElementsByTagName('img');
-           
+
            // Pass 1: Strict (No logos, High quality)
            for (var img in imgs) {
              String? src = img.attributes['src'] ?? img.attributes['data-src'] ?? img.attributes['data-original'];
-             
+
              if (src == null || src.isEmpty) continue;
-             
+
              // Filter out likely icons/trackers/logos in first pass
              if (src.endsWith('.svg') || src.contains('logo') || src.contains('icon') || src.length < 50) {
                continue;
              }
-             
+
              image = src;
              break;
            }
-           
+
            // Pass 2: Loose (Allow Request Logic: "logo.png arayalım" - If nothing found, take whatever we have)
            if (image == null) {
               for (var img in imgs) {
                  String? src = img.attributes['src'] ?? img.attributes['data-src'] ?? img.attributes['data-original'];
                  if (src == null || src.isEmpty) continue;
-                 
+
                  // Minimal filter (just avoid 1x1 pixels or base64 tiny stuff)
                  if (src.length < 20 && !src.startsWith('http')) continue;
-                 
+
                  image = src;
                  break;
               }
            }
         }
-        
+
         // Final Fallback: Apple Touch Icon (Usually high res logo)
         if (image == null) {
            final links = document.getElementsByTagName('link');
@@ -142,7 +163,7 @@ class MetadataService {
               }
            }
         }
-        
+
         // Resolve relative URLs
         if (image != null && !image.startsWith('http')) {
            final uri = Uri.parse(url);
@@ -161,13 +182,13 @@ class MetadataService {
            final uri = Uri.parse(url);
            image = 'https://www.google.com/s2/favicons?domain=${uri.host}&sz=128';
         }
-        
+
         // Fallback to <title> tag if og:title not found
         if (title == null) {
           final titleTag = document.getElementsByTagName('title').firstOrNull;
           title = titleTag?.text;
         }
-        
+
         // X.com (Twitter) Fallback: Extract username from URL if title still null
         // X.com uses CSR so meta tags are often missing
         if (title == null && (url.contains('x.com') || url.contains('twitter.com'))) {
@@ -211,13 +232,73 @@ class MetadataService {
   /// Check if URL is a maps service
   static bool _isMapUrl(String url) {
     final lower = url.toLowerCase();
-    return lower.contains('maps.app.goo.gl') || 
+    return lower.contains('maps.app.goo.gl') ||
            lower.contains('goo.gl/maps') ||
            lower.contains('google.com/maps') ||
            lower.contains('maps.google') ||
            lower.contains('yandex.com/maps') ||
            lower.contains('yandex.ru/maps') ||
            lower.contains('maps.apple.com');
+  }
+
+  /// Check if URL is a Google Maps short link (maps.app.goo.gl or goo.gl/maps)
+  static bool _isGoogleMapsShortLink(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('maps.app.goo.gl') || lower.contains('goo.gl/maps');
+  }
+
+  /// Extract title from Google Maps short link URL directly
+  /// This avoids slow redirect + HTML fetch for URLs like:
+  /// https://maps.app.goo.gl/?q=Place+Name
+  /// https://maps.app.goo.gl/ABC123?d=Place+Name
+  static String? _extractTitleFromGoogleMapsUrl(String url) {
+    try {
+      final decoded = Uri.decodeComponent(url);
+
+      // Try ?q= parameter (place name)
+      final qMatch = RegExp(r'[?&]q=([^&]+)').firstMatch(decoded);
+      if (qMatch != null) {
+        String name = qMatch.group(1)!;
+        name = name.replaceAll('+', ' ').replaceAll('_', ' ').trim();
+        if (name.isNotEmpty) {
+          return name;
+        }
+      }
+
+      // Try ?d= parameter (destination)
+      final dMatch = RegExp(r'[?&]d=([^&]+)').firstMatch(decoded);
+      if (dMatch != null) {
+        String name = dMatch.group(1)!;
+        name = name.replaceAll('+', ' ').replaceAll('_', ' ').trim();
+        if (name.isNotEmpty) {
+          return name;
+        }
+      }
+
+      // Try /place/Place+Name/ pattern (works even with short links that have path)
+      final placeMatch = RegExp(r'/place/([^/@?]+)').firstMatch(decoded);
+      if (placeMatch != null) {
+        String name = placeMatch.group(1)!;
+        name = name.replaceAll('+', ' ').replaceAll('_', ' ').trim();
+        if (name.isNotEmpty && name.toLowerCase() != 'place') {
+          return name;
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Error extracting title from URL: $e');
+    }
+    return null;
+  }
+
+  /// Check if title is a generic Maps title that should be filtered out
+  static bool _isGenericMapsTitle(String title) {
+    final genericTitles = [
+      'google', 'google maps', 'google haritalar',
+      'apple maps', 'yandex', 'yandex maps', 'yandex haritalar',
+      'maps', 'haritalar', 'map',
+      'konum', 'location', 'yer', 'place'
+    ];
+    return genericTitles.contains(title.toLowerCase().trim());
   }
   
   /// Extract place name from Maps URL

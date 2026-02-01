@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
@@ -71,42 +72,65 @@ class StorageService {
   /// Returns the download URL or null if failed
   Future<String?> uploadFile(File file, String path) async {
     try {
-      if (!await file.exists()) {
-        debugPrint('❌ [StorageService] File does not exist');
-        return null;
-      }
+      final ref = _storage.ref().child(path);
+
+      debugPrint('🔵 [StorageService] Uploading to: $path (${_storage.bucket})');
+      debugPrint('🔵 [StorageService] File path: ${file.path}');
+
+      // Read file bytes first (like uploadImageFromUrl)
+      final bytes = await file.readAsBytes();
+      debugPrint('🔵 [StorageService] Bytes read: ${bytes.length}');
+
+      // Simple metadata (like uploadImageFromUrl)
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+
+      // Use putData (like uploadImageFromUrl - this works!)
+      await ref.putData(bytes, metadata);
+
+      // Get Download URL directly (no retry logic needed like uploadImageFromUrl)
+      final downloadUrl = await ref.getDownloadURL();
+      debugPrint('✅ [StorageService] File uploaded: $downloadUrl');
+      return downloadUrl;
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ [StorageService] Error: $e');
+      debugPrint('❌ [StorageService] Stack: $stackTrace');
+      return null;
+    }
+  }
+
+  /// Uploads bytes to Firebase Storage
+  /// Returns the download URL or null if failed
+  Future<String?> uploadBytes(Uint8List bytes, String path) async {
+    try {
+      debugPrint('🔵 [StorageService] uploadBytes called. Path: $path');
+      debugPrint('🔵 [StorageService] Bucket: ${_storage.bucket}');
+      debugPrint('🔵 [StorageService] Bytes length: ${bytes.length}');
 
       final ref = _storage.ref().child(path);
-      
-      debugPrint('🔵 [StorageService] Uploading to: $path (${_storage.bucket})');
-      
-      final bytes = await file.readAsBytes();
-      
-      // Upload without metadata to avoid any policy issues
-      // Use putData for reliability
-      final uploadTask = ref.putData(bytes);
-      
-      // Wait for completion
+      debugPrint('🔵 [StorageService] Full path: ${ref.fullPath}');
+
+      // Simple metadata
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+
+      debugPrint('🔵 [StorageService] Starting putData...');
+      final uploadTask = ref.putData(bytes, metadata);
+
+      // Wait for upload with detailed logging
+      debugPrint('🔵 [StorageService] Waiting for upload to complete...');
       final snapshot = await uploadTask;
 
+      debugPrint('📊 [StorageService] Upload snapshot state: ${snapshot.state}');
+      debugPrint('📊 [StorageService] Upload total bytes: ${snapshot.totalBytes}');
+
       if (snapshot.state == TaskState.success) {
-         debugPrint('✅ [StorageService] Upload success. Waiting for URL...');
-         
-         // Retry logic for getDownloadURL (Consistency delay workaround)
-         for (int i = 0; i < 3; i++) {
-           try {
-             await Future.delayed(Duration(milliseconds: 1000 * (i + 1)));
-             final downloadUrl = await ref.getDownloadURL();
-             debugPrint('✅ [StorageService] Got URL: $downloadUrl');
-             return downloadUrl;
-           } catch (e) {
-             debugPrint('⚠️ [StorageService] Retry $i failed: $e');
-           }
-         }
-         return null;
+        debugPrint('✅ [StorageService] Upload successful, getting download URL...');
+        final downloadUrl = await ref.getDownloadURL();
+        debugPrint('✅ [StorageService] Bytes uploaded: $downloadUrl');
+        return downloadUrl;
       } else {
-         debugPrint('❌ [StorageService] Upload failed. State: ${snapshot.state}');
-         return null;
+        debugPrint('❌ [StorageService] Upload failed with state: ${snapshot.state}');
+        return null;
       }
 
     } catch (e, stackTrace) {
@@ -153,6 +177,23 @@ class StorageService {
     } catch (e) {
       debugPrint('❌ [StorageService] Error uploading profile image: $e');
       return null;
+    }
+  }
+
+  /// Delete file from Firebase Storage
+  Future<void> deleteFile(String downloadUrl) async {
+    try {
+      // Handle base64 data URLs - can't delete from Storage
+      if (downloadUrl.startsWith('data:')) {
+        debugPrint('🗑️ [StorageService] Skipping base64 image (not in Storage)');
+        return;
+      }
+
+      final ref = _storage.refFromURL(downloadUrl);
+      await ref.delete();
+      debugPrint('✅ [StorageService] File deleted: $downloadUrl');
+    } catch (e) {
+      debugPrint('❌ [StorageService] Error deleting file: $e');
     }
   }
 }
