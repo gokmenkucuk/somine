@@ -167,13 +167,15 @@ class _CardImage extends StatelessWidget {
         );
       } else {
         // LINK with og:image
-        // Check if it's a known brand (they often use logos instead of product images)
+        // Check if it's a known brand OR if image is a favicon (small, pixelated when enlarged)
         final bool isKnownBrand = _isKnownBrandSite(url);
-        debugPrint('🔵 [ItemCard] URL: $url, isKnownBrand: $isKnownBrand, imageUrl: $imageUrl');
+        final bool isFavicon = imageUrl!.contains('favicon') || imageUrl!.contains('s2/favicons');
         
-        if (isKnownBrand) {
-          // Known brands: Show placeholder with appropriate icon
-          debugPrint('✅ [ItemCard] Showing placeholder for known brand');
+        debugPrint('🔵 [ItemCard] URL: $url, isKnownBrand: $isKnownBrand, isFavicon: $isFavicon');
+        
+        if (isKnownBrand || isFavicon) {
+          // Known brands or favicons: Show placeholder with appropriate icon
+          debugPrint('✅ [ItemCard] Showing placeholder (brand or favicon)');
           content = _buildPlaceholder();
         } else {
           // Unknown sites with og:image: Show the image (product photo, article image, etc.)
