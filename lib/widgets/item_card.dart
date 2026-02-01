@@ -108,6 +108,17 @@ class ItemCard extends StatelessWidget {
   LinearGradient? _getGradientForType(String? url, bool isNote) {
     if (isNote) return const LinearGradient(colors: [Color(0xFFF6D365), Color(0xFFFDA085)]); // Warm note gradient
     if (url == null) return null;
+    
+    // Maps Gradients
+    if (url.contains('maps.app.goo') || url.contains('goo.gl/maps') || url.contains('google.com/maps') || url.contains('maps.google')) 
+      return const LinearGradient(colors: [Color(0xFF34A853), Color(0xFF1EA362)]); // Google Green
+      
+    if (url.contains('yandex.com/maps') || url.contains('yandex.ru/maps') || url.contains('yandex.o/maps'))
+      return const LinearGradient(colors: [Color(0xFFFFCC00), Color(0xFFFF9900)]); // Yandex Yellow/Orange
+      
+    if (url.contains('maps.apple.com'))
+      return const LinearGradient(colors: [Color(0xFFAAAAAA), Color(0xFF888888)]); // Apple Grey
+      
     if (url.contains('youtube')) return const LinearGradient(colors: [Color(0xFFFF9966), Color(0xFFFF5E62)]);
     if (url.contains('medium')) return const LinearGradient(colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)]);
     return const LinearGradient(colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)]);
@@ -116,6 +127,14 @@ class ItemCard extends StatelessWidget {
   Widget _getSourceIcon(String? url, bool isNote) {
      if (isNote) return const Icon(PhosphorIconsBold.notePencil, size: 14, color: Color(0xFFF97316)); // Orange for notes
      if (url == null) return const Icon(Icons.link, size: 14, color: Colors.blue);
+     
+     // Maps Icons
+     if (url.contains('maps.app.goo') || url.contains('goo.gl/maps') || url.contains('google.com/maps') || url.contains('maps.google') ||
+         url.contains('yandex.com/maps') || url.contains('yandex.ru/maps') || url.contains('yandex.o/maps') ||
+         url.contains('maps.apple.com')) {
+       return const Icon(PhosphorIconsBold.mapPin, size: 14, color: Colors.green);
+     }
+     
      if (url.contains('youtube')) return const Icon(Icons.play_arrow_rounded, size: 16, color: Colors.red);
      if (url.contains('medium')) return const Icon(Icons.article_rounded, size: 14, color: Colors.black);
      if (url.contains('instagram')) return const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.purple);
@@ -126,6 +145,11 @@ class ItemCard extends StatelessWidget {
      if (isNote) return 'Not';
      if (url == null) return 'Link';
      try {
+       // Custom names for Maps
+       if (url.contains('maps.app.goo') || url.contains('goo.gl/maps') || url.contains('google.com/maps') || url.contains('maps.google')) return 'Google Maps';
+       if (url.contains('yandex.com/maps') || url.contains('yandex.ru/maps') || url.contains('yandex.o/maps')) return 'Yandex Maps';
+       if (url.contains('maps.apple.com')) return 'Apple Maps';
+       
        final uri = Uri.parse(url);
        String host = uri.host.replaceFirst('www.', '');
        return host[0].toUpperCase() + host.substring(1);
@@ -224,6 +248,12 @@ class _CardImage extends StatelessWidget {
          icon = PhosphorIconsBold.xLogo;
        } else if (url!.contains('maps.app.goo') || url!.contains('goo.gl/maps') || url!.contains('google.com/maps') || url!.contains('maps.google')) {
          // Google Maps - use map pin icon
+         icon = PhosphorIconsBold.mapPin;
+       } else if (url!.contains('yandex.com/maps') || url!.contains('yandex.ru/maps') || url!.contains('yandex.o/maps')) {
+         // Yandex Maps
+         icon = PhosphorIconsBold.mapPin;
+       } else if (url!.contains('maps.apple.com')) {
+         // Apple Maps
          icon = PhosphorIconsBold.mapPin;
        } else if (url!.contains('google')) {
          icon = PhosphorIconsBold.googleLogo;

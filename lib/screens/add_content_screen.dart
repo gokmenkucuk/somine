@@ -388,11 +388,30 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   String _detectPlatform(String url) {
     final lowerUrl = url.toLowerCase();
+    
+    // Maps Checks (Priority)
+    if (lowerUrl.contains('maps.app.goo.gl') || 
+        lowerUrl.contains('goo.gl/maps') ||
+        lowerUrl.contains('google.com/maps') ||
+        lowerUrl.contains('maps.google.com')) return 'Maps';
+        
+    if (lowerUrl.contains('yandex.com/maps') || 
+        lowerUrl.contains('yandex.ru/maps') || 
+        lowerUrl.contains('yandex.o')) return 'Yandex Maps';
+        
+    if (lowerUrl.contains('maps.apple.com')) return 'Apple Maps';
+
     if (lowerUrl.contains('instagram.com')) return 'Instagram';
     if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be'))
       return 'YouTube';
-    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com'))
+      
+    // Fix: strict check for x.com to avoid matching 'yandex.com' logic
+    if (lowerUrl.contains('twitter.com') || 
+        lowerUrl.contains('//x.com') || 
+        lowerUrl.contains('.x.com') ||
+        (lowerUrl.contains('x.com') && !lowerUrl.contains('yandex') && !lowerUrl.contains('netflix') && !lowerUrl.contains('box.com')))
       return 'X';
+      
     if (lowerUrl.contains('tiktok.com')) return 'TikTok';
     if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
     if (lowerUrl.contains('spotify.com')) return 'Spotify';
@@ -401,11 +420,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (lowerUrl.contains('medium.com')) return 'Medium';
     if (lowerUrl.contains('behance.net')) return 'Behance';
     if (lowerUrl.contains('dribbble.com')) return 'Dribbble';
-    // Google Maps
-    if (lowerUrl.contains('maps.app.goo.gl') || 
-        lowerUrl.contains('goo.gl/maps') ||
-        lowerUrl.contains('google.com/maps') ||
-        lowerUrl.contains('maps.google.com')) return 'Maps';
+
     return 'Web';
   }
 
@@ -475,15 +490,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       if (match != null) {
         String url = match.group(0)!;
         
-        // Extract place name from Google Maps shares
-        // Format: "Place Name\nhttps://maps.app.goo.gl/..." or "Place Name https://..."
+        // Extract place name from Map shares (Google, Yandex, Apple)
+        // Format: "Place Name\nhttps://..." or "Place Name https://..."
         String? extractedTitle;
-        if (_isGoogleMapsUrl(url)) {
+        if (_isMapUrl(url)) {
           final beforeUrl = value.substring(0, match.start).trim();
           if (beforeUrl.isNotEmpty) {
             // Clean up the title (remove newlines, extra spaces)
             extractedTitle = beforeUrl.replaceAll('\n', ' ').trim();
-            debugPrint('📍 [AddContent] Extracted Maps place: $extractedTitle');
+            debugPrint('📍 [AddContent] Extracted Map place: $extractedTitle');
           }
         }
         
@@ -494,7 +509,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             _hasLink = true;
             _isManualEntry = false;
             
-            // Pre-fill title for Google Maps
+            // Pre-fill title for Maps
             if (extractedTitle != null && _titleController.text.isEmpty) {
               _titleController.text = extractedTitle;
             }
@@ -510,12 +525,26 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
   }
   
-  /// Check if URL is a Google Maps link
+  /// Check if URL is any known Map link
+  bool _isMapUrl(String url) {
+    return _isGoogleMapsUrl(url) || _isYandexMapsUrl(url) || _isAppleMapsUrl(url);
+  }
+  
   bool _isGoogleMapsUrl(String url) {
     return url.contains('maps.app.goo.gl') || 
            url.contains('goo.gl/maps') ||
            url.contains('google.com/maps') ||
            url.contains('maps.google.com');
+  }
+
+  bool _isYandexMapsUrl(String url) {
+    return url.contains('yandex.com/maps') || 
+           url.contains('yandex.ru/maps') || 
+           url.contains('yandex.o/maps');
+  }
+
+  bool _isAppleMapsUrl(String url) {
+    return url.contains('maps.apple.com');
   }
 
   void _clearLinkField() {
