@@ -155,8 +155,12 @@ class MetadataService {
            }
         }
 
-        // NO MORE FALLBACK - if no image found, return null and let UI show placeholder
-        // This prevents small/pixelated favicons from being displayed
+        // ULTIMATE FALLBACK: Google Favicon Service
+        // Guaranteed to return something for valid domains
+        if (image == null) {
+           final uri = Uri.parse(url);
+           image = 'https://www.google.com/s2/favicons?domain=${uri.host}&sz=128';
+        }
         
         // Fallback to <title> tag if og:title not found
         if (title == null) {
