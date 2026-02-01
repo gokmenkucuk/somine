@@ -1229,8 +1229,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
               child:
-                  // Show image only if it exists AND it's NOT a known brand (they use logos as og:image)
-                  (hasImage && !_isKnownBrandSite())
+                  // Show image if:
+                  // 1. Image exists AND it's NOT a known brand (they use logos as og:image)
+                  // 2. OR it's a Maps URL (always show map preview)
+                  (hasImage && (!_isKnownBrandSite() || _isMapUrl(_linkController.text.toLowerCase())))
                       ? _buildImageBackground()
                       : _buildPlatformBackground(animate: _isLoadingMetadata),
             ),
