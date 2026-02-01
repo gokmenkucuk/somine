@@ -166,29 +166,24 @@ class _CardImage extends StatelessWidget {
           errorBuilder: (_,__,___) => _buildPlaceholder(),
         );
       } else {
-        // LINK: Icon Bubble Style 🫧
-        // This is the "Foolproof" design: A white circle in the center containing the logo
-        // No matter what the image dimensions are, it will look like a neat app icon.
-        content = AspectRatio(
-          aspectRatio: 1.6,
-          child: Container(
-            color: const Color(0xFFF5F5F7), // Light grey background
-            alignment: Alignment.center,
+        // LINK: Same style as placeholder (X card) - centered small logo
+        // Fixed height container with gradient, logo centered in white circle
+        content = Container(
+          height: 150, // Same height as placeholder
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFE8EDF2), Color(0xFFD4DEE8)], // Soft grey gradient
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: ClipOval(
             child: Container(
-              width: 64, // Fixed small size
-              height: 64,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(12.0), // Padding inside the bubble
+              width: 56,
+              height: 56,
+              color: Colors.white,
+              padding: const EdgeInsets.all(10),
               child: Image.network(
                 imageUrl!,
                 fit: BoxFit.contain,
@@ -196,7 +191,7 @@ class _CardImage extends StatelessWidget {
                    if (loadingProgress == null) return child;
                    return const Center(child: LoadingIndicator(size: 16));
                 },
-                errorBuilder: (_,__,___) => _buildPlaceholder(),
+                errorBuilder: (_,__,___) => const Icon(Icons.link, size: 24, color: Colors.grey),
               ),
             ),
           ),
