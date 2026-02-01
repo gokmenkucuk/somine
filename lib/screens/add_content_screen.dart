@@ -1374,7 +1374,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       ),
                     )
                     : Icon(
-                      Icons.add_link_rounded,
+                      _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
+                          ? Icons.image_not_supported_outlined // No preview found
+                          : Icons.add_link_rounded,
                       size: 64,
                       color: Colors.white.withOpacity(0.9),
                     ),
@@ -1382,7 +1384,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 Text(
                   animate
                       ? "Bağlantı taranıyor..."
-                      : "Bağlantı önizlemesi burada görünecek",
+                      : _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
+                          ? "Önizleme bulunamadı"
+                          : "Bağlantı önizlemesi burada görünecek",
                   style: GoogleFonts.poppins(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,
