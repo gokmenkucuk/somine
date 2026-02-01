@@ -163,6 +163,16 @@ class MetadataService {
           }
         }
 
+        // Filter out generic titles for Maps URLs
+        // These short links redirect to pages with generic titles like "Google" or "Google Maps"
+        if (_isMapUrl(url) && title != null) {
+          final genericTitles = ['google', 'google maps', 'google haritalar', 'apple maps', 'yandex', 'yandex maps', 'yandex haritalar', 'maps', 'haritalar'];
+          if (genericTitles.contains(title.toLowerCase().trim())) {
+            debugPrint('⚠️ [MetadataService] Filtering generic Maps title: $title');
+            title = null; // Let UI use placeholder or user input
+          }
+        }
+
         return OGMetadata(
           title: title,
           description: description,
@@ -177,5 +187,17 @@ class MetadataService {
     // If request failed completely, return null
     // UI will show placeholder with icon based on URL
     return null;
+  }
+  
+  /// Check if URL is a maps service
+  static bool _isMapUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('maps.app.goo.gl') || 
+           lower.contains('goo.gl/maps') ||
+           lower.contains('google.com/maps') ||
+           lower.contains('maps.google') ||
+           lower.contains('yandex.com/maps') ||
+           lower.contains('yandex.ru/maps') ||
+           lower.contains('maps.apple.com');
   }
 }
