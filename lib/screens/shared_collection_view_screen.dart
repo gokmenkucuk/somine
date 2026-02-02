@@ -437,7 +437,7 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
                     ),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _copyToCollection(category.id!);
+                      _copyToCollection(category.id);
                     },
                   );
                 },
@@ -505,7 +505,7 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
       final copiedCount = await ItemRepository().copyItemsToCollection(
         itemIds: _selectedItemIds.toList(),
         targetUserId: user.uid,
-        targetCategoryId: createdCategory.id!,
+        targetCategoryId: createdCategory.id,
       );
       
       ref.invalidate(categoriesProvider);

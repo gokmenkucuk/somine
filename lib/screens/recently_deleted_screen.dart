@@ -412,7 +412,7 @@ class _DeletedItemCard extends ConsumerWidget {
 
   Future<void> _restoreItem(BuildContext context, WidgetRef ref, String itemId) async {
     try {
-      await ref.read(categoryRepositoryProvider); // Access repo via provider if needed, or directly
+      ref.read(categoryRepositoryProvider); // Access repo via provider if needed, or directly
       // Using ItemRepository directly for simplicity as usually done in this codebase for actions
       await ItemRepository().restoreItem(itemId);
       

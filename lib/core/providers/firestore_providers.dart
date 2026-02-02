@@ -341,7 +341,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       imageUrls.map((url) async {
         try {
           // Download and cache the image
-          await CachedNetworkImageProvider(url).resolve(ImageConfiguration.empty);
+          CachedNetworkImageProvider(url).resolve(ImageConfiguration.empty);
         } catch (e) {
           // Ignore errors for individual images
         }

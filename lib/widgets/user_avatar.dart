@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
-import 'package:somine_app/core/models/user_model.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 

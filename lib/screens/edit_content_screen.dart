@@ -600,7 +600,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             child: hasImage
-                    ? _buildImageBackground(imageUrl!)
+                    ? _buildImageBackground(imageUrl)
                     : _buildPlatformBackground(animate: _isLoadingMetadata),
           ),
           

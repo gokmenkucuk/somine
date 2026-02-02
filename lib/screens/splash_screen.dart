@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:somine_app/widgets/somine_loading_widget.dart';
 
 class SplashScreen extends StatefulWidget {

@@ -5,9 +5,9 @@ class CustomNoteIcon extends StatelessWidget {
   final double size;
   
   const CustomNoteIcon({
-    Key? key,
+    super.key,
     this.size = 40, // Square icon
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

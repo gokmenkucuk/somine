@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import Foundation
+import flutter_local_notifications
 
 class Logger {
     static let shared = Logger()
@@ -86,7 +87,12 @@ class Logger {
         result(FlutterMethodNotImplemented)
       }
     })
-    
+
+    // Set notification delegate
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self
+    }
+
     GeneratedPluginRegistrant.register(with: self)
     
     Logger.shared.log("AppDelegate: GeneratedPluginRegistrant registered")

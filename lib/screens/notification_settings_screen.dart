@@ -246,7 +246,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           ),
           CupertinoSwitch(
             value: value,
-            activeColor: context.colors.primary,
+            activeTrackColor: context.colors.primary,
             onChanged: onChanged,
           ),
         ],

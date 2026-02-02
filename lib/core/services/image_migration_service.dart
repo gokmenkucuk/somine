@@ -27,7 +27,7 @@ class ImageMigrationService {
 
       // 2. Filter items with Instagram CDN URLs
       for (final doc in querySnapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final displayImage = data['displayImage'] as String?;
         
         if (displayImage != null && 
@@ -94,7 +94,7 @@ class ImageMigrationService {
         .get();
 
     for (final doc in querySnapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
       final displayImage = data['displayImage'] as String?;
       
       if (displayImage != null && 

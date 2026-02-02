@@ -272,12 +272,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
      // TRASH ZONE FAB
      return DragTarget<ItemModel>(
-        onWillAccept: (item) {
+        onWillAcceptWithDetails: (item) {
           // Provide feedback when dragging enters zone
           HapticFeedback.lightImpact(); 
           return true;
         },
-        onAccept: (item) async {
+        onAcceptWithDetails: (item) async {
            HapticFeedback.mediumImpact();
 
            // Reset drag state

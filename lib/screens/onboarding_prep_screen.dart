@@ -10,7 +10,6 @@ import 'package:somine_app/core/services/metadata_service.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/screens/home_screen.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Onboarding screen that prepares demo content with a visual progress bar
 class OnboardingPrepScreen extends ConsumerStatefulWidget {

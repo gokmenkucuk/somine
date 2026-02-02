@@ -250,20 +250,22 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                               ),
                             ),
                           ),
-                          // Play/Pause icon overlay
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
-                              shape: BoxShape.circle,
+                          // Play icon - sadece video duraklatıldığında göster
+                          if (!_isPlaying)
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.play_arrow_rounded,
+                                size: 42,
+                                color: Colors.white,
+                              ),
                             ),
-                            child: Icon(
-                              _isPlaying ? Icons.pause : Icons.play_arrow,
-                              size: 36,
-                              color: Colors.white,
-                            ),
-                          ),
                         ],
                       ),
                     )

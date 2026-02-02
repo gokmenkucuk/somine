@@ -8,7 +8,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
-import 'package:somine_app/core/services/storage_service.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'dart:convert';
 import 'package:somine_app/widgets/user_avatar.dart';

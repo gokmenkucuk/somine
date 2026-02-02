@@ -52,7 +52,7 @@ class IconService {
       }
     } on PlatformException catch (e) {
       // Handle known errors (e.g. user cancelled)
-      throw e;
+      rethrow;
     }
   }
 }

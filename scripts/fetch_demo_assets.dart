@@ -131,8 +131,9 @@ Future<void> main() async {
         imageUrl = fallbackImages[url];
     } else if (url.contains('youtu')) {
        String? videoId;
-       if (url.contains('v=')) videoId = url.split('v=')[1].split('&')[0];
-       else if (url.contains('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+       if (url.contains('v=')) {
+         videoId = url.split('v=')[1].split('&')[0];
+       } else if (url.contains('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
        else if (url.contains('shorts/')) videoId = url.split('shorts/')[1].split('?')[0];
        
        if (videoId != null) {
@@ -172,9 +173,7 @@ Future<void> main() async {
                         }
                      }
                      // Fallback to <title>
-                     if (title == null) {
-                         title = document.getElementsByTagName('title').firstOrNull?.text;
-                     }
+                     title ??= document.getElementsByTagName('title').firstOrNull?.text;
                  }
              }
         } catch (e) {}

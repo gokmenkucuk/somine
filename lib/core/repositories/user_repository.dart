@@ -160,7 +160,7 @@ class UserRepository {
     // Eğer çok kısa ise, farklı kombinasyonlar dene
     if (base.length < 3) {
       // İsim çok kısa, rastgele sayı ekle
-      base = '${base}${DateTime.now().millisecondsSinceEpoch % 1000}';
+      base = '$base${DateTime.now().millisecondsSinceEpoch % 1000}';
     }
     
     // Maksimum 20 karakter

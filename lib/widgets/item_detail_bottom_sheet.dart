@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,7 +8,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
-import '../core/design/app_colors.dart';
 import '../core/design/app_colors_extension.dart';
 import '../screens/add_content_screen.dart';
 import '../widgets/custom_note_icon.dart';

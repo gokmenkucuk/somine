@@ -357,7 +357,6 @@ class _SettingsItem extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onTap,
-    this.trailing,
   });
 
   @override

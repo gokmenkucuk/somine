@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
-import 'package:somine_app/core/design/app_colors_extension.dart';
 
 /// A gradient background widget for Vibe theme
 /// Dark background with subtle red/pink glow
