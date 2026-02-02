@@ -277,7 +277,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           HapticFeedback.lightImpact(); 
           return true;
         },
-        onAcceptWithDetails: (item) async {
+        onAcceptWithDetails: (details) async {
            HapticFeedback.mediumImpact();
 
            // Reset drag state
@@ -286,7 +286,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
            final repo = ref.read(itemRepositoryProvider);
            final selectedItems = ref.read(selectedItemsProvider);
            final isSelectionMode = ref.read(isSelectionModeProvider);
-           final isBatchDelete = isSelectionMode && selectedItems.contains(item.id);
+           final isBatchDelete = isSelectionMode && selectedItems.contains(details.data.id);
 
            if (isBatchDelete) {
               // BATCH DELETE
@@ -323,28 +323,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 SuccessNotificationSheet.show(
                   context,
                   title: "Silindi",
-                  message: "${item.displayTitle.isEmpty ? 'İçerik' : item.displayTitle} silindi",
+                  message: "${details.data.displayTitle.isEmpty ? 'İçerik' : details.data.displayTitle} silindi",
                   onUndo: () async {
-                     await repo.createItem(item.copyWith(id: '')); 
+                     await repo.createItem(details.data.copyWith(id: ''));
                      ref.invalidate(paginatedFeedProvider);
                      ref.invalidate(itemCountProvider);
                   },
                 );
               }
-              // Note: Using softDelete for single item too for consistency? 
-              // Existing code used deleteItem (Permanent?). 
+              // Note: Using softDelete for single item too for consistency?
+              // Existing code used deleteItem (Permanent?).
               // User said "Trash Zone", usually implies Soft Delete.
               // Let's use deleteItem logic as before to be safe, OR switch to softDelete?
               // Existing code: await repo.deleteItem(item.id);
-              // I will stick to existing logic for single item to minimize risk, 
+              // I will stick to existing logic for single item to minimize risk,
               // BUT createItem(item.copyWith(id:'')) implies permanent delete was used before (re-creating).
               // If I use softDelete, Undo just needs restoreItem.
               // Let's keep single delete as it was (deleteItem) unless I'm sure.
               // Actually, RecenlyDeletedScreen exists, so `deleteItem` likely performs Soft Delete in this repo?
-              // Let's check ItemRepository for deleteItem vs softDeleteItems. 
+              // Let's check ItemRepository for deleteItem vs softDeleteItems.
               // Actually, to be safe, I'll keep the single delete logic identical to previous (deleteItem).
-              
-              await repo.deleteItem(item.id); 
+
+              await repo.deleteItem(details.data.id);
            }
            
            ref.invalidate(paginatedFeedProvider);
