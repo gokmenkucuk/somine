@@ -612,6 +612,63 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty && !item.displayImage!.toLowerCase().endsWith('.svg');
     final source = item.url ?? '';
 
+    // Helper to build Platform Icon - move to top level
+    Widget buildPlatformIcon(ItemModel item) {
+      IconData icon = PhosphorIconsBold.link;
+      final s = source.toLowerCase();
+
+      // Notlar için note ikonu, diğerleri için link
+      if (item.type == ItemType.note) {
+        icon = PhosphorIconsBold.note;
+      } else if (s.contains('instagram')) {
+        icon = PhosphorIconsBold.instagramLogo;
+      } else if (s.contains('youtube')) {
+        icon = PhosphorIconsBold.youtubeLogo;
+      } else if (s.contains('twitter') || s.contains('x.com')) {
+        icon = PhosphorIconsBold.xLogo;
+      } else if (s.contains('pinterest')) {
+        icon = PhosphorIconsBold.pinterestLogo;
+      } else if (s.contains('tiktok')) {
+        icon = PhosphorIconsBold.tiktokLogo;
+      } else if (s.contains('spotify')) {
+        icon = PhosphorIconsBold.spotifyLogo;
+      } else if (s.contains('linkedin')) {
+        icon = PhosphorIconsBold.linkedinLogo;
+      }
+
+      // İkonları yan yana göster - hatırlatıcı/sol, platform/sağ
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Hatırlatıcı ikonu (solda)
+          if (item.hasReminder) ...[
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: context.colors.surfaceWhite,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                PhosphorIconsBold.clock,
+                size: 14,
+                color: context.colors.primary,
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+          // Platform ikonu (sağda)
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              shape: BoxShape.circle,
+            ),
+            child: Center(child: Icon(icon, size: 14, color: context.colors.primary)),
+          ),
+        ],
+      );
+    }
+
     // --- FALLBACK VIEW (UNIFIED with Catalog) ---
     Widget buildFallbackView() {
        IconData icon;
@@ -641,58 +698,37 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
        // STANDARDIZED CARD SIZE: Square (1.0) for grid
        return AspectRatio(
          aspectRatio: 1.0,
-         child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: isNote 
-              ? const CustomNoteIcon(size: 48)
-              : ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-                child: Icon(icon, size: 48, color: Colors.white),
-              ),
+         child: Stack(
+           children: [
+             Container(
+               decoration: BoxDecoration(
+                 gradient: LinearGradient(
+                   colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
+                   begin: Alignment.topLeft,
+                   end: Alignment.bottomRight,
+                 ),
+               ),
+               alignment: Alignment.center,
+               child: isNote
+                   ? const CustomNoteIcon(size: 48)
+                   : ShaderMask(
+                       shaderCallback: (bounds) => LinearGradient(
+                         colors: gradientColors,
+                         begin: Alignment.topLeft,
+                         end: Alignment.bottomRight,
+                       ).createShader(bounds),
+                       child: Icon(icon, size: 48, color: Colors.white),
+                     ),
+             ),
+             // Üst sağda platform ve hatırlatıcı ikonu
+             Positioned(
+               top: 8,
+               right: 8,
+               child: buildPlatformIcon(item),
+             ),
+           ],
          ),
        );
-    }
-
-    // Helper to build Platform Icon
-    Widget buildPlatformIcon() {
-      IconData icon = PhosphorIconsBold.link;
-      final s = source.toLowerCase();
-
-      if (s.contains('instagram')) {
-        icon = PhosphorIconsBold.instagramLogo;
-      } else if (s.contains('youtube')) {
-        icon = PhosphorIconsBold.youtubeLogo;
-      } else if (s.contains('twitter') || s.contains('x.com')) {
-        icon = PhosphorIconsBold.xLogo;
-      } else if (s.contains('pinterest')) {
-        icon = PhosphorIconsBold.pinterestLogo;
-      } else if (s.contains('tiktok')) {
-        icon = PhosphorIconsBold.tiktokLogo;
-      } else if (s.contains('spotify')) {
-        icon = PhosphorIconsBold.spotifyLogo;
-      } else if (s.contains('linkedin')) {
-        icon = PhosphorIconsBold.linkedinLogo;
-      }
-
-      return Container(
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          shape: BoxShape.circle,
-        ),
-        child: Center(child: Icon(icon, size: 14, color: context.colors.primary)),
-      );
     }
 
     Widget contentHeader;
@@ -720,7 +756,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                    )
                  : Image.asset(item.displayImage!, fit: BoxFit.cover),
 
-              Positioned(top: 8, right: 8, child: buildPlatformIcon()),
+              Positioned(top: 8, right: 8, child: buildPlatformIcon(item)),
             ],
           ),
         );
@@ -746,7 +782,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                  )
                : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
 
-            Positioned(top: 8, right: 8, child: buildPlatformIcon()),
+            Positioned(top: 8, right: 8, child: buildPlatformIcon(item)),
           ],
         );
       }

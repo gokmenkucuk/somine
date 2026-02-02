@@ -28,6 +28,10 @@ import 'dart:ui' as import_dart_ui;
 import 'package:url_launcher/url_launcher.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/models/reminder_model.dart';
+import 'package:somine_app/core/repositories/reminder_repository.dart';
+import 'package:somine_app/core/services/reminder_scheduler_service.dart';
+import 'package:somine_app/widgets/reminder_picker_bottom_sheet.dart';
 
 class AddContentScreen extends ConsumerStatefulWidget {
   final String? initialText;
@@ -92,6 +96,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Uint8List? _noteImageBytes; // Store bytes to avoid File access issues
   String? _noteImageUrl; // For edit mode - existing image URL
   bool _isUploadingImage = false;
+
+  // Reminder State
+  ReminderModel? _currentReminder;
+  bool _hasReminder = false;
 
   // ============== COLORS ==============
 
@@ -232,7 +240,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     super.dispose();
   }
 
-  void _initializeEditMode() {
+  void _initializeEditMode() async {
     final item = widget.editItem!;
 
     // Set Mode
@@ -263,6 +271,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     // Set Category
     if (item.categoryId != null) {
       _selectedCategoryIds.add(item.categoryId!);
+    }
+
+    // Load Reminder
+    if (item.hasReminder) {
+      await _loadReminder(item.id);
     }
 
     if (mounted) setState(() {});
@@ -1075,6 +1088,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
         await _itemRepository.updateItem(updatedItem);
 
+        // Handle reminder
+        await _handleReminderAfterSave(updatedItem.id, titleText);
+
         // Create clones for other selected categories
         if (targetIds.isNotEmpty) {
           final futures = targetIds.map((catId) {
@@ -1113,7 +1129,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           return _itemRepository.createItem(newItem);
         });
 
-        await Future.wait(futures);
+        final results = await Future.wait(futures);
+        final firstItemId = results.first.id;
+
+        // Handle reminder (only for first item)
+        await _handleReminderAfterSave(firstItemId, titleText);
 
         if (mounted) {
           Navigator.pop(context, true);
@@ -1153,6 +1173,83 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             type: _AlertType.success,
           ),
     );
+  }
+
+  // Reminder Methods
+  Future<void> _loadReminder(String itemId) async {
+    try {
+      final reminderRepo = ReminderRepository();
+      final reminder = await reminderRepo.getItemReminder(itemId);
+      if (mounted) {
+        setState(() {
+          _currentReminder = reminder;
+          _hasReminder = reminder != null;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading reminder: $e');
+      if (mounted) {
+        setState(() {
+          _currentReminder = null;
+          _hasReminder = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleReminderAfterSave(String itemId, String noteTitle) async {
+    if (!_isNoteMode) return;
+
+    try {
+      final scheduler = ReminderSchedulerService();
+
+      if (_hasReminder && _currentReminder != null) {
+        // Update or create reminder
+        final reminder = _currentReminder!.copyWith(itemId: itemId);
+        if (_currentReminder!.id != null) {
+          await scheduler.updateReminder(reminder, noteTitle);
+        } else {
+          await scheduler.scheduleReminder(reminder, noteTitle);
+        }
+      } else if (!_hasReminder && widget.editItem?.hasReminder == true) {
+        // Cancel existing reminder
+        await scheduler.cancelReminder(itemId);
+      }
+    } catch (e) {
+      debugPrint('Error handling reminder: $e');
+    }
+  }
+
+  Future<void> _showReminderPicker() async {
+    final reminder = await ReminderPickerBottomSheet.show(
+      context,
+      existingReminder: _currentReminder,
+      onDelete: _currentReminder != null ? () async {
+        await _deleteReminder();
+      } : null,
+    );
+
+    if (reminder != null) {
+      setState(() {
+        _currentReminder = reminder;
+        _hasReminder = true;
+      });
+    }
+  }
+
+  Future<void> _deleteReminder() async {
+    if (_currentReminder?.id != null) {
+      try {
+        final scheduler = ReminderSchedulerService();
+        await scheduler.cancelReminder(_currentReminder!.itemId);
+        setState(() {
+          _currentReminder = null;
+          _hasReminder = false;
+        });
+      } catch (e) {
+        debugPrint('Error deleting reminder: $e');
+      }
+    }
   }
 
   Future<void> _deleteItem() async {
@@ -1921,6 +2018,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           if (_isNoteMode) ...[
             const SizedBox(height: 16),
             _buildNoteImagePicker(),
+            const SizedBox(height: 16),
+            _buildReminderPicker(),
           ],
 
           const SizedBox(height: 18), // Equal spacing
@@ -2158,6 +2257,153 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildReminderPicker() {
+    return GestureDetector(
+      onTap: _showReminderPicker,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: _hasReminder
+              ? context.colors.primary.withOpacity(0.1)
+              : context.colors.body.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hasReminder
+                ? context.colors.primary.withOpacity(0.3)
+                : Colors.transparent,
+            width: _hasReminder ? 1.5 : 0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    context.colors.primary.withOpacity(0.15),
+                    context.colors.secondary.withOpacity(0.15),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                _hasReminder ? PhosphorIconsBold.bellRinging : PhosphorIconsBold.bell,
+                size: 22,
+                color: _hasReminder ? context.colors.primary : context.colors.hint,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _hasReminder && _currentReminder != null
+                        ? 'Hatırlatıcı ayarlandı'
+                        : 'Hatırlatıcı Ekle',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _hasReminder ? context.colors.primary : context.colors.headline,
+                    ),
+                  ),
+                  if (_hasReminder && _currentReminder != null)
+                    Text(
+                      _formatReminderSummary(_currentReminder!),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: context.colors.hint,
+                      ),
+                    )
+                  else
+                    Text(
+                      'Bu not için hatırlatıcı belirle',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: context.colors.hint,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (_hasReminder)
+              Icon(
+                PhosphorIconsRegular.checkCircle,
+                size: 22,
+                color: context.colors.primary,
+              )
+            else
+              Icon(
+                PhosphorIconsRegular.caretRight,
+                size: 20,
+                color: context.colors.hint,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatReminderSummary(ReminderModel reminder) {
+    final nextOccurrence = reminder.calculateNextOccurrence();
+    final isToday = _isSameDay(nextOccurrence, DateTime.now());
+    final isTomorrow = _isSameDay(
+      nextOccurrence,
+      DateTime.now().add(const Duration(days: 1)),
+    );
+
+    String dateLabel;
+    if (isToday) {
+      dateLabel = 'Bugün';
+    } else if (isTomorrow) {
+      dateLabel = 'Yarın';
+    } else {
+      const months = [
+        'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+        'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'
+      ];
+      dateLabel = '${nextOccurrence.day} ${months[nextOccurrence.month - 1]}';
+    }
+
+    final time = '${reminder.reminderTime.hour.toString().padLeft(2, '0')}:'
+        '${reminder.reminderTime.minute.toString().padLeft(2, '0')}';
+
+    if (reminder.repeat != RepeatFrequency.none) {
+      return '$dateLabel, $time • ${_getRepeatLabel(reminder.repeat)}';
+    }
+    return '$dateLabel, $time';
+  }
+
+  String _getRepeatLabel(RepeatFrequency frequency) {
+    switch (frequency) {
+      case RepeatFrequency.none:
+        return 'Tek seferlik';
+      case RepeatFrequency.daily:
+        return 'Günlük';
+      case RepeatFrequency.weekly:
+        return 'Haftalık';
+      case RepeatFrequency.monthly:
+        return 'Aylık';
+      case RepeatFrequency.yearly:
+        return 'Yıllık';
+      case RepeatFrequency.weekdays:
+        return 'Hafta içi';
+      case RepeatFrequency.weekends:
+        return 'Hafta sonu';
+      case RepeatFrequency.customMinutes:
+        return 'Dakikada bir';
+      case RepeatFrequency.customDays:
+        return 'Gün bazlı';
+    }
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 
   // Input Field

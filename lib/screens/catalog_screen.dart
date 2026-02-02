@@ -585,11 +585,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     ? null 
                     : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
               ),
-              boxShadow: isHovered 
+              boxShadow: isHovered
                   ? [hoverShadow] // Glow on Hover
-                  : (isSelected 
+                  : (isSelected
                       ? [BoxShadow(color: context.colors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 8))]
-                      : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 2))]),
+                      : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))]),
               border: isHovered 
                   ? hoverBorder // Accent Border on Hover
                   : (isSelected 
@@ -740,9 +740,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                      decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         gradient: quickGradient,
-                        boxShadow: isHovered 
+                        boxShadow: isHovered
                             ? [hoverShadow]
-                            : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
+                            : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))],
                         border: isHovered ? hoverBorder : null,
                      ),
                      child: _buildShelfLabel(name, itemCount, isDarkBg: true, isSystem: true, isSelected: false),
@@ -768,9 +768,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                  ),
                  boxShadow: isHovered
                     ? [hoverShadow]
-                    : (isSelected 
+                    : (isSelected
                         ? [BoxShadow(color: context.colors.primary.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 6))]
-                        : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]),
+                        : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))]),
                  // Make border appear thicker on hover by increasing padding
                ),
                padding: EdgeInsets.all(isHovered ? 4 : 2), 
@@ -2141,7 +2141,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       Color iconColor = context.colors.primary; // Default Green for ALL icons to match Home
       final s = source.toLowerCase();
 
-      if (s.contains('instagram')) {
+      // Notlar için note ikonu, diğerleri için link
+      if (item.type == ItemType.note) {
+        icon = PhosphorIconsBold.note;
+      } else if (s.contains('instagram')) {
         icon = PhosphorIconsBold.instagramLogo;
       } else if (s.contains('youtube')) {
         icon = PhosphorIconsBold.youtubeLogo;
@@ -2157,14 +2160,38 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         icon = PhosphorIconsBold.linkedinLogo;
       }
 
-      return Container(
-        width: 28, height: 28, // Standardized Size
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
-          shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
-        ),
-        child: Center(child: Icon(icon, size: 16, color: iconColor)),
+      // İkonları yan yana göster - hatırlatıcı/sol, platform/sağ
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Hatırlatıcı ikonu (solda)
+          if (item.hasReminder) ...[
+            Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                color: context.colors.surfaceWhite,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
+              ),
+              child: Icon(
+                PhosphorIconsBold.clock,
+                size: 14,
+                color: iconColor,
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+          // Platform ikonu (sağda)
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
+            ),
+            child: Center(child: Icon(icon, size: 14, color: iconColor)),
+          ),
+        ],
       );
     }
     
@@ -2198,26 +2225,36 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
        // STANDARDIZED CARD SIZE: Square (1.0) for catalog grid
        return AspectRatio(
          aspectRatio: 1.0,
-         child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            alignment: Alignment.center,
-            // Notes use CustomNoteIcon, links use gradient platform icon
-            child: item.type == ItemType.note 
-              ? const CustomNoteIcon(size: 48)
-              : ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-                child: Icon(icon, size: 48, color: Colors.white),
-              ),
+         child: Stack(
+           children: [
+             Container(
+               decoration: BoxDecoration(
+                 gradient: LinearGradient(
+                   colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
+                   begin: Alignment.topLeft,
+                   end: Alignment.bottomRight,
+                 ),
+               ),
+               alignment: Alignment.center,
+               // Notes use CustomNoteIcon, links use gradient platform icon
+               child: item.type == ItemType.note
+                   ? const CustomNoteIcon(size: 48)
+                   : ShaderMask(
+                       shaderCallback: (bounds) => LinearGradient(
+                         colors: gradientColors,
+                         begin: Alignment.topLeft,
+                         end: Alignment.bottomRight,
+                       ).createShader(bounds),
+                       child: Icon(icon, size: 48, color: Colors.white),
+                     ),
+             ),
+             // Üst sağda platform ve hatırlatıcı ikonu
+             Positioned(
+               top: 8,
+               right: 8,
+               child: buildPlatformIcon(),
+             ),
+           ],
          ),
        );
     }
@@ -2229,8 +2266,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
     Widget contentHeader;
     final isNote = item.type == ItemType.note;
-    
-    if (hasImage && !isNote) { // Notes always use fallback/custom icon view
+
+    if (hasImage) {
       contentHeader = Stack(
         children: [
           item.displayImage!.startsWith('http') 

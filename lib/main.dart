@@ -20,6 +20,9 @@ import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:somine_app/core/utils/native_logger.dart';
+import 'package:somine_app/core/services/notification_service.dart';
+import 'package:somine_app/core/services/reminder_scheduler_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -59,6 +62,22 @@ void main() async {
       debugPrint('ShareService initialization error: $e');
     }
 
+    // Initialize Notification Service
+    try {
+      await NotificationService().initialize();
+      await NotificationService().requestPermissions();
+      debugPrint('NotificationService initialized successfully');
+
+      // Reschedule existing reminders on app start
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await ReminderSchedulerService().rescheduleUserReminders(currentUser.uid);
+        debugPrint('Reminders rescheduled successfully');
+      }
+    } catch (e, stack) {
+      debugPrint('NotificationService initialization error: $e');
+    }
+
     // Print native logs from previous run (Crash debugging)
     // NativeLogger.printNativeLogs();
     
@@ -85,6 +104,14 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
   void initState() {
     super.initState();
     // Share handling moved to HomeScreen to ensure auth & data is ready
+    // Pass navigator key and user ID to NotificationService for notification tap handling
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        NotificationService().setCurrentUser(user.uid);
+      }
+      NotificationService().setNavigatorKey(_navigatorKey);
+    });
   }
 
   void _onSplashComplete() {

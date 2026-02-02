@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 
 class ItemRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -108,6 +109,8 @@ class ItemRepository {
         'url': item.url, // Added URL update
         'isFavorite': item.isFavorite,
         'ogMetadata': item.ogMetadata?.toMap(),
+        'reminderId': item.reminderId,
+        'hasReminder': item.hasReminder,
         'updatedAt': FieldValue.serverTimestamp(),
       });
       debugPrint('✅ [ItemRepository] Item updated: ${item.id}');
@@ -171,6 +174,14 @@ class ItemRepository {
   /// Delete an item
   Future<void> deleteItem(String itemId) async {
     try {
+      // Cancel reminder BEFORE soft delete to prevent zombie notifications
+      try {
+        await ReminderSchedulerService().cancelReminder(itemId);
+      } catch (e) {
+        // Ignore error if reminder doesn't exist
+        debugPrint('⚠️ [ItemRepository] No reminder to cancel for $itemId: $e');
+      }
+
       // Soft delete
       await _itemsCollection.doc(itemId).update({
         'isDeleted': true,
@@ -210,6 +221,17 @@ class ItemRepository {
 
       if (snapshot.docs.isEmpty) return;
 
+      // Cancel reminders first to prevent zombie notifications
+      for (final doc in snapshot.docs) {
+        try {
+          await ReminderSchedulerService().cancelReminder(doc.id);
+        } catch (e) {
+          // Ignore error if reminder doesn't exist
+          debugPrint('⚠️ [ItemRepository] No reminder to cancel for ${doc.id}');
+        }
+      }
+
+      // Then delete items
       final batch = _firestore.batch();
       for (final doc in snapshot.docs) {
         batch.update(doc.reference, {
@@ -230,7 +252,17 @@ class ItemRepository {
   Future<void> softDeleteItems(List<String> itemIds) async {
     try {
       if (itemIds.isEmpty) return;
-      
+
+      // Cancel ALL reminders before deleting to prevent zombie notifications
+      for (final itemId in itemIds) {
+        try {
+          await ReminderSchedulerService().cancelReminder(itemId);
+        } catch (e) {
+          // Ignore error if reminder doesn't exist
+          debugPrint('⚠️ [ItemRepository] No reminder to cancel for $itemId');
+        }
+      }
+
       final batch = _firestore.batch();
       for (final id in itemIds) {
         batch.update(_itemsCollection.doc(id), {

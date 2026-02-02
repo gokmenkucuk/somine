@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
+import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/repositories/reminder_repository.dart';
+import 'package:somine_app/widgets/reminder_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -22,11 +26,25 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   YoutubePlayerController? _youtubeController;
   bool _isYoutube = false;
   bool _isPlaying = false;
+  ReminderModel? _reminder;
 
   @override
   void initState() {
     super.initState();
     _checkYoutube();
+    _loadReminder();
+  }
+
+  Future<void> _loadReminder() async {
+    if (widget.item.hasReminder) {
+      final reminderRepo = ReminderRepository();
+      final reminder = await reminderRepo.getItemReminder(widget.item.id);
+      if (mounted) {
+        setState(() {
+          _reminder = reminder;
+        });
+      }
+    }
   }
 
   void _checkYoutube() {
@@ -42,8 +60,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               mute: false,
               enableCaption: false,
               forceHD: false,
-              hideControls: false,
-              controlsVisibleAtStart: true,
+              hideControls: true, // Kontrolleri gizle - fullscreen butonu olmayacak
+              controlsVisibleAtStart: false,
             ),
           )..addListener(_listener);
         });
@@ -206,43 +224,48 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             foregroundColor: context.colors.headline, // For back button on image
             flexibleSpace: FlexibleSpaceBar(
               background: _isYoutube && _youtubeController != null
-                  ? Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        YoutubePlayer(
-                          controller: _youtubeController!,
-                          showVideoProgressIndicator: true,
-                          progressIndicatorColor: context.colors.primary,
-                          progressColors: ProgressBarColors(
-                            playedColor: context.colors.primary,
-                            handleColor: context.colors.primary,
-                          ),
-                          onReady: () {
-                             // Player Ready
-                          },
-                        ),
-                        // Custom Play Content Overlay
-                        if (!_isPlaying)
-                          GestureDetector(
-                            onTap: () {
-                               _youtubeController!.play();
-                            },
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: const Icon(
-                                Icons.play_arrow_rounded, 
-                                size: 48, 
-                                color: Colors.white
+                  ? GestureDetector(
+                      onTap: () {
+                        // Videoya tıklayınca oynat/duraklat
+                        setState(() {
+                          if (_isPlaying) {
+                            _youtubeController!.pause();
+                          } else {
+                            _youtubeController!.play();
+                          }
+                        });
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Center(
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: YoutubePlayer(
+                                controller: _youtubeController!,
+                                showVideoProgressIndicator: false,
+                                onReady: () {
+                                   // Player Ready
+                                },
                               ),
                             ),
                           ),
-                      ],
+                          // Play/Pause icon overlay
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _isPlaying ? Icons.pause : Icons.play_arrow,
+                              size: 36,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : (widget.item.displayImage != null
                       ? Hero(
@@ -306,6 +329,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
                    const SizedBox(height: DesignTokens.spacingLG),
 
+                   // Reminder Indicator
+                   if (_reminder != null)
+                     ReminderIndicator(reminder: _reminder!),
+
+                   if (_reminder != null)
+                     const SizedBox(height: DesignTokens.spacingLG),
+
                    // Note Section (Content) - No Label, just text
                    if (widget.item.note != null && widget.item.note!.isNotEmpty)
                      Container(
@@ -343,7 +373,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                        decoration: BoxDecoration(
                          color: DesignTokens.background, // Very subtle background
-                         borderRadius: BorderRadius.circular(DesignTokens.radiusXLarge),
+                         borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
                          border: Border.all(color: DesignTokens.border),
                        ),
                        child: Row(
@@ -403,7 +433,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
               ),
-                alignment: Alignment.center,
+              child: SizedBox(
                 height: 56,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

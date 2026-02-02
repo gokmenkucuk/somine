@@ -87,6 +87,8 @@ class ItemModel {
   final DateTime updatedAt;
   final bool isDeleted;
   final DateTime? deletedAt;
+  final String? reminderId;
+  final bool hasReminder;
 
   const ItemModel({
     required this.id,
@@ -103,6 +105,8 @@ class ItemModel {
     required this.updatedAt,
     this.isDeleted = false,
     this.deletedAt,
+    this.reminderId,
+    this.hasReminder = false,
   });
 
   /// Create from Firestore document
@@ -126,6 +130,8 @@ class ItemModel {
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isDeleted: data['isDeleted'] as bool? ?? false,
       deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
+      reminderId: data['reminderId'] as String?,
+      hasReminder: data['hasReminder'] as bool? ?? false,
     );
   }
 
@@ -145,6 +151,8 @@ class ItemModel {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isDeleted': isDeleted,
       'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
+      'reminderId': reminderId,
+      'hasReminder': hasReminder,
     };
   }
 
@@ -164,6 +172,8 @@ class ItemModel {
     DateTime? updatedAt,
     bool? isDeleted,
     DateTime? deletedAt,
+    String? reminderId,
+    bool? hasReminder,
   }) {
     return ItemModel(
       id: id ?? this.id,
@@ -180,6 +190,8 @@ class ItemModel {
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
+      reminderId: reminderId ?? this.reminderId,
+      hasReminder: hasReminder ?? this.hasReminder,
     );
   }
 
