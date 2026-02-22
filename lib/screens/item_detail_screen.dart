@@ -10,8 +10,10 @@ import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
 import 'package:somine_app/widgets/reminder_indicator.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'youtube_fullscreen_screen.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final ItemModel item;
@@ -60,8 +62,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               mute: false,
               enableCaption: false,
               forceHD: false,
-              hideControls: true, // Kontrolleri gizle - fullscreen butonu olmayacak
-              controlsVisibleAtStart: false,
+              hideControls: false, // FIX: Kontrolleri göster
+              controlsVisibleAtStart: true, // FIX: Başlangıçta kontrolleri göster
             ),
           )..addListener(_listener);
         });
@@ -75,6 +77,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       if (isPlaying != _isPlaying) {
         setState(() => _isPlaying = isPlaying);
       }
+      // Orientation management handled by fullscreen screen via MethodChannel
     }
   }
 
@@ -224,50 +227,81 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             foregroundColor: context.colors.headline, // For back button on image
             flexibleSpace: FlexibleSpaceBar(
               background: _isYoutube && _youtubeController != null
-                  ? GestureDetector(
-                      onTap: () {
-                        // Videoya tıklayınca oynat/duraklat
-                        setState(() {
-                          if (_isPlaying) {
-                            _youtubeController!.pause();
-                          } else {
-                            _youtubeController!.play();
-                          }
-                        });
-                      },
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Center(
-                            child: AspectRatio(
-                              aspectRatio: 16 / 9,
-                              child: YoutubePlayer(
-                                controller: _youtubeController!,
-                                showVideoProgressIndicator: false,
-                                onReady: () {
-                                   // Player Ready
-                                },
-                              ),
-                            ),
-                          ),
-                          // Play icon - sadece video duraklatıldığında göster
-                          if (!_isPlaying)
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: const Icon(
-                                Icons.play_arrow_rounded,
-                                size: 42,
-                                color: Colors.white,
-                              ),
-                            ),
-                        ],
+                  ? YoutubePlayerBuilder(
+                      player: YoutubePlayer(
+                        controller: _youtubeController!,
+                        showVideoProgressIndicator: false,
+                        onReady: () {
+                           // Player Ready
+                        },
                       ),
+                      builder: (context, player) {
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Center(
+                              child: AspectRatio(
+                                aspectRatio: 16 / 9,
+                                child: player,
+                              ),
+                            ),
+                            // FIX: Sadece video duraklatıldığında play ikonu göster
+                            if (!_isPlaying)
+                              GestureDetector(
+                                onTap: () {
+                                  // Sadece videoya oynatmak için tıkla
+                                  _youtubeController!.play();
+                                },
+                                child: Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(
+                                    Icons.play_arrow_rounded,
+                                    size: 42,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            // FIX: Fullscreen butonu
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () {
+                                  // Fullscreen screen'e yönlendir
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      fullscreenDialog: true,
+                                      builder: (context) => YoutubeFullscreenScreen(
+                                        controller: _youtubeController!,
+                                        videoTitle: widget.item.displayTitle,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.fullscreen,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     )
                   : (widget.item.displayImage != null
                       ? Hero(

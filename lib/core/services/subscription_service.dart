@@ -13,8 +13,9 @@ class SubscriptionService {
   // Platform-specific API keys
   static String get _apiKey {
     if (Platform.isIOS) {
-      return 'test_kkWnrhYrsOAPZNKNMptpNRtsgaO';
+      return 'appl_AjqufxZJYezglbnyGcyilKTbOkP';
     } else if (Platform.isAndroid) {
+      // TODO: Replace with your actual RevenueCat Android Public App-Specific API Key (starts with 'goog_')
       return 'test_kkWnrhYrsOAPZNKNMptpNRtsgaO';
     } else {
       throw UnsupportedError('Platform not supported');
@@ -60,8 +61,8 @@ class SubscriptionService {
   /// Check if user has premium subscription
   bool get isPremium {
     if (_customerInfo == null) return false;
-    // Check for "So Mine Premium" entitlement (must match RevenueCat dashboard)
-    return _customerInfo!.entitlements.active.containsKey('So Mine Premium');
+    // Check for "Premium" entitlement (must match RevenueCat dashboard)
+    return _customerInfo!.entitlements.active.containsKey('Premium');
   }
 
   /// Get current subscription tier

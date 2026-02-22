@@ -10,6 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:ui' as ui;
 
 // import 'package:somine_app/core/design/app_colors.dart';
@@ -612,28 +613,77 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty && !item.displayImage!.toLowerCase().endsWith('.svg');
     final source = item.url ?? '';
 
-    // Helper to build Platform Icon - move to top level
+    // Helper to check for known brands
+    bool _isMapUrl(String url) {
+      return url.contains('maps.app.goo.gl') || 
+             url.contains('goo.gl/maps') ||
+             url.contains('google.com/maps') ||
+             url.contains('maps.google') ||
+             url.contains('yandex.com/maps') ||
+             url.contains('yandex.ru/maps') ||
+             url.contains('maps.apple.com');
+    }
+
+    bool _isKnownBrandSite(String? url) {
+      if (url == null) return false;
+      final lowerUrl = url.toLowerCase();
+      // Exclude Maps services - they return real map images
+      if (_isMapUrl(lowerUrl)) return false;
+      
+      final knownBrands = [
+        'google', 'yandex'
+      ];
+      return knownBrands.any((brand) => lowerUrl.contains(brand));
+    }
+
+    // Helper to build Platform Icon
     Widget buildPlatformIcon(ItemModel item) {
-      IconData icon = PhosphorIconsBold.link;
+      Widget iconWidget = Icon(PhosphorIconsBold.link, size: 14, color: context.colors.primary);
       final s = source.toLowerCase();
 
       // Notlar için note ikonu, diğerleri için link
       if (item.type == ItemType.note) {
-        icon = PhosphorIconsBold.note;
+        iconWidget = Icon(PhosphorIconsBold.note, size: 14, color: context.colors.primary);
       } else if (s.contains('instagram')) {
-        icon = PhosphorIconsBold.instagramLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.instagram, size: 14, color: context.colors.primary);
       } else if (s.contains('youtube')) {
-        icon = PhosphorIconsBold.youtubeLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.youtube, size: 14, color: context.colors.primary);
       } else if (s.contains('twitter') || s.contains('x.com')) {
-        icon = PhosphorIconsBold.xLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.xTwitter, size: 13, color: context.colors.primary);
       } else if (s.contains('pinterest')) {
-        icon = PhosphorIconsBold.pinterestLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.pinterest, size: 14, color: context.colors.primary);
       } else if (s.contains('tiktok')) {
-        icon = PhosphorIconsBold.tiktokLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.tiktok, size: 13, color: context.colors.primary);
       } else if (s.contains('spotify')) {
-        icon = PhosphorIconsBold.spotifyLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.spotify, size: 14, color: context.colors.primary);
       } else if (s.contains('linkedin')) {
-        icon = PhosphorIconsBold.linkedinLogo;
+        iconWidget = FaIcon(FontAwesomeIcons.linkedin, size: 14, color: context.colors.primary);
+      } else if (s.contains('facebook')) {
+        iconWidget = FaIcon(FontAwesomeIcons.facebook, size: 14, color: context.colors.primary);
+      } else if (s.contains('github')) {
+        iconWidget = FaIcon(FontAwesomeIcons.github, size: 14, color: context.colors.primary);
+      } else if (s.contains('medium')) {
+        iconWidget = FaIcon(FontAwesomeIcons.medium, size: 14, color: context.colors.primary);
+      } else if (s.contains('amazon')) {
+        iconWidget = FaIcon(FontAwesomeIcons.amazon, size: 14, color: context.colors.primary);
+      } else if (s.contains('google')) {
+        iconWidget = FaIcon(FontAwesomeIcons.google, size: 13, color: context.colors.primary);
+      } else if (s.contains('yandex')) {
+        iconWidget = FaIcon(FontAwesomeIcons.yandex, size: 13, color: context.colors.primary);
+      } else if (s.contains('apple')) {
+        iconWidget = FaIcon(FontAwesomeIcons.apple, size: 14, color: context.colors.primary);
+      } else if (s.contains('twitch')) {
+        iconWidget = FaIcon(FontAwesomeIcons.twitch, size: 13, color: context.colors.primary);
+      } else if (s.contains('discord')) {
+        iconWidget = FaIcon(FontAwesomeIcons.discord, size: 13, color: context.colors.primary);
+      } else if (s.contains('reddit')) {
+        iconWidget = FaIcon(FontAwesomeIcons.reddit, size: 14, color: context.colors.primary);
+      } else if (s.contains('whatsapp')) {
+        iconWidget = FaIcon(FontAwesomeIcons.whatsapp, size: 14, color: context.colors.primary);
+      } else if (s.contains('telegram')) {
+        iconWidget = FaIcon(FontAwesomeIcons.telegram, size: 14, color: context.colors.primary);
+      } else if (s.contains('snapchat')) {
+        iconWidget = FaIcon(FontAwesomeIcons.snapchat, size: 14, color: context.colors.primary);
       }
 
       // İkonları yan yana göster - hatırlatıcı/sol, platform/sağ
@@ -663,7 +713,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
               color: context.colors.surfaceWhite,
               shape: BoxShape.circle,
             ),
-            child: Center(child: Icon(icon, size: 14, color: context.colors.primary)),
+            child: Center(child: iconWidget),
           ),
         ],
       );
@@ -671,28 +721,54 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
     // --- FALLBACK VIEW (UNIFIED with Catalog) ---
     Widget buildFallbackView() {
-       IconData icon;
+       Widget iconWidget;
        List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
        final s = source.toLowerCase();
        
        if (isNote) {
-          icon = PhosphorIconsBold.note;
+          iconWidget = Icon(PhosphorIconsBold.note, size: 48, color: Colors.white);
        } else if (s.contains('twitter') || s.contains('x.com')) {
-          icon = PhosphorIconsBold.xLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.xTwitter, size: 40, color: Colors.white);
        } else if (s.contains('instagram')) {
-          icon = PhosphorIconsBold.instagramLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.instagram, size: 48, color: Colors.white);
        } else if (s.contains('youtube')) {
-          icon = PhosphorIconsBold.youtubeLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.youtube, size: 48, color: Colors.white);
        } else if (s.contains('pinterest')) {
-          icon = PhosphorIconsBold.pinterestLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.pinterest, size: 48, color: Colors.white);
        } else if (s.contains('tiktok')) {
-          icon = PhosphorIconsBold.tiktokLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.tiktok, size: 40, color: Colors.white);
        } else if (s.contains('spotify')) {
-          icon = PhosphorIconsBold.spotifyLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.spotify, size: 48, color: Colors.white);
        } else if (s.contains('linkedin')) {
-          icon = PhosphorIconsBold.linkedinLogo;
+          iconWidget = FaIcon(FontAwesomeIcons.linkedin, size: 48, color: Colors.white);
+       } else if (s.contains('facebook')) {
+          iconWidget = FaIcon(FontAwesomeIcons.facebook, size: 48, color: Colors.white);
+       } else if (s.contains('github')) {
+          iconWidget = FaIcon(FontAwesomeIcons.github, size: 48, color: Colors.white);
+       } else if (s.contains('medium')) {
+          iconWidget = FaIcon(FontAwesomeIcons.medium, size: 48, color: Colors.white);
+       } else if (s.contains('amazon')) {
+          iconWidget = FaIcon(FontAwesomeIcons.amazon, size: 48, color: Colors.white);
+       } else if (s.contains('google')) {
+          iconWidget = FaIcon(FontAwesomeIcons.google, size: 40, color: Colors.white);
+       } else if (s.contains('yandex')) {
+          iconWidget = FaIcon(FontAwesomeIcons.yandex, size: 40, color: Colors.white);
+       } else if (s.contains('apple')) {
+          iconWidget = FaIcon(FontAwesomeIcons.apple, size: 48, color: Colors.white);
+       } else if (s.contains('twitch')) {
+          iconWidget = FaIcon(FontAwesomeIcons.twitch, size: 40, color: Colors.white);
+       } else if (s.contains('discord')) {
+          iconWidget = FaIcon(FontAwesomeIcons.discord, size: 40, color: Colors.white);
+       } else if (s.contains('reddit')) {
+          iconWidget = FaIcon(FontAwesomeIcons.reddit, size: 48, color: Colors.white);
+       } else if (s.contains('whatsapp')) {
+          iconWidget = FaIcon(FontAwesomeIcons.whatsapp, size: 48, color: Colors.white);
+       } else if (s.contains('telegram')) {
+          iconWidget = FaIcon(FontAwesomeIcons.telegram, size: 48, color: Colors.white);
+       } else if (s.contains('snapchat')) {
+          iconWidget = FaIcon(FontAwesomeIcons.snapchat, size: 40, color: Colors.white);
        } else {
-          icon = PhosphorIconsBold.link;
+          iconWidget = Icon(PhosphorIconsBold.link, size: 48, color: Colors.white);
        }
 
        // STANDARDIZED CARD SIZE: Square (1.0) for grid
@@ -717,7 +793,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                          begin: Alignment.topLeft,
                          end: Alignment.bottomRight,
                        ).createShader(bounds),
-                       child: Icon(icon, size: 48, color: Colors.white),
+                       child: iconWidget, // Use widget directly, ShaderMask works on Icon and FaIcon
                      ),
              ),
              // Üst sağda platform ve hatırlatıcı ikonu
@@ -731,9 +807,16 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
        );
     }
 
-    Widget contentHeader;
+    // Determine if we should show the image or the branded placeholder
+    // If it's a known brand (Google, Yandex, etc.) and NOT a map, we prefer the clean icon placeholder (fallback view)
+    final isKnownBrand = _isKnownBrandSite(source);
+    // Maps always show image if available. Other known brands show placeholder.
+    // Regular sites show image if available.
+    final bool shouldShowImage = (hasImage && !isKnownBrand) || (hasImage && _isMapUrl(source.toLowerCase()));
     
-    if (hasImage) {
+    Widget contentHeader;
+
+    if (shouldShowImage) {
       if (forceSquare) {
         // SQUARE MODE: Use AspectRatio with cover fit
         contentHeader = AspectRatio(
@@ -745,6 +828,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                  ? CachedNetworkImage(
                      imageUrl: item.displayImage!,
                      fit: BoxFit.cover,
+                     width: double.infinity,
+                     alignment: Alignment.center,
                      placeholder: (context, url) => _ImageShimmerPlaceholder(),
                      errorWidget: (context, url, error) => buildFallbackView(),
                    )
@@ -752,22 +837,26 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                  ? Image.memory(
                      const Base64Decoder().convert(item.displayImage!.substring(23)),
                      fit: BoxFit.cover,
+                     width: double.infinity,
+                     alignment: Alignment.center,
                      errorBuilder: (context, url, error) => buildFallbackView(),
                    )
-                 : Image.asset(item.displayImage!, fit: BoxFit.cover),
+                 : Image.asset(item.displayImage!, fit: BoxFit.cover, width: double.infinity, alignment: Alignment.center),
 
               Positioned(top: 8, right: 8, child: buildPlatformIcon(item)),
             ],
           ),
         );
       } else {
-        // MASONRY MODE: Use natural image height
+        // MASONRY MODE: Use natural image height but force full width
         contentHeader = Stack(
           children: [
             item.displayImage!.startsWith('http')
                ? CachedNetworkImage(
                    imageUrl: item.displayImage!,
                    fit: BoxFit.fitWidth,
+                   width: double.infinity,
+                   alignment: Alignment.center,
                    placeholder: (context, url) => AspectRatio(
                      aspectRatio: 1.0,
                      child: _ImageShimmerPlaceholder(),
@@ -778,19 +867,21 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                ? Image.memory(
                    const Base64Decoder().convert(item.displayImage!.substring(23)),
                    fit: BoxFit.fitWidth,
+                   width: double.infinity,
+                   alignment: Alignment.center,
                    errorBuilder: (context, url, error) => buildFallbackView(),
                  )
-               : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
+               : Image.asset(item.displayImage!, fit: BoxFit.fitWidth, width: double.infinity, alignment: Alignment.center),
 
             Positioned(top: 8, right: 8, child: buildPlatformIcon(item)),
           ],
         );
       }
     } else {
-      // No Image: Use buildFallbackView (already has AspectRatio inside)
+      // No Image OR Known Brand: Use buildFallbackView (already has AspectRatio inside)
       contentHeader = buildFallbackView();
     }
-
+    
     // WRAP WITH LONG PRESS DRAGGABLE
     return LongPressDraggable<ItemModel>(
       data: item,

@@ -61,7 +61,8 @@ class ShareService {
           }
           
           if (foundUrl != null) {
-            sharedUrlNotifier.value = foundUrl;
+            final extractedUrl = _extractUrl(foundUrl);
+            sharedUrlNotifier.value = extractedUrl ?? foundUrl;
             // Clear data from native storage after successful read
             await _channel.invokeMethod('clearSharedData');
           }
@@ -85,8 +86,9 @@ class ShareService {
     
     if (content.isNotEmpty) {
       debugPrint("Received shared content: $content");
-      // Pass the raw content (text/link) to the UI
-      sharedUrlNotifier.value = content;
+      // Extract URL in case the shared content contains text + URL (e.g. Pinterest, Medium)
+      final extractedUrl = _extractUrl(content);
+      sharedUrlNotifier.value = extractedUrl ?? content;
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:somine_app/core/models/item_model.dart';
 import 'dart:io';
+import 'dart:convert';
 
 /// Service to fetch Open Graph metadata from URLs
 class MetadataService {
@@ -27,9 +28,23 @@ class MetadataService {
 
       // First, resolve redirects using dart:io HttpClient
       String finalUrl = url;
-      if (_isMapUrl(url)) {
+      if (_isMapUrl(url) || url.contains('vt.tiktok.com')) {
         finalUrl = await _resolveRedirects(url) ?? url;
         debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
+      }
+
+      // Special Platform Extractors
+      if (finalUrl.contains('tiktok.com')) {
+        final data = await _fetchTikTokOembed(finalUrl);
+        if (data['title'] != null) {
+          debugPrint('🎵 [MetadataService] TikTok Oembed Success');
+          return OGMetadata(
+            title: data['title'],
+            description: null,
+            imageUrl: data['image'],
+            siteName: 'TikTok',
+          );
+        }
       }
 
       // Then fetch the page content
@@ -38,15 +53,29 @@ class MetadataService {
           ? const Duration(seconds: 5)
           : const Duration(seconds: 10);
 
+      // Set a generic Desktop Safari User-Agent to bypass mobile/bot blocks (Spotify, Dribbble, etc.)
       final response = await http.get(
         Uri.parse(finalUrl),
         headers: {
-          'User-Agent':
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
         },
       ).timeout(timeout);
+
+      // Reddit Fallback: 403/401 is common, use their open JSON API
+      if (response.statusCode != 200 && (finalUrl.contains('reddit.com') || finalUrl.contains('redd.it'))) {
+        final data = await _fetchRedditJson(finalUrl);
+        if (data['title'] != null) {
+          debugPrint('👽 [MetadataService] Reddit JSON API Success');
+          return OGMetadata(
+            title: data['title'],
+            description: null,
+            imageUrl: data['image'],
+            siteName: 'Reddit',
+          );
+        }
+      }
 
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
@@ -227,6 +256,53 @@ class MetadataService {
     // If request failed completely, return null
     // UI will show placeholder with icon based on URL
     return null;
+  }
+  
+  /// Fallback for TikTok using oEmbed API
+  static Future<Map<String, String?>> _fetchTikTokOembed(String url) async {
+    try {
+      final response = await http.get(Uri.parse('https://www.tiktok.com/oembed?url=$url')).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return {
+          'title': json['title'],
+          'image': json['thumbnail_url'],
+        };
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] TikTok Oembed Error: $e');
+    }
+    return {'title': null, 'image': null};
+  }
+
+  /// Fallback for Reddit JSON API
+  static Future<Map<String, String?>> _fetchRedditJson(String url) async {
+    try {
+      // Remove trailing slash if exists, then append .json
+      final cleanUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+      final response = await http.get(
+        Uri.parse('$cleanUrl.json'),
+        headers: {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'}
+      ).timeout(const Duration(seconds: 5));
+      
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        if (json is List && json.isNotEmpty && json[0]['data']['children'].isNotEmpty) {
+           final post = json[0]['data']['children'][0]['data'];
+           String? image;
+           if (post['preview'] != null && post['preview']['images'] != null && post['preview']['images'].isNotEmpty) {
+             image = post['preview']['images'][0]['source']['url']?.replaceAll('&amp;', '&');
+           }
+           return {
+             'title': post['title'],
+             'image': image ?? post['thumbnail'],
+           };
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Reddit JSON Error: $e');
+    }
+    return {'title': null, 'image': null};
   }
   
   /// Check if URL is a maps service

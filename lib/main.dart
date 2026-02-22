@@ -31,10 +31,10 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
     
-    // Lock orientation to Portrait
+    // Lock app to portrait mode globally
+    // YouTube fullscreen uses native MethodChannel to temporarily unlock
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
     ]);
 
     await initializeDateFormatting('tr', null);

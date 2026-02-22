@@ -437,21 +437,25 @@ class ProfileScreen extends ConsumerWidget {
                                   );
 
                                   if (shouldDelete == true && context.mounted) {
-                                    // Reset tab index to Feed before delete
-                                    ref.read(homeTabIndexProvider.notifier).state = 0;
+                                    // Reset tab index removed to prevent showing empty feed
+                                    // ref.read(homeTabIndexProvider.notifier).state = 0;
                                     
                                     // Capture navigator before async operation
                                     final navigator = Navigator.of(context);
                                     
                                     try {
-                                      // Show loading
+                                      // Show loading with OPAQUE background to hide empty feed flash
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
+                                        barrierColor: Colors.black, 
                                         builder: (context) => const Center(
-                                          child: CircularProgressIndicator(),
+                                          child: CircularProgressIndicator(color: Colors.white),
                                         ),
                                       );
+
+                                      // Reset tab index to Feed before deleting account so next login starts fresh
+                                      ref.read(homeTabIndexProvider.notifier).state = 0;
 
                                       // Perform account deletion
                                       await AuthRepository().deleteAccount();

@@ -90,7 +90,7 @@ class PaywallScreen extends ConsumerWidget {
 
                     // Packages
                     if (subscriptionState.isLoading)
-                      const CircularProgressIndicator()
+                      const Center(child: CircularProgressIndicator())
                     else if (subscriptionState.availablePackages.isNotEmpty)
                       ...subscriptionState.availablePackages.map(
                         (package) => _buildPackageCard(context, ref, package),
@@ -292,12 +292,14 @@ class PaywallScreen extends ConsumerWidget {
 
   String _getPackageTitle(Package package) {
     switch (package.packageType) {
+      case PackageType.weekly:
+        return "Haftalık Plan";
       case PackageType.monthly:
         return "Aylık Plan";
       case PackageType.annual:
         return "Yıllık Plan";
       case PackageType.lifetime:
-        return "Lifetime";
+        return "Ömür Boyu";
       default:
         return package.storeProduct.title;
     }
@@ -305,6 +307,8 @@ class PaywallScreen extends ConsumerWidget {
 
   String _getPackageDescription(Package package) {
     switch (package.packageType) {
+      case PackageType.weekly:
+        return "Her hafta otomatik yenilenir";
       case PackageType.monthly:
         return "Her ay otomatik yenilenir";
       case PackageType.annual:

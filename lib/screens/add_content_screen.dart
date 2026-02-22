@@ -115,9 +115,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
     final knownBrands = [
       'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
-      'linkedin', 'medium', 'spotify', 'github', 'pinterest', 'tiktok',
-      'amazon', 'apple', 'microsoft', 'adidas', 'nike', 'puma',
-      'netflix', 'discord', 'slack', 'notion', 'figma', 'dribbble',
+      'linkedin', 'spotify', 'github', 'amazon', 'apple', 'microsoft',
+      'adidas', 'nike', 'puma', 'netflix', 'discord', 'slack', 'notion', 
+      'figma', 'twitch', 'snapchat', 'whatsapp', 'telegram', 'yandex',
+      'stackoverflow', 'gitlab', 'bitbucket'
     ];
 
     return knownBrands.any((brand) => url.contains(brand));
@@ -1638,6 +1639,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Platform Background (Gradient Preview Placeholder)
   Widget _buildPlatformBackground({bool animate = false}) {
+    final bool showFavicon = !animate && _hasLink && !_isLoadingMetadata && _ogMetadata?.imageUrl != null && _isFaviconUrl(_ogMetadata!.imageUrl) && !_isKnownBrandSite();
+    
     return AnimatedBuilder(
       animation: _loadingController,
       builder: (context, child) {
@@ -1704,20 +1707,44 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                         ),
                       ),
                     )
-                    : Icon(
-                      _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
-                          ? Icons.link_off // No preview found
-                          : Icons.add_link_rounded,
-                      size: 64,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
+                    : showFavicon
+                        ? Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Image.network(
+                              _ogMetadata!.imageUrl!,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.language, color: Colors.grey, size: 32),
+                            ),
+                          )
+                        : Icon(
+                          _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
+                              ? Icons.link_off // No preview found
+                              : Icons.add_link_rounded,
+                          size: 64,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
                 const SizedBox(height: 12),
                 Text(
                   animate
                       ? "Bağlantı taranıyor..."
                       : _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
                           ? "Önizleme yok"
-                          : "Bağlantı önizlemesi burada görünecek",
+                          : showFavicon 
+                              ? (_ogMetadata?.title ?? "Bağlantı Eklendi")
+                              : "Bağlantı önizlemesi burada görünecek",
                   style: GoogleFonts.poppins(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,

@@ -10,7 +10,7 @@ class SubscriptionState {
   final String? error;
 
   const SubscriptionState({
-    this.tier = SubscriptionTier.curator, // TESTING: Force Premium
+    this.tier = SubscriptionTier.starter,
     this.isLoading = false,
     this.availablePackages = const [],
     this.error,
@@ -48,8 +48,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
     final packages = await _service.getOfferings();
     
     state = state.copyWith(
-      tier: SubscriptionTier.curator, // TESTING: Force Premium
-      // tier: _service.currentTier,
+      tier: _service.currentTier,
       isLoading: false,
       availablePackages: packages,
     );
@@ -62,8 +61,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
     final packages = await _service.getOfferings();
     
     state = state.copyWith(
-      tier: SubscriptionTier.curator, // TESTING: Force Premium
-      // tier: _service.currentTier,
+      tier: _service.currentTier,
       isLoading: false,
       availablePackages: packages,
     );
@@ -78,7 +76,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
       
       if (success) {
         state = state.copyWith(
-          tier: SubscriptionTier.curator,
+          tier: _service.currentTier,
           isLoading: false,
         );
       } else {
@@ -119,14 +117,12 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
   /// Check if can create collection
   bool canCreateCollection(int currentCount) {
-    return true; // TESTING: Bypass limits
-    // return _service.canCreateCollection(currentCount);
+    return _service.canCreateCollection(currentCount);
   }
 
   /// Check if can add item
   bool canAddItem(int currentItemCount) {
-    return true; // TESTING: Bypass limits
-    // return _service.canAddItem(currentItemCount);
+    return _service.canAddItem(currentItemCount);
   }
 }
 
@@ -142,8 +138,7 @@ final subscriptionProvider = StateNotifierProvider<SubscriptionNotifier, Subscri
 
 /// Convenience providers
 final isPremiumProvider = Provider<bool>((ref) {
-  return true; // TESTING: Force Premium
-  // return ref.watch(subscriptionProvider).isPremium;
+  return ref.watch(subscriptionProvider).isPremium;
 });
 
 final subscriptionTierProvider = Provider<SubscriptionTier>((ref) {

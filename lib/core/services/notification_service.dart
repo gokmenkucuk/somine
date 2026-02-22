@@ -5,8 +5,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:somine_app/core/models/reminder_model.dart';
+import 'package:somine_app/core/repositories/category_repository.dart';
+import 'package:somine_app/core/models/category_model.dart';
+import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
-import 'package:somine_app/screens/item_detail_screen.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -169,14 +171,32 @@ class NotificationService {
         final itemRepo = ItemRepository();
         final item = await itemRepo.getItem(itemId);
 
-        if (item != null && _navigatorKey!.currentState != null) {
-          // ItemDetailScreen'e push et
-          _navigatorKey!.currentState!.push(
-            MaterialPageRoute(
-              builder: (context) => ItemDetailScreen(item: item),
-            ),
+        if (item != null && _navigatorKey!.currentContext != null) {
+          final context = _navigatorKey!.currentContext!;
+          
+          List<CategoryModel> categories = [];
+          String categoryName = 'Kategori';
+          
+          if (_currentUserId != null) {
+            try {
+              final categoryRepo = CategoryRepository();
+              categories = await categoryRepo.getCategories(_currentUserId!);
+              final match = categories.where((c) => c.id == item.categoryId).toList();
+              if (match.isNotEmpty) {
+                categoryName = match.first.name;
+              }
+            } catch (e) {
+              debugPrint('⚠️ [NotificationService] Could not fetch categories: $e');
+            }
+          }
+
+          ItemDetailBottomSheet.show(
+            context,
+            item,
+            categoryName,
+            categories,
           );
-          debugPrint('✅ [NotificationService] Navigated to item: $itemId');
+          debugPrint('✅ [NotificationService] Navigated to item: $itemId via BottomSheet');
         } else {
           debugPrint('⚠️ [NotificationService] Item not found: $itemId');
         }

@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+// YoutubeFullscreenScreen import removed - feature disabled due to iOS issues
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
 import '../core/design/app_colors_extension.dart';
@@ -54,7 +56,7 @@ class ItemDetailBottomSheet extends StatefulWidget {
 
 class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   double? _imageAspectRatio;
-  
+
   // YouTube Player State
   YoutubePlayerController? _youtubeController;
   bool _isYoutube = false;
@@ -95,6 +97,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
       if (isPlaying != _isPlaying) {
         setState(() => _isPlaying = isPlaying);
       }
+      // Orientation management handled by fullscreen screen via MethodChannel
     }
   }
 
@@ -212,7 +215,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   Widget _buildYoutubePlayer() {
     // Get status bar height to position video correctly
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    
+
     return Container(
       color: Colors.black, // Black background fills status bar area
       child: Column(
@@ -221,38 +224,52 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
           SizedBox(height: statusBarHeight),
           // Actual YouTube Player
           Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                YoutubePlayer(
-                  controller: _youtubeController!,
-                  showVideoProgressIndicator: true,
-                  progressIndicatorColor: context.colors.primary,
-                  progressColors: ProgressBarColors(
-                    playedColor: context.colors.primary,
-                    handleColor: context.colors.primary,
-                  ),
+            child: YoutubePlayerBuilder(
+              player: YoutubePlayer(
+                controller: _youtubeController!,
+                showVideoProgressIndicator: true,
+                progressIndicatorColor: context.colors.primary,
+                progressColors: ProgressBarColors(
+                  playedColor: context.colors.primary,
+                  handleColor: context.colors.primary,
                 ),
-                // Custom Play Button Overlay
-                if (!_isPlaying)
-                  GestureDetector(
-                    onTap: () => _youtubeController!.play(),
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                // Hide fullscreen button by customizing bottom actions
+                bottomActions: [
+                  CurrentPosition(),
+                  ProgressBar(isExpanded: true),
+                  RemainingDuration(),
+                  PlaybackSpeedButton(),
+                  // FullScreenButton removed intentionally
+                ],
+              ),
+              builder: (context, player) {
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    player,
+                    // FIX: Sadece video duraklatıldığında play ikonu göster
+                    if (!_isPlaying)
+                      GestureDetector(
+                        onTap: () => _youtubeController!.play(),
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.play_arrow_rounded,
+                            size: 48,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-              ],
+                    // Fullscreen button removed due to iOS orientation issues
+                  ],
+                );
+              },
             ),
           ),
         ],
