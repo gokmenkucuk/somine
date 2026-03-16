@@ -4,7 +4,7 @@ SoMine QA & Yayın Öncesi Test Listesi
  Google ile Giriş test edilecek  BAŞARILI
  İlk giriş (Onboarding - İsim/Kullanıcı Adı alma) akışı doğrulanacak -- BAŞARILI
  Varsa Misafir Modu (Guest Mode) geri dönüş senaryosu kontrol edilecek -- YOK
- Hesap Silme akışı ve verilerin temizlenmesi test edilecek -- HESAP SİLME BAŞARILI. HESAP SİLİP YENİDEN GİRDİĞİNDE KULLANICI EN SON BU İŞLEMİ PROFİL SAYFASINDA YAPTIĞI İÇİN UYGULAMA PROFİL SAYFASINDA AÇILIYOR. KULLANICI HESABI SİLDİ İSE YENİDEN KAYIT OLDU ANLAMINA GELİR VE ONBOARDİNG SONRASI ANA SAYFADA AÇILMALIDIR.
+ Hesap Silme akışı ve verilerin temizlenmesi test edilecek -- BAŞARILI (Hesap silme sonrası anasayfaya dönüş hatası [BUG-01] düzeltildi)
 2. Temel Özellikler (İçerikler & Kategoriler)
  Not Ekleme (Metin girişi, kaydetme ve UI gösterimi) - NOT EKLEME TAMAM, HATIRLATICI KURMA TAMAM. HATIRLATICI BİLDİRİMİ GELDİĞİNDE ÜZERİNE TIKLAYINCA FARKLI VİD DETAY SAYFASINA GİDİYOR GİBİ VAR OLAN NOT DETAY SAYFASINA AÇILMASI GEREKİR. ÜSTTEN BİLDİRİM GELDİ VE DOKUNDU KULLANICI SONRASINDA O HATIRLATICIYA AİT NOT BİLİGLERİ AÇILMALI. AYNI ANASAYFADAN AÇILMIŞ GİBİ DAVRANMALI. FARKLI BİR DETAY SAYFASI VARSA BU İPTAL EDİLMELİ.
  Resim Ekleme (Kamera & Galeri seçicisi) - BAŞARILI
@@ -16,18 +16,18 @@ SoMine QA & Yayın Öncesi Test Listesi
  OG Metadatasının (Başlık, Resim, Site adı vb.) hatasız çekilmesi test edilecek
  Eksik veya hatalı linklerde kullanıcıya gösterilecek hata UI'ı doğrulanacak
 Desteklenen (Özel Olarak Tanınan) Platformların Test Edilmesi:
- Instagram
- YouTube
- X (Twitter)
- TikTok
- LinkedIn
- Spotify
- Pinterest
- Reddit
- Medium
- Behance
- Dribbble
- Diğer Genel Web Siteleri (Generic Web)
+ Instagram -BAŞARILI
+ YouTube -BAŞARILI
+ X (Twitter) -BAŞARILI
+ TikTok -BAŞARILI AMA İÇEİRK ÖNİZLEMESİ GÖRÜNMÜYOR. EKLENDİKTEN SONRA CARD GÖRÜNÜMÜNDE DE YOK KOCAMAN SİYAH BİR TİKTOK LOGOSU VAR BUNU İNCELEMELEYİZ.
+ LinkedIn -EKLEME BAŞARILI. İÇERİK EKLE EKRANINDA BAĞLANTI ÖNİZLEMESİ GÖRÜNMÜYOR FAKAT İÇERİĞİ EKLEYİNCE ANA SAYFADA VARD GÖRÜNÜMÜNDE VAR. İÇERİK EKLERKENDE ÖNİZLEME AKTİF OLMALI. 
+ Spotify -BAŞARILI AMA OG METADATALARI ÇEKİLMİYOR. SADECE BAĞLANTI VAR. BUNU İNCELEMELEYİZ.
+ Pinterest - BAŞARILI, LİNKİ KOPYALAMA YÖNTEMİ İLE SONURSUZ. AMA PİNTEREST UYGULAMASINDAN SHARE SEÇENEĞİ İLE GELDİĞİNDE ÖNİZLEME VE METADATA ÇEKMİYOR. BUNU İNCELEMELEYİZ.
+ Behance - BAŞARILI. EKLENEN İÇERİĞİN KÜÇÜK İKONU BAĞLANTI İKONU BEHANCE İKONU GÖRÜNMÜYOR.
+ Reddit - BAŞARILI. EKLENEN İÇERİĞİN ÖNİZLEME GÖRSELİ İÇERİK İLE İLGİLİ DEĞİL İÇERİĞİ PAYLAŞAN KULLANICINININ PROFİL FOTOĞRAFI BUNU İNCELEMELEYİZ.
+ Medium -- BAŞARILI. - LİNK İLE GELİRSE İÇERİK EKLENİYOR SORUNSUZ, UYGULAMADAN SHARE İLE GELİYOR İSE BAŞLIK İÇERİK YAA GÖRSEL GELMİYOR BUNU İNCELEMELEYİZ.
+ Dribbble - BAŞARILI SADECE BAĞLANTI VAR. HİÇ BİR META DATA YOK BUNU İNCELEMELEYİZ.
+ Diğer Genel Web Siteleri (Generic Web) - BAŞARILI, ZARA, H&M GİBİ FİRMALARDA ÜRÜN GÖRSEL VE BAŞLIKLARINI ALAMADI. AMA MESELA LOKAL MARKALARDA ALIYOR BURBERRYDE ALIYOR. BUNU İNCELEMELEYİZ.
 4. iOS Native & Donanım Özellikleri
  Kasa (Vault) kategorileri için FaceID / TouchID entegrasyonu
  iOS Share Extension (Safari, YouTube vb. diğer uygulamalardan link veya resim alma)
