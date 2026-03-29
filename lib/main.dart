@@ -1,25 +1,23 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/item_providers.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
-import 'package:somine_app/core/design/app_theme.dart';
+import 'package:somine_app/core/services/backend_realtime_service.dart';
 import 'package:somine_app/core/services/share_service.dart';
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/splash_screen.dart';
 import 'package:somine_app/firebase_options.dart';
-import 'package:somine_app/widgets/loading_indicator.dart';
 import 'package:somine_app/widgets/somine_loading_widget.dart';
 import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:somine_app/core/utils/native_logger.dart';
 import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,65 +26,68 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 void main() async {
-  runZonedGuarded<Future<void>>(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    
-    // Lock app to portrait mode globally
-    // YouTube fullscreen uses native MethodChannel to temporarily unlock
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
+  runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    await initializeDateFormatting('tr', null);
-    timeago.setLocaleMessages('tr', timeago.TrMessages());
-    timeago.setDefaultLocale('tr');
-    
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      
-      // Pass all uncaught "fatal" errors from the framework to Crashlytics
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-      
-      debugPrint('Firebase & Crashlytics initialized successfully');
-    } catch (e, stack) {
-      debugPrint('Firebase initialization error: $e');
-    }
+      // Lock app to portrait mode globally
+      // YouTube fullscreen uses native MethodChannel to temporarily unlock
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
 
-    // Initialize Share Service AFTER Firebase and with error handling
-    try {
-      ShareService().initialize();
-      debugPrint('ShareService initialized successfully');
-    } catch (e, stack) {
-      debugPrint('ShareService initialization error: $e');
-    }
+      await initializeDateFormatting('tr', null);
+      timeago.setLocaleMessages('tr', timeago.TrMessages());
+      timeago.setDefaultLocale('tr');
 
-    // Initialize Notification Service
-    try {
-      await NotificationService().initialize();
-      await NotificationService().requestPermissions();
-      debugPrint('NotificationService initialized successfully');
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
 
-      // Reschedule existing reminders on app start
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        await ReminderSchedulerService().rescheduleUserReminders(currentUser.uid);
-        debugPrint('Reminders rescheduled successfully');
+        // Pass all uncaught "fatal" errors from the framework to Crashlytics
+        FlutterError.onError =
+            FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+        debugPrint('Firebase & Crashlytics initialized successfully');
+      } catch (e) {
+        debugPrint('Firebase initialization error: $e');
       }
-    } catch (e, stack) {
-      debugPrint('NotificationService initialization error: $e');
-    }
 
-    // Print native logs from previous run (Crash debugging)
-    // NativeLogger.printNativeLogs();
-    
-    runApp(
-      const ProviderScope(
-        child: SoMineApp(),
-      ),
-    );
-  }, (error, stack) => FirebaseCrashlytics.instance.recordError(error, stack, fatal: true));
+      // Initialize Share Service AFTER Firebase and with error handling
+      try {
+        ShareService().initialize();
+        debugPrint('ShareService initialized successfully');
+      } catch (e) {
+        debugPrint('ShareService initialization error: $e');
+      }
+
+      // Initialize Notification Service
+      try {
+        await NotificationService().initialize();
+        await NotificationService().requestPermissions();
+        debugPrint('NotificationService initialized successfully');
+
+        // Reschedule existing reminders on app start
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await ReminderSchedulerService().rescheduleUserReminders(
+            currentUser.uid,
+          );
+          debugPrint('Reminders rescheduled successfully');
+        }
+      } catch (e) {
+        debugPrint('NotificationService initialization error: $e');
+      }
+
+      // Print native logs from previous run (Crash debugging)
+      // NativeLogger.printNativeLogs();
+
+      runApp(const ProviderScope(child: SoMineApp()));
+    },
+    (error, stack) =>
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+  );
 }
 
 class SoMineApp extends ConsumerStatefulWidget {
@@ -98,7 +99,12 @@ class SoMineApp extends ConsumerStatefulWidget {
 
 class _SoMineAppState extends ConsumerState<SoMineApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final BackendRealtimeService _backendRealtimeService =
+      BackendRealtimeService();
   bool _isSplashFinished = false;
+  ProviderSubscription<AsyncValue<User?>>? _authStateSubscription;
+  StreamSubscription<Map<String, dynamic>>? _itemsRealtimeSubscription;
+  StreamSubscription<Map<String, dynamic>>? _categoriesRealtimeSubscription;
 
   @override
   void initState() {
@@ -112,10 +118,64 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
       }
       NotificationService().setNavigatorKey(_navigatorKey);
     });
+
+    _itemsRealtimeSubscription = _backendRealtimeService.itemsChanges.listen((
+      _,
+    ) {
+      _refreshDerivedItemState();
+    });
+    _categoriesRealtimeSubscription =
+        _backendRealtimeService.categoriesChanges.listen((_) {
+          _refreshDerivedCategoryState();
+        });
+    _authStateSubscription = ref.listenManual<AsyncValue<User?>>(
+      authStateProvider,
+      (_, next) {
+        final user = next.valueOrNull;
+        if (user == null) {
+          unawaited(_backendRealtimeService.disconnect());
+          return;
+        }
+
+        unawaited(_backendRealtimeService.connectForCurrentUser());
+      },
+      fireImmediately: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.close();
+    _itemsRealtimeSubscription?.cancel();
+    _categoriesRealtimeSubscription?.cancel();
+    super.dispose();
   }
 
   void _onSplashComplete() {
     setState(() => _isSplashFinished = true);
+  }
+
+  void _refreshDerivedItemState() {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) {
+      return;
+    }
+
+    ref.invalidate(favoriteItemsProvider);
+    ref.invalidate(deletedItemsProvider);
+    ref.invalidate(itemCountProvider);
+    ref.invalidate(uncategorizedCountProvider(user.uid));
+    ref.invalidate(paginatedFeedProvider);
+  }
+
+  void _refreshDerivedCategoryState() {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) {
+      return;
+    }
+
+    ref.invalidate(uncategorizedCountProvider(user.uid));
+    ref.invalidate(paginatedFeedProvider);
   }
 
   @override
@@ -124,7 +184,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'So Mine', 
+      title: 'So Mine',
       theme: AppTheme.getTheme(currentTheme),
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -132,15 +192,11 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('tr', ''),
-        Locale('en', ''),
-      ],
-      home: _isSplashFinished
-          ? const AuthWrapper()
-          : SplashScreen(
-              onAnimationComplete: _onSplashComplete,
-            ),
+      supportedLocales: const [Locale('tr', ''), Locale('en', '')],
+      home:
+          _isSplashFinished
+              ? const AuthWrapper()
+              : SplashScreen(onAnimationComplete: _onSplashComplete),
     );
   }
 }
@@ -153,7 +209,7 @@ class AuthWrapper extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
     final guestState = ref.watch(guestUserStateProvider);
     final isOnboarding = ref.watch(onboardingStateProvider);
-    
+
     // If user is in onboarding flow, don't override navigation
     if (isOnboarding) {
       return const SoMineLoadingWidget();
@@ -163,39 +219,26 @@ class AuthWrapper extends ConsumerWidget {
       data: (user) {
         // 1. Authenticated User
         if (user != null) {
-          // If explicit onboarding state is set, respect it
           if (isOnboarding) return const SoMineLoadingWidget();
-          
-          // Check Firestore for profile completion (username)
-          return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
-            builder: (context, snapshot) {
-              // While checking...
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                 return const SoMineLoadingWidget();
+
+          final userModelAsync = ref.watch(currentUserModelProvider);
+          return userModelAsync.when(
+            data: (userModel) {
+              final hasUsername =
+                  userModel?.username != null &&
+                  userModel!.username!.isNotEmpty;
+              final hasName =
+                  userModel?.displayName != null &&
+                  userModel!.displayName!.isNotEmpty;
+
+              if (hasUsername && hasName) {
+                return const HomeScreen();
               }
-              
-              if (snapshot.hasData && snapshot.data!.exists) {
-                final data = snapshot.data!.data() as Map<String, dynamic>?;
-                final hasUsername = data != null && 
-                                  data.containsKey('username') && 
-                                  data['username'] != null && 
-                                  (data['username'] as String).isNotEmpty;
-                
-                final hasName = data != null && 
-                              data.containsKey('displayName') && 
-                              data['displayName'] != null && 
-                              (data['displayName'] as String).isNotEmpty;
-                
-                // If profile is complete (has username & name), go home
-                if (hasUsername && hasName) {
-                  return const HomeScreen();
-                }
-              }
-              
-              // If missing data, force onboarding
+
               return OnboardingNameScreen(userId: user.uid);
             },
+            loading: () => const SoMineLoadingWidget(),
+            error: (_, __) => OnboardingNameScreen(userId: user.uid),
           );
         }
 
@@ -205,18 +248,13 @@ class AuthWrapper extends ConsumerWidget {
           return const LoginScreen(forceLogin: true);
         }
         if (guestState.isGuest) return const HomeScreen();
-        
+
         // Default: Show Login Screen
         return const LoginScreen();
       },
       loading: () => const SoMineLoadingWidget(),
-      error: (error, stack) => Scaffold(
-        body: Center(child: Text('Hata: $error')),
-      ),
+      error:
+          (error, stack) => Scaffold(body: Center(child: Text('Hata: $error'))),
     );
   }
 }
-
-
-
-

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemUiOverlayStyle için gerekli
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
+import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 import 'package:somine_app/screens/onboarding_name_screen.dart';
 
@@ -25,38 +25,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     if (_isLoading) return; // Prevent double tap
     setState(() => _isLoading = true);
-    
+
     try {
       final authRepository = ref.read(authRepositoryProvider);
       final result = await authRepository.signInWithGoogle();
-      
+
       if (mounted && result.userCredential?.user != null) {
         final user = result.userCredential!.user!;
-        
-        // Check if user has completed onboarding by checking username in Firestore
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
-        final hasUsername = userDoc.exists && 
-            userDoc.data()?['username'] != null &&
-            (userDoc.data()?['username'] as String).isNotEmpty;
-        
+        final userModel = await UserRepository().getUser(user.uid);
+        if (!mounted) return;
+        final hasUsername =
+            userModel?.username != null && userModel!.username!.isNotEmpty;
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => hasUsername 
-                ? const HomeScreen()
-                : OnboardingNameScreen(userId: user.uid),
+            builder:
+                (_) =>
+                    hasUsername
+                        ? const HomeScreen()
+                        : OnboardingNameScreen(userId: user.uid),
           ),
         );
       } else {
         // User canceled or failed without exception
         if (mounted) {
-           setState(() => _isLoading = false);
+          setState(() => _isLoading = false);
         }
       }
-      
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -70,38 +65,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _signInWithApple() async {
     if (_isLoading) return; // Prevent double tap
     setState(() => _isLoading = true);
-    
+
     try {
       final authRepository = ref.read(authRepositoryProvider);
       final result = await authRepository.signInWithApple();
-      
+
       if (mounted && result.userCredential?.user != null) {
         final user = result.userCredential!.user!;
-        
-        // Check if user has completed onboarding by checking username in Firestore
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
-        final hasUsername = userDoc.exists && 
-            userDoc.data()?['username'] != null &&
-            (userDoc.data()?['username'] as String).isNotEmpty;
-        
+        final userModel = await UserRepository().getUser(user.uid);
+        if (!mounted) return;
+        final hasUsername =
+            userModel?.username != null && userModel!.username!.isNotEmpty;
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => hasUsername 
-                ? const HomeScreen()
-                : OnboardingNameScreen(userId: user.uid),
+            builder:
+                (_) =>
+                    hasUsername
+                        ? const HomeScreen()
+                        : OnboardingNameScreen(userId: user.uid),
           ),
         );
       } else {
         // User canceled or failed without exception
         if (mounted) {
-           setState(() => _isLoading = false);
+          setState(() => _isLoading = false);
         }
       }
-      
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);

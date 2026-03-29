@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/models/backend_auth_session.dart';
 import 'package:somine_app/core/repositories/auth_repository.dart';
 
 /// Guest user state - tracks if user is using app without auth
@@ -8,15 +10,9 @@ class GuestUserState {
   final bool isGuest;
   final bool hasPerformedAction; // If guest user added/deleted items
 
-  const GuestUserState({
-    this.isGuest = false,
-    this.hasPerformedAction = false,
-  });
+  const GuestUserState({this.isGuest = false, this.hasPerformedAction = false});
 
-  GuestUserState copyWith({
-    bool? isGuest,
-    bool? hasPerformedAction,
-  }) {
+  GuestUserState copyWith({bool? isGuest, bool? hasPerformedAction}) {
     return GuestUserState(
       isGuest: isGuest ?? this.isGuest,
       hasPerformedAction: hasPerformedAction ?? this.hasPerformedAction,
@@ -25,9 +21,10 @@ class GuestUserState {
 }
 
 /// Guest user state provider
-final guestUserStateProvider = StateNotifierProvider<GuestUserStateNotifier, GuestUserState>((ref) {
-  return GuestUserStateNotifier();
-});
+final guestUserStateProvider =
+    StateNotifierProvider<GuestUserStateNotifier, GuestUserState>((ref) {
+      return GuestUserStateNotifier();
+    });
 
 class GuestUserStateNotifier extends StateNotifier<GuestUserState> {
   GuestUserStateNotifier() : super(const GuestUserState());
@@ -72,11 +69,22 @@ final currentUserProvider = Provider<User?>((ref) {
   return authRepository.currentUser;
 });
 
+/// Backend API auth enabled state
+final isBackendAuthEnabledProvider = Provider<bool>((ref) {
+  return ApiConfig.isBackendAuthEnabled;
+});
+
+/// Persisted backend session state
+final backendSessionProvider = FutureProvider<BackendAuthSession?>((ref) async {
+  final authRepository = ref.watch(authRepositoryProvider);
+  return authRepository.backendSession;
+});
+
 /// Combined auth state - checks if user is authenticated OR is guest
 final isAuthenticatedOrGuestProvider = Provider<bool>((ref) {
   final authState = ref.watch(authStateProvider);
   final guestState = ref.watch(guestUserStateProvider);
-  
+
   return authState.when(
     data: (user) => user != null || guestState.isGuest,
     loading: () => false,
@@ -86,4 +94,3 @@ final isAuthenticatedOrGuestProvider = Provider<bool>((ref) {
 
 /// Onboarding state - tracks if new user is in onboarding flow
 final onboardingStateProvider = StateProvider<bool>((ref) => false);
-

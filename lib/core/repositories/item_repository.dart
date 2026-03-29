@@ -1,40 +1,50 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/repositories/category_repository.dart';
+import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:somine_app/core/services/backend_realtime_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 
 class ItemRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final BackendAuthService _backendAuthService = BackendAuthService();
+  final BackendRealtimeService _backendRealtimeService =
+      BackendRealtimeService();
+  final http.Client _httpClient = http.Client();
 
-  /// Collection reference
   CollectionReference<Map<String, dynamic>> get _itemsCollection =>
       _firestore.collection('items');
 
-  /// Get all items for a user
   Future<List<ItemModel>> getItems(String userId, {String? categoryId}) async {
     try {
-      Query<Map<String, dynamic>> query =
-          _itemsCollection.where('userId', isEqualTo: userId);
+      if (_useBackendForCurrentUser(userId)) {
+        return _fetchAllItemsFromApi(userId, categoryId: categoryId);
+      }
+
+      Query<Map<String, dynamic>> query = _itemsCollection.where(
+        'userId',
+        isEqualTo: userId,
+      );
 
       if (categoryId != null) {
         query = query.where('categoryId', isEqualTo: categoryId);
       }
 
       final snapshot = await query.get();
+      final items =
+          snapshot.docs
+              .map((doc) => ItemModel.fromFirestore(doc))
+              .where((item) => !item.isDeleted)
+              .toList();
 
-      final items = snapshot.docs
-          .map((doc) => ItemModel.fromFirestore(doc))
-          .where((item) => !item.isDeleted) // Client-side filter for legacy data
-          .toList();
-      
-      // Sort: Priority to 'order' field (ASC), fallback to 'createdAt' (DESC)
-      items.sort((a, b) {
-         final orderDiff = a.order.compareTo(b.order);
-         if (orderDiff != 0) return orderDiff;
-         return b.createdAt.compareTo(a.createdAt);
-      });
-      
-      // Legacy code was: items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _sortItems(items);
       return items;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting items: $e');
@@ -42,33 +52,48 @@ class ItemRepository {
     }
   }
 
-  /// Get PAGINATED items
-  Future<QuerySnapshot<Map<String, dynamic>>> getItemsPaginated(String userId, {String? categoryId, int limit = 5, DocumentSnapshot? startAfter}) async {
+  Future<QuerySnapshot<Map<String, dynamic>>> getItemsPaginated(
+    String userId, {
+    String? categoryId,
+    int limit = 5,
+    DocumentSnapshot? startAfter,
+  }) async {
     try {
-      Query<Map<String, dynamic>> query =
-          _itemsCollection.where('userId', isEqualTo: userId);
+      if (_useBackendForCurrentUser(userId)) {
+        throw UnimplementedError(
+          'getItemsPaginated is not supported in backend mode.',
+        );
+      }
+
+      Query<Map<String, dynamic>> query = _itemsCollection.where(
+        'userId',
+        isEqualTo: userId,
+      );
 
       if (categoryId != null) {
         query = query.where('categoryId', isEqualTo: categoryId);
       }
-      
-      // Order by 'order' (custom sort) then by 'createdAt' desc
+
       query = query.orderBy('order').orderBy('createdAt', descending: true);
 
       if (startAfter != null) {
-          query = query.startAfterDocument(startAfter);
+        query = query.startAfterDocument(startAfter);
       }
-      
+
       return await query.limit(limit).get();
     } catch (e) {
-       debugPrint('❌ [ItemRepository] Error fetching paginated items: $e');
-       rethrow;
+      debugPrint('❌ [ItemRepository] Error fetching paginated items: $e');
+      rethrow;
     }
   }
 
-  /// Get item by ID
   Future<ItemModel?> getItem(String itemId) async {
     try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        return _getItemFromApi(itemId, currentUserId);
+      }
+
       final doc = await _itemsCollection.doc(itemId).get();
       if (doc.exists) {
         return ItemModel.fromFirestore(doc);
@@ -80,17 +105,22 @@ class ItemRepository {
     }
   }
 
-  /// Create a new item
   Future<ItemModel> createItem(ItemModel item) async {
     try {
-      debugPrint('🔵 [ItemRepository] Creating item...');
-      final docRef = await _itemsCollection.add(item.toFirestore()).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw Exception('Bağlantı zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.');
-        },
-      );
-      debugPrint('✅ [ItemRepository] Item created: ${docRef.id}');
+      if (_useBackendForCurrentUser(item.userId)) {
+        return _createItemViaApi(item);
+      }
+
+      final docRef = await _itemsCollection
+          .add(item.toFirestore())
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception(
+                'Bağlantı zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.',
+              );
+            },
+          );
 
       final doc = await docRef.get();
       return ItemModel.fromFirestore(doc);
@@ -100,62 +130,96 @@ class ItemRepository {
     }
   }
 
-  /// Update an item
   Future<void> updateItem(ItemModel item) async {
     try {
+      if (_useBackendForCurrentUser(item.userId)) {
+        await _updateItemViaApi(item.id, item.toApiUpdateRequest());
+        return;
+      }
+
       await _itemsCollection.doc(item.id).update({
         'categoryId': item.categoryId,
         'note': item.note,
-        'url': item.url, // Added URL update
+        'url': item.url,
+        'imageUrl': item.imageUrl,
         'isFavorite': item.isFavorite,
         'ogMetadata': item.ogMetadata?.toMap(),
         'reminderId': item.reminderId,
         'hasReminder': item.hasReminder,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ [ItemRepository] Item updated: ${item.id}');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error updating item: $e');
       rethrow;
     }
   }
 
-  /// Toggle favorite status
   Future<void> toggleFavorite(String itemId, bool isFavorite) async {
     try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        await _updateItemViaApi(itemId, {'isFavorite': isFavorite});
+        return;
+      }
+
       await _itemsCollection.doc(itemId).update({
         'isFavorite': isFavorite,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ [ItemRepository] Item favorite toggled: $itemId -> $isFavorite');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error toggling favorite: $e');
       rethrow;
     }
   }
 
-  /// Move item to a different category
   Future<void> moveItemToCategory(String itemId, String categoryId) async {
     return moveToCategory(itemId, categoryId);
   }
 
-  /// Move item to a different category (Internal implementation)
   Future<void> moveToCategory(String itemId, String? categoryId) async {
     try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        await _updateItemViaApi(itemId, {
+          if (categoryId != null) 'categoryId': categoryId,
+          'clearCategory': categoryId == null,
+        });
+        return;
+      }
+
       await _itemsCollection.doc(itemId).update({
         'categoryId': categoryId,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ [ItemRepository] Item moved to category: $itemId -> $categoryId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error moving item: $e');
       rethrow;
     }
   }
 
-  /// Move multiple items to a different category
-  Future<void> moveItemsToCategory(List<String> itemIds, String targetCategoryId) async {
+  Future<void> moveItemsToCategory(
+    List<String> itemIds,
+    String targetCategoryId,
+  ) async {
     try {
+      if (itemIds.isEmpty) return;
+
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.post(
+          _buildUri('/api/items/batch-move'),
+          headers: _jsonHeaders(accessToken),
+          body: jsonEncode({
+            'itemIds': itemIds,
+            'targetCategoryId': targetCategoryId,
+          }),
+        );
+
+        _throwIfNotSuccessful(response, action: 'move items');
+        return;
+      }
+
       final batch = _firestore.batch();
       for (final id in itemIds) {
         batch.update(_itemsCollection.doc(id), {
@@ -164,30 +228,36 @@ class ItemRepository {
         });
       }
       await batch.commit();
-      debugPrint('✅ [ItemRepository] Moved ${itemIds.length} items to $targetCategoryId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error batch moving items: $e');
       rethrow;
     }
   }
 
-  /// Delete an item
   Future<void> deleteItem(String itemId) async {
     try {
-      // Cancel reminder BEFORE soft delete to prevent zombie notifications
       try {
         await ReminderSchedulerService().cancelReminder(itemId);
       } catch (e) {
-        // Ignore error if reminder doesn't exist
         debugPrint('⚠️ [ItemRepository] No reminder to cancel for $itemId: $e');
       }
 
-      // Soft delete
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.delete(
+          _buildUri('/api/items/$itemId'),
+          headers: _jsonHeaders(accessToken),
+        );
+
+        _throwIfNotSuccessful(response, action: 'delete item');
+        return;
+      }
+
       await _itemsCollection.doc(itemId).update({
         'isDeleted': true,
         'deletedAt': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ [ItemRepository] Item soft deleted: $itemId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error deleting item: $e');
       rethrow;
@@ -196,6 +266,26 @@ class ItemRepository {
 
   Future<void> batchUpdateItemOrders(List<ItemModel> items) async {
     try {
+      if (items.isEmpty) return;
+
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.patch(
+          _buildUri('/api/items/batch-reorder'),
+          headers: _jsonHeaders(accessToken),
+          body: jsonEncode({
+            'items':
+                items
+                    .map((item) => {'id': item.id, 'sortOrder': item.order})
+                    .toList(),
+          }),
+        );
+
+        _throwIfNotSuccessful(response, action: 'reorder items');
+        return;
+      }
+
       final batch = _firestore.batch();
       for (final item in items) {
         batch.update(_itemsCollection.doc(item.id), {
@@ -204,34 +294,35 @@ class ItemRepository {
         });
       }
       await batch.commit();
-      debugPrint('✅ [ItemRepository] Updated order for ${items.length} items');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error updating item orders: $e');
       rethrow;
     }
   }
 
-  /// Delete all items in a category (SOFT DELETE - moves to Recently Deleted)
   Future<void> deleteItemsInCategory(String categoryId) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('categoryId', isEqualTo: categoryId)
-          .where('isDeleted', isEqualTo: false)
-          .get();
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final items = await getItems(currentUserId, categoryId: categoryId);
+        await softDeleteItems(items.map((item) => item.id).toList());
+        return;
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('categoryId', isEqualTo: categoryId)
+              .where('isDeleted', isEqualTo: false)
+              .get();
 
       if (snapshot.docs.isEmpty) return;
 
-      // Cancel reminders first to prevent zombie notifications
       for (final doc in snapshot.docs) {
         try {
           await ReminderSchedulerService().cancelReminder(doc.id);
-        } catch (e) {
-          // Ignore error if reminder doesn't exist
-          debugPrint('⚠️ [ItemRepository] No reminder to cancel for ${doc.id}');
-        }
+        } catch (_) {}
       }
 
-      // Then delete items
       final batch = _firestore.batch();
       for (final doc in snapshot.docs) {
         batch.update(doc.reference, {
@@ -240,27 +331,33 @@ class ItemRepository {
         });
       }
       await batch.commit();
-
-      debugPrint('✅ [ItemRepository] Items in category SOFT deleted: $categoryId (${snapshot.docs.length} items)');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error deleting items in category: $e');
       rethrow;
     }
   }
 
-  /// Soft delete multiple items by IDs (for bulk selection delete)
   Future<void> softDeleteItems(List<String> itemIds) async {
     try {
       if (itemIds.isEmpty) return;
 
-      // Cancel ALL reminders before deleting to prevent zombie notifications
       for (final itemId in itemIds) {
         try {
           await ReminderSchedulerService().cancelReminder(itemId);
-        } catch (e) {
-          // Ignore error if reminder doesn't exist
-          debugPrint('⚠️ [ItemRepository] No reminder to cancel for $itemId');
-        }
+        } catch (_) {}
+      }
+
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.post(
+          _buildUri('/api/items/batch-delete'),
+          headers: _jsonHeaders(accessToken),
+          body: jsonEncode({'itemIds': itemIds}),
+        );
+
+        _throwIfNotSuccessful(response, action: 'batch delete items');
+        return;
       }
 
       final batch = _firestore.batch();
@@ -271,37 +368,47 @@ class ItemRepository {
         });
       }
       await batch.commit();
-      debugPrint('✅ [ItemRepository] Batch soft deleted ${itemIds.length} items');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error batch deleting items: $e');
       rethrow;
     }
   }
 
-  /// Search items by text
   Future<List<ItemModel>> searchItems(String userId, String query) async {
     try {
-      // Note: Firestore doesn't support full-text search
-      // This is a simple implementation that searches in notes
-      // For production, consider using Algolia or similar
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .get();
+      if (_useBackendForCurrentUser(userId)) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.get(
+          _buildUri('/api/items/search', queryParameters: {'q': query}),
+          headers: _jsonHeaders(accessToken),
+        );
+
+        _throwIfNotSuccessful(response, action: 'search items');
+        return _parseItemListResponse(
+          response.body,
+          userId: userId,
+          isDeleted: false,
+        )..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
+
+      final snapshot =
+          await _itemsCollection.where('userId', isEqualTo: userId).get();
 
       final lowerQuery = query.toLowerCase();
-      final items = snapshot.docs
-          .map((doc) => ItemModel.fromFirestore(doc))
-          .where((item) => !item.isDeleted) // Client-side filter
-          .where((item) {
-            final title = item.displayTitle.toLowerCase();
-            final note = item.note?.toLowerCase() ?? '';
-            final url = item.url?.toLowerCase() ?? '';
-            return title.contains(lowerQuery) ||
-                note.contains(lowerQuery) ||
-                url.contains(lowerQuery);
-          })
-          .toList();
-      
+      final items =
+          snapshot.docs
+              .map((doc) => ItemModel.fromFirestore(doc))
+              .where((item) => !item.isDeleted)
+              .where((item) {
+                final title = item.displayTitle.toLowerCase();
+                final note = item.note?.toLowerCase() ?? '';
+                final url = item.url?.toLowerCase() ?? '';
+                return title.contains(lowerQuery) ||
+                    note.contains(lowerQuery) ||
+                    url.contains(lowerQuery);
+              })
+              .toList();
+
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
@@ -310,18 +417,34 @@ class ItemRepository {
     }
   }
 
-  /// Get favorite items
   Future<List<ItemModel>> getFavoriteItems(String userId) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('isFavorite', isEqualTo: true)
-          .get();
+      if (_useBackendForCurrentUser(userId)) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.get(
+          _buildUri('/api/items/favorites'),
+          headers: _jsonHeaders(accessToken),
+        );
 
-      final items = snapshot.docs
-          .map((doc) => ItemModel.fromFirestore(doc))
-          .where((item) => !item.isDeleted)
-          .toList();
+        _throwIfNotSuccessful(response, action: 'fetch favorite items');
+        return _parseItemListResponse(
+          response.body,
+          userId: userId,
+          isDeleted: false,
+        )..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('isFavorite', isEqualTo: true)
+              .get();
+
+      final items =
+          snapshot.docs
+              .map((doc) => ItemModel.fromFirestore(doc))
+              .where((item) => !item.isDeleted)
+              .toList();
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return items;
     } catch (e) {
@@ -330,40 +453,62 @@ class ItemRepository {
     }
   }
 
-  /// Stream items for a user
-  Stream<List<ItemModel>> streamItems(String userId, {String? categoryId}) {
-    Query<Map<String, dynamic>> query =
-        _itemsCollection.where('userId', isEqualTo: userId);
+  Stream<List<ItemModel>> streamItems(
+    String userId, {
+    String? categoryId,
+  }) async* {
+    if (!_useBackendForCurrentUser(userId)) {
+      Query<Map<String, dynamic>> query = _itemsCollection.where(
+        'userId',
+        isEqualTo: userId,
+      );
 
-    if (categoryId != null) {
-      query = query.where('categoryId', isEqualTo: categoryId);
+      if (categoryId != null) {
+        query = query.where('categoryId', isEqualTo: categoryId);
+      }
+
+      yield* query.snapshots().map((snapshot) {
+        final items =
+            snapshot.docs
+                .map((doc) => ItemModel.fromFirestore(doc))
+                .where((item) => !item.isDeleted)
+                .toList();
+
+        _sortItems(items);
+        return items;
+      });
+      return;
     }
 
-    return query.snapshots().map((snapshot) {
-      final items = snapshot.docs
-          .map((doc) => ItemModel.fromFirestore(doc))
-          .where((item) => !item.isDeleted)
-          .toList();
-      
-      // Sort: Priority to 'order' field (ASC), fallback to 'createdAt' (DESC)
-      items.sort((a, b) {
-         final orderDiff = a.order.compareTo(b.order);
-         if (orderDiff != 0) return orderDiff;
-         return b.createdAt.compareTo(a.createdAt);
-      });
-      
-      return items;
-    });
+    var items = await _fetchAllItemsFromApi(userId, categoryId: categoryId);
+    var lastSignature = _itemsSignature(items);
+    yield items;
+
+    await for (final _ in _backendRealtimeService.itemsChanges) {
+      items = await _fetchAllItemsFromApi(userId, categoryId: categoryId);
+      final signature = _itemsSignature(items);
+
+      if (signature == lastSignature) {
+        continue;
+      }
+
+      lastSignature = signature;
+      yield items;
+    }
   }
 
-  /// Get item count for a user
   Future<int> getItemCount(String userId) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .count()
-          .get();
-      
+      if (_useBackendForCurrentUser(userId)) {
+        final items = await _fetchAllItemsFromApi(userId, includeDeleted: true);
+        return items.length;
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .count()
+              .get();
       return snapshot.count ?? 0;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting item count: $e');
@@ -371,40 +516,54 @@ class ItemRepository {
     }
   }
 
-  /// Get Uncategorized (Quick) item count
   Future<int> getUncategorizedItemCount(String userId) async {
     try {
-      int count = 0;
+      if (_useBackendForCurrentUser(userId)) {
+        final items = await getItems(userId);
+        final categories = await CategoryRepository().getCategories(userId);
+        final quickCategory =
+            categories.where((c) => c.name == 'Hızlı').firstOrNull;
 
-      // 1. Check for literal NULL (legacy uncategorized)
-      final nullSnap = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('categoryId', isNull: true)
-          .where('isDeleted', isEqualTo: false)
-          .count()
-          .get();
-      count += (nullSnap.count ?? 0);
+        return items.where((item) {
+          if (item.categoryId == null) return true;
+          return quickCategory != null && item.categoryId == quickCategory.id;
+        }).length;
+      }
 
-      // 2. Check for "Hızlı" (Quick) category items
-      try {
-        final categorySnap = await _firestore.collection('categories')
-            .where('userId', isEqualTo: userId)
-            .where('name', isEqualTo: 'Hızlı')
-            .limit(1)
-            .get();
-            
-        if (categorySnap.docs.isNotEmpty) {
-          final quickCatId = categorySnap.docs.first.id;
-          final quickSnap = await _itemsCollection
+      var count = 0;
+      final nullSnap =
+          await _itemsCollection
               .where('userId', isEqualTo: userId)
-              .where('categoryId', isEqualTo: quickCatId)
+              .where('categoryId', isNull: true)
               .where('isDeleted', isEqualTo: false)
               .count()
               .get();
-          count += (quickSnap.count ?? 0);
+      count += nullSnap.count ?? 0;
+
+      try {
+        final categorySnap =
+            await _firestore
+                .collection('categories')
+                .where('userId', isEqualTo: userId)
+                .where('name', isEqualTo: 'Hızlı')
+                .limit(1)
+                .get();
+
+        if (categorySnap.docs.isNotEmpty) {
+          final quickCatId = categorySnap.docs.first.id;
+          final quickSnap =
+              await _itemsCollection
+                  .where('userId', isEqualTo: userId)
+                  .where('categoryId', isEqualTo: quickCatId)
+                  .where('isDeleted', isEqualTo: false)
+                  .count()
+                  .get();
+          count += quickSnap.count ?? 0;
         }
       } catch (e) {
-        debugPrint('⚠️ Error fetching Quick category count: $e');
+        debugPrint(
+          '⚠️ [ItemRepository] Error fetching Quick category count: $e',
+        );
       }
 
       return count;
@@ -414,16 +573,23 @@ class ItemRepository {
     }
   }
 
-  /// Get active item count in a specific category
-  Future<int> getActiveItemCountInCategory(String userId, String categoryId) async {
+  Future<int> getActiveItemCountInCategory(
+    String userId,
+    String categoryId,
+  ) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('categoryId', isEqualTo: categoryId)
-          .where('isDeleted', isEqualTo: false)
-          .count()
-          .get();
-      
+      if (_useBackendForCurrentUser(userId)) {
+        final items = await getItems(userId, categoryId: categoryId);
+        return items.length;
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('categoryId', isEqualTo: categoryId)
+              .where('isDeleted', isEqualTo: false)
+              .count()
+              .get();
       return snapshot.count ?? 0;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting category item count: $e');
@@ -431,15 +597,21 @@ class ItemRepository {
     }
   }
 
-  /// Get Recent Items for Activity Feed
   Future<List<ItemModel>> getRecentItems(String userId, {int limit = 5}) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('isDeleted', isEqualTo: false)
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
+      if (_useBackendForCurrentUser(userId)) {
+        final items = await getItems(userId);
+        items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return items.take(limit).toList();
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('isDeleted', isEqualTo: false)
+              .orderBy('createdAt', descending: true)
+              .limit(limit)
+              .get();
 
       return snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
     } catch (e) {
@@ -448,116 +620,224 @@ class ItemRepository {
     }
   }
 
-  /// Stream Recent Items for Activity Feed
-  Stream<List<ItemModel>> streamRecentItems(String userId, {int limit = 5}) {
-    return _itemsCollection
-        .where('userId', isEqualTo: userId)
-        .where('isDeleted', isEqualTo: false)
-        .orderBy('order')
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList());
+  Stream<List<ItemModel>> streamRecentItems(
+    String userId, {
+    int limit = 5,
+  }) async* {
+    if (!_useBackendForCurrentUser(userId)) {
+      yield* _itemsCollection
+          .where('userId', isEqualTo: userId)
+          .where('isDeleted', isEqualTo: false)
+          .orderBy('order')
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .snapshots()
+          .map(
+            (snapshot) =>
+                snapshot.docs
+                    .map((doc) => ItemModel.fromFirestore(doc))
+                    .toList(),
+          );
+      return;
+    }
+
+    var items = await getRecentItems(userId, limit: limit);
+    var lastSignature = _itemsSignature(items);
+    yield items;
+
+    await for (final _ in _backendRealtimeService.itemsChanges) {
+      items = await getRecentItems(userId, limit: limit);
+      final signature = _itemsSignature(items);
+
+      if (signature == lastSignature) {
+        continue;
+      }
+
+      lastSignature = signature;
+      yield items;
+    }
   }
 
-  /// Move all items from one category to another (or to Uncategorized if newCategoryId is null)
-  Future<void> updateItemsCategory(String userId, String oldCategoryId, String? newCategoryId) async {
+  Future<void> updateItemsCategory(
+    String userId,
+    String oldCategoryId,
+    String? newCategoryId,
+  ) async {
     try {
-      final batch = _firestore.batch();
-      
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('categoryId', isEqualTo: oldCategoryId)
-          .where('isDeleted', isEqualTo: false) // Only active items
-          .get();
+      if (_useBackendForCurrentUser(userId)) {
+        final items = await getItems(userId, categoryId: oldCategoryId);
+        if (items.isEmpty) return;
 
-      if (snapshot.docs.isEmpty) return; // Nothing to move
+        if (newCategoryId == null) {
+          for (final item in items) {
+            await moveToCategory(item.id, null);
+          }
+          return;
+        }
+
+        await moveItemsToCategory(
+          items.map((item) => item.id).toList(),
+          newCategoryId,
+        );
+        return;
+      }
+
+      final batch = _firestore.batch();
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('categoryId', isEqualTo: oldCategoryId)
+              .where('isDeleted', isEqualTo: false)
+              .get();
+
+      if (snapshot.docs.isEmpty) return;
 
       for (final doc in snapshot.docs) {
         batch.update(doc.reference, {'categoryId': newCategoryId});
       }
 
       await batch.commit();
-      debugPrint('✅ [ItemRepository] Moved ${snapshot.docs.length} items from $oldCategoryId to $newCategoryId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error moving items: $e');
       rethrow;
     }
   }
 
-  /// RESTORE a soft-deleted item
   Future<void> restoreItem(String itemId) async {
     try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.post(
+          _buildUri('/api/items/$itemId/restore'),
+          headers: _jsonHeaders(accessToken),
+        );
+
+        _throwIfNotSuccessful(response, action: 'restore item');
+        return;
+      }
+
       await _itemsCollection.doc(itemId).update({
         'isDeleted': false,
         'deletedAt': FieldValue.delete(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      debugPrint('✅ [ItemRepository] Item restored: $itemId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error restoring item: $e');
       rethrow;
     }
   }
 
-  /// PERMANENTLY delete an item
   Future<void> permanentDeleteItem(String itemId) async {
     try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled && currentUserId != null) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.delete(
+          _buildUri('/api/items/$itemId/permanent'),
+          headers: _jsonHeaders(accessToken),
+        );
+
+        _throwIfNotSuccessful(response, action: 'permanently delete item');
+        return;
+      }
+
       await _itemsCollection.doc(itemId).delete();
-      debugPrint('✅ [ItemRepository] Item permanently deleted: $itemId');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error permanently deleting item: $e');
       rethrow;
     }
   }
 
-  /// Get DELETED items (for Recently Deleted screen)
   Future<List<ItemModel>> getDeletedItems(String userId) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('isDeleted', isEqualTo: true)
-          .orderBy('deletedAt', descending: true)
-          .get();
+      if (_useBackendForCurrentUser(userId)) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.get(
+          _buildUri('/api/items/deleted'),
+          headers: _jsonHeaders(accessToken),
+        );
 
-      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
-      return items;
+        _throwIfNotSuccessful(response, action: 'fetch deleted items');
+        final items = _parseItemListResponse(
+          response.body,
+          userId: userId,
+          isDeleted: true,
+        );
+        items.sort((a, b) {
+          final aDeleted = a.deletedAt ?? a.updatedAt;
+          final bDeleted = b.deletedAt ?? b.updatedAt;
+          return bDeleted.compareTo(aDeleted);
+        });
+        return items;
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('isDeleted', isEqualTo: true)
+              .orderBy('deletedAt', descending: true)
+              .get();
+
+      return snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting deleted items: $e');
       rethrow;
     }
   }
 
-  /// Delete ALL items for a user (for account deletion)
   Future<void> deleteAllUserItems(String userId) async {
     try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .get();
+      if (_useBackendForCurrentUser(userId)) {
+        final items = await _fetchAllItemsFromApi(userId, includeDeleted: true);
+        for (final item in items) {
+          await permanentDeleteItem(item.id);
+        }
+        return;
+      }
+
+      final snapshot =
+          await _itemsCollection.where('userId', isEqualTo: userId).get();
 
       final batch = FirebaseFirestore.instance.batch();
       for (final doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
       await batch.commit();
-      
-      debugPrint('✅ [ItemRepository] All items deleted for user: $userId (${snapshot.docs.length} items)');
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error deleting all user items: $e');
       rethrow;
     }
   }
 
-  /// Cleanup items deleted more than 30 days ago (auto-expiry)
   Future<int> cleanupExpiredDeletedItems(String userId) async {
     try {
       final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-      
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('isDeleted', isEqualTo: true)
-          .where('deletedAt', isLessThan: Timestamp.fromDate(thirtyDaysAgo))
-          .get();
+
+      if (_useBackendForCurrentUser(userId)) {
+        final deletedItems = await getDeletedItems(userId);
+        final expiredItems =
+            deletedItems
+                .where(
+                  (item) => (item.deletedAt ?? item.updatedAt).isBefore(
+                    thirtyDaysAgo,
+                  ),
+                )
+                .toList();
+
+        for (final item in expiredItems) {
+          await permanentDeleteItem(item.id);
+        }
+
+        return expiredItems.length;
+      }
+
+      final snapshot =
+          await _itemsCollection
+              .where('userId', isEqualTo: userId)
+              .where('isDeleted', isEqualTo: true)
+              .where('deletedAt', isLessThan: Timestamp.fromDate(thirtyDaysAgo))
+              .get();
 
       if (snapshot.docs.isEmpty) {
         return 0;
@@ -568,8 +848,7 @@ class ItemRepository {
         batch.delete(doc.reference);
       }
       await batch.commit();
-      
-      debugPrint('✅ [ItemRepository] Cleaned up ${snapshot.docs.length} expired deleted items for user: $userId');
+
       return snapshot.docs.length;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error cleaning up expired items: $e');
@@ -577,14 +856,31 @@ class ItemRepository {
     }
   }
 
-  /// Belirtilen öğeleri başka bir kullanıcının koleksiyonuna kopyala (bağımsız kopya)
   Future<int> copyItemsToCollection({
     required List<String> itemIds,
     required String targetUserId,
     required String targetCategoryId,
   }) async {
     try {
-      int copiedCount = 0;
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (_backendAuthService.isEnabled &&
+          currentUserId != null &&
+          currentUserId == targetUserId) {
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.post(
+          _buildUri('/api/items/copy'),
+          headers: _jsonHeaders(accessToken),
+          body: jsonEncode({
+            'itemIds': itemIds,
+            'targetCategoryId': targetCategoryId,
+          }),
+        );
+
+        _throwIfNotSuccessful(response, action: 'copy items');
+        return itemIds.length;
+      }
+
+      var copiedCount = 0;
       final batch = _firestore.batch();
 
       for (final itemId in itemIds) {
@@ -592,8 +888,6 @@ class ItemRepository {
         if (!originalDoc.exists) continue;
 
         final originalItem = ItemModel.fromFirestore(originalDoc);
-        
-        // Bağımsız kopya oluştur
         final copiedItem = originalItem.copyWith(
           userId: targetUserId,
           categoryId: targetCategoryId,
@@ -609,7 +903,6 @@ class ItemRepository {
       }
 
       await batch.commit();
-      debugPrint('✅ [ItemRepository] Copied $copiedCount items to collection: $targetCategoryId');
       return copiedCount;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error copying items: $e');
@@ -617,21 +910,188 @@ class ItemRepository {
     }
   }
 
-  /// Belirli bir koleksiyondaki tüm öğeleri getir (paylaşım görüntüleme için)
-  Future<List<ItemModel>> getItemsByCategory(String userId, String categoryId) async {
-    try {
-      final snapshot = await _itemsCollection
-          .where('userId', isEqualTo: userId)
-          .where('categoryId', isEqualTo: categoryId)
-          .where('isDeleted', isEqualTo: false)
-          .get();
+  Future<List<ItemModel>> getItemsByCategory(String userId, String categoryId) {
+    return getItems(userId, categoryId: categoryId);
+  }
 
-      final items = snapshot.docs.map((doc) => ItemModel.fromFirestore(doc)).toList();
-      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return items;
-    } catch (e) {
-      debugPrint('❌ [ItemRepository] Error getting items by category: $e');
-      rethrow;
+  bool _useBackendForCurrentUser(String userId) {
+    return _backendAuthService.isEnabled &&
+        FirebaseAuth.instance.currentUser?.uid == userId;
+  }
+
+  Future<List<ItemModel>> _fetchAllItemsFromApi(
+    String userId, {
+    String? categoryId,
+    bool includeDeleted = false,
+  }) async {
+    final accessToken = await _requireAccessToken();
+    final items = <ItemModel>[];
+    var page = 1;
+    const limit = 100;
+    var totalCount = 0;
+
+    do {
+      final response = await _httpClient.get(
+        _buildUri(
+          '/api/items',
+          queryParameters: {
+            'page': '$page',
+            'limit': '$limit',
+            if (categoryId != null) 'categoryId': categoryId,
+            if (includeDeleted) 'includeDeleted': 'true',
+          },
+        ),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfNotSuccessful(response, action: 'fetch items');
+
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      totalCount = payload['totalCount'] as int? ?? 0;
+
+      final pageItems =
+          (payload['items'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>()
+              .map(
+                (json) =>
+                    ItemModel.fromApi(json, userId: userId, isDeleted: false),
+              )
+              .toList();
+
+      items.addAll(pageItems);
+      page++;
+
+      if (pageItems.isEmpty) {
+        break;
+      }
+    } while (items.length < totalCount);
+
+    if (!includeDeleted) {
+      items.removeWhere((item) => item.isDeleted);
     }
+
+    _sortItems(items);
+    return items;
+  }
+
+  Future<ItemModel?> _getItemFromApi(String itemId, String userId) async {
+    final accessToken = await _requireAccessToken();
+    final response = await _httpClient.get(
+      _buildUri('/api/items/$itemId'),
+      headers: _jsonHeaders(accessToken),
+    );
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    _throwIfNotSuccessful(response, action: 'fetch item');
+    return ItemModel.fromApi(
+      jsonDecode(response.body) as Map<String, dynamic>,
+      userId: userId,
+    );
+  }
+
+  Future<ItemModel> _createItemViaApi(ItemModel item) async {
+    final accessToken = await _requireAccessToken();
+    final response = await _httpClient.post(
+      _buildUri('/api/items'),
+      headers: _jsonHeaders(accessToken),
+      body: jsonEncode(item.toApiCreateRequest()),
+    );
+
+    _throwIfNotSuccessful(response, action: 'create item');
+    return ItemModel.fromApi(
+      jsonDecode(response.body) as Map<String, dynamic>,
+      userId: item.userId,
+    );
+  }
+
+  Future<void> _updateItemViaApi(
+    String itemId,
+    Map<String, dynamic> requestBody,
+  ) async {
+    final accessToken = await _requireAccessToken();
+    final response = await _httpClient.put(
+      _buildUri('/api/items/$itemId'),
+      headers: _jsonHeaders(accessToken),
+      body: jsonEncode(requestBody),
+    );
+
+    _throwIfNotSuccessful(response, action: 'update item');
+  }
+
+  Future<String> _requireAccessToken() async {
+    final accessToken = await _backendAuthService.getValidAccessToken(
+      firebaseUser: FirebaseAuth.instance.currentUser,
+    );
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('Backend access token could not be obtained.');
+    }
+
+    return accessToken;
+  }
+
+  Uri _buildUri(String path, {Map<String, String>? queryParameters}) {
+    final baseUrl = ApiConfig.baseUrl;
+    final normalizedBase =
+        baseUrl.endsWith('/')
+            ? baseUrl.substring(0, baseUrl.length - 1)
+            : baseUrl;
+    return Uri.parse('$normalizedBase$path').replace(
+      queryParameters:
+          queryParameters?.isEmpty == true ? null : queryParameters,
+    );
+  }
+
+  Map<String, String> _jsonHeaders(String accessToken) {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    };
+  }
+
+  void _throwIfNotSuccessful(http.Response response, {required String action}) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    throw Exception(
+      'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
+    );
+  }
+
+  List<ItemModel> _parseItemListResponse(
+    String responseBody, {
+    required String userId,
+    required bool isDeleted,
+  }) {
+    final payload = jsonDecode(responseBody) as List<dynamic>;
+    return payload
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (json) =>
+              ItemModel.fromApi(json, userId: userId, isDeleted: isDeleted),
+        )
+        .toList();
+  }
+
+  void _sortItems(List<ItemModel> items) {
+    items.sort((a, b) {
+      final orderDiff = a.order.compareTo(b.order);
+      if (orderDiff != 0) return orderDiff;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+  }
+
+  String _itemsSignature(List<ItemModel> items) {
+    return items
+        .map(
+          (item) =>
+              '${item.id}|${item.categoryId}|${item.order}|${item.isFavorite}|${item.isDeleted}|${item.hasReminder}|${item.updatedAt.toUtc().millisecondsSinceEpoch}',
+        )
+        .join('||');
   }
 }

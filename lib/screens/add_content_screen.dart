@@ -233,7 +233,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     _titleController.dispose();
     _noteController.dispose();
     _linkController.dispose();
-    _linkController.dispose();
     _textAnimationController.dispose();
     _loadingController.dispose();
     _rotationController.dispose();

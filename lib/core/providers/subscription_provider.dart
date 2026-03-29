@@ -43,10 +43,10 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
   Future<void> _initialize() async {
     state = state.copyWith(isLoading: true);
-    
+
     await _service.initialize();
     final packages = await _service.getOfferings();
-    
+
     state = state.copyWith(
       tier: _service.currentTier,
       isLoading: false,
@@ -57,9 +57,10 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
   /// Reload subscription status
   Future<void> refresh() async {
     state = state.copyWith(isLoading: true);
-    
+
+    await _service.refreshStatus();
     final packages = await _service.getOfferings();
-    
+
     state = state.copyWith(
       tier: _service.currentTier,
       isLoading: false,
@@ -70,25 +71,20 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
   /// Purchase a package
   Future<bool> purchase(Package package) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final success = await _service.purchasePackage(package);
-      
+      await _service.refreshStatus();
+
       if (success) {
-        state = state.copyWith(
-          tier: _service.currentTier,
-          isLoading: false,
-        );
+        state = state.copyWith(tier: _service.currentTier, isLoading: false);
       } else {
         state = state.copyWith(isLoading: false);
       }
-      
+
       return success;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -96,21 +92,16 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
   /// Restore purchases
   Future<bool> restore() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final success = await _service.restorePurchases();
-      
-      state = state.copyWith(
-        tier: _service.currentTier,
-        isLoading: false,
-      );
-      
+      await _service.refreshStatus();
+
+      state = state.copyWith(tier: _service.currentTier, isLoading: false);
+
       return success;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -131,10 +122,11 @@ final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
   return SubscriptionService();
 });
 
-final subscriptionProvider = StateNotifierProvider<SubscriptionNotifier, SubscriptionState>((ref) {
-  final service = ref.watch(subscriptionServiceProvider);
-  return SubscriptionNotifier(service);
-});
+final subscriptionProvider =
+    StateNotifierProvider<SubscriptionNotifier, SubscriptionState>((ref) {
+      final service = ref.watch(subscriptionServiceProvider);
+      return SubscriptionNotifier(service);
+    });
 
 /// Convenience providers
 final isPremiumProvider = Provider<bool>((ref) {

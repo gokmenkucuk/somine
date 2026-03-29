@@ -1,11 +1,16 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/services/backend_auth_service.dart';
 
 /// Subscription tiers
 enum SubscriptionTier {
-  starter,  // Free
-  curator,  // Premium
+  starter, // Free
+  curator, // Premium
 }
 
 /// Subscription service for RevenueCat integration
@@ -21,27 +26,31 @@ class SubscriptionService {
       throw UnsupportedError('Platform not supported');
     }
   }
-  
+
   static final SubscriptionService _instance = SubscriptionService._internal();
   factory SubscriptionService() => _instance;
   SubscriptionService._internal();
 
   bool _isInitialized = false;
   CustomerInfo? _customerInfo;
+  final BackendAuthService _backendAuthService = BackendAuthService();
+  final http.Client _httpClient = http.Client();
+  SubscriptionTier _backendTier = SubscriptionTier.starter;
 
   /// Initialize RevenueCat
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       await Purchases.setLogLevel(LogLevel.debug);
-      
+
       PurchasesConfiguration configuration = PurchasesConfiguration(_apiKey);
       await Purchases.configure(configuration);
-      
+
       _customerInfo = await Purchases.getCustomerInfo();
+      await _refreshBackendStatus();
       _isInitialized = true;
-      
+
       debugPrint('RevenueCat initialized successfully');
     } catch (e) {
       debugPrint('RevenueCat initialization error: $e');
@@ -53,6 +62,7 @@ class SubscriptionService {
     try {
       await Purchases.logIn(userId);
       _customerInfo = await Purchases.getCustomerInfo();
+      await _refreshBackendStatus(platform: _platformName);
     } catch (e) {
       debugPrint('RevenueCat setUserId error: $e');
     }
@@ -60,8 +70,11 @@ class SubscriptionService {
 
   /// Check if user has premium subscription
   bool get isPremium {
+    if (_backendAuthService.isEnabled) {
+      return _backendTier == SubscriptionTier.curator;
+    }
+
     if (_customerInfo == null) return false;
-    // Check for "Premium" entitlement (must match RevenueCat dashboard)
     return _customerInfo!.entitlements.active.containsKey('Premium');
   }
 
@@ -75,10 +88,10 @@ class SubscriptionService {
     try {
       debugPrint('📦 Fetching RevenueCat offerings...');
       final offerings = await Purchases.getOfferings();
-      
+
       debugPrint('📦 All offerings: ${offerings.all.keys.toList()}');
       debugPrint('📦 Current offering: ${offerings.current?.identifier}');
-      
+
       if (offerings.current != null) {
         final packages = offerings.current!.availablePackages;
         debugPrint('📦 Available packages: ${packages.length}');
@@ -100,6 +113,7 @@ class SubscriptionService {
     try {
       final result = await Purchases.purchasePackage(package);
       _customerInfo = result;
+      await _verifyWithBackend();
       return isPremium;
     } catch (e) {
       debugPrint('Purchase error: $e');
@@ -111,6 +125,7 @@ class SubscriptionService {
   Future<bool> restorePurchases() async {
     try {
       _customerInfo = await Purchases.restorePurchases();
+      await _verifyWithBackend();
       return isPremium;
     } catch (e) {
       debugPrint('Restore error: $e');
@@ -144,5 +159,136 @@ class SubscriptionService {
   int remainingItems(int currentItemCount) {
     if (isPremium) return -1; // Unlimited
     return maxItemsPerCollectionStarter - currentItemCount;
+  }
+
+  Future<void> logout() async {
+    try {
+      await Purchases.logOut();
+    } catch (e) {
+      debugPrint('RevenueCat logout error: $e');
+    } finally {
+      _customerInfo = null;
+      _backendTier = SubscriptionTier.starter;
+    }
+  }
+
+  Future<void> refreshStatus() async {
+    if (_backendAuthService.isEnabled) {
+      await _refreshBackendStatus(platform: _platformName);
+      return;
+    }
+
+    try {
+      _customerInfo = await Purchases.getCustomerInfo();
+    } catch (e) {
+      debugPrint('RevenueCat refresh status error: $e');
+    }
+  }
+
+  Future<void> _verifyWithBackend() async {
+    if (!_backendAuthService.isEnabled) {
+      return;
+    }
+
+    final accessToken = await _backendAuthService.getValidAccessToken(
+      firebaseUser: FirebaseAuth.instance.currentUser,
+    );
+
+    if (accessToken == null || accessToken.isEmpty) {
+      return;
+    }
+
+    final response = await _httpClient.post(
+      _buildUri('/api/subscriptions/verify'),
+      headers: _jsonHeaders(accessToken),
+      body: jsonEncode({'receiptData': '', 'platform': _platformName}),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      _backendTier = _tierFromStatus(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+      return;
+    }
+
+    debugPrint(
+      'Subscription backend verify failed: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<void> _refreshBackendStatus({String? platform}) async {
+    if (!_backendAuthService.isEnabled) {
+      _backendTier = currentTierFromRevenueCat;
+      return;
+    }
+
+    final accessToken = await _backendAuthService.getValidAccessToken(
+      firebaseUser: FirebaseAuth.instance.currentUser,
+    );
+
+    if (accessToken == null || accessToken.isEmpty) {
+      _backendTier = currentTierFromRevenueCat;
+      return;
+    }
+
+    final response = await _httpClient.get(
+      _buildUri(
+        '/api/subscriptions/status',
+        queryParameters: {
+          if (platform != null && platform.isNotEmpty) 'platform': platform,
+        },
+      ),
+      headers: _jsonHeaders(accessToken),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      _backendTier = _tierFromStatus(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+      return;
+    }
+
+    debugPrint(
+      'Subscription backend status failed: ${response.statusCode} ${response.body}',
+    );
+    _backendTier = currentTierFromRevenueCat;
+  }
+
+  SubscriptionTier get currentTierFromRevenueCat {
+    if (_customerInfo == null) return SubscriptionTier.starter;
+    return _customerInfo!.entitlements.active.containsKey('Premium')
+        ? SubscriptionTier.curator
+        : SubscriptionTier.starter;
+  }
+
+  SubscriptionTier _tierFromStatus(Map<String, dynamic> json) {
+    final isActive = json['isActive'] as bool? ?? false;
+    return isActive ? SubscriptionTier.curator : SubscriptionTier.starter;
+  }
+
+  String get _platformName {
+    if (Platform.isIOS) return 'ios';
+    if (Platform.isAndroid) return 'android';
+    return 'unknown';
+  }
+
+  Uri _buildUri(String path, {Map<String, String>? queryParameters}) {
+    final baseUrl = ApiConfig.baseUrl;
+    final normalizedBase =
+        baseUrl.endsWith('/')
+            ? baseUrl.substring(0, baseUrl.length - 1)
+            : baseUrl;
+    return Uri.parse('$normalizedBase$path').replace(
+      queryParameters:
+          queryParameters?.isEmpty == true ? null : queryParameters,
+    );
+  }
+
+  Map<String, String> _jsonHeaders(String accessToken) {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    };
   }
 }

@@ -10,7 +10,7 @@ enum RepeatFrequency {
   weekdays,
   weekends,
   customMinutes, // Dakika bazlı tekrar (5dk, 15dk, vb.)
-  customDays,    // Gün bazlı tekrar
+  customDays, // Gün bazlı tekrar
 }
 
 class ReminderModel {
@@ -56,12 +56,75 @@ class ReminderModel {
       ),
       isActive: data['isActive'] as bool? ?? true,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
-      lastTriggered: data['lastTriggered'] != null
-          ? (data['lastTriggered'] as Timestamp).toDate()
-          : null,
+      lastTriggered:
+          data['lastTriggered'] != null
+              ? (data['lastTriggered'] as Timestamp).toDate()
+              : null,
       customRepeatDays: data['customRepeatDays'] as int?,
       customRepeatMinutes: data['customRepeatMinutes'] as int?,
     );
+  }
+
+  factory ReminderModel.fromApi(Map<String, dynamic> json) {
+    return ReminderModel(
+      id: json['id'] as String?,
+      itemId: json['itemId'] as String? ?? '',
+      reminderDate:
+          DateTime.tryParse(json['reminderDate'] as String? ?? '') ??
+          DateTime.now(),
+      reminderTime: TimeOfDay(
+        hour: json['reminderHour'] as int? ?? 0,
+        minute: json['reminderMinute'] as int? ?? 0,
+      ),
+      repeat: _repeatFrequencyFromApi(json['repeatType']),
+      isActive: json['isActive'] as bool? ?? true,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      customRepeatDays: json['customRepeatDays'] as int?,
+      customRepeatMinutes: json['customRepeatMinutes'] as int?,
+    );
+  }
+
+  static RepeatFrequency _repeatFrequencyFromApi(dynamic value) {
+    if (value is int &&
+        value >= 0 &&
+        value < RepeatFrequency.values.length) {
+      return RepeatFrequency.values[value];
+    }
+
+    if (value is String) {
+      return RepeatFrequency.values.firstWhere(
+        (frequency) => frequency.name.toLowerCase() == value.toLowerCase(),
+        orElse: () => RepeatFrequency.none,
+      );
+    }
+
+    return RepeatFrequency.none;
+  }
+
+  Map<String, dynamic> toApiCreateRequest() {
+    return {
+      'itemId': itemId,
+      'reminderDate': _dateOnly(reminderDate),
+      'reminderHour': reminderTime.hour,
+      'reminderMinute': reminderTime.minute,
+      'repeatType': repeat.index,
+      'customRepeatDays': customRepeatDays,
+      'customRepeatMinutes': customRepeatMinutes,
+    };
+  }
+
+  Map<String, dynamic> toApiUpdateRequest() {
+    return {
+      'reminderDate': _dateOnly(reminderDate),
+      'reminderHour': reminderTime.hour,
+      'reminderMinute': reminderTime.minute,
+      'repeatType': repeat.index,
+      'isActive': isActive,
+      'customRepeatDays': customRepeatDays,
+      'customRepeatMinutes': customRepeatMinutes,
+    };
   }
 
   Map<String, dynamic> toFirestore() {
@@ -75,9 +138,8 @@ class ReminderModel {
       'repeat': repeat.name,
       'isActive': isActive,
       'createdAt': Timestamp.fromDate(createdAt),
-      'lastTriggered': lastTriggered != null
-          ? Timestamp.fromDate(lastTriggered!)
-          : null,
+      'lastTriggered':
+          lastTriggered != null ? Timestamp.fromDate(lastTriggered!) : null,
       'customRepeatDays': customRepeatDays,
       'customRepeatMinutes': customRepeatMinutes,
     };
@@ -199,7 +261,10 @@ class ReminderModel {
       int lastDayOfTargetMonth = _getLastDayOfMonth(nextYear, nextMonth);
 
       // Use the original day, or clamp to last day of month
-      int targetDay = originalDay > lastDayOfTargetMonth ? lastDayOfTargetMonth : originalDay;
+      int targetDay =
+          originalDay > lastDayOfTargetMonth
+              ? lastDayOfTargetMonth
+              : originalDay;
 
       candidate = DateTime(
         nextYear,
@@ -223,10 +288,22 @@ class ReminderModel {
         // Check if next year is a leap year
         bool isLeapYear = _isLeapYear(nextYear);
         if (isLeapYear) {
-          candidate = DateTime(nextYear, 2, 29, reminderTime.hour, reminderTime.minute);
+          candidate = DateTime(
+            nextYear,
+            2,
+            29,
+            reminderTime.hour,
+            reminderTime.minute,
+          );
         } else {
           // Move to Feb 28th on non-leap years
-          candidate = DateTime(nextYear, 2, 28, reminderTime.hour, reminderTime.minute);
+          candidate = DateTime(
+            nextYear,
+            2,
+            28,
+            reminderTime.hour,
+            reminderTime.minute,
+          );
         }
       } else {
         candidate = DateTime(
@@ -250,7 +327,9 @@ class ReminderModel {
     }
 
     // Then move forward until we're in the future AND on a weekday
-    while (candidate.isBefore(now) || candidate.weekday == 6 || candidate.weekday == 7) {
+    while (candidate.isBefore(now) ||
+        candidate.weekday == 6 ||
+        candidate.weekday == 7) {
       candidate = candidate.add(const Duration(days: 1));
     }
 
@@ -265,7 +344,8 @@ class ReminderModel {
     }
 
     // Then move forward until we're in the future AND on a weekend
-    while (candidate.isBefore(now) || (candidate.weekday >= 1 && candidate.weekday <= 5)) {
+    while (candidate.isBefore(now) ||
+        (candidate.weekday >= 1 && candidate.weekday <= 5)) {
       candidate = candidate.add(const Duration(days: 1));
     }
 
@@ -316,5 +396,11 @@ class ReminderModel {
     if (year % 4 != 0) return false;
     if (year % 100 != 0) return true;
     return year % 400 == 0;
+  }
+
+  static String _dateOnly(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 }

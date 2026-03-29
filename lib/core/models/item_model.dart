@@ -1,11 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Type of saved item
-enum ItemType {
-  link,
-  note,
-  image,
-}
+enum ItemType { link, note, image }
 
 /// Open Graph metadata for links
 class OGMetadata {
@@ -123,7 +119,9 @@ class ItemModel {
       url: data['url'] as String?,
       note: data['note'] as String?,
       imageUrl: data['imageUrl'] as String?,
-      ogMetadata: OGMetadata.fromMap(data['ogMetadata'] as Map<String, dynamic>?),
+      ogMetadata: OGMetadata.fromMap(
+        data['ogMetadata'] as Map<String, dynamic>?,
+      ),
       isFavorite: data['isFavorite'] as bool? ?? false,
       order: data['order'] as int? ?? 0,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -133,6 +131,76 @@ class ItemModel {
       reminderId: data['reminderId'] as String?,
       hasReminder: data['hasReminder'] as bool? ?? false,
     );
+  }
+
+  factory ItemModel.fromApi(
+    Map<String, dynamic> json, {
+    required String userId,
+    bool isDeleted = false,
+  }) {
+    return ItemModel(
+      id: json['id'] as String,
+      userId: userId,
+      categoryId: json['categoryId'] as String?,
+      type: _itemTypeFromApi(json['type']),
+      url: json['url'] as String?,
+      note: json['note'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      ogMetadata: OGMetadata(
+        title: json['ogTitle'] as String?,
+        description: json['ogDescription'] as String?,
+        imageUrl: json['ogImageUrl'] as String?,
+        siteName: json['ogSiteName'] as String?,
+        faviconUrl: json['ogFaviconUrl'] as String?,
+      ),
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      order: json['sortOrder'] as int? ?? json['order'] as int? ?? 0,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
+      isDeleted: isDeleted,
+      deletedAt:
+          isDeleted
+              ? DateTime.tryParse(json['updatedAt'] as String? ?? '')
+              : null,
+      reminderId: null,
+      hasReminder: json['hasReminder'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toApiCreateRequest() {
+    return {
+      'url': _normalizedOptionalString(url),
+      'note': _normalizedOptionalString(note),
+      'imageUrl': _normalizedOptionalString(imageUrl),
+      'type': type.index,
+      'categoryId': _normalizedOptionalString(categoryId),
+      'ogTitle': _normalizedOptionalString(ogMetadata?.title),
+      'ogDescription': _normalizedOptionalString(ogMetadata?.description),
+      'ogImageUrl': _normalizedOptionalString(ogMetadata?.imageUrl),
+      'ogSiteName': _normalizedOptionalString(ogMetadata?.siteName),
+      'ogFaviconUrl': _normalizedOptionalString(ogMetadata?.faviconUrl),
+    };
+  }
+
+  Map<String, dynamic> toApiUpdateRequest() {
+    final normalizedCategoryId = _normalizedOptionalString(categoryId);
+    return {
+      'url': _normalizedOptionalString(url),
+      'note': _normalizedOptionalString(note),
+      'imageUrl': _normalizedOptionalString(imageUrl),
+      'categoryId': normalizedCategoryId,
+      'clearCategory': normalizedCategoryId == null,
+      'ogTitle': _normalizedOptionalString(ogMetadata?.title),
+      'ogDescription': _normalizedOptionalString(ogMetadata?.description),
+      'ogImageUrl': _normalizedOptionalString(ogMetadata?.imageUrl),
+      'ogSiteName': _normalizedOptionalString(ogMetadata?.siteName),
+      'ogFaviconUrl': _normalizedOptionalString(ogMetadata?.faviconUrl),
+      'isFavorite': isFavorite,
+    };
   }
 
   /// Convert to Firestore map
@@ -219,10 +287,14 @@ class ItemModel {
   String get platform {
     if (url == null) return 'Web';
     final lowerUrl = url!.toLowerCase();
-    
+
     if (lowerUrl.contains('instagram.com')) return 'Instagram';
-    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) return 'YouTube';
-    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) return 'X';
+    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) {
+      return 'YouTube';
+    }
+    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) {
+      return 'X';
+    }
     if (lowerUrl.contains('tiktok.com')) return 'TikTok';
     if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
     if (lowerUrl.contains('spotify.com')) return 'Spotify';
@@ -231,7 +303,7 @@ class ItemModel {
     if (lowerUrl.contains('medium.com')) return 'Medium';
     if (lowerUrl.contains('behance.net')) return 'Behance';
     if (lowerUrl.contains('dribbble.com')) return 'Dribbble';
-    
+
     // Explicitly check for generic web
     return 'Web';
   }
@@ -240,6 +312,29 @@ class ItemModel {
   String toString() {
     return 'ItemModel(id: $id, type: $type, url: $url)';
   }
+
+  static ItemType _itemTypeFromApi(dynamic rawType) {
+    if (rawType is int && rawType >= 0 && rawType < ItemType.values.length) {
+      return ItemType.values[rawType];
+    }
+
+    if (rawType is String) {
+      final normalized = rawType.toLowerCase();
+      return ItemType.values.firstWhere(
+        (itemType) => itemType.name.toLowerCase() == normalized,
+        orElse: () => ItemType.link,
+      );
+    }
+
+    return ItemType.link;
+  }
+
+  static String? _normalizedOptionalString(String? value) {
+    if (value == null) {
+      return null;
+    }
+
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
 }
-
-

@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum NotificationType {
-  shareRequest,      // Paylaşım isteği geldi
-  shareAccepted,     // Paylaşımım kabul edildi
-  shareRejected,     // Paylaşımım reddedildi
+  shareRequest, // Paylaşım isteği geldi
+  shareAccepted, // Paylaşımım kabul edildi
+  shareRejected, // Paylaşımım reddedildi
 }
 
 class NotificationModel {
@@ -41,6 +41,30 @@ class NotificationModel {
       data: Map<String, dynamic>.from(data['data'] ?? {}),
       isRead: data['isRead'] ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  factory NotificationModel.fromApi(
+    Map<String, dynamic> json, {
+    required String userId,
+  }) {
+    final rawData = json['data'];
+    return NotificationModel(
+      id: json['id'] as String?,
+      userId: userId,
+      type: NotificationType.values.firstWhere(
+        (t) =>
+            t.name.toLowerCase() ==
+            (json['type'] as String? ?? '').toLowerCase(),
+        orElse: () => NotificationType.shareRequest,
+      ),
+      title: json['title'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      data: rawData is Map<String, dynamic> ? rawData : const {},
+      isRead: json['isRead'] as bool? ?? false,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 

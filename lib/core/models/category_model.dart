@@ -24,7 +24,9 @@ class CategoryModel {
   });
 
   /// Create from Firestore document
-  factory CategoryModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory CategoryModel.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data()!;
     return CategoryModel(
       id: doc.id,
@@ -37,6 +39,35 @@ class CategoryModel {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
+  }
+
+  factory CategoryModel.fromApi(
+    Map<String, dynamic> json, {
+    required String userId,
+  }) {
+    return CategoryModel(
+      id: json['id'] as String,
+      userId: userId,
+      name: json['name'] as String,
+      icon: json['icon'] as String?,
+      color: json['color'] as String?,
+      order: json['sortOrder'] as int? ?? json['order'] as int? ?? 0,
+      isVault: json['isVault'] as bool? ?? false,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toApiCreateRequest() {
+    return {'name': name, 'icon': icon, 'color': color, 'isVault': isVault};
+  }
+
+  Map<String, dynamic> toApiUpdateRequest() {
+    return {'name': name, 'icon': icon, 'color': color, 'isVault': isVault};
   }
 
   /// Convert to Firestore map
@@ -130,5 +161,3 @@ class CategoryModel {
     return 'CategoryModel(id: $id, name: $name, icon: $icon)';
   }
 }
-
-

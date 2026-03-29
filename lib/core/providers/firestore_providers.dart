@@ -262,6 +262,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
   final ItemRepository _repository;
   String? _userId;
   String? _categoryId;
+  String _categoriesSignature = '';
   
   List<CategoryModel> _categories = [];
   List<ItemModel> _allCachedItems = [];
@@ -269,12 +270,17 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
   PaginatedItemsNotifier(this._repository) : super(PaginatedItemsState());
 
   void setParams(String userId, String? categoryId, List<CategoryModel> categories) {
-    bool changed = _userId != userId || _categoryId != categoryId || _categories != categories;
+    final nextCategoriesSignature = _buildCategoriesSignature(categories);
+    final changed =
+        _userId != userId ||
+        _categoryId != categoryId ||
+        _categoriesSignature != nextCategoriesSignature;
+
     _userId = userId;
     _categoryId = categoryId;
     _categories = categories;
+    _categoriesSignature = nextCategoriesSignature;
     
-    // Only reload if params meaningfully changed (deep equality check for cat list might be expensive, simpler if reference changes)
     if (changed) {
       loadInitial();
     }
@@ -350,6 +356,15 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     
     // Small delay to allow Flutter to calculate layout after images are cached
     await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  String _buildCategoriesSignature(List<CategoryModel> categories) {
+    return categories
+        .map(
+          (category) =>
+              '${category.id}|${category.order}|${category.isVault}|${category.updatedAt.toUtc().millisecondsSinceEpoch}',
+        )
+        .join('||');
   }
 
   Future<void> loadMore() async {
