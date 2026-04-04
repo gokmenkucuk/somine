@@ -188,6 +188,45 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes progress-1 {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 0%; }
+}
+.animate-progress-1 { animation: progress-1 3s ease-in-out infinite; }
+
+@keyframes progress-2 {
+  0% { width: 0%; }
+  30% { width: 0%; }
+  80% { width: 80%; }
+  100% { width: 0%; }
+}
+.animate-progress-2 { animation: progress-2 3s ease-in-out infinite; }
+
+@keyframes progress-3 {
+  0% { width: 0%; }
+  50% { width: 0%; }
+  85% { width: 60%; }
+  100% { width: 0%; }
+}
+.animate-progress-3 { animation: progress-3 3s ease-in-out infinite; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.4) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+.skeleton-shimmer-dark {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
 /* ─── Sequential pulse for How It Works steps ─── */
 /* 5.4s cycle (1s fade-in offset): icon1(1-1.5s) → seg1(1.5-2.5s) → icon2(2.5-3s) → seg2(3-4s) → icon3(4-4.5s) → pause(4.5-5.4s) */
 

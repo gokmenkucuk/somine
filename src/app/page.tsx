@@ -586,31 +586,34 @@ export default function Home() {
               className="group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500"
             >
               <div className="aspect-[9/16] relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#D4E8E4] to-[#E8F1EF]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-[#F5F7FA] flex items-center justify-center shadow-sm border border-gray-100">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8E9AAF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="4" />
-                      <path d="M12 2v2" /><path d="M12 20v2" />
-                      <path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
-                      <path d="M2 12h2" /><path d="M20 12h2" />
-                      <path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
-                    </svg>
+                  <div className="w-full flex flex-col items-center gap-3 bg-gradient-to-br from-[#688E8B] to-[#6FBFAC] rounded-2xl py-5 px-4 shadow-md">
+                    <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2" /><path d="M12 20v2" />
+                        <path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" />
+                        <path d="M2 12h2" /><path d="M20 12h2" />
+                        <path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-white">Air</p>
+                      <p className="text-xs text-white/70">Minimalist & Ferah</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">Air</p>
-                    <p className="text-sm text-[#8E9AAF]">Minimalist & Ferah</p>
-                  </div>
-                  <div className="w-full space-y-2 mt-4">
-                    <div className="h-2.5 rounded-full bg-[#F0F2F5] w-full" />
-                    <div className="h-2.5 rounded-full bg-[#F0F2F5] w-4/5" />
-                    <div className="h-2.5 rounded-full bg-[#F0F2F5] w-3/5" />
+                  <div className="w-full space-y-2.5 mt-2">
+                    <div className="h-3 rounded-md bg-[#688E8B]/20 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer rounded-md" /></div>
+                    <div className="h-3 rounded-md bg-[#688E8B]/20 w-4/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer rounded-md" style={{ animationDelay: '0.3s' }} /></div>
+                    <div className="h-3 rounded-md bg-[#95C5C1]/25 w-3/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer rounded-md" style={{ animationDelay: '0.6s' }} /></div>
+                    <div className="h-8 rounded-md bg-[#688E8B]/15 w-2/5 mt-3 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer rounded-md" style={{ animationDelay: '0.9s' }} /></div>
                   </div>
                 </div>
               </div>
-              <div className="p-5 border-t border-gray-50">
-                <p className="font-semibold text-gray-900 text-sm">Air Teması</p>
-                <p className="text-xs text-gray-400 mt-0.5">Açık renkler, sade tasarım</p>
+              <div className="p-5 border-t border-[#D4E8E4] bg-[#E8F1EF]">
+                <p className="font-semibold text-[#2D312F] text-sm">Air Teması</p>
+                <p className="text-xs text-[#636E72] mt-0.5">Açık renkler, sade tasarım</p>
               </div>
             </motion.div>
 
@@ -622,27 +625,30 @@ export default function Home() {
               className="group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500"
             >
               <div className="aspect-[9/16] relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#1E1E24] to-[#0A0E27]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1E1E1E] to-[#121212]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-[#2D3748] flex items-center justify-center shadow-lg border border-white/5">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-                    </svg>
+                  <div className="w-full flex flex-col items-center gap-3 bg-gradient-to-br from-[#2DD4BF] to-[#0EA5E9] rounded-2xl py-5 px-4 shadow-md">
+                    <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-white">Midnight</p>
+                      <p className="text-xs text-white/70">Karanlık & Şık</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-white">Midnight</p>
-                    <p className="text-sm text-[#A0AEC0]">Karanlık & Şık</p>
-                  </div>
-                  <div className="w-full space-y-2 mt-4">
-                    <div className="h-2.5 rounded-full bg-[#2D3748] w-full" />
-                    <div className="h-2.5 rounded-full bg-[#2D3748] w-4/5" />
-                    <div className="h-2.5 rounded-full bg-[#2D3748] w-3/5" />
+                  <div className="w-full space-y-2.5 mt-2">
+                    <div className="h-3 rounded-md bg-white/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" /></div>
+                    <div className="h-3 rounded-md bg-white/5 w-4/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" style={{ animationDelay: '0.3s' }} /></div>
+                    <div className="h-3 rounded-md bg-white/5 w-3/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" style={{ animationDelay: '0.6s' }} /></div>
+                    <div className="h-8 rounded-md bg-white/3 w-2/5 mt-3 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" style={{ animationDelay: '0.9s' }} /></div>
                   </div>
                 </div>
               </div>
-              <div className="p-5 bg-[#1E1E24] border-t border-white/5">
-                <p className="font-semibold text-white text-sm">Midnight Teması</p>
-                <p className="text-xs text-[#A0AEC0] mt-0.5">Koyu tonlar, göz dostu</p>
+              <div className="p-5 bg-[#1E1E1E] border-t border-white/5">
+                <p className="font-semibold text-[#F1F5F9] text-sm">Midnight Teması</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">Koyu tonlar, göz dostu</p>
               </div>
             </motion.div>
 
@@ -654,27 +660,30 @@ export default function Home() {
               className="group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500"
             >
               <div className="aspect-[9/16] relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#B91C3D] to-[#8B0F2A]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#2A3A4A] to-[#1A2A3A]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/10">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
+                  <div className="w-full flex flex-col items-center gap-3 bg-gradient-to-br from-[#E86B8A] to-[#5A8AB5] rounded-2xl py-5 px-4 shadow-md">
+                    <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-white">Vibe</p>
+                      <p className="text-xs text-white/70">Enerjik & Cesur</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-white">Vibe</p>
-                    <p className="text-sm text-white/60">Enerjik & Cesur</p>
-                  </div>
-                  <div className="w-full space-y-2 mt-4">
-                    <div className="h-2.5 rounded-full bg-white/10 w-full" />
-                    <div className="h-2.5 rounded-full bg-white/10 w-4/5" />
-                    <div className="h-2.5 rounded-full bg-white/10 w-3/5" />
+                  <div className="w-full space-y-2.5 mt-2">
+                    <div className="h-3 rounded-md bg-white/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" /></div>
+                    <div className="h-3 rounded-md bg-white/5 w-4/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" style={{ animationDelay: '0.3s' }} /></div>
+                    <div className="h-3 rounded-md bg-white/5 w-3/5 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" style={{ animationDelay: '0.6s' }} /></div>
+                    <div className="h-8 rounded-md bg-white/3 w-2/5 mt-3 relative overflow-hidden"><div className="absolute inset-0 skeleton-shimmer-dark rounded-md" style={{ animationDelay: '0.9s' }} /></div>
                   </div>
                 </div>
               </div>
-              <div className="p-5 bg-[#8B0F2A] border-t border-white/10">
-                <p className="font-semibold text-white text-sm">Vibe Teması</p>
-                <p className="text-xs text-white/60 mt-0.5">Kırmızı gradient, enerjik</p>
+              <div className="p-5 bg-[#1A2A3A] border-t border-[#E86B8A]/10">
+                <p className="font-semibold text-[#F5F5F5] text-sm">Vibe Teması</p>
+                <p className="text-xs text-[#B0C0C8] mt-0.5">Pembe-mavi gradient, enerjik</p>
               </div>
             </motion.div>
           </motion.div>
