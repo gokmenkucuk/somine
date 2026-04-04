@@ -22,6 +22,7 @@ import {
   Layers,
   Zap,
   MousePointerClick,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -40,6 +41,83 @@ const scaleIn = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
 }
+
+/* ─── platform icon data ─── */
+const platformIconsRow1 = [
+  {
+    name: 'Instagram',
+    viewBox: '0 0 24 24',
+    path: 'M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z',
+  },
+  {
+    name: 'YouTube',
+    viewBox: '0 0 24 24',
+    path: 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
+  },
+  {
+    name: 'Pinterest',
+    viewBox: '0 0 24 24',
+    path: 'M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z',
+  },
+  {
+    name: 'Spotify',
+    viewBox: '0 0 24 24',
+    path: 'M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z',
+  },
+  {
+    name: 'Facebook',
+    viewBox: '0 0 24 24',
+    path: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
+  },
+  {
+    name: 'Reddit',
+    viewBox: '0 0 24 24',
+    path: 'M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z',
+  },
+  {
+    name: 'Snapchat',
+    viewBox: '0 0 24 24',
+    path: 'M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12.922-.214.12-.042.239-.075.344-.1a.88.88 0 0 1 .223-.034c.239 0 .384.12.444.233a.65.65 0 0 1 .054.508c-.12.359-.509.778-1.383 1.157-.06.03-.149.069-.27.12-.418.165-1.283.509-1.498 1.158-.12.359-.075.778.15 1.197l.03.045c.015.03.18.314.474.808.674 1.122 1.828 3.042 1.932 3.536.12.554-.045.913-.239 1.122-.27.27-.704.404-1.048.404-.12 0-.239-.015-.344-.045l-.075-.015c-.149-.045-.344-.09-.644-.09-.18 0-.359.015-.539.045-.314.045-.599.195-.913.36-.434.224-.928.479-1.708.584-.12.015-.24.03-.359.03-.509 0-.868-.195-1.138-.359-.239-.15-.418-.27-.674-.27h-.03c-.254.016-.464.12-.704.27-.269.15-.614.314-1.093.314l-.09-.004c-.749-.045-1.258-.33-1.723-.584a2.814 2.814 0 0 0-.853-.33 3.677 3.677 0 0 0-.524-.03c-.284 0-.509.03-.689.075l-.06.015c-.12.03-.239.045-.359.045-.344 0-.779-.135-1.048-.404-.21-.21-.359-.568-.24-1.122.12-.509 1.272-2.413 1.932-3.521.27-.449.449-.764.474-.808.224-.419.27-.838.15-1.197-.224-.654-1.078-.993-1.498-1.157a3.89 3.89 0 0 1-.27-.12C3.04 11.59 2.65 11.171 2.53 10.812a.65.65 0 0 1 .054-.508c.06-.12.21-.233.449-.233.075 0 .149.015.224.034.12.03.224.06.344.1.27.09.629.195.928.195.18 0 .314-.03.389-.075-.015-.149-.03-.314-.045-.494l-.003-.06c-.104-1.642-.229-3.654.299-4.847C7.35 1.069 10.707.793 11.697.793h.509z',
+  },
+]
+
+const platformIconsRow2 = [
+  {
+    name: 'X',
+    viewBox: '0 0 24 24',
+    path: 'M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z',
+  },
+  {
+    name: 'TikTok',
+    viewBox: '0 0 24 24',
+    path: 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z',
+  },
+  {
+    name: 'LinkedIn',
+    viewBox: '0 0 24 24',
+    path: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
+  },
+  {
+    name: 'Medium',
+    viewBox: '0 0 24 24',
+    path: 'M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z',
+  },
+  {
+    name: 'Amazon',
+    viewBox: '0 0 24 24',
+    path: 'M.045 18.02c.07-.116.372-.197.58-.197.073 0 .146.008.207.027a8.76 8.76 0 0 0 3.224 1.162c.469.077.955.116 1.44.116 1.346 0 2.724-.342 3.817-.915.448-.23.858-.5 1.242-.786.08-.06.183-.09.28-.09.08 0 .16.024.22.073l.003.001c.135.108.166.3.074.442-1.872 2.908-5.04 4.61-8.654 4.61-1.476 0-2.895-.34-4.186-.975C-.536 20.975.008 18.855.045 18.02zM6.572 8.66c-.233.224-.613.364-.996.364-.4 0-.78-.14-1.012-.364-.143-.136-.223-.3-.223-.48 0-.176.08-.34.223-.476.232-.224.612-.364 1.012-.364.383 0 .763.14.996.364.143.136.223.3.223.476 0 .18-.08.344-.223.48zm10.248 1.92c-.236.247-.66.4-1.107.4-.447 0-.872-.153-1.107-.4-.16-.168-.248-.372-.248-.582 0-.21.088-.414.248-.582.235-.247.66-.4 1.107-.4.447 0 .871.153 1.107.4.16.168.248.372.248.582 0 .21-.089.414-.248.582zM24 15.68c0 2.03-1.373 3.88-3.74 5.16-2.01 1.084-4.627 1.702-7.24 1.702-2.73 0-5.248-.654-7.09-1.843l-.01-.006c-.196-.13-.24-.39-.095-.577.14-.18.395-.222.572-.096 1.667 1.074 3.95 1.655 6.41 1.655 2.38 0 4.773-.554 6.573-1.52 2.03-1.092 3.18-2.616 3.18-4.177 0-.196-.016-.393-.048-.586-.04-.237.1-.464.316-.512.217-.048.428.1.47.336.04.24.06.487.06.735 0 .002-.048.23-.048.232l-.05.177z',
+  },
+  {
+    name: 'Google Maps',
+    viewBox: '0 0 24 24',
+    path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z',
+  },
+  {
+    name: 'Web Links',
+    viewBox: '0 0 24 24',
+    path: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 016.32 12.906l-3.106-3.106a4 4 0 10-6.428 0L5.68 16.906A8 8 0 0112 4z',
+  },
+]
 
 function Section({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) {
   const ref = useRef(null)
@@ -564,12 +642,80 @@ export default function Home() {
         </div>
       </Section>
 
+      {/* ══════════ PLATFORM SUPPORT ══════════ */}
+      <Section id="platformlar" className="py-32 bg-[#0A0A0A] relative overflow-hidden">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#95C5C1]/8 to-[#D4EDE9]/5 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
+          {/* Header */}
+          <motion.div variants={fadeUp} className="text-center mb-20">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">Platform Desteği</p>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">
+              Her Yerden{' '}
+              <span className="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">Kaydet</span>
+            </h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
+              Instagram, YouTube, TikTok ve daha fazlası — 15+ popüler platformun yanı sıra tüm web linklerini tek bir yerde topla.
+            </p>
+          </motion.div>
+
+          {/* Marquee area */}
+          <motion.div variants={fadeUp} className="relative space-y-6 mb-16">
+            {/* Fade edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#0A0A0A] to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#0A0A0A] to-transparent z-10 pointer-events-none" />
+
+            {/* Row 1 - slides left */}
+            <div className="overflow-hidden">
+              <div className="flex gap-4 animate-marquee-left w-max">
+                {[...platformIconsRow1, ...platformIconsRow1].map((icon, i) => (
+                  <div
+                    key={`row1-${i}`}
+                    className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center opacity-40 hover:opacity-80 hover:border-white/[0.15] transition-all duration-300 shrink-0 group"
+                  >
+                    <svg
+                      viewBox={icon.viewBox}
+                      className="w-7 h-7 fill-gray-400 group-hover:fill-white transition-colors duration-300"
+                    >
+                      <path d={icon.path} />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Row 2 - slides right */}
+            <div className="overflow-hidden">
+              <div className="flex gap-4 animate-marquee-right w-max">
+                {[...platformIconsRow2, ...platformIconsRow2].map((icon, i) => (
+                  <div
+                    key={`row2-${i}`}
+                    className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center opacity-40 hover:opacity-80 hover:border-white/[0.15] transition-all duration-300 shrink-0 group"
+                  >
+                    <svg
+                      viewBox={icon.viewBox}
+                      className="w-7 h-7 fill-gray-400 group-hover:fill-white transition-colors duration-300"
+                    >
+                      <path d={icon.path} />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+        </div>
+      </Section>
+
       {/* ══════════ THEMES SHOWCASE ══════════ */}
       <Section id="temalar" className="py-32 bg-[#FAFAFA] overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
             <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Premium Temalar</p>
-            <h2 className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">
+            <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4 animate-theme-gradient">
               Kendi Tarzını Yansıt
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
@@ -586,9 +732,9 @@ export default function Home() {
               className="group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500"
             >
               <div className="aspect-[9/16] relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#D4E8E4] to-[#E8F1EF]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#688E8B] to-[#E8F1EF]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="w-full flex flex-col items-center gap-3 bg-gradient-to-br from-[#688E8B] to-[#6FBFAC] rounded-2xl py-5 px-4 shadow-md">
+                  <div className="w-full flex flex-col items-center gap-3 rounded-2xl py-5 px-4">
                     <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="4" />
@@ -625,9 +771,9 @@ export default function Home() {
               className="group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500"
             >
               <div className="aspect-[9/16] relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#1E1E1E] to-[#121212]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#2DD4BF] to-[#1E1E1E]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="w-full flex flex-col items-center gap-3 bg-gradient-to-br from-[#2DD4BF] to-[#0EA5E9] rounded-2xl py-5 px-4 shadow-md">
+                  <div className="w-full flex flex-col items-center gap-3 rounded-2xl py-5 px-4">
                     <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
@@ -660,9 +806,9 @@ export default function Home() {
               className="group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500"
             >
               <div className="aspect-[9/16] relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#2A3A4A] to-[#1A2A3A]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#E86B8A] to-[#1A2A3A]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="w-full flex flex-col items-center gap-3 bg-gradient-to-br from-[#E86B8A] to-[#5A8AB5] rounded-2xl py-5 px-4 shadow-md">
+                  <div className="w-full flex flex-col items-center gap-3 rounded-2xl py-5 px-4">
                     <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -718,109 +864,53 @@ export default function Home() {
           {/* Features grid */}
           <motion.div
             variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto mb-20"
+            className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-20"
           >
             {premiumFeatures.map((pf) => (
               <motion.div
                 key={pf.label}
                 variants={fadeUp}
-                className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl py-5 px-4 hover:bg-white/[0.06] transition-colors"
               >
                 <pf.icon className="w-4 h-4 text-[#95C5C1] shrink-0" />
                 <span className="text-sm text-gray-400">{pf.label}</span>
               </motion.div>
             ))}
           </motion.div>
-
-          {/* Pricing cards */}
-          <motion.div variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl mx-auto">
-            {/* Weekly */}
-            <motion.div
-              variants={scaleIn}
-              className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center hover:border-white/[0.12] transition-colors"
-            >
-              <p className="text-sm text-gray-500 mb-3">Haftalık</p>
-              <div className="flex items-baseline justify-center gap-1 mb-1">
-                <span className="text-4xl font-semibold text-white">$0</span>
-                <span className="text-2xl font-semibold text-white">.99</span>
-              </div>
-              <p className="text-xs text-gray-600 mb-8">haftada bir</p>
-              <a
-                href="https://apps.apple.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full text-sm font-medium bg-white/[0.06] border border-white/[0.08] text-white rounded-full px-6 py-3 hover:bg-white/[0.1] transition-colors"
-              >
-                <Zap className="w-4 h-4" />
-                Denemek İçin Tıkla
-              </a>
-            </motion.div>
-
-            {/* Monthly - Popular */}
-            <motion.div
-              variants={scaleIn}
-              className="rounded-2xl border border-[#95C5C1]/20 bg-[#95C5C1]/[0.04] p-8 text-center relative"
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="inline-flex items-center gap-1.5 bg-[#95C5C1] text-white text-[11px] font-medium rounded-full px-3 py-1">
-                  <Star className="w-3 h-3" />
-                  Popüler
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mb-3">Aylık</p>
-              <div className="flex items-baseline justify-center gap-1 mb-1">
-                <span className="text-4xl font-semibold text-white">$1</span>
-                <span className="text-2xl font-semibold text-white">.99</span>
-              </div>
-              <p className="text-xs text-gray-600 mb-8">ayda bir · %50 tasarruf</p>
-              <a
-                href="https://apps.apple.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full text-sm font-medium bg-white text-black rounded-full px-6 py-3 hover:bg-gray-100 transition-colors"
-              >
-                Premium&apos;a Geç
-              </a>
-            </motion.div>
-          </motion.div>
         </div>
       </Section>
 
       {/* ══════════ CTA ══════════ */}
-      <Section className="py-32 bg-[#0A0A0A] relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-t from-[#95C5C1]/10 to-transparent rounded-full blur-[80px]" />
-        </div>
-
-        <div className="max-w-4xl mx-auto px-6 sm:px-8 text-center relative z-10">
+      <Section className="py-32 bg-white relative overflow-hidden">
+        <div className="max-w-2xl mx-auto px-6 sm:px-8 text-center">
           <motion.div variants={fadeUp}>
             <motion.h2
               variants={fadeUp}
-              className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-6"
+              className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4"
             >
               Hemen Başla
             </motion.h2>
             <motion.p
               variants={fadeUp}
-              className="text-lg text-gray-500 max-w-xl mx-auto mb-12 leading-relaxed"
+              className="text-gray-500 text-lg max-w-md mx-auto mb-10 leading-relaxed"
             >
-              Dijital dünyanı Somine ile tasarla. Ücretsiz indir ve hemen koleksiyonlarına içerik eklemeye başla.
+              Ücretsiz indir. Koleksiyonlarını oluştur, tarzını yansıt.
             </motion.p>
             <motion.div variants={fadeUp}>
               <motion.a
                 href="https://apps.apple.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                whileHover={{ scale: 1.04, y: -2 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-3 bg-white text-black text-lg font-medium px-8 py-4 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.08)] hover:shadow-[0_0_60px_rgba(255,255,255,0.12)] transition-shadow"
+                className="inline-flex items-center gap-3 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full transition-colors hover:bg-gray-800"
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                 </svg>
                 <div className="text-left">
-                  <div className="text-[11px] opacity-50 leading-none font-normal">Ücretsiz İndir</div>
-                  <div className="font-semibold leading-tight text-sm">App Store</div>
+                  <div className="text-[10px] opacity-60 leading-none font-normal">Ücretsiz İndir</div>
+                  <div className="font-semibold leading-tight text-[13px]">App Store</div>
                 </div>
               </motion.a>
             </motion.div>
