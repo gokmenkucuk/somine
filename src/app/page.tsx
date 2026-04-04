@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
@@ -21,6 +21,7 @@ import {
   Infinity,
   Layers,
   Zap,
+  MousePointerClick,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -70,22 +71,68 @@ function PhoneMockup({ src, alt, size = 'md' }: { src: string; alt: string; size
 }
 
 /* ─── app showcase carousel ─── */
-const screens = [
-  { src: '/images/screen-splash.png', label: 'Splash', desc: 'Etkileyici açılış ekranı' },
-  { src: '/images/screen-home.png', label: 'Ana Sayfa', desc: 'Koleksiyonların merkezi' },
-  { src: '/images/screen-collection.png', label: 'Koleksiyon', desc: 'İçeriklerini organize et' },
-  { src: '/images/screen-profile.png', label: 'Profil', desc: 'Kişisel alanın' },
-  { src: '/images/screen-dark-theme.png', label: 'Vibe Tema', desc: 'Premium karanlık tema' },
-  { src: '/images/screen-premium-themes.png', label: 'Tema Seçimi', desc: 'Kendi tarzını seç' },
-  { src: '/images/screen-premium.png', label: 'Premium', desc: 'Sınırsız özellikler' },
+const carouselImages = [
+  '/images/mockups/vibe/home.png',
+  '/images/mockups/air/koleksiyon.png',
+  '/images/mockups/vibe/koleksiyon.png',
+  '/images/mockups/air/home_feed.png',
+  '/images/mockups/vibe/home_feed.png',
+  '/images/mockups/air/search.png',
+  '/images/mockups/vibe/tema.png',
+  '/images/mockups/air/profil.png',
+  '/images/mockups/vibe/koleksiyon_duzenle.png',
+  '/images/mockups/air/login.png',
 ]
 
 function AppShowcase() {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [transforms, setTransforms] = useState<{ scale: number; opacity: number; y: number }[]>(
+    carouselImages.map(() => ({ scale: 0.8, opacity: 0.35, y: 16 }))
+  )
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    let animId: number
+    const speed = 0.6
+    const itemW = 224
+
+    const updateTransforms = () => {
+      const center = el.scrollLeft + el.clientWidth / 2
+      const newTransforms = [...carouselImages, ...carouselImages].map((_, i) => {
+        const itemCenter = i * itemW + itemW / 2
+        const dist = Math.abs(center - itemCenter)
+        if (dist < itemW * 0.6) {
+          return { scale: 1.15, opacity: 1, y: 0 }
+        } else if (dist < itemW * 1.5) {
+          return { scale: 0.85, opacity: 0.4, y: 12 }
+        } else {
+          return { scale: 0.75, opacity: 0.2, y: 20 }
+        }
+      })
+      setTransforms(newTransforms)
+    }
+
+    const animate = () => {
+      el.scrollLeft += speed
+      const maxScroll = el.scrollWidth / 2
+      if (el.scrollLeft >= maxScroll) {
+        el.scrollLeft -= maxScroll
+      }
+      updateTransforms()
+      animId = requestAnimationFrame(animate)
+    }
+    animId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animId)
+  }, [])
+
+  const doubled = [...carouselImages, ...carouselImages]
+
   return (
-    <Section id="ekranlar" className="py-32 bg-[#FAFAFA] overflow-hidden">
+    <Section id="ekranlar" className="py-32 bg-white overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 sm:px-8">
         <motion.div variants={fadeUp} className="text-center mb-16">
-          <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Uygulama Ekranları</p>
+          <p className="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">Uygulama Ekranları</p>
           <h2 className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">
             Basit. Güçlü. Güzel.
           </h2>
@@ -95,26 +142,38 @@ function AppShowcase() {
         </motion.div>
 
         <motion.div variants={fadeUp} className="relative">
+          {/* Fade edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
           <div
-            className="flex gap-6 md:gap-8 overflow-x-auto pb-8 snap-x snap-mandatory px-4"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            ref={scrollRef}
+            className="flex gap-6 overflow-hidden py-8"
+            style={{ scrollbarWidth: 'none' }}
           >
-            {screens.map((screen, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: 40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="snap-center shrink-0 flex flex-col items-center gap-4"
-              >
-                <PhoneMockup src={screen.src} alt={screen.label} size="md" />
-                <div className="text-center">
-                  <p className="font-semibold text-gray-900 text-sm">{screen.label}</p>
-                  <p className="text-gray-400 text-xs mt-0.5">{screen.desc}</p>
+            {doubled.map((src, i) => {
+              const t = transforms[i] || { scale: 0.75, opacity: 0.2, y: 20 }
+              return (
+                <div
+                  key={`carousel-${i}`}
+                  className="shrink-0 w-[180px] md:w-[200px] transition-transform duration-500 ease-out"
+                  style={{
+                    transform: `scale(${t.scale}) translateY(${t.y}px)`,
+                    opacity: t.opacity,
+                  }}
+                >
+                  <div style={{ borderRadius: '1.5rem', overflow: 'hidden' }}>
+                    <Image
+                      src={src}
+                      alt={`Somine ekran ${(i % carouselImages.length) + 1}`}
+                      width={200}
+                      height={433}
+                      className="w-full h-auto"
+                    />
+                  </div>
                 </div>
-              </motion.div>
-            ))}
+              )
+            })}
           </div>
         </motion.div>
       </div>
@@ -131,43 +190,37 @@ export default function Home() {
       icon: Play,
       title: 'Video Koleksiyonları',
       desc: 'YouTube videolarını doğrudan koleksiyonlarına ekle. Beğendiğin videoları tek bir yerde topla, istediğin zaman izle.',
-      color: 'bg-red-50 text-red-500',
-      span: 'md:col-span-2',
+      accent: '#6FBFAC',
     },
     {
       icon: FolderOpen,
       title: 'Akıllı Kategoriler',
       desc: 'Gitmek istediğin yerler, müzik, tarifler ve daha fazlası. Kendi kategorilerini oluştur, düzenli tut.',
-      color: 'bg-blue-50 text-blue-500',
-      span: 'md:col-span-1',
+      accent: '#95C5C1',
     },
     {
       icon: StickyNote,
       title: 'Kişisel Notlar',
       desc: 'Her içeriğe özel not ekle. Düşüncelerini ve hatırlatmalarını kaydet, arşivini zenginleştir.',
-      color: 'bg-amber-50 text-amber-500',
-      span: 'md:col-span-1',
+      accent: '#B8DDD9',
     },
     {
       icon: ShieldCheck,
       title: 'Gizli Kasa',
-      desc: 'FaceID ve TouchID ile korunan özel koleksiyonlar. En özel içeriklerini güvenle sakla, kimse göremesin.',
-      color: 'bg-emerald-50 text-emerald-500',
-      span: 'md:col-span-2',
+      desc: 'Apple/Google yeniden kimlik doğrulama ile korunan özel koleksiyonlar. En özel içeriklerini güvenle sakla.',
+      accent: '#688E8B',
     },
     {
       icon: Share2,
       title: 'Kolay Paylaşım',
       desc: 'Koleksiyonlarını arkadaşlarınla tek tıkla paylaş. İçerikleri keşfet ve başkalarıyla paylaş.',
-      color: 'bg-violet-50 text-violet-500',
-      span: 'md:col-span-1',
+      accent: '#6FBFAC',
     },
     {
       icon: Palette,
       title: 'Premium Temalar',
       desc: 'Uygulamana özel görünüm kazandır. Farklı temalar ve ikonlarla kişiselleştir, tarzını yansıt.',
-      color: 'bg-pink-50 text-pink-500',
-      span: 'md:col-span-2',
+      accent: '#95C5C1',
     },
   ]
 
@@ -361,10 +414,10 @@ export default function Home() {
       </section>
 
       {/* ══════════ FEATURES BENTO ══════════ */}
-      <Section id="ozellikler" className="py-32 bg-white">
+      <Section id="ozellikler" className="py-32 bg-[#E8F1EF]">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
-            <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Özellikler</p>
+            <p className="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">Özellikler</p>
             <h2 className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">
               Her Şeyi Tek Bir Yerde Topla
             </h2>
@@ -378,14 +431,15 @@ export default function Home() {
               <motion.div
                 key={f.title}
                 variants={fadeUp}
-                whileHover={{ y: -6 }}
+                whileHover={{ y: -4 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className={`group rounded-2xl bg-[#FAFAFA] border border-gray-100 p-7 md:p-8 hover:bg-white hover:shadow-[0_8px_40px_rgba(0,0,0,0.06)] hover:border-gray-200/80 transition-all duration-500 ${f.span}`}
+                className="group relative rounded-2xl border border-gray-100 bg-white p-8 hover:border-[#D4EDE9] hover:shadow-[0_8px_40px_rgba(104,142,139,0.08)] transition-all duration-500"
               >
                 <div
-                  className={`w-11 h-11 rounded-xl ${f.color} flex items-center justify-center mb-5`}
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: `linear-gradient(135deg, ${f.accent}, #B8DDD9)` }}
                 >
-                  <f.icon className="w-5 h-5" />
+                  <f.icon className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="text-base font-semibold text-gray-900 mb-2">{f.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
@@ -399,47 +453,114 @@ export default function Home() {
       <AppShowcase />
 
       {/* ══════════ HOW IT WORKS ══════════ */}
-      <Section id="nasil-calisir" className="py-32 bg-white">
+      <Section id="nasil-calisir" className="py-32 bg-[#E8F1EF]">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
-            <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Nasıl Çalışır</p>
+            <p className="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">Nasıl Çalışır</p>
             <h2 className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">
-              3 Adımda Başla
+              Tek Tıkla Koleksiyonuna Ekle
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Somine&apos;yi kullanmak çocuk oyuncağı. Dakikalar içinde koleksiyonlarına içerik eklemeye başla.
+              Herhangi bir uygulamadan içeriklerini Somine koleksiyonlarına kaydetmek sadece 3 adım — hiçbir şey kopyalayıp yapıştırmaya gerek yok.
             </p>
           </motion.div>
 
-          <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            {[
-              { icon: BookmarkPlus, title: 'İçeriğini Kaydet', desc: 'Herhangi bir link, video veya görseli tek tıkla koleksiyonlarına ekle. Paylaş butonuyla anında kaydet.', num: '01' },
-              { icon: FolderOpen, title: 'Koleksiyonla Organize Et', desc: 'Kategorilere ayır, notlar ekle ve içeriklerini düzenli tut. Akıllı arama ile her şeyi bul.', num: '02' },
-              { icon: Share2, title: 'Paylaş ve Keşfet', desc: 'Koleksiyonlarını arkadaşlarınla paylaş, yeni içerikler keşfet. Topluluğa katıl.', num: '03' },
-            ].map((step) => (
-              <motion.div
-                key={step.title}
-                variants={fadeUp}
-                className="relative text-center group"
-              >
-                {step.num !== '03' && (
-                  <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-px bg-gradient-to-r from-gray-200 to-transparent" />
-                )}
+          {/* Steps with connecting line */}
+          <div className="relative">
+            {/* Connecting line — Segment 1 (desktop) */}
+            <div className="hidden md:block absolute top-[4.5rem] left-[22%] w-[23%] h-[2px] overflow-hidden">
+              <div className="absolute inset-0 bg-[#D4EDE9]" />
+              <div
+                className="absolute inset-y-[-5px] w-[35%] animate-glow-seg1"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(111,191,172,0.5), transparent)', filter: 'blur(4px)' }}
+              />
+              <div
+                className="absolute inset-y-0 w-[25%] animate-pulse-seg1"
+                style={{ background: 'linear-gradient(90deg, transparent, #6FBFAC, #6FBFAC, transparent)' }}
+              />
+            </div>
+            {/* Connecting line — Segment 2 (desktop) */}
+            <div className="hidden md:block absolute top-[4.5rem] left-[55%] w-[23%] h-[2px] overflow-hidden">
+              <div className="absolute inset-0 bg-[#D4EDE9]" />
+              <div
+                className="absolute inset-y-[-5px] w-[35%] animate-glow-seg2"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(111,191,172,0.5), transparent)', filter: 'blur(4px)' }}
+              />
+              <div
+                className="absolute inset-y-0 w-[25%] animate-pulse-seg2"
+                style={{ background: 'linear-gradient(90deg, transparent, #6FBFAC, #6FBFAC, transparent)' }}
+              />
+            </div>
 
-                <div className="relative inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-[#FAFAFA] border border-gray-100 mb-6 group-hover:border-gray-200 group-hover:shadow-sm transition-all">
-                  <span className="absolute -top-2 -right-2 w-7 h-7 rounded-lg bg-gray-900 text-white text-[11px] font-bold flex items-center justify-center">
-                    {step.num}
-                  </span>
-                  <step.icon className="w-9 h-9 text-gray-400 group-hover:text-[#95C5C1] transition-colors" />
-                </div>
+            <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
+              {[
+                {
+                  icon: Share2,
+                  title: 'Platformtan Paylaş',
+                  desc: 'Desteklediğimiz platformlardan share (paylaş) seçimi yap.',
+                  num: '01',
+                },
+                {
+                  icon: MousePointerClick,
+                  title: 'Somine\'ye Tıkla',
+                  desc: 'Çıkan uygulama listesinden Somine logosuna tıkla.',
+                  num: '02',
+                },
+                {
+                  icon: BookmarkPlus,
+                  title: 'Koleksiyona Ekle',
+                  desc: '"Koleksiyona Ekle" ile içeriğini kaydet — İşte bu kadar kolay!',
+                  num: '03',
+                },
+              ].map((step, idx) => (
+                <motion.div
+                  key={step.title}
+                  variants={fadeUp}
+                  className="relative text-center group"
+                >
+                  {/* Step circle with icon */}
+                  <div
+                    className="relative inline-flex items-center justify-center mb-8 animate-step-bounce"
+                    style={{ animationDelay: `${idx * 1.5}s` }}
+                  >
+                    {/* Number badge */}
+                    <span
+                      className="absolute -top-3 -right-3 w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center z-10 shadow-md"
+                      style={{ background: 'linear-gradient(135deg, #688E8B, #6FBFAC)' }}
+                    >
+                      {step.num}
+                    </span>
 
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-                  {step.desc}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
+                    {/* Icon container */}
+                    <div
+                      className="w-[7.5rem] h-[7.5rem] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-lg"
+                      style={{ background: 'linear-gradient(135deg, #688E8B, #6FBFAC)' }}
+                    >
+                      <step.icon className="w-10 h-10 text-white" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-[#688E8B] mb-2">{step.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed max-w-[250px] mx-auto">
+                    {step.desc}
+                  </p>
+
+                  {/* Mobile connector */}
+                  {idx < 2 && (
+                    <div className="md:hidden flex justify-center my-4">
+                      <div className="relative w-[2px] h-8 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#B8DDD9] to-transparent" />
+                        <div
+                          className="absolute inset-x-0 h-[40%] animate-electric-pulse-v"
+                          style={{ background: 'linear-gradient(180deg, transparent, #6FBFAC, transparent)' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </Section>
 

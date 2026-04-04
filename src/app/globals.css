@@ -6,7 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-outfit);
+  --font-heading: var(--font-outfit);
+  --font-body: var(--font-poppins);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -123,11 +125,14 @@
     @apply border-border outline-ring/50;
   }
   body {
-    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
     @apply bg-background text-foreground;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-outfit), -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   }
   html {
     scroll-behavior: smooth;
@@ -181,4 +186,57 @@
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Sequential pulse for How It Works steps ─── */
+/* 5.4s cycle (1s fade-in offset): icon1(1-1.5s) → seg1(1.5-2.5s) → icon2(2.5-3s) → seg2(3-4s) → icon3(4-4.5s) → pause(4.5-5.4s) */
+
+@keyframes pulse-seg1 {
+  0%, 26% { opacity: 0; left: -25%; }
+  28% { opacity: 1; left: -10%; }
+  45% { opacity: 1; left: 110%; }
+  47%, 100% { opacity: 0; left: 130%; }
+}
+@keyframes glow-seg1 {
+  0%, 26% { opacity: 0; left: -30%; }
+  28% { opacity: 0.5; left: -15%; }
+  45% { opacity: 0.5; left: 115%; }
+  47%, 100% { opacity: 0; left: 135%; }
+}
+@keyframes pulse-seg2 {
+  0%, 54% { opacity: 0; left: -25%; }
+  56% { opacity: 1; left: -10%; }
+  73% { opacity: 1; left: 110%; }
+  75%, 100% { opacity: 0; left: 130%; }
+}
+@keyframes glow-seg2 {
+  0%, 54% { opacity: 0; left: -30%; }
+  56% { opacity: 0.5; left: -15%; }
+  73% { opacity: 0.5; left: 115%; }
+  75%, 100% { opacity: 0; left: 135%; }
+}
+.animate-pulse-seg1 { animation: pulse-seg1 5.4s linear infinite; }
+.animate-glow-seg1  { animation: glow-seg1  5.4s linear infinite; }
+.animate-pulse-seg2 { animation: pulse-seg2 5.4s linear infinite; }
+.animate-glow-seg2  { animation: glow-seg2  5.4s linear infinite; }
+
+/* ─── Step icon bounce (5.4s cycle, 1s offset for fade-in) ─── */
+@keyframes step-bounce {
+  0%, 18% { transform: translateY(0); }
+  24% { transform: translateY(-22px); }
+  28% { transform: translateY(0); }
+  30% { transform: translateY(-7px); }
+  31%, 100% { transform: translateY(0); }
+}
+.animate-step-bounce { animation: step-bounce 5.4s ease infinite; }
+
+/* ─── Vertical electric pulse for mobile ─── */
+@keyframes electric-pulse-vertical {
+  0% { top: -30%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.animate-electric-pulse-v {
+  animation: electric-pulse-vertical 3.6s linear infinite;
 }
