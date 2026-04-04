@@ -182,6 +182,7 @@ class ShareRepository {
           body: jsonEncode({
             'categoryId': categoryId,
             'toUserEmail': toUserEmail,
+            'toUserId': toUserId,
           }),
         );
 

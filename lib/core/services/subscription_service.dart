@@ -70,17 +70,37 @@ class SubscriptionService {
 
   /// Check if user has premium subscription
   bool get isPremium {
-    if (_backendAuthService.isEnabled) {
-      return _backendTier == SubscriptionTier.curator;
+    if (_backendAuthService.isEnabled && _backendTier == SubscriptionTier.curator) {
+      return true;
     }
 
     if (_customerInfo == null) return false;
-    return _customerInfo!.entitlements.active.containsKey('Premium');
+    // RevenueCat panelinde Entitlement ismi olarak "So Mine Premium" ayarlanmış. İhtiyaten iki durumu da kontrol edelim.
+    return _customerInfo!.entitlements.active.containsKey('So Mine Premium') || 
+           _customerInfo!.entitlements.active.containsKey('Premium');
   }
 
   /// Get current subscription tier
   SubscriptionTier get currentTier {
     return isPremium ? SubscriptionTier.curator : SubscriptionTier.starter;
+  }
+
+  /// Get active package name
+  String get activePackageName {
+    if (!isPremium || _customerInfo == null) return "";
+
+    final entitlement = _customerInfo!.entitlements.active['So Mine Premium'] ?? 
+                        _customerInfo!.entitlements.active['Premium'];
+                        
+    if (entitlement == null) return "";
+    
+    final id = entitlement.productIdentifier.toLowerCase();
+    if (id.contains('week') || id.contains('hafta')) return "Haftalık";
+    if (id.contains('month') || id.contains('aylik')) return "Aylık";
+    if (id.contains('annual') || id.contains('year') || id.contains('yillik')) return "Yıllık";
+    if (id.contains('life') || id.contains('omur')) return "Ömür Boyu";
+    
+    return "Premium";
   }
 
   /// Get available packages
@@ -125,6 +145,10 @@ class SubscriptionService {
   Future<bool> restorePurchases() async {
     try {
       _customerInfo = await Purchases.restorePurchases();
+      debugPrint('--- REVENUECAT CUSTOMER INFO ---');
+      debugPrint('Active Entitlements: ${_customerInfo?.entitlements.active.keys.toList()}');
+      debugPrint('All Entitlements: ${_customerInfo?.entitlements.all.keys.toList()}');
+      debugPrint('--------------------------------');
       await _verifyWithBackend();
       return isPremium;
     } catch (e) {

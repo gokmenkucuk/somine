@@ -20,9 +20,12 @@ class BackendRealtimeService {
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<Map<String, dynamic>> _categoriesChangedController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _notificationsChangedController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   HubConnection? _itemsConnection;
   HubConnection? _categoriesConnection;
+  HubConnection? _notificationsConnection;
   Future<void>? _connectOperation;
   String? _connectedUserId;
 
@@ -30,6 +33,8 @@ class BackendRealtimeService {
       _itemsChangedController.stream;
   Stream<Map<String, dynamic>> get categoriesChanges =>
       _categoriesChangedController.stream;
+  Stream<Map<String, dynamic>> get notificationsChanges =>
+      _notificationsChangedController.stream;
 
   Future<void> connectForCurrentUser() {
     if (!ApiConfig.isBackendAuthEnabled) {
@@ -47,9 +52,11 @@ class BackendRealtimeService {
 
     final itemsConnection = _itemsConnection;
     final categoriesConnection = _categoriesConnection;
+    final notificationsConnection = _notificationsConnection;
 
     _itemsConnection = null;
     _categoriesConnection = null;
+    _notificationsConnection = null;
 
     if (itemsConnection != null) {
       try {
@@ -70,6 +77,16 @@ class BackendRealtimeService {
         );
       }
     }
+
+    if (notificationsConnection != null) {
+      try {
+        await notificationsConnection.stop();
+      } catch (error) {
+        debugPrint(
+          '⚠️ [BackendRealtimeService] Failed to stop notifications hub: $error',
+        );
+      }
+    }
   }
 
   Future<void> _connectForCurrentUserInternal() async {
@@ -83,7 +100,8 @@ class BackendRealtimeService {
     if (_connectedUserId != userId) {
       await disconnect();
     } else if (_hasActiveConnection(_itemsConnection) &&
-        _hasActiveConnection(_categoriesConnection)) {
+        _hasActiveConnection(_categoriesConnection) &&
+        _hasActiveConnection(_notificationsConnection)) {
       return;
     }
 
@@ -108,9 +126,15 @@ class BackendRealtimeService {
       eventName: 'categories_changed',
       onEvent: (payload) => _categoriesChangedController.add(payload),
     );
+    _notificationsConnection ??= _buildConnection(
+      path: '/hub/notifications',
+      eventName: 'notifications_changed',
+      onEvent: (payload) => _notificationsChangedController.add(payload),
+    );
 
     await _startConnection(_itemsConnection, label: 'items');
     await _startConnection(_categoriesConnection, label: 'categories');
+    await _startConnection(_notificationsConnection, label: 'notifications');
   }
 
   HubConnection _buildConnection({

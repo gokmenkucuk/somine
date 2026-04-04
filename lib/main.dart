@@ -7,7 +7,9 @@ import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/item_providers.dart';
+import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
+import 'package:somine_app/core/models/notification_model.dart';
 import 'package:somine_app/core/services/backend_realtime_service.dart';
 import 'package:somine_app/core/services/share_service.dart';
 import 'package:somine_app/screens/home_screen.dart';
@@ -21,6 +23,9 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:somine_app/screens/my_shares_screen.dart';
+import 'package:somine_app/widgets/in_app_notification_banner.dart';
+import 'package:somine_app/widgets/share_request_action_sheet.dart';
 
 import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -105,6 +110,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
   ProviderSubscription<AsyncValue<User?>>? _authStateSubscription;
   StreamSubscription<Map<String, dynamic>>? _itemsRealtimeSubscription;
   StreamSubscription<Map<String, dynamic>>? _categoriesRealtimeSubscription;
+  StreamSubscription<Map<String, dynamic>>? _notificationsRealtimeSubscription;
 
   @override
   void initState() {
@@ -128,6 +134,10 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
         _backendRealtimeService.categoriesChanges.listen((_) {
           _refreshDerivedCategoryState();
         });
+    _notificationsRealtimeSubscription =
+        _backendRealtimeService.notificationsChanges.listen((payload) {
+          unawaited(_handleNotificationRealtimeEvent(payload));
+        });
     _authStateSubscription = ref.listenManual<AsyncValue<User?>>(
       authStateProvider,
       (_, next) {
@@ -148,6 +158,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
     _authStateSubscription?.close();
     _itemsRealtimeSubscription?.cancel();
     _categoriesRealtimeSubscription?.cancel();
+    _notificationsRealtimeSubscription?.cancel();
     super.dispose();
   }
 
@@ -176,6 +187,68 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
     ref.invalidate(uncategorizedCountProvider(user.uid));
     ref.invalidate(paginatedFeedProvider);
+  }
+
+  Future<void> _handleNotificationRealtimeEvent(
+    Map<String, dynamic> payload,
+  ) async {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) {
+      return;
+    }
+
+    ref.invalidate(notificationsProvider);
+    ref.invalidate(unreadNotificationCountProvider);
+
+    final action =
+        (payload['action'] ?? payload['Action'])?.toString().toLowerCase();
+    final id = (payload['id'] ?? payload['Id'])?.toString();
+    if (action != 'created' || id == null || id.isEmpty) {
+      return;
+    }
+
+    try {
+      final repository = ref.read(notificationRepositoryProvider);
+      final notification = await repository.getNotificationById(user.uid, id);
+      if (notification == null || notification.isRead) {
+        return;
+      }
+
+      final overlay = _navigatorKey.currentState?.overlay;
+      if (overlay == null) {
+        return;
+      }
+
+      InAppNotificationBannerService().show(
+        overlay: overlay,
+        notification: notification,
+        onTap: () => _openNotificationDestination(notification),
+      );
+    } catch (e) {
+      debugPrint('Notification banner handling error: $e');
+    }
+  }
+
+  void _openNotificationDestination(NotificationModel notification) {
+    final navigator = _navigatorKey.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    switch (notification.type) {
+      case NotificationType.shareRequest:
+        ShareRequestActionSheet.show(
+          navigator.context,
+          notification: notification,
+        );
+        break;
+      case NotificationType.shareAccepted:
+      case NotificationType.shareRejected:
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const MySharesScreen()),
+        );
+        break;
+    }
   }
 
   @override

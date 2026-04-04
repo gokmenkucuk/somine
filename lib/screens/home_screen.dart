@@ -75,6 +75,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   }
 
   void _onItemTapped(int index) {
+    final currentIndex = ref.read(homeTabIndexProvider);
+    if (currentIndex == index) {
+      if (index == 0) {
+        ref.read(homeReselectTriggerProvider.notifier).state++;
+      }
+      return;
+    }
+
     ref.read(homeTabIndexProvider.notifier).state = index;
   }
 

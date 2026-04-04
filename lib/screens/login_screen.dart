@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemUiOverlayStyle için gerekli
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
@@ -178,6 +179,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         textColor: Colors.black87,
                         hasShadow: true,
                         useBorderOnWhite: true, // Yeni parametre
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Legal Terms Acceptance
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Devam ederek ',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey,
+                              height: 1.5,
+                            ),
+                            children: [
+                              WidgetSpan(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final uri = Uri.parse('https://www.somineapp.com/terms');
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                  child: Text(
+                                    'Kullanım Koşulları',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade700,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              TextSpan(text: ' ve '),
+                              WidgetSpan(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final uri = Uri.parse('https://www.somineapp.com/privacy');
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                  child: Text(
+                                    'Gizlilik Politikası',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade700,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const TextSpan(text: '\'nı kabul etmiş olursunuz.'),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
 
                       const Spacer(flex: 1),

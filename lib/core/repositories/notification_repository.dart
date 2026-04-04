@@ -8,10 +8,13 @@ import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/models/notification_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:somine_app/core/services/backend_realtime_service.dart';
 
 class NotificationRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
+  final BackendRealtimeService _backendRealtimeService =
+      BackendRealtimeService();
   final http.Client _httpClient = http.Client();
 
   CollectionReference get _notificationsCollection =>
@@ -61,9 +64,20 @@ class NotificationRepository {
       return;
     }
 
-    while (true) {
-      yield await _getNotificationsFromApi(userId);
-      await Future<void>.delayed(const Duration(seconds: 2));
+    var notifications = await _getNotificationsFromApi(userId);
+    var lastSignature = _notificationsSignature(notifications);
+    yield notifications;
+
+    await for (final _ in _backendRealtimeService.notificationsChanges) {
+      notifications = await _getNotificationsFromApi(userId);
+      final signature = _notificationsSignature(notifications);
+
+      if (signature == lastSignature) {
+        continue;
+      }
+
+      lastSignature = signature;
+      yield notifications;
     }
   }
 
@@ -224,6 +238,41 @@ class NotificationRepository {
     return notifications;
   }
 
+  Future<NotificationModel?> getNotificationById(
+    String userId,
+    String notificationId,
+  ) async {
+    final accessToken = await _requireAccessToken();
+    final response = await _httpClient.get(
+      _buildUri('/api/notifications/$notificationId'),
+      headers: _jsonHeaders(accessToken),
+    );
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return NotificationModel.fromApi(
+        jsonDecode(response.body) as Map<String, dynamic>,
+        userId: userId,
+      );
+    }
+
+    final notifications = await _getNotificationsFromApi(userId);
+    for (final notification in notifications) {
+      if (notification.id == notificationId) {
+        return notification;
+      }
+    }
+
+    _throwIfNotSuccessful(response, action: 'fetch notification');
+    return NotificationModel.fromApi(
+      jsonDecode(response.body) as Map<String, dynamic>,
+      userId: userId,
+    );
+  }
+
   Future<String> _requireAccessToken() async {
     final accessToken = await _backendAuthService.getValidAccessToken(
       firebaseUser: FirebaseAuth.instance.currentUser,
@@ -261,5 +310,14 @@ class NotificationRepository {
     throw Exception(
       'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
     );
+  }
+
+  String _notificationsSignature(List<NotificationModel> notifications) {
+    return notifications
+        .map(
+          (notification) =>
+              '${notification.id}|${notification.type.name}|${notification.isRead}|${notification.createdAt.toUtc().millisecondsSinceEpoch}',
+        )
+        .join('||');
   }
 }

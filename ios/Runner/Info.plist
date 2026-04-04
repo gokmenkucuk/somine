@@ -163,7 +163,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>somine_app</string>
+	<string>Somine</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -187,14 +187,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_googlecast._tcp</string>
-	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Gizli kasayı açmak için Face ID kullanılır.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>This app uses the local network to discover devices and services.</string>
+	<string>Bazı özellikler için yerel ağ erişimi kullanılabilir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Paylaşmak istediğiniz fotoğraf ve videoları seçmek için galeri erişimi gereklidir.</string>
 	<key>NSCameraUsageDescription</key>

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 class ApiConfig {
   static const String _baseUrlOverride = String.fromEnvironment(
     'SOMINE_API_BASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://api.somineapp.com',
   );
 
   static String get baseUrl => _baseUrlOverride.trim();

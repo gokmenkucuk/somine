@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PaywallScreen extends ConsumerWidget {
   const PaywallScreen({super.key});
@@ -148,6 +149,76 @@ class PaywallScreen extends ConsumerWidget {
                           decoration: TextDecoration.underline,
                         ),
                       ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Legal Disclosure (App Store Required)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        "Abonelik seçtiğiniz plana göre otomatik olarak yenilenir. "
+                        "Mevcut dönem bitmeden en az 24 saat önce iptal etmezseniz "
+                        "aboneliğiniz otomatik olarak yenilenir. Aboneliğinizi istediğiniz zaman "
+                        "Ayarlar > Apple Kimliği > Abonelikler üzerinden yönetebilir veya iptal edebilirsiniz.",
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          color: context.colors.hint,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Privacy & Terms Links
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse('https://www.somineapp.com/terms');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          child: Text(
+                            "Kullanım Koşulları",
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: context.colors.hint,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            "|",
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: context.colors.hint,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse('https://www.somineapp.com/privacy');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          child: Text(
+                            "Gizlilik Politikası",
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: context.colors.hint,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 40),

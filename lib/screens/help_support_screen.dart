@@ -196,9 +196,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             context,
             icon: PhosphorIconsRegular.envelope,
             title: 'E-posta Desteği',
-            subtitle: 'support@somine.app',
+            subtitle: 'support@somineapp.com',
             onTap: () async {
-              final uri = Uri.parse('mailto:support@somine.app?subject=So Mine Destek');
+              final uri = Uri.parse('mailto:support@somineapp.com?subject=So Mine Destek');
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);
               }
@@ -211,9 +211,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             context,
             icon: PhosphorIconsRegular.globe,
             title: 'Web Sitesi',
-            subtitle: 'www.somine.app',
+            subtitle: 'www.somineapp.com',
             onTap: () async {
-              final uri = Uri.parse('https://www.somine.app');
+              final uri = Uri.parse('https://www.somineapp.com');
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
@@ -259,7 +259,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                         context,
                         'Gizlilik Politikası',
                         () async {
-                          final uri = Uri.parse('https://www.somine.app/privacy');
+                          final uri = Uri.parse('https://www.somineapp.com/privacy');
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(uri, mode: LaunchMode.externalApplication);
                           }
@@ -272,7 +272,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                         context,
                         'Kullanım Koşulları',
                         () async {
-                          final uri = Uri.parse('https://www.somine.app/terms');
+                          final uri = Uri.parse('https://www.somineapp.com/terms');
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(uri, mode: LaunchMode.externalApplication);
                           }

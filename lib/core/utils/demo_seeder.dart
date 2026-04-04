@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -12,20 +13,20 @@ import 'package:somine_app/core/utils/demo_mock_data.dart';
 class DemoSeeder {
   
   static Future<void> seed(WidgetRef ref) async {
-    print('DemoSeeder: Starting...');
+    debugPrint('DemoSeeder: Starting...');
     final user = ref.read(currentUserProvider);
     if (user == null) {
-      print('DemoSeeder Error: User is null!');
+      debugPrint('DemoSeeder Error: User is null!');
       return;
     }
     
-    print('DemoSeeder: Active User UID: ${user.uid}');
+    debugPrint('DemoSeeder: Active User UID: ${user.uid}');
     final firestore = FirebaseFirestore.instance;
     final uuid = const Uuid();
     final random = Random();
 
     // 0. FORCE DELETE EVERYTHING
-    print('DemoSeeder: Deleting old data...');
+    debugPrint('DemoSeeder: Deleting old data...');
     await Future.wait([
       _deleteCollection(firestore, 'items', user.uid),
       _deleteCollection(firestore, 'categories', user.uid),
@@ -34,7 +35,7 @@ class DemoSeeder {
     ]);
     
     // 1. Create Categories (Updated list - only what we have content for)
-    print('DemoSeeder: Creating categories...');
+    debugPrint('DemoSeeder: Creating categories...');
     final writeBatch = firestore.batch();
     
     final catIds = {
@@ -60,7 +61,7 @@ class DemoSeeder {
     }
 
     // 2. Prepare Items Data
-    print('DemoSeeder: Processing ${demoMockData.length} items...');
+    debugPrint('DemoSeeder: Processing ${demoMockData.length} items...');
 
     final futures = demoMockData.map((raw) async {
        return _processSingleItem(raw, user.uid, catIds, random);
@@ -75,7 +76,7 @@ class DemoSeeder {
     }
 
     await writeBatch.commit();
-    print('DemoSeeder: Batch committed successfully!');
+    debugPrint('DemoSeeder: Batch committed successfully!');
   }
 
   // --- Helpers ---
@@ -106,7 +107,7 @@ class DemoSeeder {
     
     final catId = catIds[cat];
     if (catId == null) {
-      print('DemoSeeder: Unknown category: $cat');
+      debugPrint('DemoSeeder: Unknown category: $cat');
       return null;
     }
 
@@ -181,7 +182,7 @@ class DemoSeeder {
         }
       }
     } catch (e) {
-      print('DemoSeeder: Pinterest scrape failed for $url: $e');
+      debugPrint('DemoSeeder: Pinterest scrape failed for $url: $e');
     }
     return null;
   }

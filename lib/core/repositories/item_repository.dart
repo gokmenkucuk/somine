@@ -12,6 +12,20 @@ import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/backend_realtime_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 
+class PaginatedItemsResult {
+  const PaginatedItemsResult({
+    required this.items,
+    required this.hasMore,
+    this.lastDocument,
+    this.nextPage,
+  });
+
+  final List<ItemModel> items;
+  final bool hasMore;
+  final DocumentSnapshot? lastDocument;
+  final int? nextPage;
+}
+
 class ItemRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
@@ -52,16 +66,47 @@ class ItemRepository {
     }
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> getItemsPaginated(
+  Future<PaginatedItemsResult> getItemsPaginated(
     String userId, {
     String? categoryId,
     int limit = 5,
+    int page = 1,
     DocumentSnapshot? startAfter,
   }) async {
     try {
       if (_useBackendForCurrentUser(userId)) {
-        throw UnimplementedError(
-          'getItemsPaginated is not supported in backend mode.',
+        final accessToken = await _requireAccessToken();
+        final response = await _httpClient.get(
+          _buildUri(
+            '/api/items',
+            queryParameters: {
+              'page': '$page',
+              'limit': '$limit',
+              if (categoryId != null) 'categoryId': categoryId,
+            },
+          ),
+          headers: _jsonHeaders(accessToken),
+        );
+
+        _throwIfNotSuccessful(response, action: 'fetch paginated items');
+
+        final payload = jsonDecode(response.body) as Map<String, dynamic>;
+        final totalCount = payload['totalCount'] as int? ?? 0;
+        final currentPage = payload['page'] as int? ?? page;
+        final pageLimit = payload['limit'] as int? ?? limit;
+        final items =
+            (payload['items'] as List<dynamic>? ?? const [])
+                .whereType<Map<String, dynamic>>()
+                .map(
+                  (json) =>
+                      ItemModel.fromApi(json, userId: userId, isDeleted: false),
+                )
+                .toList();
+
+        return PaginatedItemsResult(
+          items: items,
+          hasMore: currentPage * pageLimit < totalCount,
+          nextPage: currentPage + 1,
         );
       }
 
@@ -80,7 +125,18 @@ class ItemRepository {
         query = query.startAfterDocument(startAfter);
       }
 
-      return await query.limit(limit).get();
+      final snapshot = await query.limit(limit).get();
+      final items =
+          snapshot.docs
+              .map((doc) => ItemModel.fromFirestore(doc))
+              .where((item) => !item.isDeleted)
+              .toList();
+
+      return PaginatedItemsResult(
+        items: items,
+        hasMore: snapshot.docs.length == limit,
+        lastDocument: snapshot.docs.isEmpty ? startAfter : snapshot.docs.last,
+      );
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error fetching paginated items: $e');
       rethrow;

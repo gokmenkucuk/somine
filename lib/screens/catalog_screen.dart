@@ -1348,14 +1348,28 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               Expanded(
                 child: hasSearched 
                   ? foundUser != null 
-                    ? _buildUserResult(context, ctx, foundUser!, category, setState)
+                    ? _buildUserResult(
+                        context,
+                        ctx,
+                        foundUser!,
+                        category,
+                        setState,
+                        (message) => setState(() => errorMessage = message),
+                      )
                     : _buildNoUserFound(context)
-                  : _buildRecentUsers(context, ctx, category, setState, (user) {
-                      setState(() {
-                        foundUser = user;
-                        hasSearched = true;
-                      });
-                    }),
+                  : _buildRecentUsers(
+                      context,
+                      ctx,
+                      category,
+                      setState,
+                      (user) {
+                        setState(() {
+                          foundUser = user;
+                          hasSearched = true;
+                        });
+                      },
+                      (message) => setState(() => errorMessage = message),
+                    ),
               ),
               
               // Error Message
@@ -1377,7 +1391,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
-  Widget _buildUserResult(BuildContext context, BuildContext dialogContext, Map<String, dynamic> user, CategoryModel category, StateSetter setState) {
+  Widget _buildUserResult(
+    BuildContext context,
+    BuildContext dialogContext,
+    Map<String, dynamic> user,
+    CategoryModel category,
+    StateSetter setState,
+    ValueChanged<String> onError,
+  ) {
+    final avatarImage = _buildUserAvatarImage(user['photoBase64']);
+    final displayName = _safeUserDisplayName(user['displayName']);
+    final userInitial = _safeUserInitial(displayName);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -1396,21 +1421,21 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    gradient: user['photoBase64'] == null 
+                    gradient: avatarImage == null
                       ? LinearGradient(colors: [context.colors.primary, context.colors.secondary])
                       : null,
                     shape: BoxShape.circle,
-                    image: user['photoBase64'] != null 
+                    image: avatarImage != null
                       ? DecorationImage(
-                          image: MemoryImage(base64Decode(user['photoBase64'])),
+                          image: avatarImage,
                           fit: BoxFit.cover,
                         )
                       : null,
                   ),
-                  child: user['photoBase64'] == null 
+                  child: avatarImage == null
                     ? Center(
                         child: Text(
-                          (user['displayName'] as String? ?? 'U')[0].toUpperCase(),
+                          userInitial,
                           style: GoogleFonts.outfit(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -1426,7 +1451,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user['displayName'] ?? 'Kullanıcı',
+                        displayName,
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1490,13 +1515,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       SuccessNotificationSheet.show(
                         context,
                         title: 'Paylaşım Gönderildi',
-                        message: '${user['displayName']} paylaşım isteğinizi aldı.',
+                        message: '$displayName paylaşım isteğinizi aldı.',
                       );
                     }
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
-                    );
+                    onError(_userFacingErrorMessage(e));
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1601,6 +1624,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     CategoryModel category, 
     StateSetter setState, 
     Function(Map<String, dynamic>) onUserSelected,
+    ValueChanged<String> onError,
   ) {
     final currentUser = ref.read(authStateProvider).valueOrNull;
     if (currentUser == null) return _buildSearchHint(context);
@@ -1637,7 +1661,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   itemCount: recentUsers.length,
                   itemBuilder: (context, index) {
                     final user = recentUsers[index];
-                    return _buildRecentUserTile(context, dialogContext, user, category);
+                    return _buildRecentUserTile(
+                      context,
+                      dialogContext,
+                      user,
+                      category,
+                      onError,
+                    );
                   },
                 ),
               ),
@@ -1648,7 +1678,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
-  Widget _buildRecentUserTile(BuildContext context, BuildContext dialogContext, Map<String, dynamic> user, CategoryModel category) {
+  Widget _buildRecentUserTile(
+    BuildContext context,
+    BuildContext dialogContext,
+    Map<String, dynamic> user,
+    CategoryModel category,
+    ValueChanged<String> onError,
+  ) {
+    final avatarImage = _buildUserAvatarImage(user['photoBase64']);
+    final displayName = _safeUserDisplayName(user['displayName']);
+    final userInitial = _safeUserInitial(displayName);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1662,6 +1702,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               fromUserName: currentUser.displayName ?? currentUser.email ?? 'Kullanıcı',
               fromUserEmail: currentUser.email ?? '',
               toUserEmail: user['email'],
+              toUserId: user['id'],
               categoryId: category.id!,
               categoryName: category.name,
             );
@@ -1672,13 +1713,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               SuccessNotificationSheet.show(
                 context,
                 title: 'Paylaşım Gönderildi',
-                message: '${user['displayName']} paylaşım isteğinizi aldı.',
+                message: '$displayName paylaşım isteğinizi aldı.',
               );
             }
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(e.toString())),
-            );
+            onError(_userFacingErrorMessage(e));
           }
         },
         borderRadius: BorderRadius.circular(12),
@@ -1691,21 +1730,21 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: user['photoBase64'] == null 
+                  gradient: avatarImage == null
                     ? LinearGradient(colors: [context.colors.primary, context.colors.secondary])
                     : null,
                   shape: BoxShape.circle,
-                  image: user['photoBase64'] != null 
+                  image: avatarImage != null
                     ? DecorationImage(
-                        image: MemoryImage(base64Decode(user['photoBase64'])),
+                        image: avatarImage,
                         fit: BoxFit.cover,
                       )
                     : null,
                 ),
-                child: user['photoBase64'] == null 
+                child: avatarImage == null
                   ? Center(
                       child: Text(
-                        (user['displayName'] as String? ?? 'U')[0].toUpperCase(),
+                        userInitial,
                         style: GoogleFonts.outfit(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1721,7 +1760,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user['displayName'] ?? 'Kullanıcı',
+                      displayName,
                       style: GoogleFonts.outfit(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -1751,6 +1790,50 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
+  MemoryImage? _buildUserAvatarImage(dynamic photoBase64) {
+    if (photoBase64 is! String) return null;
+
+    final normalized = photoBase64.trim();
+    if (normalized.isEmpty) return null;
+
+    try {
+      final bytes = base64Decode(normalized);
+      if (bytes.isEmpty) return null;
+      return MemoryImage(bytes);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _safeUserDisplayName(dynamic displayName) {
+    if (displayName is! String) return 'Kullanıcı';
+
+    final normalized = displayName.trim();
+    if (normalized.isEmpty) return 'Kullanıcı';
+
+    return normalized;
+  }
+
+  String _safeUserInitial(String displayName) {
+    final normalized = displayName.trim();
+    if (normalized.isEmpty) return 'U';
+
+    return String.fromCharCode(normalized.runes.first).toUpperCase();
+  }
+
+  String _userFacingErrorMessage(Object error) {
+    final raw = error.toString().trim();
+    if (raw.isEmpty) {
+      return 'Bir hata oluştu. Lütfen tekrar deneyin.';
+    }
+
+    const prefix = 'Exception:';
+    if (raw.startsWith(prefix)) {
+      return raw.substring(prefix.length).trim();
+    }
+
+    return raw;
+  }
 
   void _showRenameDialog(String categoryId, String currentName) {
     final controller = TextEditingController(text: currentName);

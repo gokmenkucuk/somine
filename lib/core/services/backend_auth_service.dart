@@ -10,14 +10,28 @@ import 'package:somine_app/core/models/backend_auth_session.dart';
 enum BackendIdentityProvider { google, apple }
 
 class BackendAuthService {
-  static const String _sessionStorageKey = 'backend_auth_session';
-
   final http.Client _httpClient;
 
   BackendAuthService({http.Client? httpClient})
     : _httpClient = httpClient ?? http.Client();
 
   bool get isEnabled => ApiConfig.isBackendAuthEnabled;
+
+  String get _sessionStorageKey {
+    final rawBaseUrl = ApiConfig.baseUrl.trim();
+    if (rawBaseUrl.isEmpty) {
+      return 'backend_auth_session';
+    }
+
+    final normalizedBaseUrl =
+        rawBaseUrl
+            .toLowerCase()
+            .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+            .replaceAll(RegExp(r'_+'), '_')
+            .replaceAll(RegExp(r'^_|_$'), '');
+
+    return 'backend_auth_session_$normalizedBaseUrl';
+  }
 
   Future<BackendAuthSession?> getStoredSession() async {
     final prefs = await SharedPreferences.getInstance();

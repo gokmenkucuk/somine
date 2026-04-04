@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Pagination
 import 'package:cached_network_image/cached_network_image.dart'; // Image Precaching
@@ -235,12 +237,14 @@ class PaginatedItemsState {
   final bool isLoading;
   final bool hasMore;
   final DocumentSnapshot? lastDocument;
+  final int nextPage;
 
   PaginatedItemsState({
     this.items = const [],
     this.isLoading = false,
     this.hasMore = true,
     this.lastDocument,
+    this.nextPage = 1,
   });
 
   PaginatedItemsState copyWith({
@@ -248,12 +252,14 @@ class PaginatedItemsState {
     bool? isLoading,
     bool? hasMore,
     DocumentSnapshot? lastDocument,
+    int? nextPage,
   }) {
     return PaginatedItemsState(
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
       lastDocument: lastDocument ?? this.lastDocument,
+      nextPage: nextPage ?? this.nextPage,
     );
   }
 }
@@ -263,9 +269,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
   String? _userId;
   String? _categoryId;
   String _categoriesSignature = '';
-  
   List<CategoryModel> _categories = [];
-  List<ItemModel> _allCachedItems = [];
 
   PaginatedItemsNotifier(this._repository) : super(PaginatedItemsState());
 
@@ -290,43 +294,24 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     if (_userId == null) return;
     
     // Reset state
-    state = state.copyWith(isLoading: true, items: [], hasMore: true, lastDocument: null);
-    _allCachedItems = [];
+    state = PaginatedItemsState(isLoading: true);
     
     try {
-      // 1. Fetch ALL items (Simple Query, No Index needed)
-      var allItems = await _repository.getItems(_userId!, categoryId: _categoryId);
+      final initialBatch = await _loadBatch(
+        page: 1,
+        lastDocument: null,
+      );
       if (!mounted) return;
-      
-      // Filter out Vault items if viewing "All" (null categoryId)
-      if (_categoryId == null) {
-        final vaultIds = _categories.where((c) => c.isVault).map((c) => c.id).toSet();
-        if (vaultIds.isNotEmpty) {
-          allItems = allItems.where((i) => !vaultIds.contains(i.categoryId)).toList();
-        }
-      }
-      
-      // 2. Sort in memory (just to be safe, repo does it too)
-      allItems.sort((a, b) {
-         final orderDiff = a.order.compareTo(b.order);
-         if (orderDiff != 0) return orderDiff;
-         return b.createdAt.compareTo(a.createdAt);
-      });
-      
-      _allCachedItems = allItems;
-      
-      // 3. Slice first page
-      final initialBatch = _allCachedItems.take(5).toList();
-      
-      // 4. Precache images before showing content
+
       await _precacheImages(initialBatch);
       if (!mounted) return;
       
       state = state.copyWith(
         items: initialBatch,
         isLoading: false,
-        hasMore: initialBatch.length < _allCachedItems.length,
-        lastDocument: null, 
+        hasMore: _lastBatchHasMore,
+        lastDocument: _lastBatchLastDocument,
+        nextPage: _lastBatchNextPage,
       );
     } catch (e) {
       if (mounted) state = state.copyWith(isLoading: false, hasMore: false);
@@ -373,22 +358,77 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      // Get next batch from cache
-      final currentLength = state.items.length;
-      final nextBatch = _allCachedItems.skip(currentLength).take(5).toList();
-      
-      // Precache images before showing
-      await _precacheImages(nextBatch);
+      final nextBatch = await _loadBatch(
+        page: state.nextPage,
+        lastDocument: state.lastDocument,
+      );
       if (!mounted) return;
       
       state = state.copyWith(
         items: [...state.items, ...nextBatch],
         isLoading: false,
-        hasMore: (state.items.length + nextBatch.length) < _allCachedItems.length,
+        hasMore: _lastBatchHasMore,
+        lastDocument: _lastBatchLastDocument,
+        nextPage: _lastBatchNextPage,
       );
+
+      // Warm image cache in the background so scroll append is immediate.
+      unawaited(_precacheImages(nextBatch));
     } catch (e) {
        if (mounted) state = state.copyWith(isLoading: false);
     }
+  }
+
+  bool _lastBatchHasMore = true;
+  DocumentSnapshot? _lastBatchLastDocument;
+  int _lastBatchNextPage = 1;
+
+  Future<List<ItemModel>> _loadBatch({
+    required int page,
+    required DocumentSnapshot? lastDocument,
+  }) async {
+    const visibleBatchSize = 5;
+    final items = <ItemModel>[];
+    var currentPage = page;
+    var currentLastDocument = lastDocument;
+    var sourceHasMore = true;
+    final vaultIds =
+        _categoryId == null
+            ? _categories.where((c) => c.isVault).map((c) => c.id).toSet()
+            : const <String?>{};
+
+    while (items.length < visibleBatchSize && sourceHasMore) {
+      final result = await _repository.getItemsPaginated(
+        _userId!,
+        categoryId: _categoryId,
+        limit: visibleBatchSize,
+        page: currentPage,
+        startAfter: currentLastDocument,
+      );
+
+      var batchItems = result.items;
+      if (vaultIds.isNotEmpty) {
+        batchItems =
+            batchItems
+                .where((item) => !vaultIds.contains(item.categoryId))
+                .toList();
+      }
+
+      items.addAll(batchItems);
+      sourceHasMore = result.hasMore;
+      currentLastDocument = result.lastDocument;
+      currentPage = result.nextPage ?? currentPage;
+
+      if (result.items.isEmpty) {
+        break;
+      }
+    }
+
+    _lastBatchHasMore = sourceHasMore;
+    _lastBatchLastDocument = currentLastDocument;
+    _lastBatchNextPage = currentPage;
+
+    return items.take(visibleBatchSize).toList();
   }
 }
 

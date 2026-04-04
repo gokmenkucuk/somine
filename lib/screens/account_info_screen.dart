@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
@@ -52,53 +53,80 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
-    // Smaller size for Firestore storage
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 300,
-      maxHeight: 300,
-      imageQuality: 70,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
     );
 
-    if (pickedFile != null) {
-      setState(() => _isUploadingColor = true);
+    if (pickedFile == null) return;
 
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) return;
+    // Crop the selected image
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: pickedFile.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      compressQuality: 70,
+      maxWidth: 300,
+      maxHeight: 300,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Fotoğrafı Kırp',
+          toolbarColor: Colors.black,
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: Colors.green,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          hideBottomControls: false,
+        ),
+        IOSUiSettings(
+          title: 'Fotoğrafı Kırp',
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+          aspectRatioPickerButtonHidden: true,
+        ),
+      ],
+    );
 
-        final file = File(pickedFile.path);
-        final bytes = await file.readAsBytes();
-        final base64String = base64Encode(bytes);
+    if (croppedFile == null) return; // Kullanıcı iptal etti
 
-        await _userRepository.updateProfilePhotoBase64(
-          uid: user.uid,
-          photoBase64: base64String,
+    setState(() => _isUploadingColor = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final file = File(croppedFile.path);
+      final bytes = await file.readAsBytes();
+      final base64String = base64Encode(bytes);
+
+      await _userRepository.updateProfilePhotoBase64(
+        uid: user.uid,
+        photoBase64: base64String,
+      );
+
+      // Update Auth (Clear it so we don't use Google's)
+      await user.updatePhotoURL(null);
+      await user.reload();
+
+      await _loadUserData();
+
+      if (mounted) {
+        setState(() {});
+        SuccessNotificationSheet.show(
+          context,
+          title: 'Fotoğraf Güncellendi',
+          message: 'Profil fotoğrafınız başarıyla değiştirildi.',
         );
-
-        // Update Auth (Clear it so we don't use Google's)
-        await user.updatePhotoURL(null);
-        await user.reload();
-
-        await _loadUserData();
-
-        if (mounted) {
-          setState(() {});
-          SuccessNotificationSheet.show(
-            context,
-            title: 'Fotoğraf Güncellendi',
-            message: 'Profil fotoğrafınız başarıyla değiştirildi.',
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Hata: $e')));
-        }
-      } finally {
-        if (mounted) setState(() => _isUploadingColor = false);
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingColor = false);
     }
   }
 
@@ -259,16 +287,35 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
           const SizedBox(height: 12),
 
-          // Info Cards
-          _buildInfoCard(
-            context,
-            icon: CupertinoIcons.mail,
-            label: 'E-posta',
-            value: user?.email ?? 'Bilinmiyor',
+          // Info Cards - Email (provider-aware)
+          Builder(
+            builder: (context) {
+              final isApple = user?.providerData.any((p) => p.providerId == 'apple.com') ?? false;
+              final email = user?.email;
+              
+              String emailDisplay;
+              if (email != null && email.isNotEmpty) {
+                if (email.contains('privaterelay.appleid.com')) {
+                  emailDisplay = 'E-posta Gizli (Apple)';
+                } else {
+                  emailDisplay = email;
+                }
+              } else {
+                emailDisplay = isApple ? 'E-posta Gizli (Apple)' : 'Bilinmiyor';
+              }
+              
+              return _buildInfoCard(
+                context,
+                icon: CupertinoIcons.mail,
+                label: 'E-posta',
+                value: emailDisplay,
+              );
+            },
           ),
 
           const SizedBox(height: 12),
 
+          // Hesap Oluşturma Tarihi
           _buildInfoCard(
             context,
             icon: CupertinoIcons.calendar,
@@ -281,13 +328,37 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
           const SizedBox(height: 12),
 
-          _buildInfoCard(
-            context,
-            icon: CupertinoIcons.checkmark_shield,
-            label: 'E-posta Doğrulama',
-            value: user?.emailVerified == true ? 'Doğrulandı' : 'Doğrulanmadı',
-            valueColor:
-                user?.emailVerified == true ? Colors.green : Colors.orange,
+          // Verification (provider-aware)
+          Builder(
+            builder: (context) {
+              final isApple = user?.providerData.any((p) => p.providerId == 'apple.com') ?? false;
+              final isGoogle = user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
+              
+              String verificationText;
+              Color verificationColor;
+              
+              if (isApple) {
+                verificationText = 'Apple ile Doğrulandı';
+                verificationColor = Colors.green;
+              } else if (isGoogle) {
+                verificationText = 'Google ile Doğrulandı';
+                verificationColor = Colors.green;
+              } else if (user?.emailVerified == true) {
+                verificationText = 'Doğrulandı';
+                verificationColor = Colors.green;
+              } else {
+                verificationText = 'Doğrulanmadı';
+                verificationColor = Colors.orange;
+              }
+              
+              return _buildInfoCard(
+                context,
+                icon: CupertinoIcons.checkmark_shield,
+                label: 'Hesap Doğrulama',
+                value: verificationText,
+                valueColor: verificationColor,
+              );
+            },
           ),
 
           const SizedBox(height: 32),

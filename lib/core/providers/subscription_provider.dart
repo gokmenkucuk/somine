@@ -5,12 +5,14 @@ import 'package:somine_app/core/services/subscription_service.dart';
 /// Subscription state
 class SubscriptionState {
   final SubscriptionTier tier;
+  final String activePackageName;
   final bool isLoading;
   final List<Package> availablePackages;
   final String? error;
 
   const SubscriptionState({
     this.tier = SubscriptionTier.starter,
+    this.activePackageName = "",
     this.isLoading = false,
     this.availablePackages = const [],
     this.error,
@@ -18,12 +20,14 @@ class SubscriptionState {
 
   SubscriptionState copyWith({
     SubscriptionTier? tier,
+    String? activePackageName,
     bool? isLoading,
     List<Package>? availablePackages,
     String? error,
   }) {
     return SubscriptionState(
       tier: tier ?? this.tier,
+      activePackageName: activePackageName ?? this.activePackageName,
       isLoading: isLoading ?? this.isLoading,
       availablePackages: availablePackages ?? this.availablePackages,
       error: error,
@@ -49,6 +53,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
     state = state.copyWith(
       tier: _service.currentTier,
+      activePackageName: _service.activePackageName,
       isLoading: false,
       availablePackages: packages,
     );
@@ -63,6 +68,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
     state = state.copyWith(
       tier: _service.currentTier,
+      activePackageName: _service.activePackageName,
       isLoading: false,
       availablePackages: packages,
     );
@@ -77,7 +83,11 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
       await _service.refreshStatus();
 
       if (success) {
-        state = state.copyWith(tier: _service.currentTier, isLoading: false);
+        state = state.copyWith(
+          tier: _service.currentTier, 
+          activePackageName: _service.activePackageName,
+          isLoading: false
+        );
       } else {
         state = state.copyWith(isLoading: false);
       }
@@ -97,7 +107,11 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
       final success = await _service.restorePurchases();
       await _service.refreshStatus();
 
-      state = state.copyWith(tier: _service.currentTier, isLoading: false);
+      state = state.copyWith(
+        tier: _service.currentTier, 
+        activePackageName: _service.activePackageName,
+        isLoading: false
+      );
 
       return success;
     } catch (e) {
@@ -135,4 +149,8 @@ final isPremiumProvider = Provider<bool>((ref) {
 
 final subscriptionTierProvider = Provider<SubscriptionTier>((ref) {
   return ref.watch(subscriptionProvider).tier;
+});
+
+final activePackageNameProvider = Provider<String>((ref) {
+  return ref.watch(subscriptionProvider).activePackageName;
 });

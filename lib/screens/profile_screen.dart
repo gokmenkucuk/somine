@@ -123,9 +123,21 @@ class ProfileScreen extends ConsumerWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildStatItem(context, "İçerik", itemCount.toString(), PhosphorIconsRegular.article),
+                            _buildStatItem(
+                              context, 
+                              "İçerik", 
+                              itemCount.toString(), 
+                              PhosphorIconsRegular.article,
+                              onTap: () => ref.read(homeTabIndexProvider.notifier).state = 0, // Feed Tab
+                            ),
                             _buildVerticalDivider(context),
-                            _buildStatItem(context, "Koleksiyon", collectionCount.toString(), PhosphorIconsRegular.cards),
+                            _buildStatItem(
+                              context, 
+                              "Koleksiyon", 
+                              collectionCount.toString(), 
+                              PhosphorIconsRegular.cards,
+                              onTap: () => ref.read(homeTabIndexProvider.notifier).state = 2, // Catalog Tab
+                            ),
                           ],
                         ),
                       ),
@@ -636,14 +648,22 @@ class ProfileScreen extends ConsumerWidget {
                         decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(6)),
-                        child: Text(
-                          isPro ? "PREMIUM" : "STANDART",
-                          style: GoogleFonts.outfit(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final pkgName = ref.watch(activePackageNameProvider);
+                            final badgeText = isPro 
+                                ? "PREMIUM${pkgName.isNotEmpty ? ' - ${pkgName.toUpperCase()}' : ''}" 
+                                : "STANDART";
+                            return Text(
+                              badgeText,
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -663,10 +683,13 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -698,7 +721,8 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ],
+        ],
+      ),
     );
   }
 

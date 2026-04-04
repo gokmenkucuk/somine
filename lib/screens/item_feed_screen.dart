@@ -42,7 +42,7 @@ class ItemFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
-  ViewMode _viewMode = ViewMode.masonry; 
+  ViewMode _viewMode = ViewMode.square; 
   final ScrollController _scrollController = ScrollController();
   
   // For smooth skeleton-to-content transition
@@ -96,6 +96,17 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final selCategory = ref.watch(selectedCategoryIdProvider);
     final feedState = ref.watch(paginatedFeedProvider);
+    ref.listen<int>(homeReselectTriggerProvider, (previous, next) {
+      if (previous == null || next == previous || !_scrollController.hasClients) {
+        return;
+      }
+
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    });
     
     // Listen for item changes to trigger fade-in after layout
     ref.listen<PaginatedItemsState>(paginatedFeedProvider, (previous, next) {
@@ -1281,10 +1292,6 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   }
 
   Widget _buildSkeletonCard(int index) {
-    // Alternate heights for masonry effect
-    final heights = [180.0, 220.0, 160.0, 200.0, 190.0, 240.0];
-    final height = heights[index % heights.length];
-    
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -1295,15 +1302,16 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // Image Placeholder with Shimmer - use ClipRRect for top corners
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: _ShimmerBox(height: height),
+            // Image Placeholder - expands to fill available space
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: _ShimmerBox(height: double.infinity),
+              ),
             ),
             
-            // Text Placeholder
+            // Text Placeholder - fixed size
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
