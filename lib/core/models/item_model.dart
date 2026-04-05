@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:somine_app/core/config/api_config.dart';
 
 /// Type of saved item
 enum ItemType { link, note, image }
@@ -280,7 +281,15 @@ class ItemModel {
 
   /// Get display image (from OG metadata or item imageUrl)
   String? get displayImage {
-    return ogMetadata?.imageUrl ?? imageUrl;
+    final img = ogMetadata?.imageUrl ?? imageUrl;
+    if (img != null) {
+      String correctedImg = img.trim().replaceAll('\n', '').replaceAll('\r', '');
+      if (correctedImg.contains('46.224.146.102')) {
+        correctedImg = correctedImg.replaceAll('http://46.224.146.102', ApiConfig.baseUrl);
+      }
+      return correctedImg;
+    }
+    return null;
   }
 
   /// Get platform name based on URL

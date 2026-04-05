@@ -32,6 +32,8 @@ import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/widgets/reminder_picker_bottom_sheet.dart';
+import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:somine_app/widgets/limit_reached_dialog.dart';
 
 class AddContentScreen extends ConsumerStatefulWidget {
   final String? initialText;
@@ -979,6 +981,40 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         return;
       }
     }
+
+    // --- ITEM LIMIT CHECK FOR STARTER TIER ---
+    final subState = ref.read(subscriptionProvider);
+    final subNotifier = ref.read(subscriptionProvider.notifier);
+    if (!subState.isPremium) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final repo = ItemRepository();
+        for (final catId in _selectedCategoryIds) {
+          // Check if it's a new addition to this specific category
+          bool isNewAdd = true;
+          if (widget.editItem != null && widget.editItem!.categoryId == catId) {
+            isNewAdd = false; // Just editing within the same category
+          }
+
+          if (isNewAdd) {
+            final currentCount = await repo.getActiveItemCountInCategory(uid, catId);
+            if (!subNotifier.canAddItem(currentCount)) {
+              if (mounted) {
+                LimitReachedDialog.show(
+                  context: context,
+                  ref: ref,
+                  title: "Koleksiyon Dolu",
+                  message: "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
+                  type: LimitType.item,
+                );
+              }
+              return;
+            }
+          }
+        }
+      }
+    }
+    // --- END LIMIT CHECK ---
 
     setState(() => _isSaving = true);
     final storageService = StorageService();
@@ -2896,6 +2932,24 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   void _showAddCategoryDialog(BuildContext context) {
+    // --- COLLECTION LIMIT CHECK ---
+    final addSubState = ref.read(subscriptionProvider);
+    final addSubNotifier = ref.read(subscriptionProvider.notifier);
+    if (!addSubState.isPremium) {
+      final categories = _categories;
+      if (!addSubNotifier.canCreateCollection(categories.length)) {
+        LimitReachedDialog.show(
+          context: context,
+          ref: ref,
+          title: null,
+          message: null,
+          type: LimitType.collection,
+        );
+        return;
+      }
+    }
+    // --- END LIMIT CHECK ---
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

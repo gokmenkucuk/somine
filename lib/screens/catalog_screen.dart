@@ -2046,6 +2046,35 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                              ),
                              title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: context.colors.headline)),
                              onTap: () async {
+                               // --- LIMIT CHECK ---
+                               final isPremium = ref.read(subscriptionProvider).isPremium;
+                               if (!isPremium) {
+                                  final uid = FirebaseAuth.instance.currentUser?.uid;
+                                  if (uid != null) {
+                                     final repo = ref.read(itemRepositoryProvider);
+                                     final currentCount = await repo.getActiveItemCountInCategory(uid, cat.id);
+                                     final isSelection = ref.read(isSelectionModeProvider);
+                                     final numAdding = isSelection 
+                                          ? (ref.read(selectedItemsProvider).isEmpty ? 1 : ref.read(selectedItemsProvider).length) 
+                                          : 1;
+                                          
+                                     if (!ref.read(subscriptionProvider.notifier).canAddItem(currentCount + numAdding - 1)) {
+                                         if (context.mounted) Navigator.pop(ctx);
+                                         if (mounted) {
+                                            LimitReachedDialog.show(
+                                                context: context,
+                                                ref: ref,
+                                                title: "Koleksiyon Dolu",
+                                                message: "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
+                                                type: LimitType.item,
+                                            );
+                                         }
+                                         return;
+                                     }
+                                  }
+                               }
+                               // --- END LIMIT CHECK ---
+
                                Navigator.pop(ctx);
                                
                                if (ref.read(isSelectionModeProvider)) {
@@ -2054,7 +2083,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   if (selectedIds.isEmpty) { 
                                      selectedIds.add(item.id); 
                                   }
-                                  await ref.read(itemRepositoryProvider).moveItemsToCategory(selectedIds, cat.id!);
+                                  await ref.read(itemRepositoryProvider).moveItemsToCategory(selectedIds, cat.id);
                                   if (mounted) {
                                      SuccessNotificationSheet.show(
                                        context,
@@ -2387,7 +2416,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                  // Show fallback view when image fails to load
                  errorWidget: (context, url, error) => buildFallbackView(),
                )
-             : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
+             : item.displayImage!.startsWith('data:')
+                 ? Image.memory(
+                     const Base64Decoder().convert(item.displayImage!.split(',').last),
+                     fit: BoxFit.fitWidth,
+                     errorBuilder: (context, error, stackTrace) => buildFallbackView(),
+                   )
+                 : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
           
           // Platform Icon (Top Right)
           Positioned(top: 8, right: 8, child: buildPlatformIcon()),
@@ -2652,6 +2687,33 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   void _moveItemToCategory(ItemModel item, String? targetCategoryId) async {
      try {
+       // --- ITEM LIMIT CHECK FOR DRAG & DROP ---
+       final isPremium = ref.read(subscriptionProvider).isPremium;
+       if (!isPremium && targetCategoryId != null) {
+          final uid = FirebaseAuth.instance.currentUser?.uid;
+          if (uid != null) {
+             final repo = ref.read(itemRepositoryProvider);
+             final currentCount = await repo.getActiveItemCountInCategory(uid, targetCategoryId);
+             final isSelMode = ref.read(isSelectionModeProvider);
+             final selectedItems = ref.read(selectedItemsProvider);
+             final numAdding = (isSelMode && selectedItems.contains(item.id)) ? selectedItems.length : 1;
+             
+             if (!ref.read(subscriptionProvider.notifier).canAddItem(currentCount + numAdding - 1)) {
+                if (mounted) {
+                   LimitReachedDialog.show(
+                     context: context,
+                     ref: ref,
+                     title: "Koleksiyon Dolu",
+                     message: "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
+                     type: LimitType.item,
+                   );
+                }
+                return;
+             }
+          }
+       }
+       // --- END LIMIT CHECK ---
+
        final isSelectionMode = ref.read(isSelectionModeProvider);
        final selectedItems = ref.read(selectedItemsProvider);
        final isBatchMove = isSelectionMode && selectedItems.contains(item.id);
@@ -2963,7 +3025,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final isPremium = ref.read(isPremiumProvider);
     final categories = ref.read(categoriesProvider).valueOrNull ?? [];
     
-    if (!isPremium && categories.length >= 3) {
+    if (!isPremium && !ref.read(subscriptionProvider.notifier).canCreateCollection(categories.length)) {
       LimitReachedDialog.show(
         context: context,
         ref: ref,

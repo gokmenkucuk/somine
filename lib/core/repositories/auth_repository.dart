@@ -382,6 +382,18 @@ class AuthRepository {
         throw Exception('No user logged in');
       }
 
+      // 0. Proactively reauthenticate to prevent data loss if authentication is cancelled
+      try {
+        await _reauthenticateUser(user);
+        debugPrint('✅ [AuthRepository] Pre-deletion re-authentication completed');
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Re-authentication failed or cancelled: $e');
+        if (e.toString().toLowerCase().contains('cancelled') || e.toString().contains('iptal')) {
+          throw Exception('Kullanıcı doğrulaması iptal edildi');
+        }
+        rethrow;
+      }
+
       final userId = user.uid;
       debugPrint('🔵 [AuthRepository] Deleting account for user: $userId');
 
@@ -409,21 +421,15 @@ class AuthRepository {
         debugPrint('⚠️ [AuthRepository] Error deleting user doc: $e');
       }
 
-      // 4. Try to delete Firebase Auth account (handle re-auth if needed)
+      // 4. Delete Firebase Auth account
       try {
         await user.delete();
         debugPrint('✅ [AuthRepository] Firebase Auth account deleted');
       } on FirebaseAuthException catch (e) {
         if (e.code == 'requires-recent-login') {
-          debugPrint(
-            '⚠️ [AuthRepository] Delete requires recent login, reauthenticating...',
-          );
+          // Fallback if somehow it still requires login despite proactive reauth
           await _reauthenticateUser(user);
-          // Retry deletion
           await user.delete();
-          debugPrint(
-            '✅ [AuthRepository] Firebase Auth account deleted (after re-auth)',
-          );
         } else {
           rethrow;
         }

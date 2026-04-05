@@ -823,7 +823,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final isKnownBrand = _isKnownBrandSite(source);
     // Maps always show image if available. Other known brands show placeholder.
     // Regular sites show image if available.
-    final bool shouldShowImage = (hasImage && !isKnownBrand) || (hasImage && _isMapUrl(source.toLowerCase()));
+    final bool shouldShowImage = hasImage;
     
     Widget contentHeader;
 
@@ -846,7 +846,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                    )
                  : item.displayImage!.startsWith('data:')
                  ? Image.memory(
-                     const Base64Decoder().convert(item.displayImage!.substring(23)),
+                     const Base64Decoder().convert(item.displayImage!.split(',').last),
                      fit: BoxFit.cover,
                      width: double.infinity,
                      alignment: Alignment.center,
@@ -876,7 +876,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                  )
                : item.displayImage!.startsWith('data:')
                ? Image.memory(
-                   const Base64Decoder().convert(item.displayImage!.substring(23)),
+                   const Base64Decoder().convert(item.displayImage!.split(',').last),
                    fit: BoxFit.fitWidth,
                    width: double.infinity,
                    alignment: Alignment.center,
