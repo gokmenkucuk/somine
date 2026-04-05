@@ -71,7 +71,7 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/destek">
+            <Link href="/support">
               <Button
                 variant="ghost"
                 size="sm"
@@ -136,13 +136,13 @@ export default function Navbar() {
                   ))}
                   <div className="h-px bg-gray-100 my-2" />
                   <SheetClose asChild>
-                    <Link href="/gizlilik-politikasi" className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Gizlilik Politikası</Link>
+                    <Link href="/privacy" className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Gizlilik Politikası</Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/kullanim-sartlari" className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Kullanım Şartları</Link>
+                    <Link href="/terms" className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Kullanım Şartları</Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link href="/destek" className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Destek</Link>
+                    <Link href="/support" className="flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Destek</Link>
                   </SheetClose>
                 </div>
                 <div className="p-4 mt-auto">

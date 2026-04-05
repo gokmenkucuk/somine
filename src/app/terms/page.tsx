@@ -272,7 +272,7 @@ export default function KullanimSartlari() {
               </ul>
               <p className="text-somine-gray leading-relaxed mt-4">
                 Hesap silme işlemleri hakkında detaylı bilgi için{' '}
-                <Link href="/hesap-silme" className="text-turquoise-dark hover:underline font-medium">
+                <Link href="/delete-account" className="text-turquoise-dark hover:underline font-medium">
                   Hesap Silme sayfamızı
                 </Link>{' '}
                 ziyaret edebilirsiniz.

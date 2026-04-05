@@ -10,13 +10,13 @@ const footerLinks = {
     { href: '/#ekranlar', label: 'Ekranlar' },
   ],
   yasal: [
-    { href: '/gizlilik-politikasi', label: 'Gizlilik Politikası' },
-    { href: '/kullanim-sartlari', label: 'Kullanım Şartları' },
-    { href: '/hesap-silme', label: 'Hesap Silme' },
+    { href: '/privacy', label: 'Gizlilik Politikası' },
+    { href: '/terms', label: 'Kullanım Şartları' },
+    { href: '/delete-account', label: 'Hesap Silme' },
   ],
   destek: [
-    { href: '/destek', label: 'Sıkça Sorulan Sorular' },
-    { href: '/destek', label: 'Bize Ulaşın' },
+    { href: '/support', label: 'Sıkça Sorulan Sorular' },
+    { href: '/support', label: 'Bize Ulaşın' },
     { href: 'mailto:support@somineapp.com', label: 'support@somineapp.com' },
   ],
 }
@@ -108,19 +108,19 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <Link
-              href="/gizlilik-politikasi"
+              href="/privacy"
               className="text-xs text-white/50 hover:text-white transition-colors duration-300"
             >
               Gizlilik
             </Link>
             <Link
-              href="/kullanim-sartlari"
+              href="/terms"
               className="text-xs text-white/50 hover:text-white transition-colors duration-300"
             >
               Şartlar
             </Link>
             <Link
-              href="/hesap-silme"
+              href="/delete-account"
               className="text-xs text-white/50 hover:text-white transition-colors duration-300"
             >
               Hesap Silme
