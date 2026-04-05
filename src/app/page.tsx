@@ -216,7 +216,7 @@ function Section({ children, className = '', id }: { children: React.ReactNode; 
 
 /* ─── phone mockup ─── */
 function PhoneMockup({ src, alt, size = 'md' }: { src: string; alt: string; size?: 'sm' | 'md' | 'lg' }) {
-  const sizes = { sm: 'w-40 md:w-48', md: 'w-52 md:w-60', lg: 'w-60 md:w-72' }
+  const sizes = { sm: 'w-40 md:w-48', md: 'w-52 md:w-60', lg: 'w-40 sm:w-52 md:w-72' }
   return (
     <div className={`${sizes[size]} mx-auto`}>
       <div className="phone-frame-apple">
@@ -406,8 +406,8 @@ export default function Home() {
           className="absolute top-[50%] right-[10%] w-1.5 h-1.5 rounded-full bg-white/30 hidden lg:block"
         />
 
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 w-full pt-16 pb-12 md:py-20 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 w-full pt-8 pb-8 md:py-20 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-4 lg:gap-12 items-center">
             {/* Left: Text */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
@@ -419,7 +419,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="text-5xl sm:text-6xl lg:text-7xl font-semibold text-white leading-[1.08] mb-8 tracking-tight"
+                className="text-4xl sm:text-6xl lg:text-7xl font-semibold text-white leading-[1.08] mb-3 sm:mb-8 tracking-tight"
               >
                 Dijital Dünyanı{' '}
                 <span className="bg-gradient-to-r from-white to-[#D4EDE9] bg-clip-text text-transparent">
@@ -450,7 +450,7 @@ export default function Home() {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-shadow"
+                  className="hidden sm:inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-shadow"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
@@ -474,6 +474,25 @@ export default function Home() {
                   </Link>
                 </motion.div>
               </motion.div>
+
+              {/* Mobile App Store CTA */}
+              <motion.a
+                href="https://apps.apple.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+                className="sm:hidden inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] mb-6"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                </svg>
+                <div className="text-left">
+                  <div className="text-[10px] opacity-50 leading-none font-normal">İndir</div>
+                  <div className="font-semibold leading-tight text-sm">App Store</div>
+                </div>
+              </motion.a>
 
               {/* Platform Icons */}
               <HeroPlatformIcons />
