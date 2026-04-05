@@ -7,6 +7,8 @@ import 'package:somine_app/core/providers/theme_provider.dart';
 import 'package:somine_app/widgets/vibe_background.dart';
 import 'package:somine_app/screens/icon_picker_screen.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:somine_app/screens/paywall_screen.dart';
 
 class AppearanceScreen extends ConsumerWidget {
   const AppearanceScreen({super.key});
@@ -15,6 +17,7 @@ class AppearanceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeProvider);
     final isVibe = currentTheme == AppThemeEnum.vibe;
+    final isPremium = ref.watch(isPremiumProvider);
 
     Widget content = Scaffold(
       backgroundColor: Colors.transparent,
@@ -73,6 +76,8 @@ class AppearanceScreen extends ConsumerWidget {
                 end: Alignment.bottomCenter,
               ),
               isDark: true,
+              isPremiumOnly: true,
+              isPremium: isPremium,
             ),
 
             const SizedBox(height: 12),
@@ -92,6 +97,8 @@ class AppearanceScreen extends ConsumerWidget {
                 end: Alignment.bottomRight,
               ),
               isDark: true,
+              isPremiumOnly: true,
+              isPremium: isPremium,
             ),
 
             const SizedBox(height: 32),
@@ -205,11 +212,23 @@ class AppearanceScreen extends ConsumerWidget {
     required IconData icon,
     required Gradient gradient,
     bool isDark = false,
+    bool isPremiumOnly = false,
+    bool isPremium = true,
   }) {
     final isSelected = theme == currentTheme;
+    final isLocked = isPremiumOnly && !isPremium;
 
     return GestureDetector(
       onTap: () {
+        if (isLocked) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const PaywallScreen(),
+          );
+          return;
+        }
         ref.read(themeProvider.notifier).setTheme(theme);
       },
       child: AnimatedContainer(
@@ -267,7 +286,21 @@ class AppearanceScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (isSelected)
+              if (isLocked)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(PhosphorIconsFill.lockKey, size: 14, color: isDark ? Colors.white70 : Colors.grey[700]),
+                    ],
+                  ),
+                )
+              else if (isSelected)
                 CircleAvatar(
                   radius: 12,
                   backgroundColor: Theme.of(context).primaryColor,

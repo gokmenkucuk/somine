@@ -1081,7 +1081,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 trailing: category.isVault ? Text(
                   "Gizli Kasa",
                   style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
-                ) : null,
+                ) : (!isPremium ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text("PRO", style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                ) : null),
                 onTap: () {
                   if (category.isVault) {
                     // Show info that vaults cannot be shared
@@ -1094,6 +1101,19 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     );
                     return;
                   }
+                  
+                  if (!isPremium) {
+                    Navigator.pop(ctx);
+                    LimitReachedDialog.show(
+                      context: context,
+                      ref: ref,
+                      title: "Premium Özellik",
+                      message: "Koleksiyon paylaşma özelliği premium üyelere özeldir. Arkadaşlarınla ortak koleksiyon yönetmek için yükselt!",
+                      type: LimitType.collection,
+                    );
+                    return;
+                  }
+
                   Navigator.pop(ctx);
                   _showShareCollectionDialog(category);
                 },

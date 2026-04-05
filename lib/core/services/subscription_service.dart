@@ -158,8 +158,8 @@ class SubscriptionService {
   }
 
   /// Starter tier limits
-  static const int maxCollectionsStarter = 3;
-  static const int maxItemsPerCollectionStarter = 20;
+  static const int maxCollectionsStarter = 10;
+  static const int maxItemsPerCollectionStarter = 5;
 
   /// Check if can create more collections
   bool canCreateCollection(int currentCount) {
