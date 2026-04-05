@@ -17,14 +17,11 @@ import {
   LayoutGrid,
   Sparkles,
   ArrowRight,
-  Star,
-  Fingerprint,
-  Search,
-  Infinity,
-  Layers,
   Zap,
   MousePointerClick,
   Globe,
+  Check,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -305,50 +302,42 @@ export default function Home() {
   const features = [
     {
       icon: Play,
-      title: 'Video Koleksiyonları',
-      desc: 'YouTube videolarını doğrudan koleksiyonlarına ekle. Beğendiğin videoları tek bir yerde topla, istediğin zaman izle.',
+      title: 'Her Platformdan İçerik',
+      desc: 'Instagram, YouTube, Pinterest ve daha fazlası — beğendiğin içerikleri hangi platformda olursa olsun koleksiyonuna ekle.',
       accent: '#6FBFAC',
     },
     {
       icon: FolderOpen,
       title: 'Akıllı Kategoriler',
-      desc: 'Gitmek istediğin yerler, müzik, tarifler ve daha fazlası. Kendi kategorilerini oluştur, düzenli tut.',
+      desc: 'Beğendiğin içerikleri düzenli ve bulunması kolay hale getir. İstediğin kadar kategori oluştur, istediğin gibi düzenle.',
       accent: '#95C5C1',
     },
     {
       icon: StickyNote,
       title: 'Kişisel Notlar',
-      desc: 'Her içeriğe özel not ekle. Düşüncelerini ve hatırlatmalarını kaydet, arşivini zenginleştir.',
+      desc: 'Her içeriğe kendi notunu ekle. Neden beğendiğini, ne yapmak istediğini kaybet.',
       accent: '#B8DDD9',
     },
     {
       icon: ShieldCheck,
       title: 'Gizli Kasa',
-      desc: 'Apple/Google yeniden kimlik doğrulama ile korunan özel koleksiyonlar. En özel içeriklerini güvenle sakla.',
+      desc: 'Sadece senin görmeni istediğin içerikler için. Face ID ile korunan özel koleksiyonlar. Tamamen ücretsiz.',
       accent: '#688E8B',
     },
     {
       icon: Share2,
       title: 'Kolay Paylaşım',
-      desc: 'Koleksiyonlarını arkadaşlarınla tek tıkla paylaş. İçerikleri keşfet ve başkalarıyla paylaş.',
+      desc: 'Kullanıcı adı veya e-posta ile arkadaşını bul ve koleksiyonunu gönder. Kabul ettiği anda içerikler onun kütüphanesinde.',
       accent: '#6FBFAC',
     },
     {
       icon: Palette,
       title: 'Premium Temalar',
-      desc: 'Uygulamana özel görünüm kazandır. Farklı temalar ve ikonlarla kişiselleştir, tarzını yansıt.',
+      desc: 'Air, Midnight, Vibe — tüm temalar ücretsiz. Ana ekran uygulama ikonu ve özel koleksiyon ikonları Premium ile gelir.',
       accent: '#95C5C1',
     },
   ]
 
-  const premiumFeatures = [
-    { icon: Infinity, label: 'Sınırsız koleksiyon' },
-    { icon: Fingerprint, label: 'FaceID gizli kasa' },
-    { icon: Palette, label: 'Premium temalar' },
-    { icon: Star, label: 'Özel koleksiyon ikonları' },
-    { icon: Search, label: 'Akıllı arama' },
-    { icon: Layers, label: 'Widget desteği' },
-  ]
 
   return (
     <main className="min-h-screen">
@@ -421,9 +410,9 @@ export default function Home() {
                 transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="text-4xl sm:text-6xl lg:text-7xl font-semibold text-white leading-[1.08] mb-3 sm:mb-8 tracking-tight"
               >
-                Dijital Dünyanı{' '}
+                Beğendiklerini{' '}
                 <span className="bg-gradient-to-r from-white to-[#D4EDE9] bg-clip-text text-transparent">
-                  Tasarla
+                  Tek Bir Yerde Topla
                 </span>
               </motion.h1>
 
@@ -433,9 +422,7 @@ export default function Home() {
                 transition={{ delay: 0.5, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="text-sm sm:text-lg md:text-xl text-white max-w-lg mx-auto lg:mx-0 mb-6 sm:mb-10 leading-relaxed font-light"
               >
-                {'Özenle sakla, keyifle paylaş!'}
-                <br />
-                {'Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet.'}
+                {'Instagram\'dan, Pinterest\'ten, YouTube\'dan — beğendiğin her şey artık bir arada.'}
               </motion.p>
 
               <motion.div
@@ -596,7 +583,7 @@ export default function Home() {
               Tek Tıkla Koleksiyonuna Ekle
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Herhangi bir uygulamadan içeriklerini Somine koleksiyonlarına kaydetmek sadece 3 adım — hiçbir şey kopyalayıp yapıştırmaya gerek yok.
+              Herhangi bir uygulamadan içeriklerini Somine koleksiyonlarına kaydetmek sadece 3 adım. İçerik kopyalanmaz — orijinal haliyle platforma bağlı kalır.
             </p>
           </motion.div>
 
@@ -915,21 +902,67 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Features grid */}
-          <motion.div
-            variants={stagger}
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-20"
-          >
-            {premiumFeatures.map((pf) => (
-              <motion.div
-                key={pf.label}
-                variants={fadeUp}
-                className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl py-5 px-4 hover:bg-white/[0.06] transition-colors"
-              >
-                <pf.icon className="w-4 h-4 text-[#95C5C1] shrink-0" />
-                <span className="text-sm text-gray-400">{pf.label}</span>
+          {/* Plan comparison */}
+          <motion.div variants={stagger} className="max-w-4xl mx-auto">
+            <div className="grid sm:grid-cols-2 gap-6">
+
+              {/* Starter */}
+              <motion.div variants={fadeUp} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-2">Ücretsiz</p>
+                <h3 className="text-2xl font-semibold text-white mb-1">Starter</h3>
+                <p className="text-sm text-gray-500 mb-6">Temel ihtiyaçlar için tamamen ücretsiz</p>
+                <div className="space-y-3">
+                  {[
+                    { label: '10 Koleksiyon', ok: true },
+                    { label: 'Koleksiyon başına 5 içerik', ok: true },
+                    { label: 'Gizli Kasa (Face ID / Touch ID)', ok: true },
+                    { label: 'Bulut senkronizasyonu', ok: true },
+                    { label: 'Koleksiyon paylaşımı', ok: false },
+                    { label: 'Akıllı link önizleme', ok: true },
+                    { label: 'Air teması', ok: true },
+                    { label: '15+ platform desteği', ok: true },
+                    { label: 'Özel uygulama ikonları', ok: false },
+                  ].map((f) => (
+                    <div key={f.label} className="flex items-center gap-3">
+                      {f.ok
+                        ? <Check className="w-4 h-4 text-[#95C5C1] shrink-0" />
+                        : <X className="w-4 h-4 text-white/15 shrink-0" />
+                      }
+                      <span className={`text-sm ${f.ok ? 'text-gray-300' : 'text-gray-600'}`}>{f.label}</span>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
-            ))}
+
+              {/* Premium */}
+              <motion.div variants={fadeUp} className="relative bg-gradient-to-b from-[#95C5C1]/10 to-white/[0.02] border border-[#95C5C1]/25 rounded-2xl p-7">
+                <div className="absolute top-4 right-4 text-[11px] font-medium bg-[#95C5C1]/15 text-[#95C5C1] px-3 py-1 rounded-full border border-[#95C5C1]/20">
+                  👑 Premium
+                </div>
+                <p className="text-xs font-medium text-[#95C5C1]/60 uppercase tracking-widest mb-2">Ücretli</p>
+                <h3 className="text-2xl font-semibold text-white mb-1">Premium</h3>
+                <p className="text-sm text-gray-500 mb-6">Sınırsız özgürlük, tam özelleştirme</p>
+                <div className="space-y-3">
+                  {[
+                    'Sınırsız koleksiyon',
+                    'Sınırsız içerik',
+                    'Gizli Kasa (Face ID / Touch ID)',
+                    'Bulut senkronizasyonu',
+                    'Koleksiyon paylaşımı',
+                    'Akıllı link önizleme',
+                    'Air, Midnight, Vibe temaları',
+                    '15+ platform desteği',
+                    '5 Özel uygulama ikonu',
+                  ].map((f) => (
+                    <div key={f} className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-[#95C5C1] shrink-0" />
+                      <span className="text-sm text-gray-300">{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+            </div>
           </motion.div>
         </div>
       </Section>
@@ -950,16 +983,16 @@ export default function Home() {
               variants={fadeUp}
               className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 text-white"
             >
-              Dijital dünyanı{' '}
+              Beğendiklerini{' '}
               <span className="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">
-                şimdi tasarla
+                tek bir yerde topla
               </span>
             </motion.h2>
             <motion.p
               variants={fadeUp}
               className="text-white/40 text-lg max-w-md mx-auto mb-10 leading-relaxed"
             >
-              Koleksiyonlarını oluştur, tarzını yansıt. Tek bir dokunuşla başla.
+              Artık her şeyin bir yeri var.
             </motion.p>
             <motion.div variants={fadeUp}>
               <motion.a
