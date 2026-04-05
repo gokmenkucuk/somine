@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,6 +24,9 @@ const navLinks = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const pathname = usePathname()
+  const isHome = pathname === '/'
+  const isLight = !isHome || scrolled
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,10 +38,10 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,backdrop-filter] duration-500 ease-out ${
+        isLight
           ? 'bg-white/80 backdrop-blur-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-b border-black/[0.04]'
-          : 'bg-transparent'
+          : 'bg-transparent border-b border-transparent'
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 sm:px-8">
@@ -50,7 +54,7 @@ export default function Navbar() {
               width={90}
               height={28}
               className="object-contain transition-all duration-500"
-              style={scrolled ? {} : { filter: 'brightness(0) invert(1)' }}
+              style={isLight ? {} : { filter: 'brightness(0) invert(1)' }}
             />
           </Link>
 
@@ -61,7 +65,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`px-4 py-2 text-[13px] font-medium transition-all duration-300 rounded-full ${
-                  scrolled ? 'text-gray-600 hover:text-gray-900 hover:bg-black/[0.04]' : 'text-white/80 hover:text-white hover:bg-white/[0.08]'
+                  isLight ? 'text-gray-600 hover:text-gray-900 hover:bg-black/[0.04]' : 'text-white/80 hover:text-white hover:bg-white/[0.08]'
                 }`}
               >
                 {link.label}
@@ -76,7 +80,7 @@ export default function Navbar() {
                 variant="ghost"
                 size="sm"
                 className={`text-[13px] font-medium rounded-full transition-all duration-300 ${
-                  scrolled ? 'text-gray-500 hover:text-gray-900 hover:bg-black/[0.04]' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'
+                  isLight ? 'text-gray-500 hover:text-gray-900 hover:bg-black/[0.04]' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'
                 }`}
               >
                 Destek
@@ -87,7 +91,7 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               className={`inline-flex items-center gap-1.5 text-[13px] font-medium px-4 py-2 rounded-full transition-all duration-300 ${
-                scrolled
+                isLight
                   ? 'bg-black text-white hover:bg-gray-800'
                   : 'bg-white/15 text-white border border-white/20 hover:bg-white/25 backdrop-blur-sm'
               }`}
@@ -106,7 +110,7 @@ export default function Navbar() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`transition-colors duration-300 ${scrolled ? 'text-gray-900' : 'text-white'}`}
+                  className={`transition-colors duration-300 ${isLight ? 'text-gray-900' : 'text-white'}`}
                 >
                   <Menu className="size-5" />
                 </Button>

@@ -18,22 +18,32 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://somineapp.com"),
-  title: "Somine — Dijital Dünyanı Tasarla",
+  title: {
+    default: "Somine — Dijital Dünyanı Tasarla",
+    template: "%s | Somine",
+  },
   description:
-    "Somine ile dijital içeriklerini özenle sakla, keyifle paylaş! Video, link ve görsellerini kişisel koleksiyonlarında organize et.",
+    "Somine ile sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet. Özenle sakla, keyifle paylaş!",
   keywords: [
     "Somine", "içerik koleksiyonlama", "video kaydet", "link koleksiyonu",
-    "dijital düzen", "YouTube entegrasyonu", "kişisel koleksiyon",
-    "mobil uygulama", "iOS uygulama",
+    "dijital düzen", "YouTube kaydet", "Instagram kaydet", "kişisel koleksiyon",
+    "mobil uygulama", "iOS uygulama", "bookmark manager", "içerik organize",
+    "Pinterest alternatif", "link yönetimi", "koleksiyon uygulaması",
   ],
-  authors: [{ name: "Somine" }],
+  authors: [{ name: "Somine", url: "https://somineapp.com" }],
+  creator: "Somine",
+  category: "Productivity",
   icons: {
-    icon: "/images/logo-gradient.png",
-    apple: "/images/logo-gradient.png",
+    icon: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
+  manifest: "/manifest.json",
+  alternates: {
+    canonical: "https://somineapp.com",
   },
   openGraph: {
     title: "Somine — Dijital Dünyanı Tasarla",
-    description: "Video, link ve görsellerini özenle sakla, keyifle paylaş!",
+    description: "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet.",
     url: "https://somineapp.com",
     siteName: "Somine",
     type: "website",
@@ -43,10 +53,14 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Somine — Dijital Dünyanı Tasarla",
-    description: "Video, link ve görsellerini özenle sakla, keyifle paylaş!",
+    description: "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet.",
     images: ["/images/logo-gradient.png"],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
+  },
 };
 
 export default function RootLayout({
@@ -54,7 +68,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${poppins.variable} antialiased bg-background text-foreground`}>
+      <body className={`${outfit.variable} ${poppins.variable} antialiased bg-[#688E8B] text-foreground`}>
         {children}
         <Toaster />
       </body>

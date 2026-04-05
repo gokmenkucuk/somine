@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "swiper/css";
+@import "swiper/css/effect-coverflow";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -144,6 +146,10 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ─── Hide scrollbar for carousel ─── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ─── Apple-style phone frame ─── */
 .phone-frame-apple {
@@ -305,5 +311,15 @@
   0% { transform: translateX(-50%); }
   100% { transform: translateX(0); }
 }
-.animate-marquee-left { animation: marquee-left 30s linear infinite; }
+.animate-marquee-left { animation: marquee-left 50s linear infinite; }
 .animate-marquee-right { animation: marquee-right 30s linear infinite; }
+
+/* ─── Swiper carousel ─── */
+.swiper-slide { overflow: hidden !important; transition: transform 0.5s ease, opacity 0.5s ease; }
+.swiper-slide-active { transform: scale(1) !important; }
+@media (max-width: 639px) {
+  .swiper-slide:not(.swiper-slide-active) { transform: scale(0.75); opacity: 0.6; }
+}
+@media (min-width: 640px) {
+  .swiper-slide:not(.swiper-slide-active) { transform: scale(0.85); opacity: 0.7; }
+}

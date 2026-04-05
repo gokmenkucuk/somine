@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 const deleteSteps = [
-  'So Mine uygulamasını açın',
+  'Somine uygulamasını açın',
   'Alt menüden Profil sekmesine gidin',
   'Hesap Bilgileri bölümüne tıklayın',
   'En altta "Hesabımı Sil" seçeneğine dokunun',
@@ -31,27 +31,14 @@ export default function HesapSilme() {
       <Navbar />
 
       {/* Header */}
-      <section className="bg-somine-bg pt-32 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-somine-gray hover:text-turquoise-dark transition-colors mb-6"
-          >
+      <section className="pt-32 pb-16 bg-[#E8F1EF]">
+        <div className="max-w-4xl mx-auto px-6 sm:px-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
             ← Ana Sayfaya Dön
           </Link>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-400 to-red-500 flex items-center justify-center shadow-lg">
-              <Trash2 className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-somine-text">
-                Hesap Silme
-              </h1>
-              <p className="text-somine-gray text-sm mt-1">
-                Hesabınızı kalıcı olarak silme hakkında bilgi
-              </p>
-            </div>
-          </div>
+          <p className="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-3">Hesap</p>
+          <h1 className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-3">Hesap Silme</h1>
+          <p className="text-gray-500 text-lg">Hesabınızı kalıcı olarak silme hakkında bilgi.</p>
         </div>
       </section>
 
@@ -62,23 +49,23 @@ export default function HesapSilme() {
 
             {/* How to delete */}
             <div>
-              <h2 className="text-xl font-bold text-somine-text mb-6 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-turquoise/10 text-turquoise-dark flex items-center justify-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center">
                   <Smartphone className="w-4 h-4" />
                 </span>
                 Hesabınızı Nasıl Silebilirsiniz?
               </h2>
-              <p className="text-somine-gray leading-relaxed mb-4">Adımlar:</p>
+              <p className="text-gray-500 leading-relaxed mb-4">Adımlar:</p>
               <div className="space-y-3">
                 {deleteSteps.map((text, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-4 bg-somine-bg rounded-xl p-4 border border-gray-100"
+                    className="flex items-start gap-4 bg-[#E8F1EF] rounded-xl p-4 border border-gray-100"
                   >
-                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-turquoise to-turquoise-dark text-white text-sm font-bold flex items-center justify-center shrink-0">
+                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[#688E8B] to-[#688E8B] text-white text-sm font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
-                    <p className="text-somine-gray text-sm pt-1">{text}</p>
+                    <p className="text-gray-500 text-sm pt-1">{text}</p>
                   </div>
                 ))}
               </div>
@@ -86,27 +73,27 @@ export default function HesapSilme() {
 
             {/* What gets deleted */}
             <div>
-              <h2 className="text-xl font-bold text-somine-text mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center">
                   <Trash2 className="w-4 h-4" />
                 </span>
                 Silme İşleminde Neler Kaldırılır?
               </h2>
-              <p className="text-somine-gray leading-relaxed mb-4">
+              <p className="text-gray-500 leading-relaxed mb-4">
                 Hesabınız silindiğinde aşağıdaki tüm veriler kalıcı olarak kaldırılır:
               </p>
               <div className="bg-red-50/50 rounded-2xl border border-red-100 overflow-hidden">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-red-100">
-                      <th className="text-left text-sm font-semibold text-somine-text px-5 py-3">Veri</th>
-                      <th className="text-left text-sm font-semibold text-somine-text px-5 py-3">Durum</th>
+                      <th className="text-left text-sm font-semibold text-gray-900 px-5 py-3">Veri</th>
+                      <th className="text-left text-sm font-semibold text-gray-900 px-5 py-3">Durum</th>
                     </tr>
                   </thead>
                   <tbody>
                     {deletedData.map((item, i) => (
                       <tr key={i} className="border-b border-red-100/50 last:border-0">
-                        <td className="text-sm text-somine-gray px-5 py-3">{item.label}</td>
+                        <td className="text-sm text-gray-500 px-5 py-3">{item.label}</td>
                         <td className="text-sm px-5 py-3">
                           <span className="inline-flex items-center gap-1.5 text-red-500">
                             <X className="w-3.5 h-3.5" />
@@ -147,18 +134,18 @@ export default function HesapSilme() {
             </div>
 
             {/* Contact */}
-            <div className="bg-gradient-to-br from-turquoise/5 to-turquoise-dark/5 rounded-2xl p-6 border border-turquoise/10">
-              <h3 className="text-lg font-semibold text-somine-text mb-3">
+            <div className="bg-gradient-to-br from-[#688E8B]/5 to-[#688E8B]/5 rounded-2xl p-6 border border-[#688E8B]/10">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Yardıma mı İhtiyacınız Var?
               </h3>
-              <p className="text-somine-gray text-sm leading-relaxed">
+              <p className="text-gray-500 text-sm leading-relaxed">
                 Hesap silme süreciyle ilgili herhangi bir sorunuz veya yardıma
                 ihtiyacınız varsa, bizimle iletişime geçmekten çekinmeyin.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mt-4">
                 <a
                   href="mailto:support@somineapp.com?subject=Hesap%20Silme%20Talebi"
-                  className="inline-flex items-center gap-2 bg-turquoise text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-2 bg-[#688E8B] text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
@@ -167,7 +154,7 @@ export default function HesapSilme() {
                 </a>
                 <Link
                   href="/support"
-                  className="inline-flex items-center gap-2 bg-white rounded-xl px-5 py-2.5 text-sm font-medium text-turquoise-dark border border-turquoise/20 hover:bg-turquoise/5 transition-colors"
+                  className="inline-flex items-center gap-2 bg-white rounded-xl px-5 py-2.5 text-sm font-medium text-[#688E8B] border border-[#688E8B]/20 hover:bg-[#688E8B]/5 transition-colors"
                 >
                   Destek Sayfasına Git
                 </Link>
