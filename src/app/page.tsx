@@ -897,7 +897,7 @@ export default function Home() {
       </Section>
 
       {/* ══════════ PREMIUM ══════════ */}
-      <Section id="premium" className="py-32 bg-[#0A0A0A] relative overflow-hidden">
+      <Section id="premium" className="py-20 sm:py-28 bg-[#0A0A0A] relative overflow-hidden">
         {/* Ambient glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#95C5C1]/8 to-[#D4EDE9]/5 rounded-full blur-[100px]" />
@@ -918,7 +918,7 @@ export default function Home() {
           {/* Features grid */}
           <motion.div
             variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-20"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-20"
           >
             {premiumFeatures.map((pf) => (
               <motion.div
@@ -935,35 +935,46 @@ export default function Home() {
       </Section>
 
       {/* ══════════ CTA ══════════ */}
-      <Section className="py-32 bg-white relative overflow-hidden">
-        <div className="max-w-2xl mx-auto px-6 sm:px-8 text-center">
+      <Section className="py-24 sm:py-32 bg-[#0A0A0A] relative overflow-hidden">
+        {/* Glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-[#688E8B]/20 via-[#95C5C1]/10 to-[#D4EDE9]/10 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="max-w-2xl mx-auto px-6 sm:px-8 text-center relative z-10">
           <motion.div variants={fadeUp}>
+            <motion.p variants={fadeUp} className="text-sm font-medium text-[#95C5C1]/70 uppercase tracking-widest mb-4">
+              Ücretsiz başla
+            </motion.p>
             <motion.h2
               variants={fadeUp}
-              className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4"
+              className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 text-white"
             >
-              Hemen Başla
+              Dijital dünyanı{' '}
+              <span className="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">
+                şimdi tasarla
+              </span>
             </motion.h2>
             <motion.p
               variants={fadeUp}
-              className="text-gray-500 text-lg max-w-md mx-auto mb-10 leading-relaxed"
+              className="text-white/40 text-lg max-w-md mx-auto mb-10 leading-relaxed"
             >
-              Ücretsiz indir. Koleksiyonlarını oluştur, tarzını yansıt.
+              Koleksiyonlarını oluştur, tarzını yansıt. Tek bir dokunuşla başla.
             </motion.p>
             <motion.div variants={fadeUp}>
               <motion.a
                 href="https://apps.apple.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-3 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full transition-colors hover:bg-gray-800"
+                className="inline-flex items-center gap-3 bg-white text-[#1a3b38] text-sm font-medium px-7 py-3.5 rounded-full shadow-[0_0_50px_rgba(149,197,193,0.2)] hover:shadow-[0_0_70px_rgba(149,197,193,0.35)] transition-shadow"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                 </svg>
                 <div className="text-left">
-                  <div className="text-[10px] opacity-60 leading-none font-normal">Ücretsiz İndir</div>
+                  <div className="text-[10px] opacity-50 leading-none font-normal">Ücretsiz İndir</div>
                   <div className="font-semibold leading-tight text-[13px]">App Store</div>
                 </div>
               </motion.a>
