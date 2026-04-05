@@ -112,9 +112,29 @@ const platformIconsRow2 = [
     path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z',
   },
   {
+    name: 'Apple Maps',
+    viewBox: '0 0 24 24',
+    path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-8l-3 7 7-3 3-7-7 3zm1-1c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z',
+  },
+  {
+    name: 'Yandex Maps',
+    viewBox: '0 0 24 24',
+    path: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1 14h-2v-5L7 7h2.5l2.5 3 2.5-3H17l-4 4v5z',
+  },
+  {
+    name: 'Behance',
+    viewBox: '0 0 24 24',
+    path: 'M22 7h-7V5h7zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14H15.97c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zm-9.574 6.988H0V5.021h6.953c5.476.081 5.58 5.444 2.72 6.906 3.461 1.26 3.577 8.061-3.207 8.061zM3 11h3.584c2.508 0 2.906-3-.312-3H3v3zm3.391 3H3v3.016h3.341c3.055 0 2.868-3.016.05-3.016z',
+  },
+  {
+    name: 'Dribbble',
+    viewBox: '0 0 24 24',
+    path: 'M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm10.12-10.358c-.35-.11-3.17-.953-6.384-.438 1.34 3.684 1.887 6.684 1.992 7.308 2.3-1.555 3.936-4.02 4.395-6.87zm-6.115 7.808c-.153-.9-.75-4.032-2.19-7.77l-.066.02c-5.79 2.015-7.86 6.025-8.04 6.4 1.73 1.358 3.92 2.166 6.29 2.166 1.42 0 2.77-.29 4-.81zm-11.62-2.58c.232-.4 3.045-5.055 8.332-6.765.135-.045.27-.084.405-.12-.26-.585-.54-1.167-.832-1.74C7.17 11.775 2.206 11.71 1.756 11.7l-.004.312c0 2.633.998 5.037 2.634 6.855zm-2.42-8.955c.46.008 4.683.026 9.477-1.248-1.698-3.018-3.53-5.558-3.8-5.928-2.868 1.35-5.01 3.99-5.676 7.17zM9.6 2.052c.282.38 2.145 2.914 3.822 6 3.645-1.365 5.19-3.44 5.373-3.702C16.86 2.61 14.545 1.62 12 1.62c-.8 0-1.6.1-2.4.285v.15zm10.335 3.483c-.218.29-1.91 2.493-5.724 4.04.24.49.47.985.68 1.486.08.18.15.36.22.53 3.41-.43 6.8.26 7.14.33-.02-2.42-.88-4.64-2.31-6.38z',
+  },
+  {
     name: 'Web Links',
     viewBox: '0 0 24 24',
-    path: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 016.32 12.906l-3.106-3.106a4 4 0 10-6.428 0L5.68 16.906A8 8 0 0112 4z',
+    path: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
   },
 ]
 
@@ -251,7 +271,7 @@ function AppShowcase() {
             Basit. Güçlü. Güzel.
           </h2>
           <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-            Somine&apos;nin her ekranı özenle tasarlandı. Kullanıcı dostu arayüz ile içeriklerini kolayca yönet.
+            Beğendiğin içeriklere her zaman tek dokunuşla ulaş. Temiz, sade ve göze zevk veren bir deneyim.
           </p>
         </motion.div>
       </div>
@@ -544,7 +564,7 @@ export default function Home() {
               Her Şeyi Tek Bir Yerde Topla
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Somine ile dijital hayatını organize et. İçeriklerini kaydet, kategorize et ve istediğin zaman eriş.
+              Sadece kaydetmekle kalmaz — kategorize eder, not alır, güvende tutar ve paylaşırsın.
             </p>
           </motion.div>
 
@@ -702,51 +722,31 @@ export default function Home() {
               <span className="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">Kaydet</span>
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Instagram, YouTube, TikTok ve daha fazlası — 15+ popüler platformun yanı sıra tüm web linklerini tek bir yerde topla.
+              Instagram, YouTube, Pinterest ve daha fazlası — 15+ popüler platformun yanı sıra tüm web linklerini tek bir yerde topla.
             </p>
           </motion.div>
         </div>
 
-        {/* Marquee area - full width */}
-        <div className="relative z-10">
-          <motion.div variants={fadeUp} className="relative space-y-6 mb-16">
-            {/* Row 1 - slides left */}
-            <div className="overflow-hidden">
-              <div className="flex gap-4 animate-marquee-left w-max">
-                {[...platformIconsRow1, ...platformIconsRow1].map((icon, i) => (
-                  <div
-                    key={`row1-${i}`}
-                    className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center opacity-40 hover:opacity-80 hover:border-white/[0.15] transition-all duration-300 shrink-0 group"
-                  >
-                    <svg
-                      viewBox={icon.viewBox}
-                      className="w-7 h-7 fill-gray-400 group-hover:fill-white transition-colors duration-300"
-                    >
-                      <path d={icon.path} />
-                    </svg>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Row 2 - slides right */}
-            <div className="overflow-hidden">
-              <div className="flex gap-4 animate-marquee-right w-max">
-                {[...platformIconsRow2, ...platformIconsRow2].map((icon, i) => (
-                  <div
-                    key={`row2-${i}`}
-                    className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center opacity-40 hover:opacity-80 hover:border-white/[0.15] transition-all duration-300 shrink-0 group"
-                  >
-                    <svg
-                      viewBox={icon.viewBox}
-                      className="w-7 h-7 fill-gray-400 group-hover:fill-white transition-colors duration-300"
-                    >
-                      <path d={icon.path} />
-                    </svg>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Platform grid */}
+        <div className="max-w-4xl mx-auto px-6 sm:px-8 relative z-10">
+          <motion.div
+            variants={stagger}
+            className="grid grid-cols-4 sm:grid-cols-7 gap-4"
+          >
+            {[...platformIconsRow1, ...platformIconsRow2].map((icon, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] hover:border-white/[0.2] hover:scale-105 transition-all duration-300">
+                  <svg viewBox={icon.viewBox} className="w-6 h-6 sm:w-7 sm:h-7 fill-gray-500 group-hover:fill-white transition-colors duration-300">
+                    <path d={icon.path} />
+                  </svg>
+                </div>
+                <span className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors duration-300 text-center leading-tight">{icon.name}</span>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </Section>
@@ -755,12 +755,12 @@ export default function Home() {
       <Section id="temalar" className="py-32 bg-[#FAFAFA] overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
-            <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Premium Temalar</p>
+            <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Temalar</p>
             <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4 animate-theme-gradient">
               Kendi Tarzını Yansıt
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Air&apos;ın sadeliğinden Vibe&apos;ın enerjisine kadar her zevke uygun premium temalar. Uygulamana özel bir görünüm kazandır.
+              Air ücretsiz, Midnight ve Vibe ise Premium ile açılır. Hangisi sana uygunsa onu seç, uygulamanı istediğin gibi hissettir.
             </p>
           </motion.div>
 
@@ -898,7 +898,7 @@ export default function Home() {
               <span className="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">Kaldır</span>
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
-              Premium ile Somine&apos;yi tam potansiyeliyle kullan. Sınırsız koleksiyon, özel güvenlik ve çok daha fazlası.
+              Sınırları kaldır, koleksiyonlarını ve içeriklerini sınırsız büyüt. Uygulamanı tamamen kendine göre özelleştir.
             </p>
           </motion.div>
 
