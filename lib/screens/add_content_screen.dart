@@ -116,11 +116,34 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (_isMapUrl(url)) return false;
 
     final knownBrands = [
-      'google', 'youtube', 'twitter', 'x.com', 'instagram', 'facebook',
-      'linkedin', 'spotify', 'github', 'amazon', 'apple', 'microsoft',
-      'adidas', 'nike', 'puma', 'netflix', 'discord', 'slack', 'notion', 
-      'figma', 'twitch', 'snapchat', 'whatsapp', 'telegram', 'yandex',
-      'stackoverflow', 'gitlab', 'bitbucket'
+      'google',
+      'youtube',
+      'twitter',
+      'x.com',
+      'instagram',
+      'facebook',
+      'linkedin',
+      'spotify',
+      'github',
+      'amazon',
+      'apple',
+      'microsoft',
+      'adidas',
+      'nike',
+      'puma',
+      'netflix',
+      'discord',
+      'slack',
+      'notion',
+      'figma',
+      'twitch',
+      'snapchat',
+      'whatsapp',
+      'telegram',
+      'yandex',
+      'stackoverflow',
+      'gitlab',
+      'bitbucket',
     ];
 
     return knownBrands.any((brand) => url.contains(brand));
@@ -266,7 +289,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
 
     // Set Note Image (for notes with images)
-    if (_isNoteMode && item.ogMetadata?.imageUrl != null && item.ogMetadata!.imageUrl!.isNotEmpty) {
+    if (_isNoteMode &&
+        item.ogMetadata?.imageUrl != null &&
+        item.ogMetadata!.imageUrl!.isNotEmpty) {
       _noteImageUrl = item.ogMetadata!.imageUrl;
     }
 
@@ -444,30 +469,35 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   String _detectPlatform(String url) {
     final lowerUrl = url.toLowerCase();
-    
+
     // Maps Checks (Priority)
-    if (lowerUrl.contains('maps.app.goo.gl') || 
+    if (lowerUrl.contains('maps.app.goo.gl') ||
         lowerUrl.contains('goo.gl/maps') ||
         lowerUrl.contains('google.com/maps') ||
-        lowerUrl.contains('maps.google.com')) return 'Maps';
-        
-    if (lowerUrl.contains('yandex.com/maps') || 
-        lowerUrl.contains('yandex.ru/maps') || 
-        lowerUrl.contains('yandex.o')) return 'Yandex Maps';
-        
+        lowerUrl.contains('maps.google.com'))
+      return 'Maps';
+
+    if (lowerUrl.contains('yandex.com/maps') ||
+        lowerUrl.contains('yandex.ru/maps') ||
+        lowerUrl.contains('yandex.o'))
+      return 'Yandex Maps';
+
     if (lowerUrl.contains('maps.apple.com')) return 'Apple Maps';
 
     if (lowerUrl.contains('instagram.com')) return 'Instagram';
     if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be'))
       return 'YouTube';
-      
+
     // Fix: strict check for x.com to avoid matching 'yandex.com' logic
-    if (lowerUrl.contains('twitter.com') || 
-        lowerUrl.contains('//x.com') || 
+    if (lowerUrl.contains('twitter.com') ||
+        lowerUrl.contains('//x.com') ||
         lowerUrl.contains('.x.com') ||
-        (lowerUrl.contains('x.com') && !lowerUrl.contains('yandex') && !lowerUrl.contains('netflix') && !lowerUrl.contains('box.com')))
+        (lowerUrl.contains('x.com') &&
+            !lowerUrl.contains('yandex') &&
+            !lowerUrl.contains('netflix') &&
+            !lowerUrl.contains('box.com')))
       return 'X';
-      
+
     if (lowerUrl.contains('tiktok.com')) return 'TikTok';
     if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
     if (lowerUrl.contains('spotify.com')) return 'Spotify';
@@ -552,9 +582,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       if (mounted) {
         setState(() {
           if (metadata != null) {
+            final descriptionPreview =
+                metadata.description == null
+                    ? 'null'
+                    : metadata.description!.length <= 50
+                    ? metadata.description!
+                    : '${metadata.description!.substring(0, 50)}...';
+
             debugPrint('📄 [AddContent] Metadata received:');
             debugPrint('   - title: ${metadata.title ?? "null"}');
-            debugPrint('   - description: ${metadata.description?.substring(0, 50) ?? "null"}...');
+            debugPrint('   - description: $descriptionPreview');
             debugPrint('   - imageUrl: ${metadata.imageUrl ?? "null"}');
 
             _ogMetadata = OGMetadata(
@@ -629,7 +666,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 titleToUse = metadata.title;
                 debugPrint('📄 [AddContent] Using metadata title: $titleToUse');
               } else {
-                debugPrint('⚠️ [AddContent] Metadata title is generic, skipping: ${metadata.title}');
+                debugPrint(
+                  '⚠️ [AddContent] Metadata title is generic, skipping: ${metadata.title}',
+                );
               }
             }
 
@@ -643,16 +682,24 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
         // If no coordinates were found, log a helpful message
         if (_mapCoordinate == null && metadata?.title != null) {
-          debugPrint('⚠️ [AddContent] Could not extract coordinates for: ${metadata!.title}');
-          debugPrint('⚠️ [AddContent] HTML extraction was attempted but no patterns matched');
+          debugPrint(
+            '⚠️ [AddContent] Could not extract coordinates for: ${metadata!.title}',
+          );
+          debugPrint(
+            '⚠️ [AddContent] HTML extraction was attempted but no patterns matched',
+          );
         }
       }
     } catch (e) {
       debugPrint("🔴 [AddContent] Metadata fetch error: $e");
-      debugPrint('════════════════════════════════════════════════════════════');
+      debugPrint(
+        '════════════════════════════════════════════════════════════',
+      );
     } finally {
       if (mounted) setState(() => _isLoadingMetadata = false);
-      debugPrint('════════════════════════════════════════════════════════════');
+      debugPrint(
+        '════════════════════════════════════════════════════════════',
+      );
     }
   }
 
@@ -672,10 +719,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     ];
 
     final lowerTitle = title.toLowerCase().trim();
-    return genericTitles.any((term) =>
-        lowerTitle == term ||
-        lowerTitle == '$term - harita' ||
-        lowerTitle.startsWith('$term '));
+    return genericTitles.any(
+      (term) =>
+          lowerTitle == term ||
+          lowerTitle == '$term - harita' ||
+          lowerTitle.startsWith('$term '),
+    );
   }
 
   // Handle Link Edit
@@ -690,7 +739,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       final match = urlRegExp.firstMatch(value);
       if (match != null) {
         String url = match.group(0)!;
-        
+
         // Extract place name from Map shares (Google, Yandex, Apple)
         // Format: "Place Name\nhttps://..." or "Place Name https://..."
         String? extractedTitle;
@@ -702,14 +751,14 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             debugPrint('📍 [AddContent] Extracted Map place: $extractedTitle');
           }
         }
-        
+
         if (url != _detectedLink) {
           setState(() {
             _detectedLink = url;
             _detectedPlatform = _detectPlatform(url);
             _hasLink = true;
             _isManualEntry = false;
-            
+
             // Pre-fill title for Maps
             if (extractedTitle != null && _titleController.text.isEmpty) {
               _titleController.text = extractedTitle;
@@ -725,35 +774,45 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       });
     }
   }
-  
+
   /// Check if URL is any known Map link
   bool _isMapUrl(String url) {
-    return _isGoogleMapsUrl(url) || _isYandexMapsUrl(url) || _isAppleMapsUrl(url);
+    return _isGoogleMapsUrl(url) ||
+        _isYandexMapsUrl(url) ||
+        _isAppleMapsUrl(url);
   }
 
   /// Check if URL is X (Twitter) link
   bool _isXUrl(String url) {
     final lower = url.toLowerCase();
     return lower.contains('twitter.com') ||
-           lower.contains('//x.com') ||
-           lower.contains('.x.com') ||
-           (lower.contains('x.com') &&
+        lower.contains('//x.com') ||
+        lower.contains('.x.com') ||
+        (lower.contains('x.com') &&
             !lower.contains('yandex') &&
             !lower.contains('netflix') &&
             !lower.contains('box.com'));
   }
 
+  bool _shouldPersistRemoteMetadataImage(String imageUrl) {
+    final lower = imageUrl.toLowerCase();
+    if (_isXUrl(_detectedLink.toLowerCase())) return false;
+    if (lower.endsWith('.svg')) return false;
+    if (lower.contains('/emoji/') || lower.contains('twemoji')) return false;
+    return true;
+  }
+
   bool _isGoogleMapsUrl(String url) {
-    return url.contains('maps.app.goo.gl') || 
-           url.contains('goo.gl/maps') ||
-           url.contains('google.com/maps') ||
-           url.contains('maps.google.com');
+    return url.contains('maps.app.goo.gl') ||
+        url.contains('goo.gl/maps') ||
+        url.contains('google.com/maps') ||
+        url.contains('maps.google.com');
   }
 
   bool _isYandexMapsUrl(String url) {
-    return url.contains('yandex.com/maps') || 
-           url.contains('yandex.ru/maps') || 
-           url.contains('yandex.o/maps');
+    return url.contains('yandex.com/maps') ||
+        url.contains('yandex.ru/maps') ||
+        url.contains('yandex.o/maps');
   }
 
   bool _isAppleMapsUrl(String url) {
@@ -796,117 +855,120 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      builder:
+          (ctx) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
             ),
-            Text(
-              "Görsel Ekle",
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: context.colors.headline,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Gallery Option
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _pickImage(ImageSource.gallery);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(
-                        color: context.colors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: context.colors.primary.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            PhosphorIconsBold.images,
-                            size: 32,
-                            color: context.colors.primary,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Galeri",
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: context.colors.headline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                // Handle bar
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 16),
-                // Camera Option
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _pickImage(ImageSource.camera);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(
-                        color: context.colors.secondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: context.colors.secondary.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            PhosphorIconsBold.camera,
-                            size: 32,
-                            color: context.colors.secondary,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Kamera",
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: context.colors.headline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                Text(
+                  "Görsel Ekle",
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: context.colors.headline,
                   ),
                 ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    // Gallery Option
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickImage(ImageSource.gallery);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            color: context.colors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: context.colors.primary.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                PhosphorIconsBold.images,
+                                size: 32,
+                                color: context.colors.primary,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Galeri",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: context.colors.headline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Camera Option
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickImage(ImageSource.camera);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            color: context.colors.secondary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: context.colors.secondary.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                PhosphorIconsBold.camera,
+                                size: 32,
+                                color: context.colors.secondary,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Kamera",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: context.colors.headline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
               ],
             ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -997,14 +1059,18 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           }
 
           if (isNewAdd) {
-            final currentCount = await repo.getActiveItemCountInCategory(uid, catId);
+            final currentCount = await repo.getActiveItemCountInCategory(
+              uid,
+              catId,
+            );
             if (!subNotifier.canAddItem(currentCount)) {
               if (mounted) {
                 LimitReachedDialog.show(
                   context: context,
                   ref: ref,
                   title: "Koleksiyon Dolu",
-                  message: "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
+                  message:
+                      "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
                   type: LimitType.item,
                 );
               }
@@ -1030,7 +1096,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
       // Check for remote image and process if needed
       if (_ogMetadata?.imageUrl != null &&
-          !_ogMetadata!.imageUrl!.contains('firebasestorage')) {
+          !_ogMetadata!.imageUrl!.contains('firebasestorage') &&
+          _shouldPersistRemoteMetadataImage(_ogMetadata!.imageUrl!)) {
         // Only attempt upload if it looks like an external URL
         final persistentUrl = await storageService.uploadImageFromUrl(
           _ogMetadata!.imageUrl!,
@@ -1062,7 +1129,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         try {
           final fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final path = 'items/$userId/$fileName';
-          noteImageUrl = await storageService.uploadBytes(_noteImageBytes!, path);
+          noteImageUrl = await storageService.uploadBytes(
+            _noteImageBytes!,
+            path,
+          );
           debugPrint('📸 Note image uploaded: $noteImageUrl');
 
           // Delete old image from Storage if it was a Storage URL (not base64)
@@ -1260,9 +1330,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     final reminder = await ReminderPickerBottomSheet.show(
       context,
       existingReminder: _currentReminder,
-      onDelete: _currentReminder != null ? () async {
-        await _deleteReminder();
-      } : null,
+      onDelete:
+          _currentReminder != null
+              ? () async {
+                await _deleteReminder();
+              }
+              : null,
     );
 
     if (reminder != null) {
@@ -1447,7 +1520,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   .transparent, // Material typically needs a color or transparent
           type: MaterialType.transparency, // Important for overlay
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque, // Ensures taps on empty areas work
+            behavior:
+                HitTestBehavior.opaque, // Ensures taps on empty areas work
             onTap: () => FocusScope.of(context).unfocus(),
             child: Container(
               decoration: BoxDecoration(
@@ -1551,7 +1625,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Görsel yoksa minimum 180px garanti et (X, Maps ve normal linkler için)
         final minHeight = 180.0;
         final calculatedHeight = size.height * 0.30;
-        stageHeight = calculatedHeight < minHeight ? minHeight : calculatedHeight;
+        stageHeight =
+            calculatedHeight < minHeight ? minHeight : calculatedHeight;
       }
     } else if (_isManualEntry) {
       stageHeight = size.height * 0.40; // Increased from 0.25
@@ -1595,14 +1670,14 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   _isLoadingMetadata
                       ? _buildPlatformBackground(animate: true)
                       : _isXUrl(_detectedLink.toLowerCase())
-                          ? _buildXPlaceholder()
-                          : _isMapUrl(_detectedLink.toLowerCase())
-                              ? _buildMapPlaceholder()
-                              : (hasImage &&
-                                 (!_isKnownBrandSite() || _isSocialPlatform()) &&
-                                 !_isFaviconUrl(_ogMetadata?.imageUrl))
-                                  ? _buildImageBackground()
-                                  : _buildPlatformBackground(animate: false),
+                      ? _buildXPlaceholder()
+                      : _isMapUrl(_detectedLink.toLowerCase())
+                      ? _buildMapPlaceholder()
+                      : (hasImage &&
+                          (!_isKnownBrandSite() || _isSocialPlatform()) &&
+                          !_isFaviconUrl(_ogMetadata?.imageUrl))
+                      ? _buildImageBackground()
+                      : _buildPlatformBackground(animate: false),
             ),
 
             // Platform Icon removed as requested
@@ -1674,8 +1749,14 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Platform Background (Gradient Preview Placeholder)
   Widget _buildPlatformBackground({bool animate = false}) {
-    final bool showFavicon = !animate && _hasLink && !_isLoadingMetadata && _ogMetadata?.imageUrl != null && _isFaviconUrl(_ogMetadata!.imageUrl) && !_isKnownBrandSite();
-    
+    final bool showFavicon =
+        !animate &&
+        _hasLink &&
+        !_isLoadingMetadata &&
+        _ogMetadata?.imageUrl != null &&
+        _isFaviconUrl(_ogMetadata!.imageUrl) &&
+        !_isKnownBrandSite();
+
     return AnimatedBuilder(
       animation: _loadingController,
       builder: (context, child) {
@@ -1743,43 +1824,53 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       ),
                     )
                     : showFavicon
-                        ? Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                    ? Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: Image.network(
+                        _ogMetadata!.imageUrl!,
+                        fit: BoxFit.contain,
+                        errorBuilder:
+                            (_, __, ___) => const Icon(
+                              Icons.language,
+                              color: Colors.grey,
+                              size: 32,
                             ),
-                            padding: const EdgeInsets.all(12),
-                            child: Image.network(
-                              _ogMetadata!.imageUrl!,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.language, color: Colors.grey, size: 32),
-                            ),
-                          )
-                        : Icon(
-                          _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
-                              ? Icons.link_off // No preview found
-                              : Icons.add_link_rounded,
-                          size: 64,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
+                      ),
+                    )
+                    : Icon(
+                      _hasLink &&
+                              !_isLoadingMetadata &&
+                              (_ogMetadata?.imageUrl == null)
+                          ? Icons
+                              .link_off // No preview found
+                          : Icons.add_link_rounded,
+                      size: 64,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
                 const SizedBox(height: 12),
                 Text(
                   animate
                       ? "Bağlantı taranıyor..."
-                      : _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
-                          ? "Önizleme yok"
-                          : showFavicon 
-                              ? (_ogMetadata?.title ?? "Bağlantı Eklendi")
-                              : "Bağlantı önizlemesi burada görünecek",
+                      : _hasLink &&
+                          !_isLoadingMetadata &&
+                          (_ogMetadata?.imageUrl == null)
+                      ? "Önizleme yok"
+                      : showFavicon
+                      ? (_ogMetadata?.title ?? "Bağlantı Eklendi")
+                      : "Bağlantı önizlemesi burada görünecek",
                   style: GoogleFonts.poppins(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,
@@ -1813,7 +1904,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       ],
     );
   }
-  
+
   // Custom Map Preview (Gradient + Icon) like ItemCard
   // If coordinates are available, show Apple Map preview
   Widget _buildMapPreview() {
@@ -1845,16 +1936,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [context.colors.primary, context.colors.secondary], // Tema renkleri
+          colors: [
+            context.colors.primary,
+            context.colors.secondary,
+          ], // Tema renkleri
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Center(
-        child: Icon(
-          Icons.map,
-          size: 64,
-          color: Colors.white.withOpacity(0.9),
-        ),
+        child: Icon(Icons.map, size: 64, color: Colors.white.withOpacity(0.9)),
       ),
     );
   }
@@ -1887,10 +1977,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
     final uri = Uri.parse(_detectedLink);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -1906,19 +1993,17 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
     final uri = Uri.parse(appleMapsUrl);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
   // Map icon placeholder for Google/Yandex (no map, just icon)
   Widget _buildMapIconPlaceholder() {
     final provider = _mapCoordinate!.provider;
-    final gradientColors = provider == MapProvider.googleMaps
-        ? [const Color(0xFF34A853), const Color(0xFF1EA362)] // Google Yeşil
-        : [const Color(0xFFFFCC00), const Color(0xFFFF9900)]; // Yandex Sarı
+    final gradientColors =
+        provider == MapProvider.googleMaps
+            ? [const Color(0xFF34A853), const Color(0xFF1EA362)] // Google Yeşil
+            : [const Color(0xFFFFCC00), const Color(0xFFFF9900)]; // Yandex Sarı
 
     return Container(
       key: const ValueKey('map_icon_placeholder'),
@@ -1944,7 +2029,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  provider == MapProvider.googleMaps ? 'Google Maps' : 'Yandex Maps',
+                  provider == MapProvider.googleMaps
+                      ? 'Google Maps'
+                      : 'Yandex Maps',
                   style: GoogleFonts.poppins(
                     color: Colors.white.withOpacity(0.95),
                     fontSize: 16,
@@ -1976,7 +2063,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // Gradient fallback when no coordinates
   Widget _buildMapGradientFallback() {
     final url = _detectedLink.toLowerCase();
-    List<Color> gradientColors = [context.colors.primary, context.colors.secondary];
+    List<Color> gradientColors = [
+      context.colors.primary,
+      context.colors.secondary,
+    ];
 
     if (url.contains('maps.app.goo') ||
         url.contains('goo.gl/maps') ||
@@ -2008,11 +2098,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.map,
-                size: 48,
-                color: Colors.white.withOpacity(0.9),
-              ),
+              Icon(Icons.map, size: 48, color: Colors.white.withOpacity(0.9)),
               const SizedBox(height: 12),
               Text(
                 'Harita Konumu',
@@ -2149,14 +2235,19 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   /// Builds the note image picker UI
   Widget _buildNoteImagePicker() {
-    final hasImage = _selectedNoteImage != null || (_noteImageUrl != null && _noteImageUrl!.isNotEmpty);
-    
+    final hasImage =
+        _selectedNoteImage != null ||
+        (_noteImageUrl != null && _noteImageUrl!.isNotEmpty);
+
     return Container(
       decoration: BoxDecoration(
         color: context.colors.body.withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasImage ? context.colors.primary.withOpacity(0.3) : Colors.transparent,
+          color:
+              hasImage
+                  ? context.colors.primary.withOpacity(0.3)
+                  : Colors.transparent,
           width: hasImage ? 1.5 : 0,
         ),
       ),
@@ -2233,23 +2324,28 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             child: SizedBox(
               width: 80,
               height: 80,
-              child: _selectedNoteImage != null
-                  ? Image.file(
-                      _selectedNoteImage!,
-                      fit: BoxFit.cover,
-                    )
-                  : CachedNetworkImage(
-                      imageUrl: _noteImageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
-                        color: context.colors.backgroundTop,
-                        child: const Center(child: CupertinoActivityIndicator()),
+              child:
+                  _selectedNoteImage != null
+                      ? Image.file(_selectedNoteImage!, fit: BoxFit.cover)
+                      : CachedNetworkImage(
+                        imageUrl: _noteImageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(
+                              color: context.colors.backgroundTop,
+                              child: const Center(
+                                child: CupertinoActivityIndicator(),
+                              ),
+                            ),
+                        errorWidget:
+                            (_, __, ___) => Container(
+                              color: context.colors.backgroundTop,
+                              child: Icon(
+                                PhosphorIconsBold.imageSquare,
+                                color: context.colors.hint,
+                              ),
+                            ),
                       ),
-                      errorWidget: (_, __, ___) => Container(
-                        color: context.colors.backgroundTop,
-                        child: Icon(PhosphorIconsBold.imageSquare, color: context.colors.hint),
-                      ),
-                    ),
             ),
           ),
           const SizedBox(width: 16),
@@ -2268,7 +2364,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _selectedNoteImage != null ? "Yeni görsel seçildi" : "Mevcut görsel",
+                  _selectedNoteImage != null
+                      ? "Yeni görsel seçildi"
+                      : "Mevcut görsel",
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: context.colors.hint,
@@ -2327,14 +2425,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
-          color: _hasReminder
-              ? context.colors.primary.withOpacity(0.1)
-              : context.colors.body.withOpacity(0.04),
+          color:
+              _hasReminder
+                  ? context.colors.primary.withOpacity(0.1)
+                  : context.colors.body.withOpacity(0.04),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _hasReminder
-                ? context.colors.primary.withOpacity(0.3)
-                : Colors.transparent,
+            color:
+                _hasReminder
+                    ? context.colors.primary.withOpacity(0.3)
+                    : Colors.transparent,
             width: _hasReminder ? 1.5 : 0,
           ),
         ),
@@ -2352,9 +2452,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                _hasReminder ? PhosphorIconsBold.bellRinging : PhosphorIconsBold.bell,
+                _hasReminder
+                    ? PhosphorIconsBold.bellRinging
+                    : PhosphorIconsBold.bell,
                 size: 22,
-                color: _hasReminder ? context.colors.primary : context.colors.hint,
+                color:
+                    _hasReminder ? context.colors.primary : context.colors.hint,
               ),
             ),
             const SizedBox(width: 16),
@@ -2369,7 +2472,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: _hasReminder ? context.colors.primary : context.colors.headline,
+                      color:
+                          _hasReminder
+                              ? context.colors.primary
+                              : context.colors.headline,
                     ),
                   ),
                   if (_hasReminder && _currentReminder != null)
@@ -2424,13 +2530,24 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       dateLabel = 'Yarın';
     } else {
       const months = [
-        'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
-        'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'
+        'Oca',
+        'Şub',
+        'Mar',
+        'Nis',
+        'May',
+        'Haz',
+        'Tem',
+        'Ağu',
+        'Eyl',
+        'Eki',
+        'Kas',
+        'Ara',
       ];
       dateLabel = '${nextOccurrence.day} ${months[nextOccurrence.month - 1]}';
     }
 
-    final time = '${reminder.reminderTime.hour.toString().padLeft(2, '0')}:'
+    final time =
+        '${reminder.reminderTime.hour.toString().padLeft(2, '0')}:'
         '${reminder.reminderTime.minute.toString().padLeft(2, '0')}';
 
     if (reminder.repeat != RepeatFrequency.none) {
@@ -2477,7 +2594,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     int maxLines = 1,
   }) {
     final isMultiLine = maxLines > 1;
-    
+
     return Stack(
       children: [
         Container(
@@ -2500,7 +2617,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           ),
           child: Row(
             crossAxisAlignment:
-                isMultiLine ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                isMultiLine
+                    ? CrossAxisAlignment.start
+                    : CrossAxisAlignment.center,
             children: [
               Padding(
                 padding: EdgeInsets.only(top: isMultiLine ? 2 : 0),

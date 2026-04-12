@@ -45,9 +45,10 @@ class VaultNotifier extends StateNotifier<VaultState> {
     
     state = state.copyWith(isLoading: true);
     
-    final success = await _service.authenticate(
+    final result = await _service.authenticate(
       reason: 'Gizli kasaya erişmek için doğrulama yapın',
     );
+    final success = result == VaultAuthResult.success;
     
     state = state.copyWith(
       isUnlocked: success,

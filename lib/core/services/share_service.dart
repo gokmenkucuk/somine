@@ -37,6 +37,7 @@ class ShareService {
       final String? jsonString = await _channel.invokeMethod('getSharedData');
       if (jsonString != null && jsonString.isNotEmpty) {
         debugPrint("ShareService: Found initial share data: $jsonString");
+        await _printNativeShareLogs();
         
         try {
           // Parse JSON: [{"path": "...", "type": "url/text", "mimeType": ...}]
@@ -62,7 +63,9 @@ class ShareService {
           
           if (foundUrl != null) {
             final extractedUrl = _extractUrl(foundUrl);
-            sharedUrlNotifier.value = extractedUrl ?? foundUrl;
+            final sharedContent = extractedUrl ?? foundUrl;
+            debugPrint("ShareService: Resolved shared content: $sharedContent");
+            sharedUrlNotifier.value = sharedContent;
             // Clear data from native storage after successful read
             await _channel.invokeMethod('clearSharedData');
           }
@@ -71,9 +74,21 @@ class ShareService {
         }
       } else {
         debugPrint("ShareService: No initial share data found.");
+        await _printNativeShareLogs();
       }
     } catch (e) {
       debugPrint("ShareService checkInitialShare error: $e");
+    }
+  }
+
+  Future<void> _printNativeShareLogs() async {
+    try {
+      final String logs = await _channel.invokeMethod('getNativeLogs');
+      if (logs.contains('[SHARE_EXT]')) {
+        debugPrint('\n=== SHARE EXTENSION LOGS START ===\n$logs\n=== SHARE EXTENSION LOGS END ===\n');
+      }
+    } catch (e) {
+      debugPrint("ShareService native log read error: $e");
     }
   }
 
@@ -88,7 +103,9 @@ class ShareService {
       debugPrint("Received shared content: $content");
       // Extract URL in case the shared content contains text + URL (e.g. Pinterest, Medium)
       final extractedUrl = _extractUrl(content);
-      sharedUrlNotifier.value = extractedUrl ?? content;
+      final sharedContent = extractedUrl ?? content;
+      debugPrint("ShareService: Resolved stream content: $sharedContent");
+      sharedUrlNotifier.value = sharedContent;
     }
   }
 

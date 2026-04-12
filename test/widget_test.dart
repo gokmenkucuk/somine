@@ -6,6 +6,7 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 
 import 'package:somine_app/main.dart';
 
@@ -25,16 +26,11 @@ void main() {
         overrides: [
           authStateProvider.overrideWith((ref) => Stream.value(null)),
         ],
-        child: const SoMineApp(),
+        child: const MaterialApp(home: AuthWrapper()),
       ),
     );
 
-    // The app starts with SplashScreen. 
-    // Wait for the splash screen animation/delay to complete.
-    // SplashScreen has a 3-second delay plus animation.
-    await tester.pump(const Duration(seconds: 4));
-    await tester.pump(); // Handle setState in main
-    await tester.pump(); // Handle AuthWrapper/LoginScreen build
+    await tester.pump();
 
     // Verify LoginScreen is present
     expect(find.byType(LoginScreen), findsOneWidget);

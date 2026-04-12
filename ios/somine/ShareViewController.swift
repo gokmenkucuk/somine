@@ -35,48 +35,21 @@ class ShareViewController: UIViewController {
         
         let group = DispatchGroup()
         var sharedItems: [[String: Any]] = []
+        let sharedItemsQueue = DispatchQueue(label: "com.somine.share.items")
         
         for attachment in attachments {
+            Logger.shared.log("ShareViewController: Attachment types: \(attachment.registeredTypeIdentifiers.joined(separator: ", "))")
             group.enter()
-            
-            // Handle URLs (YouTube, Web, etc.)
-            if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                attachment.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] item, error in
-                    defer { group.leave() }
-                    if let url = item as? URL {
-                        Logger.shared.log("ShareViewController: Found URL: \(url.absoluteString)")
-                        sharedItems.append([
-                            "path": url.absoluteString,
-                            "type": "url",
-                            "mimeType": "text/plain" 
-                        ])
+
+            loadSharedItem(from: attachment) { item in
+                if let item = item {
+                    sharedItemsQueue.async {
+                        sharedItems.append(item)
+                        group.leave()
                     }
+                } else {
+                    group.leave()
                 }
-            }
-            // Handle Text
-            else if attachment.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
-                attachment.loadItem(forTypeIdentifier: UTType.text.identifier) { [weak self] item, error in
-                    defer { group.leave() }
-                    if let text = item as? String {
-                        Logger.shared.log("ShareViewController: Found Text")
-                        sharedItems.append([
-                            "path": text,
-                            "type": "text",
-                            "mimeType": "text/plain"
-                        ])
-                    }
-                }
-            }
-            // Handle Images (Optional - keeping logic simplified for now as user tests mainly links)
-            else if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                 attachment.loadItem(forTypeIdentifier: UTType.image.identifier) { [weak self] item, error in
-                     defer { group.leave() }
-                     // Image handling can be added here if needed, keeping it simple for stability
-                     Logger.shared.log("ShareViewController: Image found but full processing skipped for stability")
-                 }
-            }
-            else {
-                group.leave()
             }
         }
         
@@ -84,6 +57,84 @@ class ShareViewController: UIViewController {
             Logger.shared.log("ShareViewController: All items processed. Saving...")
             self?.saveAndRedirect(items: sharedItems)
         }
+    }
+
+    private func loadSharedItem(from attachment: NSItemProvider, completion: @escaping ([String: Any]?) -> Void) {
+        let candidateTypes = [
+            UTType.url.identifier,
+            UTType.plainText.identifier,
+            UTType.text.identifier,
+            "public.url",
+            "public.plain-text",
+            "public.text"
+        ].removingDuplicates()
+
+        func loadNext(_ index: Int) {
+            guard index < candidateTypes.count else {
+                if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                    Logger.shared.log("ShareViewController: Image found but no URL/text representation was available")
+                } else {
+                    Logger.shared.log("ShareViewController: No usable URL/text representation found")
+                }
+                completion(nil)
+                return
+            }
+
+            let typeIdentifier = candidateTypes[index]
+            guard attachment.hasItemConformingToTypeIdentifier(typeIdentifier) else {
+                loadNext(index + 1)
+                return
+            }
+
+            attachment.loadItem(forTypeIdentifier: typeIdentifier) { item, error in
+                if let error = error {
+                    Logger.shared.log("ShareViewController: Failed to load \(typeIdentifier): \(error.localizedDescription)")
+                    loadNext(index + 1)
+                    return
+                }
+
+                guard let value = self.stringValue(from: item)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !value.isEmpty else {
+                    Logger.shared.log("ShareViewController: Empty or unsupported item for \(typeIdentifier): \(String(describing: item))")
+                    loadNext(index + 1)
+                    return
+                }
+
+                let itemType = typeIdentifier == UTType.url.identifier || typeIdentifier == "public.url" ? "url" : "text"
+                Logger.shared.log("ShareViewController: Found \(itemType): \(value)")
+                completion([
+                    "path": value,
+                    "type": itemType,
+                    "mimeType": "text/plain"
+                ])
+            }
+        }
+
+        loadNext(0)
+    }
+
+    private func stringValue(from item: NSSecureCoding?) -> String? {
+        if let url = item as? URL {
+            return url.absoluteString
+        }
+
+        if let url = item as? NSURL {
+            return url.absoluteString
+        }
+
+        if let text = item as? String {
+            return text
+        }
+
+        if let attributedText = item as? NSAttributedString {
+            return attributedText.string
+        }
+
+        if let data = item as? Data {
+            return String(data: data, encoding: .utf8)
+        }
+
+        return nil
     }
     
     private func saveAndRedirect(items: [[String: Any]]) {
@@ -178,5 +229,12 @@ class Logger {
                 fileHandle.closeFile()
             }
         }
+    }
+}
+
+private extension Array where Element: Hashable {
+    func removingDuplicates() -> [Element] {
+        var seen = Set<Element>()
+        return filter { seen.insert($0).inserted }
     }
 }

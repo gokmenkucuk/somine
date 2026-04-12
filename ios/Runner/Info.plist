@@ -214,5 +214,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Yer bazlı özellikler ve harita kullanımı için konumunuza erişim gereklidir.</string>
 </dict>
 </plist>
