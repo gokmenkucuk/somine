@@ -170,7 +170,17 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         url.contains('open.spotify.com') ||
         url.contains('x.com') ||
         url.contains('twitter.com') ||
-        url.contains('github.com');
+        url.contains('github.com') ||
+        url.contains('linkedin.com') ||
+        url.contains('reddit.com') ||
+        url.contains('amazon.') ||
+        url.contains('netflix.com') ||
+        url.contains('twitch.tv') ||
+        url.contains('gitlab.com') ||
+        url.contains('bitbucket.org') ||
+        url.contains('medium.com') ||
+        url.contains('behance.net') ||
+        url.contains('dribbble.com');
   }
 
   /// Checks if the image URL appears to be a favicon (small logo image)

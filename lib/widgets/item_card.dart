@@ -782,7 +782,17 @@ class _CardImage extends StatelessWidget {
         lower.contains('open.spotify.com') ||
         lower.contains('x.com') ||
         lower.contains('twitter.com') ||
-        lower.contains('github.com');
+        lower.contains('github.com') ||
+        lower.contains('linkedin.com') ||
+        lower.contains('reddit.com') ||
+        lower.contains('amazon.') ||
+        lower.contains('netflix.com') ||
+        lower.contains('twitch.tv') ||
+        lower.contains('gitlab.com') ||
+        lower.contains('bitbucket.org') ||
+        lower.contains('medium.com') ||
+        lower.contains('behance.net') ||
+        lower.contains('dribbble.com');
   }
 
   /// Check if URL is a maps service
