@@ -173,7 +173,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         url.contains('github.com') ||
         url.contains('linkedin.com') ||
         url.contains('reddit.com') ||
-        url.contains('amazon.') ||
         url.contains('netflix.com') ||
         url.contains('twitch.tv') ||
         url.contains('gitlab.com') ||

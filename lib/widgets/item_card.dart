@@ -785,7 +785,6 @@ class _CardImage extends StatelessWidget {
         lower.contains('github.com') ||
         lower.contains('linkedin.com') ||
         lower.contains('reddit.com') ||
-        lower.contains('amazon.') ||
         lower.contains('netflix.com') ||
         lower.contains('twitch.tv') ||
         lower.contains('gitlab.com') ||
