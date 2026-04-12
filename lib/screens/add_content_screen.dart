@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/map_coordinate.dart';
@@ -1715,10 +1716,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   // 5. Fallback - platform background
                   _isLoadingMetadata
                       ? _buildPlatformBackground(animate: true)
-                      : (_isXUrl(_detectedLink.toLowerCase()) && !hasImage)
-                      ? _buildXPlaceholder()
-                      : (_isFacebookUrl(_detectedLink.toLowerCase()) && !hasImage)
-                      ? _buildFacebookPlaceholder()
                       : _isMapUrl(_detectedLink.toLowerCase())
                       ? _buildMapPlaceholder()
                       : (hasImage &&
@@ -1898,16 +1895,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                             ),
                       ),
                     )
-                    : Icon(
-                      _hasLink &&
-                              !_isLoadingMetadata &&
-                              (_ogMetadata?.imageUrl == null)
-                          ? Icons
-                              .link_off // No preview found
-                          : Icons.add_link_rounded,
-                      size: 64,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
+                    : _buildPlatformIcon(),
                 const SizedBox(height: 12),
                 Text(
                   animate
@@ -2010,45 +1998,72 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   // X (Twitter) placeholder - show X logo
-  Widget _buildXPlaceholder() {
-    return Container(
-      key: const ValueKey('x_placeholder'),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [context.colors.primary, context.colors.secondary],
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Center(
-        child: Icon(
-          PhosphorIconsThin.xLogo,
-          size: 64,
-          color: Colors.white.withOpacity(0.9),
-        ),
-      ),
-    );
-  }
+  /// Returns platform-specific icon for preview placeholder
+  Widget _buildPlatformIcon() {
+    final url = _detectedLink.toLowerCase();
+    const iconColor = Colors.white;
+    const iconSize = 48.0;
 
-  Widget _buildFacebookPlaceholder() {
-    return Container(
-      key: const ValueKey('facebook_placeholder'),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [context.colors.primary, context.colors.secondary],
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Center(
-        child: Icon(
-          PhosphorIconsThin.facebookLogo,
-          size: 64,
-          color: Colors.white.withOpacity(0.9),
-        ),
-      ),
+    // Social/Content platforms
+    if (url.contains('x.com') || url.contains('twitter.com')) {
+      return const FaIcon(FontAwesomeIcons.xTwitter, size: iconSize, color: iconColor);
+    }
+    if (url.contains('facebook.com') || url.contains('fb.watch')) {
+      return const FaIcon(FontAwesomeIcons.facebook, size: iconSize, color: iconColor);
+    }
+    if (url.contains('instagram.com')) {
+      return const FaIcon(FontAwesomeIcons.instagram, size: iconSize, color: iconColor);
+    }
+    if (url.contains('youtube.com') || url.contains('youtu.be')) {
+      return const FaIcon(FontAwesomeIcons.youtube, size: iconSize, color: iconColor);
+    }
+    if (url.contains('tiktok.com')) {
+      return const FaIcon(FontAwesomeIcons.tiktok, size: iconSize, color: iconColor);
+    }
+    if (url.contains('spotify.com')) {
+      return const FaIcon(FontAwesomeIcons.spotify, size: iconSize, color: iconColor);
+    }
+    if (url.contains('linkedin.com')) {
+      return const FaIcon(FontAwesomeIcons.linkedin, size: iconSize, color: iconColor);
+    }
+    if (url.contains('pinterest.com') || url.contains('pin.it')) {
+      return const FaIcon(FontAwesomeIcons.pinterest, size: iconSize, color: iconColor);
+    }
+    if (url.contains('reddit.com')) {
+      return const FaIcon(FontAwesomeIcons.reddit, size: iconSize, color: iconColor);
+    }
+    if (url.contains('github.com')) {
+      return const FaIcon(FontAwesomeIcons.github, size: iconSize, color: iconColor);
+    }
+    if (url.contains('twitch.tv')) {
+      return const FaIcon(FontAwesomeIcons.twitch, size: iconSize, color: iconColor);
+    }
+    if (url.contains('discord.com') || url.contains('discord.gg')) {
+      return const FaIcon(FontAwesomeIcons.discord, size: iconSize, color: iconColor);
+    }
+    if (url.contains('medium.com')) {
+      return const FaIcon(FontAwesomeIcons.medium, size: iconSize, color: iconColor);
+    }
+    if (url.contains('whatsapp.com')) {
+      return const FaIcon(FontAwesomeIcons.whatsapp, size: iconSize, color: iconColor);
+    }
+    if (url.contains('telegram.org') || url.contains('t.me')) {
+      return const FaIcon(FontAwesomeIcons.telegram, size: iconSize, color: iconColor);
+    }
+    if (url.contains('snapchat.com')) {
+      return const FaIcon(FontAwesomeIcons.snapchat, size: iconSize, color: iconColor);
+    }
+    if (url.contains('amazon.com') || url.contains('amazon.')) {
+      return const FaIcon(FontAwesomeIcons.amazon, size: iconSize, color: iconColor);
+    }
+
+    // Default link icon
+    return Icon(
+      _hasLink && !_isLoadingMetadata && (_ogMetadata?.imageUrl == null)
+          ? Icons.link_off
+          : Icons.add_link_rounded,
+      size: 64,
+      color: Colors.white.withOpacity(0.9),
     );
   }
 
