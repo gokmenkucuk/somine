@@ -283,6 +283,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _isManualEntry = false;
       // Pre-fill metadata from item
       _ogMetadata = item.ogMetadata;
+      // Also fallback to generic imageUrl if OGMetadata lacks one
+      if ((_ogMetadata == null || _ogMetadata!.imageUrl == null) && item.imageUrl != null) {
+        _ogMetadata = (_ogMetadata ?? const OGMetadata()).copyWith(imageUrl: item.imageUrl);
+      }
       if (_ogMetadata?.imageUrl != null) {
         _resolveImageSize(_ogMetadata!.imageUrl!);
       }

@@ -28,7 +28,7 @@ class MetadataService {
 
       // First, resolve redirects using dart:io HttpClient
       String finalUrl = url;
-      if (_isMapUrl(url) || url.contains('vt.tiktok.com')) {
+      if (_isMapUrl(url) || url.contains('vt.tiktok.com') || url.contains('pin.it') || url.contains('pinterest.com/pin/')) {
         finalUrl = await _resolveRedirects(url) ?? url;
         debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
       }
@@ -109,6 +109,17 @@ class MetadataService {
           }
         }
 
+        if (url.contains('pinterest')) {
+          // Pinterest heavily utilizes generic "Check out this pin" text in og:title, so we prioritize the `<title>` tag for better content titles.
+          final rawTitle = document.querySelector('title')?.text;
+          if (rawTitle != null &&
+              !rawTitle.toLowerCase().contains("pine") &&
+              rawTitle.toLowerCase() != "pinterest") {
+            title = rawTitle.replaceFirst('Pinterest', '').replaceAll('On ', '').trim();
+            title = title.split('|').first.trim(); // "Pin by X on Y | Category" -> "Pin by X on Y"
+          }
+        }
+
         for (var tag in metaTags) {
           final property = tag.attributes['property'];
           final name = tag.attributes['name'];
@@ -117,10 +128,9 @@ class MetadataService {
           if (content == null || content.isEmpty) continue;
 
           // Title
-          if (property == 'og:title' ||
-              name == 'title' ||
-              name == 'twitter:title') {
-            title ??= content; // Keep first found
+          if (title == null && (property == 'og:title' ||
+              name == 'title' || name == 'twitter:title')) {
+            title = content; // Keep first found
           }
 
           // Description
