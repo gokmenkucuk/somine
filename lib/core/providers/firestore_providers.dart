@@ -1,9 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Pagination
-import 'package:cached_network_image/cached_network_image.dart'; // Image Precaching
-import 'package:flutter/painting.dart'; // ImageConfiguration
 
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -303,7 +299,6 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
       );
       if (!mounted) return;
 
-      await _precacheImages(initialBatch);
       if (!mounted) return;
       
       state = state.copyWith(
@@ -318,30 +313,6 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     }
   }
   
-  /// Precache images for items (waits for all images to download)
-  Future<void> _precacheImages(List<ItemModel> items) async {
-    final imageUrls = items
-        .where((item) => item.displayImage != null && item.displayImage!.startsWith('http'))
-        .map((item) => item.displayImage!)
-        .toList();
-    
-    if (imageUrls.isEmpty) return;
-    
-    // Use CachedNetworkImageProvider to precache all images in parallel
-    await Future.wait(
-      imageUrls.map((url) async {
-        try {
-          // Download and cache the image
-          CachedNetworkImageProvider(url).resolve(ImageConfiguration.empty);
-        } catch (e) {
-          // Ignore errors for individual images
-        }
-      }),
-    );
-    
-    // Small delay to allow Flutter to calculate layout after images are cached
-    await Future.delayed(const Duration(milliseconds: 100));
-  }
 
   String _buildCategoriesSignature(List<CategoryModel> categories) {
     return categories
@@ -372,8 +343,6 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
         nextPage: _lastBatchNextPage,
       );
 
-      // Warm image cache in the background so scroll append is immediate.
-      unawaited(_precacheImages(nextBatch));
     } catch (e) {
        if (mounted) state = state.copyWith(isLoading: false);
     }

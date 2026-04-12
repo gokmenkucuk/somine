@@ -28,7 +28,7 @@ class MetadataService {
 
       // First, resolve redirects using dart:io HttpClient
       String finalUrl = url;
-      if (_isMapUrl(url) || url.contains('vt.tiktok.com') || url.contains('pin.it') || url.contains('pinterest.com/pin/')) {
+      if (_isMapUrl(url) || url.contains('vt.tiktok.com') || url.contains('pin.it') || url.contains('pinterest.com/pin/') || _isFacebookRedirect(url)) {
         finalUrl = await _resolveRedirects(url) ?? url;
         debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
       }
@@ -43,6 +43,35 @@ class MetadataService {
             description: null,
             imageUrl: data['image'],
             siteName: 'TikTok',
+          );
+        }
+      }
+
+      // Spotify oEmbed Extractor
+      if (finalUrl.contains('open.spotify.com')) {
+        final data = await _fetchSpotifyOembed(finalUrl);
+        if (data['title'] != null) {
+          debugPrint('🎵 [MetadataService] Spotify Oembed Success');
+          return OGMetadata(
+            title: data['title'],
+            description: data['description'],
+            imageUrl: data['image'],
+            siteName: 'Spotify',
+          );
+        }
+      }
+
+      // X.com (Twitter) oEmbed Extractor
+      if (_isTwitterUrl(finalUrl) || _isTwitterUrl(url)) {
+        final twitterUrl = _isTwitterUrl(finalUrl) ? finalUrl : url;
+        final data = await _fetchTwitterOembed(twitterUrl);
+        if (data['title'] != null) {
+          debugPrint('🐦 [MetadataService] Twitter/X Oembed Success');
+          return OGMetadata(
+            title: data['title'],
+            description: null,
+            imageUrl: data['image'],
+            siteName: 'X',
           );
         }
       }
@@ -299,6 +328,27 @@ class MetadataService {
           }
         }
 
+        // Facebook: If we got a generic/redirect title, use fallback
+        final isFbUrl = _isFacebookUrl(finalUrl) || _isFacebookUrl(url);
+        debugPrint('🔵 [MetadataService] Facebook check: isFbUrl=$isFbUrl, title=$title, finalUrl=$finalUrl');
+        if (isFbUrl) {
+          final lowerTitle = title?.toLowerCase().trim() ?? '';
+          final isGenericTitle = lowerTitle.isEmpty ||
+              lowerTitle.contains('redirecting') ||
+              lowerTitle == 'facebook' ||
+              lowerTitle.contains('log in') ||
+              lowerTitle.contains('giriş yap');
+          debugPrint('🔵 [MetadataService] Facebook generic check: lowerTitle=$lowerTitle, isGeneric=$isGenericTitle');
+          if (isGenericTitle) {
+            debugPrint('⚠️ [MetadataService] Facebook generic title detected, using fallback');
+            final fallback = _buildFacebookFallback(url);
+            if (fallback != null) {
+              debugPrint('✅ [MetadataService] Facebook fallback: ${fallback.title}');
+              return fallback;
+            }
+          }
+        }
+
         return OGMetadata(
           title: title,
           description: description,
@@ -336,6 +386,146 @@ class MetadataService {
       debugPrint('⚠️ [MetadataService] TikTok Oembed Error: $e');
     }
     return {'title': null, 'image': null};
+  }
+
+  /// Fallback for Twitter/X using vxtwitter proxy + oEmbed
+  static Future<Map<String, String?>> _fetchTwitterOembed(String url) async {
+    try {
+      // Try fxtwitter API for tweet data (JSON endpoint)
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+      // Extract username and tweet ID from URL like /username/status/1234567
+      String? tweetId;
+      for (int i = 0; i < pathSegments.length; i++) {
+        if (pathSegments[i] == 'status' && i + 1 < pathSegments.length) {
+          tweetId = pathSegments[i + 1].split('?').first;
+          break;
+        }
+      }
+
+      if (tweetId != null) {
+        final username = pathSegments.isNotEmpty ? pathSegments[0] : '';
+        final apiUrl = 'https://api.fxtwitter.com/$username/status/$tweetId';
+        debugPrint('🐦 [MetadataService] Trying fxtwitter API: $apiUrl');
+
+        final fxResponse = await http.get(
+          Uri.parse(apiUrl),
+          headers: {'User-Agent': 'SomineApp/1.0'},
+        ).timeout(const Duration(seconds: 5));
+        debugPrint('🐦 [MetadataService] fxtwitter API status: ${fxResponse.statusCode}');
+
+        if (fxResponse.statusCode == 200) {
+          final json = jsonDecode(fxResponse.body);
+          final tweet = json['tweet'];
+          if (tweet != null) {
+            final text = tweet['text'] as String?;
+            final author = tweet['author']?['name'] as String?;
+            final media = tweet['media'];
+            String? image;
+
+            // Get first image from media
+            if (media != null && media['photos'] != null && (media['photos'] as List).isNotEmpty) {
+              image = media['photos'][0]['url'];
+            }
+            // Or video thumbnail
+            if (image == null && media != null && media['videos'] != null && (media['videos'] as List).isNotEmpty) {
+              image = media['videos'][0]['thumbnail_url'];
+            }
+
+            String? title = text;
+            if (title != null && title.length > 100) {
+              title = '${title.substring(0, 100)}...';
+            }
+            title ??= author != null ? '@$author\'in gönderisi' : null;
+
+            if (title != null) {
+              debugPrint('🐦 [MetadataService] FxTwitter API Success: $title, image=$image');
+              return {'title': title, 'image': image};
+            }
+          }
+        }
+      }
+
+      // Fallback to official oEmbed (no images but gets title)
+      final encodedUrl = Uri.encodeComponent(url);
+      final response = await http
+          .get(Uri.parse('https://publish.twitter.com/oembed?url=$encodedUrl'))
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final authorName = json['author_name'] as String?;
+        final html = json['html'] as String?;
+
+        String? tweetText;
+        if (html != null) {
+          final match = RegExp(r'<p[^>]*>([^<]+)</p>').firstMatch(html);
+          if (match != null) {
+            tweetText = match.group(1);
+            tweetText = tweetText?.replaceAll('&amp;', '&')
+                .replaceAll('&lt;', '<')
+                .replaceAll('&gt;', '>')
+                .replaceAll('&quot;', '"');
+            if (tweetText != null && tweetText.length > 100) {
+              tweetText = '${tweetText.substring(0, 100)}...';
+            }
+          }
+        }
+
+        final title = tweetText ?? (authorName != null ? '@$authorName\'in gönderisi' : null);
+        return {'title': title, 'image': null};
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Twitter Oembed Error: $e');
+    }
+    return {'title': null, 'image': null};
+  }
+
+  /// Fallback for Spotify using oEmbed API
+  static Future<Map<String, String?>> _fetchSpotifyOembed(String url) async {
+    try {
+      // Clean URL - remove query params for oEmbed
+      final cleanUrl = url.split('?').first;
+      final response = await http
+          .get(Uri.parse('https://open.spotify.com/oembed?url=$cleanUrl'))
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        // Extract type from URL (track, album, playlist, artist)
+        String? description;
+        if (cleanUrl.contains('/track/')) {
+          description = json['provider_name'];
+        } else if (cleanUrl.contains('/album/')) {
+          description = 'Albüm';
+        } else if (cleanUrl.contains('/playlist/')) {
+          description = 'Çalma Listesi';
+        } else if (cleanUrl.contains('/artist/')) {
+          description = 'Sanatçı';
+        }
+        return {
+          'title': json['title'],
+          'description': description,
+          'image': json['thumbnail_url'],
+        };
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Spotify Oembed Error: $e');
+    }
+    return {'title': null, 'description': null, 'image': null};
+  }
+
+  /// Check if URL is a Facebook redirect link
+  static bool _isFacebookRedirect(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('fb.watch') ||
+        lower.contains('l.facebook.com') ||
+        lower.contains('m.facebook.com') ||
+        lower.contains('lm.facebook.com');
+  }
+
+  /// Check if URL is any Facebook URL
+  static bool _isFacebookUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('facebook.com') || lower.contains('fb.watch');
   }
 
   /// Fallback for Reddit JSON API
@@ -434,7 +624,37 @@ class MetadataService {
   }
 
   static OGMetadata? _buildBlockedSiteFallback(String url) {
+    // Try Facebook fallback first
+    final facebookFallback = _buildFacebookFallback(url);
+    if (facebookFallback != null) return facebookFallback;
+
     return _buildAdidasFallback(url);
+  }
+
+  static OGMetadata? _buildFacebookFallback(String url) {
+    final lower = url.toLowerCase();
+    if (!lower.contains('facebook.com') && !lower.contains('fb.watch')) {
+      return null;
+    }
+
+    // Determine content type from URL
+    String title = 'Facebook Paylaşımı';
+    if (lower.contains('/reel') || lower.contains('fb.watch')) {
+      title = 'Facebook Reels';
+    } else if (lower.contains('/video')) {
+      title = 'Facebook Video';
+    } else if (lower.contains('/photo')) {
+      title = 'Facebook Fotoğraf';
+    } else if (lower.contains('/share/r/')) {
+      title = 'Facebook Reels';
+    }
+
+    return OGMetadata(
+      title: title,
+      description: null,
+      imageUrl: null, // UI will show Facebook icon placeholder
+      siteName: 'Facebook',
+    );
   }
 
   static OGMetadata? _buildAdidasFallback(String url) {

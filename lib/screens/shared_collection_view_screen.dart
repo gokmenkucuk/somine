@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -11,6 +10,7 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 
 class SharedCollectionViewScreen extends ConsumerStatefulWidget {
@@ -19,10 +19,12 @@ class SharedCollectionViewScreen extends ConsumerStatefulWidget {
   const SharedCollectionViewScreen({super.key, required this.share});
 
   @override
-  ConsumerState<SharedCollectionViewScreen> createState() => _SharedCollectionViewScreenState();
+  ConsumerState<SharedCollectionViewScreen> createState() =>
+      _SharedCollectionViewScreenState();
 }
 
-class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionViewScreen> {
+class _SharedCollectionViewScreenState
+    extends ConsumerState<SharedCollectionViewScreen> {
   List<ItemModel> _items = [];
   bool _isLoading = true;
   Set<String> _selectedItemIds = {};
@@ -118,9 +120,10 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
             ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _items.isEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _items.isEmpty
               ? _buildEmptyState()
               : _buildItemsGrid(),
       bottomNavigationBar: _isSelectionMode ? _buildCopyBar() : null,
@@ -172,16 +175,17 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
       itemBuilder: (context, index) {
         final item = _items[index];
         final isSelected = _selectedItemIds.contains(item.id);
-        
+
         return GestureDetector(
           onTap: () => _toggleSelection(item.id),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: isSelected
-                  ? Border.all(color: context.colors.primary, width: 3)
-                  : null,
+              border:
+                  isSelected
+                      ? Border.all(color: context.colors.primary, width: 3)
+                      : null,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -201,43 +205,46 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
-                          child: item.displayImage != null
-                              ? CachedNetworkImage(
-                                  imageUrl: item.displayImage!,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) => Container(
-                                    color: Colors.grey[100],
-                                    child: Center(
-                                      child: Icon(
-                                        PhosphorIconsLight.image,
-                                        size: 32,
-                                        color: Colors.grey[300],
-                                      ),
-                                    ),
-                                  ),
-                                  errorWidget: (_, __, ___) => Container(
+                          child:
+                              item.displayImage != null
+                                  ? buildAuthImage(
+                                    imageUrl: item.displayImage!,
+                                    fit: BoxFit.cover,
+                                    placeholder:
+                                        (_, __) => Container(
+                                          color: Colors.grey[100],
+                                          child: Center(
+                                            child: Icon(
+                                              PhosphorIconsLight.image,
+                                              size: 32,
+                                              color: Colors.grey[300],
+                                            ),
+                                          ),
+                                        ),
+                                    errorWidget:
+                                        (_, __, ___) => Container(
+                                          color: context.colors.backgroundTop,
+                                          child: Center(
+                                            child: Icon(
+                                              PhosphorIconsBold.link,
+                                              size: 32,
+                                              color: context.colors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                  )
+                                  : Container(
                                     color: context.colors.backgroundTop,
                                     child: Center(
                                       child: Icon(
-                                        PhosphorIconsBold.link,
+                                        item.type == ItemType.note
+                                            ? PhosphorIconsBold.note
+                                            : PhosphorIconsBold.link,
                                         size: 32,
                                         color: context.colors.primary,
                                       ),
                                     ),
                                   ),
-                                )
-                              : Container(
-                                  color: context.colors.backgroundTop,
-                                  child: Center(
-                                    child: Icon(
-                                      item.type == ItemType.note
-                                          ? PhosphorIconsBold.note
-                                          : PhosphorIconsBold.link,
-                                      size: 32,
-                                      color: context.colors.primary,
-                                    ),
-                                  ),
-                                ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(10),
@@ -255,7 +262,7 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
                       ],
                     ),
                   ),
-                  
+
                   // Selection Indicator
                   if (isSelected)
                     Positioned(
@@ -286,7 +293,12 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
 
   Widget _buildCopyBar() {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 16),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.of(context).padding.bottom + 16,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         boxShadow: [
@@ -333,119 +345,125 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
   void _showCopyDialog() {
     final categoriesAsync = ref.read(categoriesProvider);
     final categories = categoriesAsync.valueOrNull ?? [];
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      builder:
+          (ctx) => Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
             ),
-            
-            // Title
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                'Koleksiyon Seçin',
-                style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: context.colors.headline,
+            child: Column(
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-            ),
-            
-            // Category List
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: categories.length + 1, // +1 for "Create New"
-                itemBuilder: (context, index) {
-                  if (index == categories.length) {
-                    // Create new option
-                    return ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: context.colors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          PhosphorIconsRegular.plus,
-                          color: context.colors.primary,
-                        ),
-                      ),
-                      title: Text(
-                        'Aynı isimle yeni koleksiyon oluştur',
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w600,
-                          color: context.colors.headline,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '"${widget.share.categoryName}"',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: context.colors.hint,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _createNewCollectionAndCopy();
-                      },
-                    );
-                  }
-                  
-                  final category = categories[index];
-                  return ListTile(
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [context.colors.primary, context.colors.secondary],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        PhosphorIconsRegular.cards,
-                        color: Colors.white,
-                      ),
+
+                // Title
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Koleksiyon Seçin',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: context.colors.headline,
                     ),
-                    title: Text(
-                      category.name,
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.headline,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _copyToCollection(category.id);
+                  ),
+                ),
+
+                // Category List
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: categories.length + 1, // +1 for "Create New"
+                    itemBuilder: (context, index) {
+                      if (index == categories.length) {
+                        // Create new option
+                        return ListTile(
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: context.colors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              PhosphorIconsRegular.plus,
+                              color: context.colors.primary,
+                            ),
+                          ),
+                          title: Text(
+                            'Aynı isimle yeni koleksiyon oluştur',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w600,
+                              color: context.colors.headline,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '"${widget.share.categoryName}"',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: context.colors.hint,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _createNewCollectionAndCopy();
+                          },
+                        );
+                      }
+
+                      final category = categories[index];
+                      return ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                context.colors.primary,
+                                context.colors.secondary,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            PhosphorIconsRegular.cards,
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(
+                          category.name,
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w600,
+                            color: context.colors.headline,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _copyToCollection(category.id);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -453,21 +471,21 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
     try {
       final user = ref.read(authStateProvider).valueOrNull;
       if (user == null) return;
-      
+
       final copiedCount = await ItemRepository().copyItemsToCollection(
         itemIds: _selectedItemIds.toList(),
         targetUserId: user.uid,
         targetCategoryId: categoryId,
       );
-      
+
       ref.invalidate(itemsProvider);
       ref.invalidate(catalogItemsProvider);
-      
+
       setState(() {
         _selectedItemIds.clear();
         _isSelectionMode = false;
       });
-      
+
       if (mounted) {
         SuccessNotificationSheet.show(
           context,
@@ -477,9 +495,9 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
   }
@@ -488,7 +506,7 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
     try {
       final user = ref.read(authStateProvider).valueOrNull;
       if (user == null) return;
-      
+
       // Create new category with same name
       final newCategory = CategoryModel(
         id: '', // Will be generated by Firestore
@@ -497,38 +515,39 @@ class _SharedCollectionViewScreenState extends ConsumerState<SharedCollectionVie
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       final categoryRepo = ref.read(categoryRepositoryProvider);
       final createdCategory = await categoryRepo.createCategory(newCategory);
-      
+
       // Copy items to new category
       final copiedCount = await ItemRepository().copyItemsToCollection(
         itemIds: _selectedItemIds.toList(),
         targetUserId: user.uid,
         targetCategoryId: createdCategory.id,
       );
-      
+
       ref.invalidate(categoriesProvider);
       ref.invalidate(itemsProvider);
       ref.invalidate(catalogItemsProvider);
-      
+
       setState(() {
         _selectedItemIds.clear();
         _isSelectionMode = false;
       });
-      
+
       if (mounted) {
         SuccessNotificationSheet.show(
           context,
           title: 'Kopyalandı',
-          message: '"${widget.share.categoryName}" koleksiyonu oluşturuldu ve $copiedCount içerik eklendi.',
+          message:
+              '"${widget.share.categoryName}" koleksiyonu oluşturuldu ve $copiedCount içerik eklendi.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
   }

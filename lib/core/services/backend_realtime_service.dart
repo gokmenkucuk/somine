@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:signalr_netcore/http_connection_options.dart';
 import 'package:signalr_netcore/hub_connection.dart';
 import 'package:signalr_netcore/hub_connection_builder.dart';
+import 'package:signalr_netcore/ihub_protocol.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 
@@ -146,6 +147,7 @@ class BackendRealtimeService {
         .withUrl(
           _buildHubUrl(path),
           options: HttpConnectionOptions(
+            headers: _apiKeyHeaders(),
             accessTokenFactory: () async {
               final user = FirebaseAuth.instance.currentUser;
               final accessToken = await _backendAuthService.getValidAccessToken(
@@ -184,6 +186,15 @@ class BackendRealtimeService {
     });
 
     return connection;
+  }
+
+  MessageHeaders? _apiKeyHeaders() {
+    if (ApiConfig.apiKey.isEmpty) {
+      return null;
+    }
+
+    return MessageHeaders()
+      ..setHeaderValue('X-SoMine-Api-Key', ApiConfig.apiKey);
   }
 
   Future<void> _startConnection(

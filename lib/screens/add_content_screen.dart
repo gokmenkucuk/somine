@@ -118,7 +118,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (_isMapUrl(url)) return false;
 
     // Pinterest & TikTok return real content images (not logos), so exclude them
-    if (url.contains('pinterest') || url.contains('pin.it') || url.contains('tiktok')) return false;
+    if (url.contains('pinterest') ||
+        url.contains('pin.it') ||
+        url.contains('tiktok'))
+      return false;
 
     final knownBrands = [
       'google',
@@ -162,7 +165,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         url.contains('youtu.be') ||
         url.contains('tiktok.com') ||
         url.contains('pinterest.com') ||
-        url.contains('pin.it');
+        url.contains('pin.it') ||
+        url.contains('open.spotify.com') ||
+        url.contains('x.com') ||
+        url.contains('twitter.com');
   }
 
   /// Checks if the image URL appears to be a favicon (small logo image)
@@ -176,7 +182,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         lowerUrl.contains('googleusercontent.com/s2/favicons');
   }
 
-  void _resolveImageSize(String imageUrl) {
+  void _resolveImageSize(String imageUrl) async {
     if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
 
     // X ve Maps URL'leri için görsel çözümleme yapma (sadece ikon gösterilecek)
@@ -188,13 +194,23 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     // Fix stale IP address pointing to old server
     String correctedUrl = imageUrl;
     if (correctedUrl.contains('46.224.146.102')) {
-      correctedUrl = correctedUrl.replaceAll('http://46.224.146.102', ApiConfig.baseUrl);
+      correctedUrl = correctedUrl.replaceAll(
+        'http://46.224.146.102',
+        ApiConfig.baseUrl,
+      );
     }
 
     // Reset first
     setState(() => _imageAspectRatio = null);
 
-    final ImageProvider provider = CachedNetworkImageProvider(correctedUrl);
+    final headers = await resolveImageHeaders(correctedUrl);
+    if (!mounted) return;
+
+    final ImageProvider provider = CachedNetworkImageProvider(
+      correctedUrl,
+      cacheKey: isApiStorageUrl(correctedUrl) ? '${correctedUrl}_auth' : null,
+      headers: headers,
+    );
 
     provider
         .resolve(const ImageConfiguration())
@@ -299,8 +315,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     // Pre-fill metadata from item
     _ogMetadata = item.ogMetadata;
     // Also fallback to generic imageUrl if OGMetadata lacks one
-    if ((_ogMetadata == null || _ogMetadata!.imageUrl == null) && item.imageUrl != null) {
-      _ogMetadata = (_ogMetadata ?? const OGMetadata()).copyWith(imageUrl: item.imageUrl);
+    if ((_ogMetadata == null || _ogMetadata!.imageUrl == null) &&
+        item.imageUrl != null) {
+      _ogMetadata = (_ogMetadata ?? const OGMetadata()).copyWith(
+        imageUrl: item.imageUrl,
+      );
     }
     if (_ogMetadata?.imageUrl != null) {
       _resolveImageSize(_ogMetadata!.imageUrl!);
@@ -814,11 +833,18 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             !lower.contains('box.com'));
   }
 
+  /// Check if URL is Facebook link
+  bool _isFacebookUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('facebook.com') || lower.contains('fb.watch');
+  }
+
   bool _shouldPersistRemoteMetadataImage(String imageUrl) {
     final lower = imageUrl.toLowerCase();
-    if (_isXUrl(_detectedLink.toLowerCase())) return false;
     if (lower.endsWith('.svg')) return false;
     if (lower.contains('/emoji/') || lower.contains('twemoji')) return false;
+    // Don't persist favicon images - they're too small and will be blurry
+    if (_isFaviconUrl(imageUrl)) return false;
     return true;
   }
 
@@ -1689,8 +1715,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   // 5. Fallback - platform background
                   _isLoadingMetadata
                       ? _buildPlatformBackground(animate: true)
-                      : _isXUrl(_detectedLink.toLowerCase())
+                      : (_isXUrl(_detectedLink.toLowerCase()) && !hasImage)
                       ? _buildXPlaceholder()
+                      : (_isFacebookUrl(_detectedLink.toLowerCase()) && !hasImage)
+                      ? _buildFacebookPlaceholder()
                       : _isMapUrl(_detectedLink.toLowerCase())
                       ? _buildMapPlaceholder()
                       : (hasImage &&
@@ -1859,10 +1887,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                         ],
                       ),
                       padding: const EdgeInsets.all(12),
-                      child: Image.network(
-                        _ogMetadata!.imageUrl!,
+                      child: buildAuthImage(
+                        imageUrl: _ogMetadata!.imageUrl!,
                         fit: BoxFit.contain,
-                        errorBuilder:
+                        errorWidget:
                             (_, __, ___) => const Icon(
                               Icons.language,
                               color: Colors.grey,
@@ -1912,9 +1940,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Widget _buildImageBackground() {
     // Fix stale IP address pointing to old server
     final rawUrl = _ogMetadata!.imageUrl!;
-    String imageUrl = rawUrl.contains('46.224.146.102')
-        ? rawUrl.replaceAll('http://46.224.146.102', ApiConfig.baseUrl)
-        : rawUrl;
+    String imageUrl =
+        rawUrl.contains('46.224.146.102')
+            ? rawUrl.replaceAll('http://46.224.146.102', ApiConfig.baseUrl)
+            : rawUrl;
     // Migrate old public /storage/ to authenticated /api/storage/
     if (imageUrl.contains(ApiConfig.baseUrl) &&
         imageUrl.contains('/storage/') &&
@@ -1995,6 +2024,27 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       child: Center(
         child: Icon(
           PhosphorIconsThin.xLogo,
+          size: 64,
+          color: Colors.white.withOpacity(0.9),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFacebookPlaceholder() {
+    return Container(
+      key: const ValueKey('facebook_placeholder'),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1877F2), Color(0xFF0C5DC7)],
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Center(
+        child: Icon(
+          PhosphorIconsThin.facebookLogo,
           size: 64,
           color: Colors.white.withOpacity(0.9),
         ),
@@ -2358,7 +2408,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               child:
                   _selectedNoteImage != null
                       ? Image.file(_selectedNoteImage!, fit: BoxFit.cover)
-                      : CachedNetworkImage(
+                      : buildAuthImage(
                         imageUrl: _noteImageUrl!,
                         fit: BoxFit.cover,
                         placeholder:

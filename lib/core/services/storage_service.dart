@@ -7,6 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 
 class StorageService {
   // Use default instance - let auto-config handle the bucket
@@ -23,10 +24,19 @@ class StorageService {
       }
 
       // 1. Download image
-      final response = await http.get(Uri.parse(url));
+      final uri = Uri.parse(url);
+      final referer = resolveRefererForUrl(url);
+      final response = await http.get(
+        uri,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          'Referer': referer,
+          'Accept': 'image/webp,image/avif,image/*,*/*;q=0.8',
+        },
+      );
       if (response.statusCode != 200) {
         debugPrint(
-          '❌ [StorageService] Failed to download image: ${response.statusCode}',
+          '❌ [StorageService] Failed to download image: ${response.statusCode} url=$url',
         );
         return null;
       }
@@ -282,6 +292,7 @@ class StorageService {
           headers: {
             'Accept': 'application/json',
             'Authorization': 'Bearer $accessToken',
+            if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
           },
         );
 
@@ -323,6 +334,9 @@ class StorageService {
     );
     request.headers['Authorization'] = 'Bearer $accessToken';
     request.headers['Accept'] = 'application/json';
+    if (ApiConfig.apiKey.isNotEmpty) {
+      request.headers['X-SoMine-Api-Key'] = ApiConfig.apiKey;
+    }
     request.files.add(
       http.MultipartFile.fromBytes(
         'file',

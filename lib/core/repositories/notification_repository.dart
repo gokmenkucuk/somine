@@ -298,6 +298,7 @@ class NotificationRepository {
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
       'Authorization': 'Bearer $accessToken',
     };
   }

@@ -8,6 +8,7 @@ import 'package:somine_app/core/models/link_preview_model.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/services/link_preview_service.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 
 import 'package:somine_app/core/providers/storage_providers.dart';
@@ -21,18 +22,19 @@ class CaptureScreen extends ConsumerStatefulWidget {
   ConsumerState<CaptureScreen> createState() => _CaptureScreenState();
 }
 
-class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTickerProviderStateMixin {
+class _CaptureScreenState extends ConsumerState<CaptureScreen>
+    with SingleTickerProviderStateMixin {
   late TextEditingController _urlController;
   final TextEditingController _noteController = TextEditingController();
-  
+
   String? _selectedCategoryId;
   bool _isSaving = false;
-  
+
   // Animation
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
-  
+
   // Link Preview State
   bool _isLoadingPreview = false;
   LinkPreviewModel? _previewData;
@@ -41,7 +43,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
   void initState() {
     super.initState();
     _urlController = TextEditingController(text: widget.url);
-    
+
     // Setup Animation
     _animController = AnimationController(
       vsync: this,
@@ -54,7 +56,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
         curve: Curves.elasticIn, // Wormhole effect
       ),
     );
-    
+
     _opacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _animController,
@@ -67,7 +69,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
 
   Future<void> _fetchPreview() async {
     setState(() => _isLoadingPreview = true);
-    
+
     try {
       final data = await LinkPreviewService().fetchPreview(widget.url);
       if (mounted) {
@@ -97,18 +99,30 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
     if (_selectedCategoryId == null) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Koleksiyon Seçilmedi', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-          content: Text('Lütfen kaydetmeden önce bir koleksiyon seçiniz.', style: GoogleFonts.poppins()),
-          backgroundColor: DesignTokens.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLG)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Tamam', style: GoogleFonts.poppins(color: DesignTokens.primary)),
+        builder:
+            (context) => AlertDialog(
+              title: Text(
+                'Koleksiyon Seçilmedi',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
+              content: Text(
+                'Lütfen kaydetmeden önce bir koleksiyon seçiniz.',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: DesignTokens.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Tamam',
+                    style: GoogleFonts.poppins(color: DesignTokens.primary),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       return;
     }
@@ -127,17 +141,22 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
 
       // 2. Persist Image (Only for Instagram to prevent link expiry)
       String? finalImageUrl = _previewData?.imageUrl;
-      if (finalImageUrl != null && finalImageUrl.isNotEmpty && widget.url.contains('instagram.com')) {
-         try {
-           final storageRepo = ref.read(storageRepositoryProvider);
-           final persistentUrl = await storageRepo.persistenceImageFromUrl(user.uid, finalImageUrl);
-           if (persistentUrl != null) {
-             finalImageUrl = persistentUrl;
-           }
-         } catch (e) {
-           debugPrint('Cover image persistence failed: $e');
-           // Continue with original URL if persistence fails
-         }
+      if (finalImageUrl != null &&
+          finalImageUrl.isNotEmpty &&
+          widget.url.contains('instagram.com')) {
+        try {
+          final storageRepo = ref.read(storageRepositoryProvider);
+          final persistentUrl = await storageRepo.persistenceImageFromUrl(
+            user.uid,
+            finalImageUrl,
+          );
+          if (persistentUrl != null) {
+            finalImageUrl = persistentUrl;
+          }
+        } catch (e) {
+          debugPrint('Cover image persistence failed: $e');
+          // Continue with original URL if persistence fails
+        }
       }
 
       final item = ItemModel(
@@ -146,13 +165,19 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
         categoryId: _selectedCategoryId,
         type: ItemType.link,
         url: widget.url,
-        ogMetadata: _previewData != null ? OGMetadata(
-          title: _previewData!.title,
-          description: _previewData!.description,
-          imageUrl: finalImageUrl, // Use the persistent URL
-          siteName: _previewData!.siteName,
-        ) : null,
-        note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
+        ogMetadata:
+            _previewData != null
+                ? OGMetadata(
+                  title: _previewData!.title,
+                  description: _previewData!.description,
+                  imageUrl: finalImageUrl, // Use the persistent URL
+                  siteName: _previewData!.siteName,
+                )
+                : null,
+        note:
+            _noteController.text.trim().isNotEmpty
+                ? _noteController.text.trim()
+                : null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -171,22 +196,22 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
       if (mounted) {
         setState(() => _isSaving = false);
         Navigator.of(context).pop(); // Close modal
-        
+
         // Success Feedback
         ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Koleksiyonuna eklendi! ✓')),
+          const SnackBar(content: Text('Koleksiyonuna eklendi! ✓')),
         );
       }
     } catch (e) {
       debugPrint('Error saving item: $e');
       // If error, reverse animation to show screen again
       _animController.reverse();
-      
+
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
   }
@@ -200,10 +225,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
-            child: Opacity(
-              opacity: _opacityAnimation.value,
-              child: child,
-            ),
+            child: Opacity(opacity: _opacityAnimation.value, child: child),
           );
         },
         child: Center(
@@ -212,142 +234,179 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
               padding: const EdgeInsets.all(DesignTokens.spacingLG),
               child: Stack(
                 children: [
-                   // The Modal Card
-                   Container(
-                     width: double.infinity,
-                     constraints: const BoxConstraints(maxWidth: 400),
-                     decoration: BoxDecoration(
-                       color: DesignTokens.surface,
-                       borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
-                       boxShadow: DesignTokens.shadowLG,
-                     ),
-                     clipBehavior: Clip.antiAlias,
-                     child: Column(
-                       mainAxisSize: MainAxisSize.min,
-                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                       children: [
-                         // Preview Image Header
-                         SizedBox(
-                           height: 180,
-                           child: _isLoadingPreview 
-                               ? const Center(child: LoadingIndicator())
-                               : _previewData?.imageUrl != null
-                                   ? Image.network(
-                                       _previewData!.imageUrl!,
-                                       fit: BoxFit.cover,
-                                       errorBuilder: (_,__,___) => Container(color: DesignTokens.background),
-                                     )
-                                   : Container(
-                                       color: DesignTokens.background,
-                                       child: const Icon(Icons.link, size: 48, color: DesignTokens.textTertiary),
-                                     ),
-                         ),
-                         
-                         // Content
-                         Padding(
-                           padding: const EdgeInsets.all(DesignTokens.spacingMD),
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               if (_previewData?.title != null)
-                                 Text(
-                                   _previewData!.title!,
-                                   style: GoogleFonts.poppins(
-                                     fontSize: 16,
-                                     fontWeight: FontWeight.bold,
-                                     color: DesignTokens.textPrimary,
-                                   ),
-                                   maxLines: 2,
-                                   overflow: TextOverflow.ellipsis,
-                                 ),
-                                 
-                               const SizedBox(height: DesignTokens.spacingMD),
-                               
-                               // Category Picker (Simple dropdown style or chips)
-                               _buildCategorySelector(),
-                               
-                               const SizedBox(height: DesignTokens.spacingMD),
-                               
-                               // Note Input
-                               TextField(
-                                 controller: _noteController,
-                                 decoration: InputDecoration(
-                                   hintText: 'Bir not ekle...',
-                                   hintStyle: GoogleFonts.poppins(color: DesignTokens.textTertiary),
-                                   border: OutlineInputBorder(
-                                     borderRadius: BorderRadius.circular(DesignTokens.radiusMD),
-                                     borderSide: const BorderSide(color: DesignTokens.border),
-                                   ),
-                                   filled: true,
-                                   fillColor: DesignTokens.background,
-                                   contentPadding: const EdgeInsets.all(12),
-                                 ),
-                                 maxLines: 2,
-                                 minLines: 1,
-                                 style: GoogleFonts.poppins(fontSize: 14),
-                               ),
-                               
-                               const SizedBox(height: DesignTokens.spacingLG),
-                               
-                               // Actions
-                               Row(
-                                 children: [
-                                   Expanded(
-                                     child: TextButton(
-                                       onPressed: () => Navigator.pop(context),
-                                       child: Text(
-                                         'İptal',
-                                         style: GoogleFonts.poppins(color: DesignTokens.textSecondary),
-                                       ),
-                                     ),
-                                   ),
-                                   const SizedBox(width: 16),
-                                   Expanded(
-                                     flex: 2,
-                                     child: ElevatedButton(
-                                       onPressed: _isSaving ? null : _handleSave,
-                                       style: ElevatedButton.styleFrom(
-                                         backgroundColor: DesignTokens.primary,
-                                         foregroundColor: Colors.white,
-                                         padding: const EdgeInsets.symmetric(vertical: 16),
-                                         shape: RoundedRectangleBorder(
-                                           borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
-                                         ),
-                                         elevation: 0,
-                                       ),
-                                       child: _isSaving 
-                                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                         : Text(
-                                             'Kaydet',
-                                             style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                                           ),
-                                     ),
-                                   ),
-                                 ],
-                               )
-                             ],
-                           ),
-                         ),
-                       ],
-                     ),
-                   ),
-                   
-                   // Close Button (Top Right absolute)
-                   Positioned(
-                     top: 8,
-                     right: 8,
-                     child: GestureDetector(
-                       onTap: () => Navigator.pop(context),
-                       child: Container(
-                         padding: const EdgeInsets.all(8),
-                         decoration: const BoxDecoration(
-                           color: Colors.black26,
-                           shape: BoxShape.circle,
-                         ),
-                         child: const Icon(Icons.close, color: Colors.white, size: 20),
-                       ),
-                     ),
-                   ),
+                  // The Modal Card
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    decoration: BoxDecoration(
+                      color: DesignTokens.surface,
+                      borderRadius: BorderRadius.circular(
+                        DesignTokens.radiusXL,
+                      ),
+                      boxShadow: DesignTokens.shadowLG,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Preview Image Header
+                        SizedBox(
+                          height: 180,
+                          child:
+                              _isLoadingPreview
+                                  ? const Center(child: LoadingIndicator())
+                                  : _previewData?.imageUrl != null
+                                  ? buildAuthImage(
+                                    imageUrl: _previewData!.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorWidget:
+                                        (_, __, ___) => Container(
+                                          color: DesignTokens.background,
+                                        ),
+                                  )
+                                  : Container(
+                                    color: DesignTokens.background,
+                                    child: const Icon(
+                                      Icons.link,
+                                      size: 48,
+                                      color: DesignTokens.textTertiary,
+                                    ),
+                                  ),
+                        ),
+
+                        // Content
+                        Padding(
+                          padding: const EdgeInsets.all(DesignTokens.spacingMD),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_previewData?.title != null)
+                                Text(
+                                  _previewData!.title!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: DesignTokens.textPrimary,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+
+                              const SizedBox(height: DesignTokens.spacingMD),
+
+                              // Category Picker (Simple dropdown style or chips)
+                              _buildCategorySelector(),
+
+                              const SizedBox(height: DesignTokens.spacingMD),
+
+                              // Note Input
+                              TextField(
+                                controller: _noteController,
+                                decoration: InputDecoration(
+                                  hintText: 'Bir not ekle...',
+                                  hintStyle: GoogleFonts.poppins(
+                                    color: DesignTokens.textTertiary,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      DesignTokens.radiusMD,
+                                    ),
+                                    borderSide: const BorderSide(
+                                      color: DesignTokens.border,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: DesignTokens.background,
+                                  contentPadding: const EdgeInsets.all(12),
+                                ),
+                                maxLines: 2,
+                                minLines: 1,
+                                style: GoogleFonts.poppins(fontSize: 14),
+                              ),
+
+                              const SizedBox(height: DesignTokens.spacingLG),
+
+                              // Actions
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                        'İptal',
+                                        style: GoogleFonts.poppins(
+                                          color: DesignTokens.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    flex: 2,
+                                    child: ElevatedButton(
+                                      onPressed: _isSaving ? null : _handleSave,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: DesignTokens.primary,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            DesignTokens.radiusLG,
+                                          ),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child:
+                                          _isSaving
+                                              ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
+                                              )
+                                              : Text(
+                                                'Kaydet',
+                                                style: GoogleFonts.poppins(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Close Button (Top Right absolute)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Colors.black26,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -356,13 +415,13 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
       ),
     );
   }
-  
+
   Widget _buildCategorySelector() {
     final categoriesAsync = ref.watch(categoriesProvider);
     return categoriesAsync.when(
       data: (categories) {
         if (categories.isEmpty) return const SizedBox.shrink();
-        
+
         return SizedBox(
           height: 36,
           child: ListView.separated(
@@ -373,22 +432,41 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
               final category = categories[index];
               final isSelected = category.id == _selectedCategoryId;
               return GestureDetector(
-                onTap: () => setState(() => _selectedCategoryId = isSelected ? null : category.id),
+                onTap:
+                    () => setState(
+                      () =>
+                          _selectedCategoryId = isSelected ? null : category.id,
+                    ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? DesignTokens.primary : DesignTokens.background,
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+                    color:
+                        isSelected
+                            ? DesignTokens.primary
+                            : DesignTokens.background,
+                    borderRadius: BorderRadius.circular(
+                      DesignTokens.radiusFull,
+                    ),
                     border: Border.all(
-                      color: isSelected ? DesignTokens.primary : DesignTokens.border,
+                      color:
+                          isSelected
+                              ? DesignTokens.primary
+                              : DesignTokens.border,
                     ),
                   ),
                   child: Text(
                     category.name,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: isSelected ? Colors.white : DesignTokens.textSecondary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color:
+                          isSelected
+                              ? Colors.white
+                              : DesignTokens.textSecondary,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -398,7 +476,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with SingleTicker
         );
       },
       loading: () => const SizedBox(height: 36),
-      error: (_,__) => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

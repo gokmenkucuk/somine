@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:uuid/uuid.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 
 class StorageRepository {
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -66,7 +67,15 @@ class StorageRepository {
 
     try {
       // 1. Download the image
-      final response = await http.get(Uri.parse(sourceUrl));
+      final response = await http.get(
+        Uri.parse(sourceUrl),
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          'Referer': resolveRefererForUrl(sourceUrl),
+          'Accept': 'image/webp,image/avif,image/*,*/*;q=0.8',
+        },
+      );
       if (response.statusCode != 200) {
         throw Exception(
           'Failed to download image source. Status: ${response.statusCode}',
@@ -131,6 +140,9 @@ class StorageRepository {
     );
     request.headers['Authorization'] = 'Bearer $accessToken';
     request.headers['Accept'] = 'application/json';
+    if (ApiConfig.apiKey.isNotEmpty) {
+      request.headers['X-SoMine-Api-Key'] = ApiConfig.apiKey;
+    }
     request.files.add(
       http.MultipartFile.fromBytes(
         'file',

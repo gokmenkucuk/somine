@@ -173,9 +173,10 @@ class PreferencesService {
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final terms = (json['terms'] as List<dynamic>? ?? const [])
-        .whereType<String>()
-        .toList();
+    final terms =
+        (json['terms'] as List<dynamic>? ?? const [])
+            .whereType<String>()
+            .toList();
 
     return _normalizeHistory(terms);
   }
@@ -242,6 +243,7 @@ class PreferencesService {
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
       'Authorization': 'Bearer $accessToken',
     };
   }

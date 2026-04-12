@@ -12,11 +12,11 @@ import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 
-
 import 'dart:ui' as import_dart_ui;
 import 'dart:math' as math;
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 
 class EditContentScreen extends StatefulWidget {
   final ItemModel item;
@@ -27,10 +27,11 @@ class EditContentScreen extends StatefulWidget {
   State<EditContentScreen> createState() => _EditContentScreenState();
 }
 
-class _EditContentScreenState extends State<EditContentScreen> with TickerProviderStateMixin {
+class _EditContentScreenState extends State<EditContentScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _linkController = TextEditingController(); 
+  final TextEditingController _linkController = TextEditingController();
   final CategoryRepository _categoryRepository = CategoryRepository();
   final ItemRepository _itemRepository = ItemRepository();
 
@@ -40,7 +41,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
   // State
   bool _isSaving = false;
   bool _isLoadingMetadata = false;
-  bool _isManualEntry = true; 
+  bool _isManualEntry = true;
 
   // Link Preview State
   bool _hasLink = false;
@@ -52,29 +53,41 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
   final Set<String> _selectedCategoryIds = {};
   List<CategoryModel> _categories = [];
   bool _isLoadingCategories = true;
-  
+
   // Dynamic Header
   double? _imageAspectRatio;
 
-  void _resolveImageSize(String imageUrl) {
+  void _resolveImageSize(String imageUrl) async {
     if (imageUrl.isEmpty || imageUrl.toLowerCase().contains('.svg')) return;
-    
+
     // Reset first
     setState(() => _imageAspectRatio = null);
 
-    final ImageProvider provider = CachedNetworkImageProvider(imageUrl);
-    
-    provider.resolve(const ImageConfiguration()).addListener(
-      ImageStreamListener((ImageInfo info, bool synchronousCall) {
-        if (!mounted) return;
-        final myImage = info.image;
-        setState(() {
-          _imageAspectRatio = myImage.width / myImage.height;
-        });
-      }, onError: (exception, stackTrace) {
-        debugPrint("Image resolution error: $exception");
-      }),
+    final headers = await resolveImageHeaders(imageUrl);
+    if (!mounted) return;
+
+    final ImageProvider provider = CachedNetworkImageProvider(
+      imageUrl,
+      cacheKey: isApiStorageUrl(imageUrl) ? '${imageUrl}_auth' : null,
+      headers: headers,
     );
+
+    provider
+        .resolve(const ImageConfiguration())
+        .addListener(
+          ImageStreamListener(
+            (ImageInfo info, bool synchronousCall) {
+              if (!mounted) return;
+              final myImage = info.image;
+              setState(() {
+                _imageAspectRatio = myImage.width / myImage.height;
+              });
+            },
+            onError: (exception, stackTrace) {
+              debugPrint("Image resolution error: $exception");
+            },
+          ),
+        );
   }
 
   @override
@@ -85,8 +98,8 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
     // Loading Animation
     _loadingController = AnimationController(
-       vsync: this,
-       duration: const Duration(milliseconds: 1500),
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
   }
 
@@ -94,7 +107,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     // Pre-fill data from ItemModel
     _titleController.text = widget.item.displayTitle;
     _noteController.text = widget.item.note ?? "";
-    _ogMetadata = widget.item.ogMetadata; // Initialize metadata FIRST to avoid unnecessary fetch
+    _ogMetadata =
+        widget
+            .item
+            .ogMetadata; // Initialize metadata FIRST to avoid unnecessary fetch
 
     if (widget.item.categoryId != null) {
       _selectedCategoryIds.add(widget.item.categoryId!);
@@ -152,12 +168,54 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     final now = DateTime.now();
     setState(() {
       _categories = [
-        CategoryModel(id: 'seyahat', userId: 'user_1', name: 'Seyahat', icon: '✈️', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'spor', userId: 'user_1', name: 'Spor', icon: '🏀', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'muzik', userId: 'user_1', name: 'Müzik', icon: '🎵', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'komik', userId: 'user_1', name: 'Komik', icon: '😂', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'tasarim', userId: 'user_1', name: 'Tasarım', icon: '🎨', createdAt: now, updatedAt: now),
-        CategoryModel(id: 'fikir', userId: 'user_1', name: 'Fikir', icon: '💡', createdAt: now, updatedAt: now),
+        CategoryModel(
+          id: 'seyahat',
+          userId: 'user_1',
+          name: 'Seyahat',
+          icon: '✈️',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'spor',
+          userId: 'user_1',
+          name: 'Spor',
+          icon: '🏀',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'muzik',
+          userId: 'user_1',
+          name: 'Müzik',
+          icon: '🎵',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'komik',
+          userId: 'user_1',
+          name: 'Komik',
+          icon: '😂',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'tasarim',
+          userId: 'user_1',
+          name: 'Tasarım',
+          icon: '🎨',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        CategoryModel(
+          id: 'fikir',
+          userId: 'user_1',
+          name: 'Fikir',
+          icon: '💡',
+          createdAt: now,
+          updatedAt: now,
+        ),
       ];
       _isLoadingCategories = false;
     });
@@ -170,8 +228,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
   String _detectPlatform(String url) {
     final lowerUrl = url.toLowerCase();
     if (lowerUrl.contains('instagram.com')) return 'Instagram';
-    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) return 'YouTube';
-    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) return 'X';
+    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be'))
+      return 'YouTube';
+    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com'))
+      return 'X';
     if (lowerUrl.contains('tiktok.com')) return 'TikTok';
     if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
     if (lowerUrl.contains('spotify.com')) return 'Spotify';
@@ -196,15 +256,15 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         _hasLink = true;
         _isManualEntry = false;
       });
-      
+
       // Only fetch metadata if it wasn't pre-filled or if link changed
       if (_ogMetadata == null || widget.item.url != url) {
         _fetchMetadata(url);
       }
     } else {
       setState(() {
-         _isManualEntry = true;
-         _hasLink = false;
+        _isManualEntry = true;
+        _hasLink = false;
       });
     }
   }
@@ -212,8 +272,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
   Future<void> _fetchMetadata(String url) async {
     setState(() => _isLoadingMetadata = true);
     try {
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final document = parser.parse(response.body);
         final metaTags = document.getElementsByTagName('meta');
@@ -271,33 +332,33 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       if (match != null) {
         String url = match.group(0)!;
         if (url != _detectedLink) {
-           setState(() {
-              _detectedLink = url;
-              _detectedPlatform = _detectPlatform(url);
-              _hasLink = true;
-              _isManualEntry = false;
-           });
-           _fetchMetadata(url);
+          setState(() {
+            _detectedLink = url;
+            _detectedPlatform = _detectPlatform(url);
+            _hasLink = true;
+            _isManualEntry = false;
+          });
+          _fetchMetadata(url);
         }
       }
     } else {
-       setState(() {
-         _detectedPlatform = "Web"; 
-       });
+      setState(() {
+        _detectedPlatform = "Web";
+      });
     }
   }
 
   void _clearLinkField() {
     setState(() {
-       _detectedLink = "";
-       _detectedPlatform = "";
-       _ogMetadata = null;
-       _hasLink = false;
-       _isManualEntry = true;
-       // We don't clear title/note in edit mode as user might want to keep them
+      _detectedLink = "";
+      _detectedPlatform = "";
+      _ogMetadata = null;
+      _hasLink = false;
+      _isManualEntry = true;
+      // We don't clear title/note in edit mode as user might want to keep them
     });
   }
-  
+
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
@@ -327,7 +388,9 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
               const SizedBox(height: 12),
             ],
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: context.colors.surfaceWhite,
           actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           actions: [
@@ -369,7 +432,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
+                          colors: [
+                            const Color(0xFFFF5252),
+                            const Color(0xFFD32F2F),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
@@ -409,7 +475,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         // 2. Return success signal
         // Pop Edit Screen -> Returns to Detail Sheet
         // We pass 'true' to indicate update/delete
-        Navigator.pop(context, true); 
+        Navigator.pop(context, true);
       }
     } catch (e) {
       debugPrint("Delete error: $e");
@@ -431,10 +497,11 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     setState(() => _isSaving = true);
 
     try {
-      final noteText = _noteController.text.isNotEmpty
-          ? _noteController.text
-          : _titleController.text;
-      
+      final noteText =
+          _noteController.text.isNotEmpty
+              ? _noteController.text
+              : _titleController.text;
+
       // Multi-category logic:
       // 1. Identify primary category (preserve original if selected, else pick first)
       // 2. Update existing item with primary category
@@ -454,12 +521,12 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       }
 
       final updatedItem = widget.item.copyWith(
-          categoryId: primaryTargetId,
-          type: _hasLink ? ItemType.link : ItemType.note,
-          url: _hasLink ? _detectedLink : null,
-          note: noteText,
-          ogMetadata: _ogMetadata,
-          updatedAt: DateTime.now(),
+        categoryId: primaryTargetId,
+        type: _hasLink ? ItemType.link : ItemType.note,
+        url: _hasLink ? _detectedLink : null,
+        note: noteText,
+        ogMetadata: _ogMetadata,
+        updatedAt: DateTime.now(),
       );
 
       await _itemRepository.updateItem(updatedItem);
@@ -511,55 +578,60 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            Theme.of(context).brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
+      ),
+    );
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Stack(
-        children: [
-          // Main Content
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeroStage(),
-                _buildControlCenter(),
-                const SizedBox(height: 140),
-              ],
-            ),
-          ),
-
-          // Back Button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8, // Fixed Alignment
-            left: 16,
-            child: _buildBackButton(),
-          ),
-
-          // Sticky Trash Button
-          if (_hasLink || _isManualEntry)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8, // Fixed Alignment
-              right: 16,
-              child: _buildCircleButton(
-                icon: PhosphorIconsLight.trash,
-                onTap: _showDeleteConfirmation,
+          children: [
+            // Main Content
+            SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeroStage(),
+                  _buildControlCenter(),
+                  const SizedBox(height: 140),
+                ],
               ),
             ),
 
-          // Floating CTA Dock
-          Positioned(
-            bottom: 40,
-            left: 24,
-            right: 24,
-            child: _buildFloatingDock(),
-          ),
-        ],
-      ),
+            // Back Button
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8, // Fixed Alignment
+              left: 16,
+              child: _buildBackButton(),
+            ),
+
+            // Sticky Trash Button
+            if (_hasLink || _isManualEntry)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8, // Fixed Alignment
+                right: 16,
+                child: _buildCircleButton(
+                  icon: PhosphorIconsLight.trash,
+                  onTap: _showDeleteConfirmation,
+                ),
+              ),
+
+            // Floating CTA Dock
+            Positioned(
+              bottom: 40,
+              left: 24,
+              right: 24,
+              child: _buildFloatingDock(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -571,12 +643,13 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     double stageHeight;
     if (_hasLink) {
       if (_imageAspectRatio != null) {
-        double calculatedRatio = (size.width / _imageAspectRatio!) / size.height;
+        double calculatedRatio =
+            (size.width / _imageAspectRatio!) / size.height;
         if (calculatedRatio > 0.65) calculatedRatio = 0.65;
         if (calculatedRatio < 0.20) calculatedRatio = 0.20;
         stageHeight = size.height * calculatedRatio;
       } else {
-         stageHeight = size.height * 0.45;
+        stageHeight = size.height * 0.45;
       }
     } else if (_isManualEntry) {
       stageHeight = size.height * 0.40;
@@ -586,7 +659,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
     // Use ogMetadata image first, fallback to original item image
     final imageUrl = _ogMetadata?.imageUrl ?? widget.item.displayImage;
-    final hasImage = imageUrl != null && imageUrl.isNotEmpty && !imageUrl.toLowerCase().contains('.svg');
+    final hasImage =
+        imageUrl != null &&
+        imageUrl.isNotEmpty &&
+        !imageUrl.toLowerCase().contains('.svg');
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
@@ -599,12 +675,11 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
-            child: hasImage
+            child:
+                hasImage
                     ? _buildImageBackground(imageUrl)
                     : _buildPlatformBackground(animate: _isLoadingMetadata),
           ),
-          
-
         ],
       ),
     );
@@ -615,22 +690,36 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
       animation: _loadingController,
       builder: (context, child) {
         final double shimmer = animate ? _loadingController.value : 0.0;
-        final startAlign = Alignment.lerp(Alignment.topLeft, Alignment.topCenter, shimmer)!;
-        final endAlign = Alignment.lerp(Alignment.bottomRight, Alignment.bottomCenter, shimmer)!;
-        
+        final startAlign =
+            Alignment.lerp(Alignment.topLeft, Alignment.topCenter, shimmer)!;
+        final endAlign =
+            Alignment.lerp(
+              Alignment.bottomRight,
+              Alignment.bottomCenter,
+              shimmer,
+            )!;
+
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
             color: context.colors.backgroundTop,
-            borderRadius: BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
             gradient: LinearGradient(
-              colors: animate 
-                  ? [
-                      context.colors.primary, 
-                      Color.lerp(context.colors.secondary, context.colors.surfaceWhite, shimmer * 0.3)!, 
-                      context.colors.secondary
-                    ]
-                  : [context.colors.primary, context.colors.secondary],
+              colors:
+                  animate
+                      ? [
+                        context.colors.primary,
+                        Color.lerp(
+                          context.colors.secondary,
+                          context.colors.surfaceWhite,
+                          shimmer * 0.3,
+                        )!,
+                        context.colors.secondary,
+                      ]
+                      : [context.colors.primary, context.colors.secondary],
               begin: startAlign,
               end: endAlign,
               stops: animate ? [0.0, 0.5 + (shimmer * 0.5), 1.0] : null,
@@ -640,26 +729,26 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                animate 
+                animate
                     ? SizedBox(
-                        height: 64,
-                        width: 64,
-                        child: Center(
-                          child: SizedBox(
-                            height: 48, 
-                            width: 48,
-                            child: CircularProgressIndicator(
-                              color: context.colors.surfaceWhite.withOpacity(0.9),
-                              strokeWidth: 4,
-                            ),
+                      height: 64,
+                      width: 64,
+                      child: Center(
+                        child: SizedBox(
+                          height: 48,
+                          width: 48,
+                          child: CircularProgressIndicator(
+                            color: context.colors.surfaceWhite.withOpacity(0.9),
+                            strokeWidth: 4,
                           ),
                         ),
-                      )
-                    : Icon(
-                        Icons.edit_note_rounded, // Changed icon for edit
-                        size: 64,
-                        color: context.colors.surfaceWhite.withOpacity(0.9),
                       ),
+                    )
+                    : Icon(
+                      Icons.edit_note_rounded, // Changed icon for edit
+                      size: 64,
+                      color: context.colors.surfaceWhite.withOpacity(0.9),
+                    ),
                 const SizedBox(height: 12),
                 Text(
                   animate ? "Bağlantı taranıyor..." : "İçeriği düzenle",
@@ -681,11 +770,12 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     return Stack(
       fit: StackFit.expand,
       children: [
-        CachedNetworkImage(
+        buildAuthImage(
           imageUrl: imageUrl,
           fit: BoxFit.cover,
           alignment: Alignment.center,
-          placeholder: (context, url) => _buildPlatformBackground(animate: true),
+          placeholder:
+              (context, url) => _buildPlatformBackground(animate: true),
           errorWidget: (context, url, error) => _buildPlatformBackground(),
         ),
       ],
@@ -704,10 +794,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
           // Link Preview
           if (_hasLink || _isManualEntry) ...[
-             _buildLinkPreview(),
-             const SizedBox(height: 16),
+            _buildLinkPreview(),
+            const SizedBox(height: 16),
           ],
-          
+
           // Title
           _buildInputField(
             controller: _titleController,
@@ -715,7 +805,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             hint: "Başlık",
             isTitle: true,
           ),
-          
+
           const SizedBox(height: 12),
 
           // Note
@@ -743,18 +833,19 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
           // Category Chips
           SizedBox(
             height: 44,
-            child: _isLoadingCategories
-                ? const Center(child: CupertinoActivityIndicator())
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    clipBehavior: Clip.none,
-                    itemCount: _categories.length,
-                    itemBuilder: (context, index) {
-                      final cat = _categories[index];
-                      return _buildCategoryChip(cat);
-                    },
-                  ),
+            child:
+                _isLoadingCategories
+                    ? const Center(child: CupertinoActivityIndicator())
+                    : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      clipBehavior: Clip.none,
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final cat = _categories[index];
+                        return _buildCategoryChip(cat);
+                      },
+                    ),
           ),
         ],
       ),
@@ -771,11 +862,17 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     return Container(
       height: maxLines == 1 ? 52 : null,
       alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 14 : 0),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: maxLines > 1 ? 14 : 0,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1),
+        border: Border.all(
+          color: context.colors.hint.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Row(
         crossAxisAlignment:
@@ -783,11 +880,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         children: [
           Padding(
             padding: EdgeInsets.only(top: maxLines > 1 ? 2 : 0),
-            child: Icon(
-              icon,
-              size: 18,
-              color: context.colors.body,
-            ),
+            child: Icon(icon, size: 18, color: context.colors.body),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -811,7 +904,7 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                 focusedBorder: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.zero, 
+                contentPadding: EdgeInsets.zero,
               ),
               maxLines: maxLines,
               minLines: maxLines > 1 ? 2 : 1,
@@ -824,28 +917,24 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
 
   Widget _buildLinkPreview() {
     final hasPlatform = _detectedPlatform.isNotEmpty;
-    final themeColor = context.colors.primary; 
-    final platformIcon = hasPlatform ? _getPlatformIcon(_detectedPlatform) : PhosphorIconsThin.link;
+    final themeColor = context.colors.primary;
+    final platformIcon =
+        hasPlatform
+            ? _getPlatformIcon(_detectedPlatform)
+            : PhosphorIconsThin.link;
 
     return Container(
       height: 52,
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 16), 
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: themeColor.withOpacity(0.5), 
-          width: 1.0
-        ),
+        border: Border.all(color: themeColor.withOpacity(0.5), width: 1.0),
       ),
       child: Row(
         children: [
-          Icon(
-            platformIcon,
-            size: 18, 
-            color: themeColor,
-          ),
+          Icon(platformIcon, size: 18, color: themeColor),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -895,40 +984,46 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: GestureDetector(
-        onTap: () => setState(() {
-          if (isSelected) {
-            _selectedCategoryIds.remove(cat.id);
-          } else {
-            _selectedCategoryIds.add(cat.id);
-          }
-        }),
+        onTap:
+            () => setState(() {
+              if (isSelected) {
+                _selectedCategoryIds.remove(cat.id);
+              } else {
+                _selectedCategoryIds.add(cat.id);
+              }
+            }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
+            gradient:
+                isSelected
+                    ? LinearGradient(
+                      colors: [
+                        context.colors.secondary.withOpacity(0.5),
+                        context.colors.surfaceWhite,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                    : null,
             color: isSelected ? null : context.colors.surfaceWhite,
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
               color: isSelected ? Colors.transparent : context.colors.secondary,
               width: 1.5,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: context.colors.secondary.withOpacity(0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: context.colors.secondary.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -938,7 +1033,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? context.colors.headline : context.colors.body,
+                  color:
+                      isSelected
+                          ? context.colors.headline
+                          : context.colors.body,
                 ),
               ),
               if (isSelected) ...[
@@ -977,34 +1075,37 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
           ],
         ),
         child: Center(
-          child: _isSaving
-              ? SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(context.colors.surfaceWhite),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      PhosphorIconsBold.check, // Changed to Check
-                      size: 20,
-                      color: context.colors.surfaceWhite, 
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Değişiklikleri Kaydet", // Updated Text
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.surfaceWhite, 
+          child:
+              _isSaving
+                  ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        context.colors.surfaceWhite,
                       ),
                     ),
-                  ],
-                ),
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        PhosphorIconsBold.check, // Changed to Check
+                        size: 20,
+                        color: context.colors.surfaceWhite,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Değişiklikleri Kaydet", // Updated Text
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.surfaceWhite,
+                        ),
+                      ),
+                    ],
+                  ),
         ),
       ),
     );
@@ -1019,7 +1120,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
-          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1),
+          border: Border.all(
+            color: context.colors.hint.withOpacity(0.3),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -1049,7 +1153,10 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
-          border: Border.all(color: context.colors.hint.withOpacity(0.3), width: 1),
+          border: Border.all(
+            color: context.colors.hint.withOpacity(0.3),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -1058,29 +1165,38 @@ class _EditContentScreenState extends State<EditContentScreen> with TickerProvid
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: context.colors.headline,
-        ),
+        child: Icon(icon, size: 18, color: context.colors.headline),
       ),
     );
   }
 
   IconData _getPlatformIcon(String platform) {
     switch (platform.toLowerCase()) {
-      case 'instagram': return PhosphorIconsThin.instagramLogo;
-      case 'youtube': return PhosphorIconsThin.youtubeLogo;
-      case 'x': case 'twitter': return PhosphorIconsThin.xLogo;
-      case 'tiktok': return PhosphorIconsThin.tiktokLogo;
-      case 'linkedin': return PhosphorIconsThin.linkedinLogo;
-      case 'spotify': return PhosphorIconsThin.spotifyLogo;
-      case 'pinterest': return PhosphorIconsThin.pinterestLogo;
-      case 'reddit': return PhosphorIconsThin.redditLogo;
-      case 'medium': return PhosphorIconsThin.mediumLogo;
-      case 'behance': return PhosphorIconsThin.behanceLogo;
-      case 'dribbble': return PhosphorIconsThin.dribbbleLogo;
-      default: return PhosphorIconsThin.globe;
+      case 'instagram':
+        return PhosphorIconsThin.instagramLogo;
+      case 'youtube':
+        return PhosphorIconsThin.youtubeLogo;
+      case 'x':
+      case 'twitter':
+        return PhosphorIconsThin.xLogo;
+      case 'tiktok':
+        return PhosphorIconsThin.tiktokLogo;
+      case 'linkedin':
+        return PhosphorIconsThin.linkedinLogo;
+      case 'spotify':
+        return PhosphorIconsThin.spotifyLogo;
+      case 'pinterest':
+        return PhosphorIconsThin.pinterestLogo;
+      case 'reddit':
+        return PhosphorIconsThin.redditLogo;
+      case 'medium':
+        return PhosphorIconsThin.mediumLogo;
+      case 'behance':
+        return PhosphorIconsThin.behanceLogo;
+      case 'dribbble':
+        return PhosphorIconsThin.dribbbleLogo;
+      default:
+        return PhosphorIconsThin.globe;
     }
   }
 }

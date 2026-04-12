@@ -9,6 +9,7 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/widgets/reminder_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -63,7 +64,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               enableCaption: false,
               forceHD: false,
               hideControls: false, // FIX: Kontrolleri göster
-              controlsVisibleAtStart: true, // FIX: Başlangıçta kontrolleri göster
+              controlsVisibleAtStart:
+                  true, // FIX: Başlangıçta kontrolleri göster
             ),
           )..addListener(_listener);
         });
@@ -106,97 +108,106 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   Future<void> _deleteItem(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Center(
-          child: Text(
-            'Silme Onayı',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: context.colors.headline,
-            ),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Bu içeriği silmek istediğinize emin misiniz?',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: context.colors.body,
-                fontSize: 14,
+      builder:
+          (context) => AlertDialog(
+            title: Center(
+              child: Text(
+                'Silme Onayı',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: context.colors.headline,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-          ],
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: context.colors.surfaceWhite,
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, false),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.grey.shade300, Colors.grey.shade400],
-                      ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Bu içeriği silmek istediğinize emin misiniz?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: context.colors.body,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            backgroundColor: context.colors.surfaceWhite,
+            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, false),
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "İptal",
-                        style: GoogleFonts.poppins(
-                          color: Colors.grey.shade800,
-                          fontWeight: FontWeight.w600,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.grey.shade300,
+                              Colors.grey.shade400,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "İptal",
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey.shade800,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, true),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, true),
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFFF5252),
+                              const Color(0xFFD32F2F),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Sil",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                        child: Center(
+                          child: Text(
+                            "Sil",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
     );
 
     if (confirmed == true && context.mounted) {
@@ -224,220 +235,256 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             expandedHeight: 300,
             pinned: true,
             backgroundColor: context.colors.surfaceWhite,
-            foregroundColor: context.colors.headline, // For back button on image
+            foregroundColor:
+                context.colors.headline, // For back button on image
             flexibleSpace: FlexibleSpaceBar(
-              background: _isYoutube && _youtubeController != null
-                  ? YoutubePlayerBuilder(
-                      player: YoutubePlayer(
-                        controller: _youtubeController!,
-                        showVideoProgressIndicator: false,
-                        onReady: () {
-                           // Player Ready
-                        },
-                      ),
-                      builder: (context, player) {
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Center(
-                              child: AspectRatio(
-                                aspectRatio: 16 / 9,
-                                child: player,
-                              ),
-                            ),
-                            // FIX: Sadece video duraklatıldığında play ikonu göster
-                            if (!_isPlaying)
-                              GestureDetector(
-                                onTap: () {
-                                  // Sadece videoya oynatmak için tıkla
-                                  _youtubeController!.play();
-                                },
-                                child: Container(
-                                  width: 70,
-                                  height: 70,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.6),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
-                                  child: const Icon(
-                                    Icons.play_arrow_rounded,
-                                    size: 42,
-                                    color: Colors.white,
-                                  ),
+              background:
+                  _isYoutube && _youtubeController != null
+                      ? YoutubePlayerBuilder(
+                        player: YoutubePlayer(
+                          controller: _youtubeController!,
+                          showVideoProgressIndicator: false,
+                          onReady: () {
+                            // Player Ready
+                          },
+                        ),
+                        builder: (context, player) {
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Center(
+                                child: AspectRatio(
+                                  aspectRatio: 16 / 9,
+                                  child: player,
                                 ),
                               ),
-                            // FIX: Fullscreen butonu
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Fullscreen screen'e yönlendir
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      fullscreenDialog: true,
-                                      builder: (context) => YoutubeFullscreenScreen(
-                                        controller: _youtubeController!,
-                                        videoTitle: widget.item.displayTitle,
+                              // FIX: Sadece video duraklatıldığında play ikonu göster
+                              if (!_isPlaying)
+                                GestureDetector(
+                                  onTap: () {
+                                    // Sadece videoya oynatmak için tıkla
+                                    _youtubeController!.play();
+                                  },
+                                  child: Container(
+                                    width: 70,
+                                    height: 70,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
                                       ),
                                     ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.6),
-                                    shape: BoxShape.circle,
+                                    child: const Icon(
+                                      Icons.play_arrow_rounded,
+                                      size: 42,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.fullscreen,
-                                    color: Colors.white,
-                                    size: 20,
+                                ),
+                              // FIX: Fullscreen butonu
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    // Fullscreen screen'e yönlendir
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        fullscreenDialog: true,
+                                        builder:
+                                            (context) =>
+                                                YoutubeFullscreenScreen(
+                                                  controller:
+                                                      _youtubeController!,
+                                                  videoTitle:
+                                                      widget.item.displayTitle,
+                                                ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.fullscreen,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ),
+                            ],
+                          );
+                        },
+                      )
+                      : (widget.item.displayImage != null
+                          ? Hero(
+                            tag: widget.item.id,
+                            child: buildAuthImage(
+                              imageUrl: widget.item.displayImage!,
+                              fit: BoxFit.cover,
                             ),
-                          ],
-                        );
-                      },
-                    )
-                  : (widget.item.displayImage != null
-                      ? Hero(
-                          tag: widget.item.id,
-                          child: Image.network(
-                            widget.item.displayImage!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Container(
-                          color: DesignTokens.primary.withValues(alpha: 0.1),
-                          child: const Center(
-                            child: Icon(Icons.image, size: 64, color: DesignTokens.textTertiary),
-                          ),
-                        )),
+                          )
+                          : Container(
+                            color: DesignTokens.primary.withValues(alpha: 0.1),
+                            child: const Center(
+                              child: Icon(
+                                Icons.image,
+                                size: 64,
+                                color: DesignTokens.textTertiary,
+                              ),
+                            ),
+                          )),
             ),
             actions: [
               IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: const BoxDecoration(
-                    color: Colors.black26, 
-                    shape: BoxShape.circle
+                    color: Colors.black26,
+                    shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.delete, size: 20, color: Colors.white),
+                  child: const Icon(
+                    Icons.delete,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
                 onPressed: () => _deleteItem(context),
               ),
               const SizedBox(width: 8),
             ],
             leading: IconButton(
-               icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Colors.black26, 
-                    shape: BoxShape.circle
-                  ),
-                  child: const Icon(Icons.arrow_back, size: 20, color: Colors.white),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.black26,
+                  shape: BoxShape.circle,
                 ),
-                onPressed: () => Navigator.pop(context),
+                child: const Icon(
+                  Icons.arrow_back,
+                  size: 20,
+                  color: Colors.white,
+                ),
+              ),
+              onPressed: () => Navigator.pop(context),
             ),
           ),
 
           // 2. Info Content
           SliverToBoxAdapter(
             child: Padding(
-               padding: const EdgeInsets.all(DesignTokens.spacingLG),
-               child: Column(
-                 crossAxisAlignment: CrossAxisAlignment.start,
-                 children: [
-                   // Title (H1)
-                   Text(
-                     widget.item.displayTitle,
-                     style: GoogleFonts.poppins(
-                       fontSize: 24,
-                       fontWeight: FontWeight.w600, // Slightly bolder for hierarchy
-                       color: DesignTokens.textPrimary,
-                       height: 1.3,
-                     ),
-                   ),
+              padding: const EdgeInsets.all(DesignTokens.spacingLG),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title (H1)
+                  Text(
+                    widget.item.displayTitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight:
+                          FontWeight.w600, // Slightly bolder for hierarchy
+                      color: DesignTokens.textPrimary,
+                      height: 1.3,
+                    ),
+                  ),
 
-                   const SizedBox(height: DesignTokens.spacingLG),
+                  const SizedBox(height: DesignTokens.spacingLG),
 
-                   // Reminder Indicator
-                   if (_reminder != null)
-                     ReminderIndicator(reminder: _reminder!),
+                  // Reminder Indicator
+                  if (_reminder != null)
+                    ReminderIndicator(reminder: _reminder!),
 
-                   if (_reminder != null)
-                     const SizedBox(height: DesignTokens.spacingLG),
+                  if (_reminder != null)
+                    const SizedBox(height: DesignTokens.spacingLG),
 
-                   // Note Section (Content) - No Label, just text
-                   if (widget.item.note != null && widget.item.note!.isNotEmpty)
-                     Container(
-                       width: double.infinity,
-                       padding: const EdgeInsets.symmetric(horizontal: 4), // Minimal padding shift
-                       child: Text(
-                         widget.item.note!,
-                         style: GoogleFonts.kalam(
-                           fontSize: 18, // Larger for readability since it's the main content
-                           color: DesignTokens.textPrimary,
-                           height: 1.6,
-                         ),
-                       ),
-                     )
-                   else
-                      GestureDetector(
-                        onTap: () {
-                          // TODO: Open edit modal
-                        },
-                        child: Text(
-                           'Bir not ekle...',
-                           style: GoogleFonts.kalam(
-                             fontSize: 16,
-                             color: DesignTokens.textTertiary,
-                           ),
+                  // Note Section (Content) - No Label, just text
+                  if (widget.item.note != null && widget.item.note!.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                      ), // Minimal padding shift
+                      child: Text(
+                        widget.item.note!,
+                        style: GoogleFonts.kalam(
+                          fontSize:
+                              18, // Larger for readability since it's the main content
+                          color: DesignTokens.textPrimary,
+                          height: 1.6,
                         ),
                       ),
-                      
-                   const SizedBox(height: DesignTokens.spacingXXL), // More breathing room
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () {
+                        // TODO: Open edit modal
+                      },
+                      child: Text(
+                        'Bir not ekle...',
+                        style: GoogleFonts.kalam(
+                          fontSize: 16,
+                          color: DesignTokens.textTertiary,
+                        ),
+                      ),
+                    ),
 
-                   // Metadata (Collection) - Subtle footer
-                   Align(
-                     alignment: Alignment.centerLeft,
-                     child: Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                       decoration: BoxDecoration(
-                         color: DesignTokens.background, // Very subtle background
-                         borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
-                         border: Border.all(color: DesignTokens.border),
-                       ),
-                       child: Row(
-                         mainAxisSize: MainAxisSize.min,
-                         children: [
-                           Icon(PhosphorIconsRegular.folder, size: 14, color: DesignTokens.textSecondary),
-                           const SizedBox(width: 8),
-                           Text(
-                             categoryName,
-                             style: GoogleFonts.poppins(
-                               color: DesignTokens.textSecondary,
-                               fontSize: 13,
-                               fontWeight: FontWeight.w500,
-                              ),
-                           ),
-                         ],
-                       ),
-                     ),
-                   ),
-                   
-                   const SizedBox(height: 100), // Spacing for sticky button
-                 ],
-               ),
+                  const SizedBox(
+                    height: DesignTokens.spacingXXL,
+                  ), // More breathing room
+                  // Metadata (Collection) - Subtle footer
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            DesignTokens.background, // Very subtle background
+                        borderRadius: BorderRadius.circular(
+                          DesignTokens.radiusXL,
+                        ),
+                        border: Border.all(color: DesignTokens.border),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            PhosphorIconsRegular.folder,
+                            size: 14,
+                            color: DesignTokens.textSecondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            categoryName,
+                            style: GoogleFonts.poppins(
+                              color: DesignTokens.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 100), // Spacing for sticky button
+                ],
+              ),
             ),
           ),
         ],
       ),
-      
+
       // 3. Sticky Bottom Button
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(DesignTokens.spacingLG),
@@ -448,7 +495,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               color: context.colors.premiumShadow.withOpacity(0.05),
               offset: const Offset(0, -4),
               blurRadius: 16,
-            )
+            ),
           ],
         ),
         child: SafeArea(
@@ -456,17 +503,19 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             onPressed: () => _launchUrl(context),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.transparent, 
+              backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
               ),
             ).copyWith(
-               backgroundColor: WidgetStateProperty.all(Colors.transparent), 
+              backgroundColor: WidgetStateProperty.all(Colors.transparent),
             ),
             child: Ink(
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
+                gradient: LinearGradient(
+                  colors: [context.colors.primary, context.colors.secondary],
+                ),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLG),
               ),
               child: SizedBox(
@@ -503,18 +552,30 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   // Helper for dynamic icon
   IconData _getPlatformIcon(String platform) {
     switch (platform) {
-      case 'Instagram': return PhosphorIconsBold.instagramLogo;
-      case 'YouTube': return PhosphorIconsBold.youtubeLogo;
-      case 'X': return PhosphorIconsBold.xLogo;
-      case 'TikTok': return PhosphorIconsBold.tiktokLogo;
-      case 'LinkedIn': return PhosphorIconsBold.linkedinLogo;
-      case 'Spotify': return PhosphorIconsBold.spotifyLogo;
-      case 'Pinterest': return PhosphorIconsBold.pinterestLogo;
-      case 'Reddit': return PhosphorIconsBold.redditLogo;
-      case 'Medium': return PhosphorIconsBold.mediumLogo;
-      case 'Behance': return PhosphorIconsBold.behanceLogo;
-      case 'Dribbble': return PhosphorIconsBold.dribbbleLogo;
-      default: return PhosphorIconsBold.link; // Generic link icon for Web
+      case 'Instagram':
+        return PhosphorIconsBold.instagramLogo;
+      case 'YouTube':
+        return PhosphorIconsBold.youtubeLogo;
+      case 'X':
+        return PhosphorIconsBold.xLogo;
+      case 'TikTok':
+        return PhosphorIconsBold.tiktokLogo;
+      case 'LinkedIn':
+        return PhosphorIconsBold.linkedinLogo;
+      case 'Spotify':
+        return PhosphorIconsBold.spotifyLogo;
+      case 'Pinterest':
+        return PhosphorIconsBold.pinterestLogo;
+      case 'Reddit':
+        return PhosphorIconsBold.redditLogo;
+      case 'Medium':
+        return PhosphorIconsBold.mediumLogo;
+      case 'Behance':
+        return PhosphorIconsBold.behanceLogo;
+      case 'Dribbble':
+        return PhosphorIconsBold.dribbbleLogo;
+      default:
+        return PhosphorIconsBold.link; // Generic link icon for Web
     }
   }
 
