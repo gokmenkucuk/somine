@@ -207,6 +207,10 @@ class ItemCard extends StatelessWidget {
       return const LinearGradient(
         colors: [Color(0xFFFF9900), Color(0xFF146eb4)],
       );
+    if (s.contains('hepsiburada'))
+      return const LinearGradient(
+        colors: [Color(0xFFFF6000), Color(0xFFFF8C00)],
+      );
     if (s.contains('netflix'))
       return const LinearGradient(
         colors: [Color(0xFFE50914), Color(0xFFB81D24)],
@@ -358,6 +362,12 @@ class ItemCard extends StatelessWidget {
         FontAwesomeIcons.amazon,
         size: 14,
         color: Colors.black,
+      );
+    if (s.contains('hepsiburada'))
+      return const FaIcon(
+        FontAwesomeIcons.bagShopping,
+        size: 14,
+        color: Color(0xFFFF6000),
       );
     if (s.contains('google'))
       return const FaIcon(
@@ -614,6 +624,12 @@ class _CardImage extends StatelessWidget {
           color: Colors.white,
           size: 48,
         );
+      } else if (s.contains('hepsiburada')) {
+        iconWidget = FaIcon(
+          FontAwesomeIcons.bagShopping,
+          color: Colors.white,
+          size: 48,
+        );
       } else if (s.contains('google')) {
         iconWidget = FaIcon(
           FontAwesomeIcons.google,
@@ -791,7 +807,8 @@ class _CardImage extends StatelessWidget {
         lower.contains('bitbucket.org') ||
         lower.contains('medium.com') ||
         lower.contains('behance.net') ||
-        lower.contains('dribbble.com');
+        lower.contains('dribbble.com') ||
+        lower.contains('trendyol.com');
   }
 
   /// Check if URL is a maps service

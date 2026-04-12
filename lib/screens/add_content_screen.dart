@@ -179,7 +179,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         url.contains('bitbucket.org') ||
         url.contains('medium.com') ||
         url.contains('behance.net') ||
-        url.contains('dribbble.com');
+        url.contains('dribbble.com') ||
+        url.contains('trendyol.com');
   }
 
   /// Checks if the image URL appears to be a favicon (small logo image)
@@ -2065,6 +2066,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
     if (url.contains('amazon.com') || url.contains('amazon.')) {
       return const FaIcon(FontAwesomeIcons.amazon, size: iconSize, color: iconColor);
+    }
+    if (url.contains('hepsiburada.com')) {
+      return const FaIcon(FontAwesomeIcons.bagShopping, size: iconSize, color: iconColor);
     }
 
     // Default link icon

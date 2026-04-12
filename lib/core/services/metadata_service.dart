@@ -349,6 +349,38 @@ class MetadataService {
           }
         }
 
+        // Amazon: Filter out tracking pixels and invalid images
+        if (url.toLowerCase().contains('amazon.') || finalUrl.toLowerCase().contains('amazon.')) {
+          // Amazon returns tracking pixels instead of real images
+          if (image != null && (image.contains('fls-eu.amazon') || image.contains('/batch/') || image.contains('/uedata'))) {
+            debugPrint('⚠️ [MetadataService] Amazon tracking pixel filtered: $image');
+            image = null;
+          }
+          // If title is generic, use fallback
+          final lowerTitle = title?.toLowerCase().trim() ?? '';
+          if (lowerTitle.isEmpty || lowerTitle == 'amazon' || lowerTitle.contains('robot')) {
+            debugPrint('⚠️ [MetadataService] Amazon generic title detected, using fallback');
+            final fallback = _buildAmazonFallback(url);
+            if (fallback != null) {
+              debugPrint('✅ [MetadataService] Amazon fallback: ${fallback.title}');
+              return fallback;
+            }
+          }
+        }
+
+        // Hepsiburada: If we got empty/generic title, use fallback
+        if (url.toLowerCase().contains('hepsiburada.com') || finalUrl.toLowerCase().contains('hepsiburada.com')) {
+          final lowerTitle = title?.toLowerCase().trim() ?? '';
+          if (lowerTitle.isEmpty || lowerTitle == 'hepsiburada') {
+            debugPrint('⚠️ [MetadataService] Hepsiburada generic title detected, using fallback');
+            final fallback = _buildHepsiburadaFallback(url);
+            if (fallback != null) {
+              debugPrint('✅ [MetadataService] Hepsiburada fallback: ${fallback.title}');
+              return fallback;
+            }
+          }
+        }
+
         return OGMetadata(
           title: title,
           description: description,
@@ -628,7 +660,83 @@ class MetadataService {
     final facebookFallback = _buildFacebookFallback(url);
     if (facebookFallback != null) return facebookFallback;
 
+    // Try Amazon fallback
+    final amazonFallback = _buildAmazonFallback(url);
+    if (amazonFallback != null) return amazonFallback;
+
+    // Try Hepsiburada fallback
+    final hepsiFallback = _buildHepsiburadaFallback(url);
+    if (hepsiFallback != null) return hepsiFallback;
+
     return _buildAdidasFallback(url);
+  }
+
+  static OGMetadata? _buildAmazonFallback(String url) {
+    final lower = url.toLowerCase();
+    if (!lower.contains('amazon.')) return null;
+
+    // Try to extract product name from URL
+    // Amazon URLs: /dp/ASIN/ProductName or /gp/product/ASIN
+    String title = 'Amazon Ürünü';
+
+    try {
+      final uri = Uri.parse(url);
+      final segments = uri.pathSegments;
+
+      // Look for product name after /dp/ or check for descriptive slug
+      for (int i = 0; i < segments.length; i++) {
+        final seg = segments[i];
+        // Skip common path segments
+        if (seg == 'dp' || seg == 'gp' || seg == 'product' || seg.length == 10) continue;
+        // If segment looks like a product name (has dashes, longer than ASIN)
+        if (seg.contains('-') && seg.length > 10) {
+          title = seg.replaceAll('-', ' ');
+          // Capitalize first letter of each word
+          title = title.split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w).join(' ');
+          break;
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Amazon URL parse error: $e');
+    }
+
+    return OGMetadata(
+      title: title,
+      description: null,
+      imageUrl: null,
+      siteName: 'Amazon',
+    );
+  }
+
+  static OGMetadata? _buildHepsiburadaFallback(String url) {
+    final lower = url.toLowerCase();
+    if (!lower.contains('hepsiburada.com')) return null;
+
+    String title = 'Hepsiburada Ürünü';
+
+    try {
+      final uri = Uri.parse(url);
+      final path = uri.path;
+
+      // Hepsiburada URL format: /product-name-p-PRODUCTCODE
+      // Extract product name before -p-
+      final pIndex = path.lastIndexOf('-p-');
+      if (pIndex > 0) {
+        String slug = path.substring(1, pIndex); // Remove leading /
+        title = slug.replaceAll('-', ' ');
+        // Capitalize first letter of each word
+        title = title.split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w).join(' ');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [MetadataService] Hepsiburada URL parse error: $e');
+    }
+
+    return OGMetadata(
+      title: title,
+      description: null,
+      imageUrl: null,
+      siteName: 'Hepsiburada',
+    );
   }
 
   static OGMetadata? _buildFacebookFallback(String url) {
