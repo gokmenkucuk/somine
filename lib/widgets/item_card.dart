@@ -781,7 +781,8 @@ class _CardImage extends StatelessWidget {
         lower.contains('pin.it') ||
         lower.contains('open.spotify.com') ||
         lower.contains('x.com') ||
-        lower.contains('twitter.com');
+        lower.contains('twitter.com') ||
+        lower.contains('github.com');
   }
 
   /// Check if URL is a maps service

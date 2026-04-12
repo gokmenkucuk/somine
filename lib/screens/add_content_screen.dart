@@ -169,7 +169,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         url.contains('pin.it') ||
         url.contains('open.spotify.com') ||
         url.contains('x.com') ||
-        url.contains('twitter.com');
+        url.contains('twitter.com') ||
+        url.contains('github.com');
   }
 
   /// Checks if the image URL appears to be a favicon (small logo image)
