@@ -171,6 +171,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         url.contains('x.com') ||
         url.contains('twitter.com') ||
         url.contains('github.com') ||
+        url.contains('linkedin.com') ||
         url.contains('reddit.com') ||
         url.contains('amazon.') ||
         url.contains('netflix.com') ||
