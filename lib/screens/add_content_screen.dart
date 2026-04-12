@@ -28,6 +28,8 @@ import 'dart:ui' as import_dart_ui;
 import 'package:url_launcher/url_launcher.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
@@ -115,6 +117,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     // Exclude Maps services - they return real map images
     if (_isMapUrl(url)) return false;
 
+    // Pinterest & TikTok return real content images (not logos), so exclude them
+    if (url.contains('pinterest') || url.contains('pin.it') || url.contains('tiktok')) return false;
+
     final knownBrands = [
       'google',
       'youtube',
@@ -155,7 +160,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     return url.contains('instagram.com') ||
         url.contains('youtube.com') ||
         url.contains('youtu.be') ||
-        url.contains('tiktok.com');
+        url.contains('tiktok.com') ||
+        url.contains('pinterest.com') ||
+        url.contains('pin.it');
   }
 
   /// Checks if the image URL appears to be a favicon (small logo image)
@@ -178,10 +185,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       return;
     }
 
+    // Fix stale IP address pointing to old server
+    String correctedUrl = imageUrl;
+    if (correctedUrl.contains('46.224.146.102')) {
+      correctedUrl = correctedUrl.replaceAll('http://46.224.146.102', ApiConfig.baseUrl);
+    }
+
     // Reset first
     setState(() => _imageAspectRatio = null);
 
-    final ImageProvider provider = CachedNetworkImageProvider(imageUrl);
+    final ImageProvider provider = CachedNetworkImageProvider(correctedUrl);
 
     provider
         .resolve(const ImageConfiguration())
@@ -281,22 +294,25 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _detectedLink = item.url!;
       _hasLink = true;
       _isManualEntry = false;
-      // Pre-fill metadata from item
-      _ogMetadata = item.ogMetadata;
-      // Also fallback to generic imageUrl if OGMetadata lacks one
-      if ((_ogMetadata == null || _ogMetadata!.imageUrl == null) && item.imageUrl != null) {
-        _ogMetadata = (_ogMetadata ?? const OGMetadata()).copyWith(imageUrl: item.imageUrl);
-      }
-      if (_ogMetadata?.imageUrl != null) {
-        _resolveImageSize(_ogMetadata!.imageUrl!);
-      }
+    }
+
+    // Pre-fill metadata from item
+    _ogMetadata = item.ogMetadata;
+    // Also fallback to generic imageUrl if OGMetadata lacks one
+    if ((_ogMetadata == null || _ogMetadata!.imageUrl == null) && item.imageUrl != null) {
+      _ogMetadata = (_ogMetadata ?? const OGMetadata()).copyWith(imageUrl: item.imageUrl);
+    }
+    if (_ogMetadata?.imageUrl != null) {
+      _resolveImageSize(_ogMetadata!.imageUrl!);
     }
 
     // Set Note Image (for notes with images)
-    if (_isNoteMode &&
-        item.ogMetadata?.imageUrl != null &&
-        item.ogMetadata!.imageUrl!.isNotEmpty) {
-      _noteImageUrl = item.ogMetadata!.imageUrl;
+    if (_isNoteMode && item.imageUrl != null && item.imageUrl!.isNotEmpty) {
+      _noteImageUrl = item.imageUrl;
+    } else if (_isNoteMode &&
+        _ogMetadata?.imageUrl != null &&
+        _ogMetadata!.imageUrl!.isNotEmpty) {
+      _noteImageUrl = _ogMetadata!.imageUrl;
     }
 
     // Set Category
@@ -1894,14 +1910,25 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // Image Background
   // Image Background (Cover)
   Widget _buildImageBackground() {
+    // Fix stale IP address pointing to old server
+    final rawUrl = _ogMetadata!.imageUrl!;
+    String imageUrl = rawUrl.contains('46.224.146.102')
+        ? rawUrl.replaceAll('http://46.224.146.102', ApiConfig.baseUrl)
+        : rawUrl;
+    // Migrate old public /storage/ to authenticated /api/storage/
+    if (imageUrl.contains(ApiConfig.baseUrl) &&
+        imageUrl.contains('/storage/') &&
+        !imageUrl.contains('/api/storage/')) {
+      imageUrl = imageUrl.replaceAll('/storage/', '/api/storage/');
+    }
+
     return Stack(
       key: const ValueKey('image'),
       fit: StackFit.expand,
       children: [
-        CachedNetworkImage(
-          imageUrl: _ogMetadata!.imageUrl!,
+        buildAuthImage(
+          imageUrl: imageUrl,
           fit: BoxFit.cover,
-          alignment: Alignment.center,
           placeholder: (context, url) => const SizedBox.shrink(),
           errorWidget: (context, url, error) => const SizedBox.shrink(),
         ),

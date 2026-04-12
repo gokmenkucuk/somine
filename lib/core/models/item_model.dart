@@ -284,8 +284,15 @@ class ItemModel {
     final img = ogMetadata?.imageUrl ?? imageUrl;
     if (img != null) {
       String correctedImg = img.trim().replaceAll('\n', '').replaceAll('\r', '');
+      // Fix old IP address
       if (correctedImg.contains('46.224.146.102')) {
         correctedImg = correctedImg.replaceAll('http://46.224.146.102', ApiConfig.baseUrl);
+      }
+      // Migrate old public /storage/ path to authenticated /api/storage/ path
+      if (correctedImg.contains(ApiConfig.baseUrl) &&
+          correctedImg.contains('/storage/') &&
+          !correctedImg.contains('/api/storage/')) {
+        correctedImg = correctedImg.replaceAll('/storage/', '/api/storage/');
       }
       return correctedImg;
     }
