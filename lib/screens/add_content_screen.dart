@@ -2035,10 +2035,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     return Container(
       key: const ValueKey('facebook_placeholder'),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1877F2), Color(0xFF0C5DC7)],
+          colors: [context.colors.primary, context.colors.secondary],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
