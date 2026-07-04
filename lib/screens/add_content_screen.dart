@@ -1024,32 +1024,27 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (!subState.isPremium) {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
-        final repo = ItemRepository();
-        for (final catId in _selectedCategoryIds) {
-          // Check if it's a new addition to this specific category
-          bool isNewAdd = true;
-          if (widget.editItem != null && widget.editItem!.categoryId == catId) {
-            isNewAdd = false; // Just editing within the same category
-          }
+        // Is at least one genuinely new item being created (not just editing
+        // the existing item within its original category)?
+        final originalCatId = widget.editItem?.categoryId;
+        final isNewAdd =
+            widget.editItem == null ||
+            _selectedCategoryIds.any((catId) => catId != originalCatId);
 
-          if (isNewAdd) {
-            final currentCount = await repo.getActiveItemCountInCategory(
-              uid,
-              catId,
-            );
-            if (!subNotifier.canAddItem(currentCount)) {
-              if (mounted) {
-                LimitReachedDialog.show(
-                  context: context,
-                  ref: ref,
-                  title: "Koleksiyon Dolu",
-                  message:
-                      "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
-                  type: LimitType.item,
-                );
-              }
-              return;
+        if (isNewAdd) {
+          final totalItemCount = await ref.read(itemCountProvider.future);
+          if (!subNotifier.canAddItem(totalItemCount)) {
+            if (mounted) {
+              LimitReachedDialog.show(
+                context: context,
+                ref: ref,
+                title: "İçerik Sınırına Ulaştın",
+                message:
+                    "Ücretsiz planda en fazla 500 içerik kaydedebilirsin. Sınırsız içerik için Premium'a geçin!",
+                type: LimitType.item,
+              );
             }
+            return;
           }
         }
       }
@@ -1227,6 +1222,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           }
         }
 
+        await _maybeShowItemLimitWarning();
         if (mounted) {
           Navigator.pop(context, true); // Return success
         }
@@ -1302,6 +1298,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           }
         }
 
+        await _maybeShowItemLimitWarning();
         if (mounted) {
           Navigator.pop(context, true);
         }
@@ -1311,6 +1308,29 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       if (mounted) _showError("Bir hata oluştu");
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Starter planında toplam içerik sayısı yumuşak uyarı eşiğine
+  /// (450/500) yaklaştıysa/geçtiyse bilgilendirici bir SnackBar gösterir.
+  Future<void> _maybeShowItemLimitWarning() async {
+    final subState = ref.read(subscriptionProvider);
+    if (subState.isPremium) return;
+
+    final subNotifier = ref.read(subscriptionProvider.notifier);
+    ref.invalidate(itemCountProvider);
+    final totalItemCount = await ref.read(itemCountProvider.future);
+
+    if (subNotifier.shouldWarnItemLimit(totalItemCount) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "İçerik hakkın azalıyor: $totalItemCount/500 — Premium'la sınırsıza geç",
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 

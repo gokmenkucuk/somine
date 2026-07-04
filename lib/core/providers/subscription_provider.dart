@@ -125,9 +125,29 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
     return _service.canCreateCollection(currentCount);
   }
 
-  /// Check if can add item
-  bool canAddItem(int currentItemCount) {
-    return _service.canAddItem(currentItemCount);
+  /// Check if can add item (toplam içerik sayısına göre)
+  bool canAddItem(int totalItemCount) {
+    return _service.canAddItem(totalItemCount);
+  }
+
+  /// Check if can create more active reminders
+  bool canCreateReminder(int activeReminderCount) {
+    return _service.canCreateReminder(activeReminderCount);
+  }
+
+  /// Check if can create more active shares
+  bool canCreateShare(int activeShareCount) {
+    return _service.canCreateShare(activeShareCount);
+  }
+
+  /// Whether to show a soft warning as the user approaches the total item limit
+  bool shouldWarnItemLimit(int totalItemCount) {
+    return _service.shouldWarnItemLimit(totalItemCount);
+  }
+
+  /// Get remaining items (toplam içerik sayısına göre)
+  int remainingItems(int totalItemCount) {
+    return _service.remainingItems(totalItemCount);
   }
 }
 

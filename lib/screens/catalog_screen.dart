@@ -2539,61 +2539,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   ),
                                 ),
                                 onTap: () async {
-                                  // --- LIMIT CHECK ---
-                                  final isPremium =
-                                      ref.read(subscriptionProvider).isPremium;
-                                  if (!isPremium) {
-                                    final uid =
-                                        FirebaseAuth.instance.currentUser?.uid;
-                                    if (uid != null) {
-                                      final repo = ref.read(
-                                        itemRepositoryProvider,
-                                      );
-                                      final currentCount = await repo
-                                          .getActiveItemCountInCategory(
-                                            uid,
-                                            cat.id,
-                                          );
-                                      final isSelection = ref.read(
-                                        isSelectionModeProvider,
-                                      );
-                                      final numAdding =
-                                          isSelection
-                                              ? (ref
-                                                      .read(
-                                                        selectedItemsProvider,
-                                                      )
-                                                      .isEmpty
-                                                  ? 1
-                                                  : ref
-                                                      .read(
-                                                        selectedItemsProvider,
-                                                      )
-                                                      .length)
-                                              : 1;
-
-                                      if (!ref
-                                          .read(subscriptionProvider.notifier)
-                                          .canAddItem(
-                                            currentCount + numAdding - 1,
-                                          )) {
-                                        if (context.mounted) Navigator.pop(ctx);
-                                        if (mounted) {
-                                          LimitReachedDialog.show(
-                                            context: this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                                            ref: ref,
-                                            title: "Koleksiyon Dolu",
-                                            message:
-                                                "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
-                                            type: LimitType.item,
-                                          );
-                                        }
-                                        return;
-                                      }
-                                    }
-                                  }
-                                  // --- END LIMIT CHECK ---
-
                                   if (ctx.mounted) Navigator.pop(ctx);
 
                                   if (ref.read(isSelectionModeProvider)) {
@@ -3325,42 +3270,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   void _moveItemToCategory(ItemModel item, String? targetCategoryId) async {
     try {
-      // --- ITEM LIMIT CHECK FOR DRAG & DROP ---
-      final isPremium = ref.read(subscriptionProvider).isPremium;
-      if (!isPremium && targetCategoryId != null) {
-        final uid = FirebaseAuth.instance.currentUser?.uid;
-        if (uid != null) {
-          final repo = ref.read(itemRepositoryProvider);
-          final currentCount = await repo.getActiveItemCountInCategory(
-            uid,
-            targetCategoryId,
-          );
-          final isSelMode = ref.read(isSelectionModeProvider);
-          final selectedItems = ref.read(selectedItemsProvider);
-          final numAdding =
-              (isSelMode && selectedItems.contains(item.id))
-                  ? selectedItems.length
-                  : 1;
-
-          if (!ref
-              .read(subscriptionProvider.notifier)
-              .canAddItem(currentCount + numAdding - 1)) {
-            if (mounted) {
-              LimitReachedDialog.show(
-                context: context,
-                ref: ref,
-                title: "Koleksiyon Dolu",
-                message:
-                    "Başlangıç paketinde her koleksiyona en fazla 5 içerik ekleyebilirsiniz. Sınırsız içerik için Premium'a geçin!",
-                type: LimitType.item,
-              );
-            }
-            return;
-          }
-        }
-      }
-      // --- END LIMIT CHECK ---
-
       final isSelectionMode = ref.read(isSelectionModeProvider);
       final selectedItems = ref.read(selectedItemsProvider);
       final isBatchMove = isSelectionMode && selectedItems.contains(item.id);

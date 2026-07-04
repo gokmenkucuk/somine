@@ -167,7 +167,10 @@ class SubscriptionService {
 
   /// Starter tier limits
   static const int maxCollectionsStarter = 10;
-  static const int maxItemsPerCollectionStarter = 5;
+  static const int maxTotalItemsStarter = 500;
+  static const int itemWarnThresholdStarter = 450;
+  static const int maxActiveRemindersStarter = 3;
+  static const int maxActiveSharesStarter = 1;
 
   /// Check if can create more collections
   bool canCreateCollection(int currentCount) {
@@ -175,10 +178,28 @@ class SubscriptionService {
     return currentCount < maxCollectionsStarter;
   }
 
-  /// Check if can add more items to collection
-  bool canAddItem(int currentItemCount) {
+  /// Check if can add more items (toplam içerik sayısına göre)
+  bool canAddItem(int totalItemCount) {
     if (isPremium) return true;
-    return currentItemCount < maxItemsPerCollectionStarter;
+    return totalItemCount < maxTotalItemsStarter;
+  }
+
+  /// Check if can create more active reminders
+  bool canCreateReminder(int activeReminderCount) {
+    if (isPremium) return true;
+    return activeReminderCount < maxActiveRemindersStarter;
+  }
+
+  /// Check if can create more active shares
+  bool canCreateShare(int activeShareCount) {
+    if (isPremium) return true;
+    return activeShareCount < maxActiveSharesStarter;
+  }
+
+  /// Whether to show a soft warning as the user approaches the total item limit
+  bool shouldWarnItemLimit(int totalItemCount) {
+    if (isPremium) return false;
+    return totalItemCount >= itemWarnThresholdStarter;
   }
 
   /// Get remaining collections for Starter
@@ -187,10 +208,10 @@ class SubscriptionService {
     return maxCollectionsStarter - currentCount;
   }
 
-  /// Get remaining items for collection
-  int remainingItems(int currentItemCount) {
+  /// Get remaining items (toplam içerik sayısına göre)
+  int remainingItems(int totalItemCount) {
     if (isPremium) return -1; // Unlimited
-    return maxItemsPerCollectionStarter - currentItemCount;
+    return maxTotalItemsStarter - totalItemCount;
   }
 
   Future<void> logout() async {
