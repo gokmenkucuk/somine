@@ -114,7 +114,7 @@ class ProfileScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: context.colors.premiumShadow.withOpacity(0.03),
+                              color: context.colors.premiumShadow.withValues(alpha: 0.03),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),
@@ -325,7 +325,7 @@ class ProfileScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: context.colors.premiumShadow.withOpacity(0.03),
+                                  color: context.colors.premiumShadow.withValues(alpha: 0.03),
                                   blurRadius: 15,
                                   offset: const Offset(0, 5),
                                 ),
@@ -416,7 +416,7 @@ class ProfileScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: Colors.black.withValues(alpha: 0.04),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -561,7 +561,7 @@ class ProfileScreen extends ConsumerWidget {
   // Gradient like Tümü button for Midnight, solid for Air
   final backgroundGradient = isDark 
       ? LinearGradient(
-          colors: [context.colors.secondary.withOpacity(0.5), context.colors.surfaceWhite],
+          colors: [context.colors.secondary.withValues(alpha: 0.5), context.colors.surfaceWhite],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         )
@@ -575,12 +575,12 @@ class ProfileScreen extends ConsumerWidget {
     decoration: BoxDecoration(
       gradient: backgroundGradient,
       borderRadius: BorderRadius.circular(20),
-      border: isDark ? Border.all(color: context.colors.secondary.withOpacity(0.3), width: 1) : null,
+      border: isDark ? Border.all(color: context.colors.secondary.withValues(alpha: 0.3), width: 1) : null,
       boxShadow: [
         BoxShadow(
           color: isDark 
-              ? context.colors.secondary.withOpacity(0.35) 
-              : context.colors.primary.withOpacity(0.3),
+              ? context.colors.secondary.withValues(alpha: 0.35) 
+              : context.colors.primary.withValues(alpha: 0.3),
           blurRadius: 15,
           offset: const Offset(0, 8),
         ),
@@ -605,7 +605,7 @@ class ProfileScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: isPro
@@ -646,7 +646,7 @@ class ProfileScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6)),
                         child: Consumer(
                           builder: (context, ref, child) {
@@ -693,7 +693,7 @@ class ProfileScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: context.colors.primary.withOpacity(0.1),
+            color: context.colors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, size: 20, color: context.colors.primary),
@@ -727,7 +727,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildVerticalDivider(BuildContext context) {
-    return Container(height: 24, width: 1, color: context.colors.hint.withOpacity(0.2));
+    return Container(height: 24, width: 1, color: context.colors.hint.withValues(alpha: 0.2));
   }
 
   Widget _buildMenuSection(BuildContext context, {required List<Widget> children}) {
@@ -737,7 +737,7 @@ class ProfileScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: context.colors.premiumShadow.withOpacity(0.03),
+            color: context.colors.premiumShadow.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -751,7 +751,7 @@ class ProfileScreen extends ConsumerWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      color: context.colors.hint.withOpacity(0.1),
+      color: context.colors.hint.withValues(alpha: 0.1),
       indent: 60, // Align with text start
     );
   }
@@ -777,10 +777,10 @@ class ProfileScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.05),
+                  color: context.colors.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: context.colors.primary.withOpacity(0.8), size: 20),
+                child: Icon(icon, color: context.colors.primary.withValues(alpha: 0.8), size: 20),
               ),
               const SizedBox(width: 16),
 
@@ -817,7 +817,7 @@ class ProfileScreen extends ConsumerWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: (badgeColor ?? Colors.blue).withOpacity(0.1),
+                    color: (badgeColor ?? Colors.blue).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -864,10 +864,10 @@ class ProfileScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.05),
+                  color: context.colors.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: context.colors.primary.withOpacity(0.8), size: 20),
+                child: Icon(icon, color: context.colors.primary.withValues(alpha: 0.8), size: 20),
               ),
               const SizedBox(width: 16),
 

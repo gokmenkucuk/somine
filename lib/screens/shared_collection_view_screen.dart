@@ -38,9 +38,15 @@ class _SharedCollectionViewScreenState
 
   Future<void> _loadItems() async {
     try {
-      final items = await ItemRepository().getItemsByCategory(
-        widget.share.fromUserId,
-        widget.share.categoryId,
+      final shareId = widget.share.id;
+      if (shareId == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final items = await ItemRepository().getSharedItems(
+        shareId: shareId,
+        ownerUserId: widget.share.fromUserId,
       );
       setState(() {
         _items = items;
@@ -154,7 +160,7 @@ class _SharedCollectionViewScreenState
             'Bu koleksiyonda henüz içerik yok.',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: context.colors.body.withOpacity(0.7),
+              color: context.colors.body.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -188,7 +194,7 @@ class _SharedCollectionViewScreenState
                       : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -303,7 +309,7 @@ class _SharedCollectionViewScreenState
         color: context.colors.surfaceWhite,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -398,7 +404,7 @@ class _SharedCollectionViewScreenState
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withOpacity(0.1),
+                              color: context.colors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(

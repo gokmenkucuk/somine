@@ -67,8 +67,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  context.colors.primary.withOpacity(0.1),
-                  context.colors.secondary.withOpacity(0.05),
+                  context.colors.primary.withValues(alpha: 0.1),
+                  context.colors.secondary.withValues(alpha: 0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -80,7 +80,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: context.colors.primary.withOpacity(0.15),
+                    color: context.colors.primary.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -216,7 +216,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: context.colors.primary, size: 22),

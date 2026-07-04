@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 class BackendAuthUser {
   final String id;
   final String? email;
@@ -72,12 +74,22 @@ class BackendAuthSession {
   }
 
   factory BackendAuthSession.fromStoredJson(Map<String, dynamic> json) {
+    DateTime? parsedIssuedAt;
+    try {
+      parsedIssuedAt = DateTime.parse(json['issuedAt'] as String).toUtc();
+    } catch (e) {
+      debugPrint(
+        '⚠️ [BackendAuthSession] Failed to parse issuedAt: ${json['issuedAt']}',
+      );
+      throw const FormatException('Invalid backend session issuedAt');
+    }
+
     return BackendAuthSession(
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String,
       tokenType: json['tokenType'] as String? ?? 'Bearer',
       expiresInSeconds: json['expiresInSeconds'] as int? ?? 3600,
-      issuedAt: DateTime.parse(json['issuedAt'] as String).toUtc(),
+      issuedAt: parsedIssuedAt,
       user: BackendAuthUser.fromJson(json['user'] as Map<String, dynamic>),
     );
   }

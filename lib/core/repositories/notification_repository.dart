@@ -1,69 +1,23 @@
-import 'dart:async';
+import 'dart:async' hide TimeoutException;
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/notification_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/backend_realtime_service.dart';
 
 class NotificationRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
   final BackendRealtimeService _backendRealtimeService =
       BackendRealtimeService();
   final http.Client _httpClient = http.Client();
-
-  CollectionReference get _notificationsCollection =>
-      _firestore.collection('notifications');
-
-  Future<NotificationModel> createNotification({
-    required String userId,
-    required NotificationType type,
-    required String title,
-    required String message,
-    Map<String, dynamic> data = const {},
-  }) async {
-    try {
-      final notification = NotificationModel(
-        userId: userId,
-        type: type,
-        title: title,
-        message: message,
-        data: data,
-        isRead: false,
-        createdAt: DateTime.now(),
-      );
-
-      final docRef = await _notificationsCollection.add(
-        notification.toFirestore(),
-      );
-      return notification.copyWith(id: docRef.id);
-    } catch (e) {
-      debugPrint('❌ [NotificationRepository] Error creating notification: $e');
-      rethrow;
-    }
-  }
+  static const Duration _requestTimeout = Duration(seconds: 15);
 
   Stream<List<NotificationModel>> getNotifications(String userId) async* {
-    if (!_useBackendForCurrentUser(userId)) {
-      yield* _notificationsCollection
-          .where('userId', isEqualTo: userId)
-          .snapshots()
-          .map((snapshot) {
-            final docs =
-                snapshot.docs
-                    .map((doc) => NotificationModel.fromFirestore(doc))
-                    .toList();
-            docs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            return docs;
-          });
-      return;
-    }
-
     var notifications = await _getNotificationsFromApi(userId);
     var lastSignature = _notificationsSignature(notifications);
     yield notifications;
@@ -89,21 +43,16 @@ class NotificationRepository {
 
   Future<void> markAsRead(String notificationId) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.put(
+      final accessToken = await _requireAccessToken();
+      final response = await _withTimeout(
+        _httpClient.put(
           _buildUri('/api/notifications/$notificationId/read'),
           headers: _jsonHeaders(accessToken),
-        );
+        ),
+        'mark notification as read',
+      );
 
-        _throwIfNotSuccessful(response, action: 'mark notification as read');
-        return;
-      }
-
-      await _notificationsCollection.doc(notificationId).update({
-        'isRead': true,
-      });
+      _throwIfNotSuccessful(response, action: 'mark notification as read');
     } catch (e) {
       debugPrint(
         '❌ [NotificationRepository] Error marking notification as read: $e',
@@ -114,32 +63,19 @@ class NotificationRepository {
 
   Future<void> markAllAsRead(String userId) async {
     try {
-      if (_useBackendForCurrentUser(userId)) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.put(
+      final accessToken = await _requireAccessToken();
+      final response = await _withTimeout(
+        _httpClient.put(
           _buildUri('/api/notifications/read-all'),
           headers: _jsonHeaders(accessToken),
-        );
+        ),
+        'mark all notifications as read',
+      );
 
-        _throwIfNotSuccessful(
-          response,
-          action: 'mark all notifications as read',
-        );
-        return;
-      }
-
-      final batch = _firestore.batch();
-      final snapshot =
-          await _notificationsCollection
-              .where('userId', isEqualTo: userId)
-              .where('isRead', isEqualTo: false)
-              .get();
-
-      for (final doc in snapshot.docs) {
-        batch.update(doc.reference, {'isRead': true});
-      }
-
-      await batch.commit();
+      _throwIfNotSuccessful(
+        response,
+        action: 'mark all notifications as read',
+      );
     } catch (e) {
       debugPrint(
         '❌ [NotificationRepository] Error marking all notifications as read: $e',
@@ -150,19 +86,16 @@ class NotificationRepository {
 
   Future<void> deleteNotification(String notificationId) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.delete(
+      final accessToken = await _requireAccessToken();
+      final response = await _withTimeout(
+        _httpClient.delete(
           _buildUri('/api/notifications/$notificationId'),
           headers: _jsonHeaders(accessToken),
-        );
+        ),
+        'delete notification',
+      );
 
-        _throwIfNotSuccessful(response, action: 'delete notification');
-        return;
-      }
-
-      await _notificationsCollection.doc(notificationId).delete();
+      _throwIfNotSuccessful(response, action: 'delete notification');
     } catch (e) {
       debugPrint('❌ [NotificationRepository] Error deleting notification: $e');
       rethrow;
@@ -174,37 +107,19 @@ class NotificationRepository {
     String shareId,
   ) async {
     try {
-      if (_useBackendForCurrentUser(userId)) {
-        final notifications = await _getNotificationsFromApi(userId);
-        final relatedNotifications =
-            notifications
-                .where(
-                  (notification) => notification.data['shareId'] == shareId,
-                )
-                .toList();
+      final notifications = await _getNotificationsFromApi(userId);
+      final relatedNotifications =
+          notifications
+              .where(
+                (notification) => notification.data['shareId'] == shareId,
+              )
+              .toList();
 
-        for (final notification in relatedNotifications) {
-          if (notification.id != null) {
-            await deleteNotification(notification.id!);
-          }
+      for (final notification in relatedNotifications) {
+        if (notification.id != null) {
+          await deleteNotification(notification.id!);
         }
-        return;
       }
-
-      final snapshot =
-          await _notificationsCollection
-              .where('userId', isEqualTo: userId)
-              .where('data.shareId', isEqualTo: shareId)
-              .get();
-
-      if (snapshot.docs.isEmpty) return;
-
-      final batch = _firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
-      }
-
-      await batch.commit();
     } catch (e) {
       debugPrint(
         '❌ [NotificationRepository] Error deleting notifications for shareId: $e',
@@ -212,18 +127,31 @@ class NotificationRepository {
     }
   }
 
-  bool _useBackendForCurrentUser(String userId) {
-    return _backendAuthService.isEnabled &&
-        FirebaseAuth.instance.currentUser?.uid == userId;
+  Future<void> deleteAllUserNotifications(String userId) async {
+    try {
+      final notifications = await _getNotificationsFromApi(userId);
+      for (final n in notifications) {
+        if (n.id != null) {
+          try {
+            await deleteNotification(n.id!);
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [NotificationRepository] Error deleting all notifications: $e');
+    }
   }
 
   Future<List<NotificationModel>> _getNotificationsFromApi(
     String userId,
   ) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.get(
-      _buildUri('/api/notifications'),
-      headers: _jsonHeaders(accessToken),
+    final response = await _withTimeout(
+      _httpClient.get(
+        _buildUri('/api/notifications'),
+        headers: _jsonHeaders(accessToken),
+      ),
+      'fetch notifications',
     );
 
     _throwIfNotSuccessful(response, action: 'fetch notifications');
@@ -243,9 +171,12 @@ class NotificationRepository {
     String notificationId,
   ) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.get(
-      _buildUri('/api/notifications/$notificationId'),
-      headers: _jsonHeaders(accessToken),
+    final response = await _withTimeout(
+      _httpClient.get(
+        _buildUri('/api/notifications/$notificationId'),
+        headers: _jsonHeaders(accessToken),
+      ),
+      'fetch notification',
     );
 
     if (response.statusCode == 404) {
@@ -279,7 +210,10 @@ class NotificationRepository {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('Backend access token could not be obtained.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
     return accessToken;
@@ -303,14 +237,61 @@ class NotificationRepository {
     };
   }
 
+  Future<T> _withTimeout<T>(Future<T> future, String action) {
+    return future.timeout(
+      _requestTimeout,
+      onTimeout:
+          () =>
+              throw TimeoutException(
+                '$action timed out after ${_requestTimeout.inSeconds} seconds',
+                userMessage:
+                    'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.',
+              ),
+    );
+  }
+
   void _throwIfNotSuccessful(http.Response response, {required String action}) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
 
-    throw Exception(
-      'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
+    debugPrint(
+      'API Error [$action]: ${response.statusCode} - ${response.body}',
     );
+
+    throw switch (response.statusCode) {
+      401 => const UnauthorizedException(
+        'notification request unauthorized',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => const ConflictException(
+        'notification request conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        'notification request failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => const ServerException(
+        'notification server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => const ServerException(
+        'notification request failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 
   String _notificationsSignature(List<NotificationModel> notifications) {

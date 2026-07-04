@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// 0: Feed, 1: Search, 2: Catalog, 3: Profile
 final homeTabIndexProvider = StateProvider<int>((ref) => 0);
 
+/// Tracks which tabs have been initialized so HomeScreen can lazy-load them.
+final initializedHomeTabsProvider = StateProvider<Set<int>>((ref) => {0});
+
 /// Increments when the active Home tab is tapped again and the feed should scroll to top.
 final homeReselectTriggerProvider = StateProvider<int>((ref) => 0);
 

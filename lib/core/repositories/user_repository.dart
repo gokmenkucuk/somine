@@ -1,35 +1,28 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/user_model.dart';
+import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 
 class UserRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
-  final http.Client _httpClient = http.Client();
+  final ApiClient _apiClient = ApiClient();
 
-  /// Collection reference
-  CollectionReference<Map<String, dynamic>> get _usersCollection =>
-      _firestore.collection('users');
+  /// Signals profile changes so [streamUser] listeners refetch.
+  /// Static: profile updates can happen through any repository instance.
+  static final StreamController<void> _profileChangedController =
+      StreamController<void>.broadcast();
 
   /// Get user by ID
   Future<UserModel?> getUser(String uid) async {
     try {
-      final localUser = await _getLocalUser(uid);
-
-      if (_shouldUseBackendForUser(uid)) {
-        final backendUser = await _getCurrentUserFromApi();
-        if (backendUser != null) {
-          return _mergeBackendUser(backendUser, localUser, uid);
-        }
-      }
-
-      return localUser;
+      return await _getCurrentUserFromApi();
     } catch (e) {
       debugPrint('❌ [UserRepository] Error getting user: $e');
       rethrow;
@@ -39,29 +32,26 @@ class UserRepository {
   /// Create or update user from Firebase Auth
   Future<UserModel> createOrUpdateUser(User firebaseUser) async {
     try {
-      await _createOrUpdateLocalUser(firebaseUser);
+      await _backendAuthService.ensureSession(firebaseUser);
 
-      if (_backendAuthService.isEnabled) {
-        try {
-          await _backendAuthService.ensureSession(firebaseUser);
-          final backendUser = await _getCurrentUserFromApi();
-          final localUser = await _getLocalUser(firebaseUser.uid);
-          if (backendUser != null) {
-            return _mergeBackendUser(backendUser, localUser, firebaseUser.uid);
-          }
-        } catch (e) {
-          debugPrint(
-            '⚠️ [UserRepository] Backend create/update sync failed: $e',
-          );
-        }
-      }
-
-      final updatedDoc = await _getLocalUser(firebaseUser.uid);
-      if (updatedDoc == null) {
+      var backendUser = await _getCurrentUserFromApi();
+      if (backendUser == null) {
         throw Exception('User could not be created or loaded.');
       }
 
-      return updatedDoc;
+      // Backfill displayName from email for first-time Google users
+      // whose Firebase profile has no name.
+      if (backendUser.displayName == null || backendUser.displayName!.isEmpty) {
+        final derivedName =
+            firebaseUser.displayName ?? _displayNameFromEmail(firebaseUser.email);
+        if (derivedName != null && derivedName.isNotEmpty) {
+          await _updateCurrentUserViaApi(displayName: derivedName);
+          backendUser = await _getCurrentUserFromApi() ?? backendUser;
+        }
+      }
+
+      _profileChangedController.add(null);
+      return backendUser;
     } catch (e) {
       debugPrint('❌ [UserRepository] Error creating/updating user: $e');
       rethrow;
@@ -76,34 +66,23 @@ class UserRepository {
     String? photoURL,
   }) async {
     try {
-      if (_shouldUseBackendForUser(uid)) {
-        await _updateCurrentUserViaApi(
-          displayName: displayName,
-          username: username,
-          photoURL: photoURL,
-        );
-      }
+      await _updateCurrentUserViaApi(
+        displayName: displayName,
+        username: username,
+        photoURL: photoURL,
+      );
 
-      final updates = <String, dynamic>{
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-      if (displayName != null) updates['displayName'] = displayName;
-      if (username != null) updates['username'] = username;
-      if (photoURL != null) updates['photoURL'] = photoURL;
-
-      await _usersCollection.doc(uid).set(updates, SetOptions(merge: true));
-
-      // 2. Update Firebase Auth (Sync)
+      // Keep Firebase Auth profile in sync so auth listeners see the change
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null && currentUser.uid == uid) {
         if (displayName != null) {
           await currentUser.updateDisplayName(displayName);
         }
         if (photoURL != null) await currentUser.updatePhotoURL(photoURL);
-        // Force reload to propagate changes to listeners
         await currentUser.reload();
       }
 
+      _profileChangedController.add(null);
       debugPrint('✅ [UserRepository] User profile updated: $uid');
     } catch (e) {
       debugPrint('❌ [UserRepository] Error updating user profile: $e');
@@ -116,20 +95,8 @@ class UserRepository {
     required String photoBase64,
   }) async {
     try {
-      if (_shouldUseBackendForUser(uid)) {
-        await _updateCurrentUserViaApi(
-          photoURL: null,
-          photoBase64: photoBase64,
-        );
-      }
-
-      await _usersCollection.doc(uid).set({
-        'photoBase64': photoBase64,
-        'photoURL': null,
-        'photoUrl': null,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
+      await _updateCurrentUserViaApi(photoBase64: photoBase64);
+      _profileChangedController.add(null);
       debugPrint('✅ [UserRepository] Profile photo updated: $uid');
     } catch (e) {
       debugPrint('❌ [UserRepository] Error updating profile photo: $e');
@@ -139,17 +106,8 @@ class UserRepository {
 
   Future<void> clearProfilePhoto(String uid) async {
     try {
-      if (_shouldUseBackendForUser(uid)) {
-        await _updateCurrentUserViaApi(photoURL: null, photoBase64: null);
-      }
-
-      await _usersCollection.doc(uid).set({
-        'photoBase64': null,
-        'photoURL': null,
-        'photoUrl': null,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
+      await _updateCurrentUserViaApi(clearPhoto: true);
+      _profileChangedController.add(null);
       debugPrint('✅ [UserRepository] Profile photo cleared: $uid');
     } catch (e) {
       debugPrint('❌ [UserRepository] Error clearing profile photo: $e');
@@ -157,10 +115,18 @@ class UserRepository {
     }
   }
 
-  /// Delete user
+  /// Delete user account and all backend data
   Future<void> deleteUser(String uid) async {
     try {
-      await _usersCollection.doc(uid).delete();
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.delete(
+        _buildUri('/api/users/me'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      if (response.statusCode != 404) {
+        _throwIfNotSuccessful(response, action: 'delete user');
+      }
       debugPrint('✅ [UserRepository] User deleted: $uid');
     } catch (e) {
       debugPrint('❌ [UserRepository] Error deleting user: $e');
@@ -168,24 +134,21 @@ class UserRepository {
     }
   }
 
-  /// Stream user changes
-  Stream<UserModel?> streamUser(String uid) {
-    return _usersCollection.doc(uid).snapshots().asyncMap((doc) async {
-      final localUser = doc.exists ? UserModel.fromFirestore(doc) : null;
+  /// Stream user changes (refetches on profile updates)
+  Stream<UserModel?> streamUser(String uid) async* {
+    while (true) {
+      try {
+        yield await _getCurrentUserFromApi();
 
-      if (_shouldUseBackendForUser(uid)) {
-        try {
-          final backendUser = await _getCurrentUserFromApi();
-          if (backendUser != null) {
-            return _mergeBackendUser(backendUser, localUser, uid);
-          }
-        } catch (e) {
-          debugPrint('⚠️ [UserRepository] Backend stream sync failed: $e');
+        await for (final _ in _profileChangedController.stream) {
+          yield await _getCurrentUserFromApi();
         }
+      } catch (error, stackTrace) {
+        debugPrint('❌ [UserRepository] streamUser failed: $error');
+        yield* Stream<UserModel?>.error(error, stackTrace);
+        await Future<void>.delayed(const Duration(seconds: 5));
       }
-
-      return localUser;
-    });
+    }
   }
 
   // ============= USERNAME FUNCTIONS =============
@@ -248,18 +211,8 @@ class UserRepository {
         return false;
       }
 
-      if (_backendAuthService.isEnabled) {
-        final matches = await _searchUsersViaApi(normalized);
-        return !matches.any((user) => user.username == normalized);
-      }
-
-      final snapshot =
-          await _usersCollection
-              .where('username', isEqualTo: normalized)
-              .limit(1)
-              .get();
-
-      return snapshot.docs.isEmpty;
+      final matches = await _searchUsersViaApi(normalized);
+      return !matches.any((user) => user.username == normalized);
     } catch (e) {
       debugPrint('❌ [UserRepository] Error checking username: $e');
       return false;
@@ -276,24 +229,8 @@ class UserRepository {
         throw Exception('Geçersiz kullanıcı adı formatı');
       }
 
-      if (_shouldUseBackendForUser(uid)) {
-        await _updateCurrentUserViaApi(username: normalized);
-      } else {
-        final existing =
-            await _usersCollection
-                .where('username', isEqualTo: normalized)
-                .limit(1)
-                .get();
-
-        if (existing.docs.isNotEmpty && existing.docs.first.id != uid) {
-          throw Exception('Bu kullanıcı adı zaten alınmış');
-        }
-      }
-
-      await _usersCollection.doc(uid).set({
-        'username': normalized,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      await _updateCurrentUserViaApi(username: normalized);
+      _profileChangedController.add(null);
 
       debugPrint('✅ [UserRepository] Username updated: $normalized');
       return true;
@@ -308,20 +245,8 @@ class UserRepository {
     try {
       final normalized = username.toLowerCase().trim().replaceAll('@', '');
 
-      if (_backendAuthService.isEnabled) {
-        final matches = await _searchUsersViaApi(normalized);
-        return matches.where((user) => user.username == normalized).firstOrNull;
-      }
-
-      final snapshot =
-          await _usersCollection
-              .where('username', isEqualTo: normalized)
-              .limit(1)
-              .get();
-
-      if (snapshot.docs.isEmpty) return null;
-
-      return UserModel.fromFirestore(snapshot.docs.first);
+      final matches = await _searchUsersViaApi(normalized);
+      return matches.where((user) => user.username == normalized).firstOrNull;
     } catch (e) {
       debugPrint('❌ [UserRepository] Error finding user by username: $e');
       return null;
@@ -351,70 +276,21 @@ class UserRepository {
     return regex.hasMatch(username);
   }
 
-  Future<UserModel?> _getLocalUser(String uid) async {
-    final doc = await _usersCollection.doc(uid).get();
-    if (!doc.exists) {
-      return null;
-    }
+  String? _displayNameFromEmail(String? email) {
+    if (email == null || !email.contains('@')) return null;
 
-    return UserModel.fromFirestore(doc);
-  }
-
-  bool _shouldUseBackendForUser(String uid) {
-    return _backendAuthService.isEnabled &&
-        FirebaseAuth.instance.currentUser?.uid == uid;
-  }
-
-  Future<void> _createOrUpdateLocalUser(User firebaseUser) async {
-    final userRef = _usersCollection.doc(firebaseUser.uid);
-    final existingDoc = await userRef.get();
-
-    String? displayName = firebaseUser.displayName;
-    if (displayName == null || displayName.isEmpty) {
-      if (firebaseUser.email != null && firebaseUser.email!.contains('@')) {
-        final emailName = firebaseUser.email!.split('@').first;
-        displayName = emailName
-            .replaceAll('.', ' ')
-            .replaceAll('_', ' ')
-            .split(' ')
-            .map(
-              (word) =>
-                  word.isNotEmpty
-                      ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-                      : '',
-            )
-            .join(' ');
-        debugPrint(
-          '📝 [UserRepository] Used email for displayName: $displayName',
-        );
-      }
-    }
-
-    if (existingDoc.exists) {
-      final existingData = existingDoc.data();
-      final existingDisplayName = existingData?['displayName'] as String?;
-
-      await userRef.update({
-        'email': firebaseUser.email,
-        if (existingDisplayName == null || existingDisplayName.isEmpty)
-          'displayName': displayName,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      debugPrint('✅ [UserRepository] User updated: ${firebaseUser.uid}');
-      return;
-    }
-
-    final now = DateTime.now();
-    final newUser = UserModel(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      displayName: displayName,
-      photoURL: null,
-      createdAt: now,
-      updatedAt: now,
-    );
-    await userRef.set(newUser.toFirestore());
-    debugPrint('✅ [UserRepository] User created: ${firebaseUser.uid}');
+    final emailName = email.split('@').first;
+    return emailName
+        .replaceAll('.', ' ')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map(
+          (word) =>
+              word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+                  : '',
+        )
+        .join(' ');
   }
 
   Future<UserModel?> _getCurrentUserFromApi() async {
@@ -426,16 +302,12 @@ class UserRepository {
       return null;
     }
 
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri('/api/users/me'),
       headers: _jsonHeaders(accessToken),
     );
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to fetch current user. Status: ${response.statusCode}. Body: ${response.body}',
-      );
-    }
+    _throwIfNotSuccessful(response, action: 'fetch current user');
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return UserModel(
@@ -444,7 +316,7 @@ class UserRepository {
       displayName: json['displayName'] as String?,
       username: json['username'] as String?,
       photoURL: json['photoUrl'] as String?,
-      photoBase64: null,
+      photoBase64: json['photoBase64'] as String?,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -455,16 +327,11 @@ class UserRepository {
     String? username,
     String? photoURL,
     String? photoBase64,
+    bool clearPhoto = false,
   }) async {
-    final accessToken = await _backendAuthService.getValidAccessToken(
-      firebaseUser: FirebaseAuth.instance.currentUser,
-    );
+    final accessToken = await _requireAccessToken();
 
-    if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('No backend access token available.');
-    }
-
-    final response = await _httpClient.put(
+    final response = await _apiClient.put(
       _buildUri('/api/users/me'),
       headers: _jsonHeaders(accessToken),
       body: jsonEncode({
@@ -472,18 +339,18 @@ class UserRepository {
         'username': username,
         'photoUrl': photoURL,
         'photoBase64': photoBase64,
+        if (clearPhoto) 'clearPhoto': true,
       }),
     );
 
     if (response.statusCode == 409) {
-      throw Exception('Bu kullanıcı adı zaten alınmış');
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to update current user. Status: ${response.statusCode}. Body: ${response.body}',
+      throw const ConflictException(
+        'username already exists',
+        userMessage: 'Bu kullanıcı adı zaten alınmış.',
       );
     }
+
+    _throwIfNotSuccessful(response, action: 'update current user');
   }
 
   Future<List<UserModel>> _searchUsersViaApi(String query) async {
@@ -495,7 +362,7 @@ class UserRepository {
       return [];
     }
 
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri('/api/users/search?q=$query'),
       headers: _jsonHeaders(accessToken),
     );
@@ -504,11 +371,7 @@ class UserRepository {
       return [];
     }
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to search users. Status: ${response.statusCode}. Body: ${response.body}',
-      );
-    }
+    _throwIfNotSuccessful(response, action: 'search users');
 
     final items = jsonDecode(response.body) as List<dynamic>;
     return items
@@ -520,7 +383,7 @@ class UserRepository {
             displayName: json['displayName'] as String?,
             username: json['username'] as String?,
             photoURL: json['photoUrl'] as String?,
-            photoBase64: null,
+            photoBase64: json['photoBase64'] as String?,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -528,21 +391,19 @@ class UserRepository {
         .toList();
   }
 
-  UserModel _mergeBackendUser(
-    UserModel backendUser,
-    UserModel? localUser,
-    String uid,
-  ) {
-    return UserModel(
-      uid: uid,
-      email: backendUser.email ?? localUser?.email,
-      displayName: backendUser.displayName ?? localUser?.displayName,
-      username: backendUser.username ?? localUser?.username,
-      photoURL: backendUser.photoURL ?? localUser?.photoURL,
-      photoBase64: localUser?.photoBase64,
-      createdAt: localUser?.createdAt ?? backendUser.createdAt,
-      updatedAt: DateTime.now(),
+  Future<String> _requireAccessToken() async {
+    final accessToken = await _backendAuthService.getValidAccessToken(
+      firebaseUser: FirebaseAuth.instance.currentUser,
     );
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
+    }
+
+    return accessToken;
   }
 
   Uri _buildUri(String pathWithQuery) {
@@ -561,5 +422,47 @@ class UserRepository {
       if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
       'Authorization': 'Bearer $accessToken',
     };
+  }
+
+  void _throwIfNotSuccessful(http.Response response, {required String action}) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    debugPrint('API Error [$action]: ${response.statusCode}');
+
+    throw switch (response.statusCode) {
+      401 => const UnauthorizedException(
+        'user request unauthorized',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => const ConflictException(
+        'user request conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        'user request failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => const ServerException(
+        'user server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => const ServerException(
+        'user request failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 }

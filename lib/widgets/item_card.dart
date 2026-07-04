@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/utils/content_preview_policy.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -51,7 +51,11 @@ class ItemCard extends StatelessWidget {
                   url: item.url, // Pass URL for fallback logic
                   isNote: isNote, // Pass note type for special handling
                   // If no image, show a nice gradient placeholder
-                  placeholderGradient: _getGradientForType(item.url, isNote),
+                  placeholderGradient: _getGradientForType(
+                    context,
+                    item.url,
+                    isNote,
+                  ),
                 ),
 
                 // Source Icon Badge (Subtle, Top Left)
@@ -63,11 +67,11 @@ class ItemCard extends StatelessWidget {
                     height: 32,
                     padding: EdgeInsets.zero,
                     decoration: BoxDecoration(
-                      color: context.colors.surfaceWhite.withOpacity(0.9),
+                      color: context.colors.surfaceWhite.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: _getSourceIcon(item.url, isNote),
+                    child: _getSourceIcon(context, item.url, isNote),
                   ),
                 ),
               ],
@@ -110,112 +114,130 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  LinearGradient? _getGradientForType(String? url, bool isNote) {
-    if (isNote)
+  LinearGradient? _getGradientForType(
+    BuildContext context,
+    String? url,
+    bool isNote,
+  ) {
+    if (isNote) {
       return const LinearGradient(
         colors: [Color(0xFFF6D365), Color(0xFFFDA085)],
       ); // Warm note gradient
+    }
     if (url == null) return null;
 
     final s = url.toLowerCase();
 
     // Maps Gradients
-    if (s.contains('maps.app.goo') ||
-        s.contains('goo.gl/maps') ||
-        s.contains('google.com/maps') ||
-        s.contains('maps.google'))
-      return const LinearGradient(
-        colors: [Color(0xFF34A853), Color(0xFF1EA362)],
-      ); // Google Green
+    if (ContentPreviewPolicy.isMapUrl(s)) {
+      return LinearGradient(
+        colors: [context.colors.primary, context.colors.secondary],
+      );
+    }
 
-    if (s.contains('yandex.com/maps') ||
-        s.contains('yandex.ru/maps') ||
-        s.contains('yandex.o/maps'))
+    if (s.contains('openstreetmap.org')) {
       return const LinearGradient(
-        colors: [Color(0xFFFFCC00), Color(0xFFFF9900)],
-      ); // Yandex Yellow/Orange
-
-    if (s.contains('maps.apple.com'))
-      return const LinearGradient(
-        colors: [Color(0xFFAAAAAA), Color(0xFF888888)],
-      ); // Apple Grey
+        colors: [Color(0xFF7EBC6F), Color(0xFF4CAF50)],
+      ); // OSM Green
+    }
 
     // Brand Gradients
-    if (s.contains('youtube'))
+    if (s.contains('youtube')) {
       return const LinearGradient(
         colors: [Color(0xFFFF0000), Color(0xFFCC0000)],
       );
-    if (s.contains('medium'))
+    }
+    if (s.contains('medium')) {
       return const LinearGradient(
         colors: [Color(0xFF000000), Color(0xFF444444)],
       );
-    if (s.contains('instagram'))
+    }
+    if (s.contains('instagram')) {
       return const LinearGradient(
         colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCB045)],
       );
-    if (s.contains('twitter') || s.contains('x.com'))
+    }
+    if (s.contains('twitter') || s.contains('x.com')) {
       return const LinearGradient(
         colors: [Color(0xFF000000), Color(0xFF14171A)],
       );
-    if (s.contains('facebook'))
+    }
+    if (s.contains('facebook')) {
       return const LinearGradient(
         colors: [Color(0xFF1877F2), Color(0xFF0C5DC7)],
       );
-    if (s.contains('linkedin'))
+    }
+    if (s.contains('linkedin')) {
       return const LinearGradient(
         colors: [Color(0xFF0A66C2), Color(0xFF004182)],
       );
-    if (s.contains('github'))
+    }
+    if (s.contains('github')) {
       return const LinearGradient(
         colors: [Color(0xFF24292e), Color(0xFF000000)],
       );
-    if (s.contains('pinterest'))
-      return const LinearGradient(colors: [Color(0xFFE60023), Color(0xFDBDCC)]);
-    if (s.contains('tiktok'))
+    }
+    if (s.contains('pinterest')) {
+      return const LinearGradient(
+        colors: [Color(0xFFE60023), Color(0x00fdbdcc)],
+      );
+    }
+    if (s.contains('tiktok')) {
       return const LinearGradient(
         colors: [Color(0xFF000000), Color(0xFF25F4EE), Color(0xFFFE2C55)],
       );
-    if (s.contains('spotify'))
+    }
+    if (s.contains('spotify')) {
       return const LinearGradient(
         colors: [Color(0xFF1DB954), Color(0xFF191414)],
       );
-    if (s.contains('twitch'))
+    }
+    if (s.contains('twitch')) {
       return const LinearGradient(
         colors: [Color(0xFF9146FF), Color(0xFF6441A5)],
       );
-    if (s.contains('discord'))
+    }
+    if (s.contains('discord')) {
       return const LinearGradient(
         colors: [Color(0xFF5865F2), Color(0xFF404EED)],
       );
-    if (s.contains('reddit'))
+    }
+    if (s.contains('reddit')) {
       return const LinearGradient(
         colors: [Color(0xFFFF4500), Color(0xFFFF5700)],
       );
-    if (s.contains('snapchat'))
+    }
+    if (s.contains('snapchat')) {
       return const LinearGradient(
         colors: [Color(0xFFFFFC00), Color(0xFFFFD700)],
       );
-    if (s.contains('whatsapp'))
+    }
+    if (s.contains('whatsapp')) {
       return const LinearGradient(
         colors: [Color(0xFF25D366), Color(0xFF128C7E)],
       );
-    if (s.contains('telegram'))
+    }
+    if (s.contains('telegram')) {
       return const LinearGradient(
         colors: [Color(0xFF0088cc), Color(0xFF0077b5)],
       );
-    if (s.contains('amazon'))
+    }
+    if (s.contains('amazon')) {
       return const LinearGradient(
         colors: [Color(0xFFFF9900), Color(0xFF146eb4)],
       );
-    if (s.contains('hepsiburada'))
+    }
+    if (s.contains('hepsiburada')) {
       return const LinearGradient(
         colors: [Color(0xFFFF6000), Color(0xFFFF8C00)],
       );
-    if (s.contains('netflix'))
+    }
+    if (s.contains('netflix')) {
       return const LinearGradient(
         colors: [Color(0xFFE50914), Color(0xFFB81D24)],
       );
-    if (s.contains('google'))
+    }
+    if (s.contains('google')) {
       return const LinearGradient(
         colors: [
           Color(0xFF4285F4),
@@ -224,169 +246,214 @@ class ItemCard extends StatelessWidget {
           Color(0xFFEA4335),
         ],
       );
-    if (s.contains('yandex'))
+    }
+    if (s.contains('yandex')) {
       return const LinearGradient(
         colors: [Color(0xFFFFCC00), Color(0xFF000000)],
       );
+    }
 
     return const LinearGradient(colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)]);
   }
 
-  Widget _getSourceIcon(String? url, bool isNote) {
-    if (isNote)
+  Widget _getSourceIcon(BuildContext context, String? url, bool isNote) {
+    if (isNote) {
       return const Icon(
         PhosphorIconsBold.notePencil,
         size: 14,
         color: Color(0xFFF97316),
       ); // Orange for notes
-    if (url == null)
+    }
+    if (url == null) {
       return const Icon(Icons.link, size: 14, color: Colors.blue);
+    }
 
     final s = url.toLowerCase();
 
-    // Maps Icons
+    // Maps Icons — provider-specific brand icons
     if (s.contains('maps.app.goo') ||
         s.contains('goo.gl/maps') ||
         s.contains('google.com/maps') ||
         s.contains('maps.google') ||
-        s.contains('yandex.com/maps') ||
+        s.contains('share.google')) {
+      return FaIcon(
+        FontAwesomeIcons.google,
+        size: 12,
+        color: context.colors.primary,
+      );
+    }
+    if (s.contains('yandex.com/maps') ||
         s.contains('yandex.ru/maps') ||
-        s.contains('yandex.o/maps') ||
-        s.contains('maps.apple.com')) {
-      return const Icon(
-        PhosphorIconsBold.mapPin,
+        s.contains('yandex.o/maps')) {
+      return FaIcon(
+        FontAwesomeIcons.yandex,
+        size: 13,
+        color: context.colors.primary,
+      );
+    }
+    if (s.contains('maps.apple.com')) {
+      return FaIcon(
+        FontAwesomeIcons.apple,
+        size: 13,
+        color: context.colors.primary,
+      );
+    }
+    if (s.contains('openstreetmap.org')) {
+      return Icon(
+        PhosphorIconsBold.mapTrifold,
         size: 14,
-        color: Colors.green,
+        color: context.colors.primary,
       );
     }
 
     // FontAwesome Brand Icons (Small)
-    if (s.contains('youtube'))
+    if (s.contains('youtube')) {
       return const FaIcon(
         FontAwesomeIcons.youtube,
         size: 14,
         color: Colors.red,
       );
-    if (s.contains('instagram'))
+    }
+    if (s.contains('instagram')) {
       return const FaIcon(
         FontAwesomeIcons.instagram,
         size: 14,
         color: Colors.purple,
       );
-    if (s.contains('twitter') || s.contains('x.com'))
-      return const FaIcon(
+    }
+    if (s.contains('twitter') || s.contains('x.com')) {
+      return FaIcon(
         FontAwesomeIcons.xTwitter,
         size: 13,
-        color: Colors.black,
+        color: context.colors.primary,
       );
-    if (s.contains('facebook'))
+    }
+    if (s.contains('facebook')) {
       return const FaIcon(
         FontAwesomeIcons.facebook,
         size: 14,
         color: Color(0xFF1877F2),
       );
-    if (s.contains('linkedin'))
+    }
+    if (s.contains('linkedin')) {
       return const FaIcon(
         FontAwesomeIcons.linkedin,
         size: 14,
         color: Color(0xFF0A66C2),
       );
-    if (s.contains('github'))
+    }
+    if (s.contains('github')) {
       return const FaIcon(
         FontAwesomeIcons.github,
         size: 14,
         color: Colors.black,
       );
-    if (s.contains('pinterest'))
+    }
+    if (s.contains('pinterest')) {
       return const FaIcon(
         FontAwesomeIcons.pinterest,
         size: 14,
         color: Color(0xFFE60023),
       );
-    if (s.contains('tiktok'))
+    }
+    if (s.contains('tiktok')) {
       return const FaIcon(
         FontAwesomeIcons.tiktok,
         size: 13,
         color: Colors.black,
       );
-    if (s.contains('spotify'))
+    }
+    if (s.contains('spotify')) {
       return const FaIcon(
         FontAwesomeIcons.spotify,
         size: 14,
         color: Color(0xFF1DB954),
       );
-    if (s.contains('twitch'))
+    }
+    if (s.contains('twitch')) {
       return const FaIcon(
         FontAwesomeIcons.twitch,
         size: 13,
         color: Color(0xFF9146FF),
       );
-    if (s.contains('discord'))
+    }
+    if (s.contains('discord')) {
       return const FaIcon(
         FontAwesomeIcons.discord,
         size: 13,
         color: Color(0xFF5865F2),
       );
-    if (s.contains('reddit'))
+    }
+    if (s.contains('reddit')) {
       return const FaIcon(
         FontAwesomeIcons.reddit,
         size: 14,
         color: Color(0xFFFF4500),
       );
-    if (s.contains('snapchat'))
+    }
+    if (s.contains('snapchat')) {
       return const FaIcon(
         FontAwesomeIcons.snapchat,
         size: 14,
         color: Color(0xFFFFFC00),
       );
-    if (s.contains('whatsapp'))
+    }
+    if (s.contains('whatsapp')) {
       return const FaIcon(
         FontAwesomeIcons.whatsapp,
         size: 14,
         color: Color(0xFF25D366),
       );
-    if (s.contains('telegram'))
+    }
+    if (s.contains('telegram')) {
       return const FaIcon(
         FontAwesomeIcons.telegram,
         size: 14,
         color: Color(0xFF0088cc),
       );
-    if (s.contains('medium'))
+    }
+    if (s.contains('medium')) {
       return const FaIcon(
         FontAwesomeIcons.medium,
         size: 14,
         color: Colors.black,
       );
-    if (s.contains('amazon'))
+    }
+    if (s.contains('amazon')) {
       return const FaIcon(
         FontAwesomeIcons.amazon,
         size: 14,
         color: Colors.black,
       );
-    if (s.contains('hepsiburada'))
+    }
+    if (s.contains('hepsiburada')) {
       return const FaIcon(
         FontAwesomeIcons.bagShopping,
         size: 14,
         color: Color(0xFFFF6000),
       );
-    if (s.contains('google'))
+    }
+    if (s.contains('google')) {
       return const FaIcon(
         FontAwesomeIcons.google,
         size: 13,
         color: Colors.blue,
       );
-    if (s.contains('yandex'))
+    }
+    if (s.contains('yandex')) {
       return const FaIcon(
         FontAwesomeIcons.yandex,
         size: 13,
         color: Colors.red,
       ); // Yandex Red
-    if (s.contains('apple'))
+    }
+    if (s.contains('apple')) {
       return const FaIcon(
         FontAwesomeIcons.apple,
         size: 14,
         color: Colors.black,
       );
+    }
 
     return const Icon(Icons.link_rounded, size: 16, color: Colors.blue);
   }
@@ -399,13 +466,17 @@ class ItemCard extends StatelessWidget {
       if (url.contains('maps.app.goo') ||
           url.contains('goo.gl/maps') ||
           url.contains('google.com/maps') ||
-          url.contains('maps.google'))
+          url.contains('maps.google') ||
+          url.contains('share.google')) {
         return 'Google Maps';
+      }
       if (url.contains('yandex.com/maps') ||
           url.contains('yandex.ru/maps') ||
-          url.contains('yandex.o/maps'))
+          url.contains('yandex.o/maps')) {
         return 'Yandex Maps';
+      }
       if (url.contains('maps.apple.com')) return 'Apple Maps';
+      if (url.contains('openstreetmap.org')) return 'OpenStreetMap';
 
       final uri = Uri.parse(url);
       String host = uri.host.replaceFirst('www.', '');
@@ -424,7 +495,6 @@ class _CardImage extends StatelessWidget {
   final LinearGradient? placeholderGradient;
 
   const _CardImage({
-    super.key,
     this.imageUrl,
     this.heroTag,
     this.url,
@@ -486,10 +556,10 @@ class _CardImage extends StatelessWidget {
           '🖼️ [CardImage] isKnownBrand=$isKnownBrand | isSocial=$isSocialPlatform | isFavicon=$isFavicon | isMaps=$isMaps',
         );
 
-        // Maps URLs: Always show the image (even if it's a favicon - they return map previews)
+        // Maps: Always show brand placeholder (like X/Twitter — no OG image)
         // Social platforms (Spotify, YouTube, etc.): Show real content images
         // Known brands or favicons (non-maps, non-social): Show placeholder with appropriate icon
-        if ((isKnownBrand || isFavicon) && !isMaps && !isSocialPlatform) {
+        if (isMaps || ((isKnownBrand || isFavicon) && !isSocialPlatform)) {
           // Known brands or favicons: Show placeholder with appropriate icon
           content = _buildPlaceholder(
             faviconUrl: (isFavicon && !isKnownBrand) ? imageUrl : null,
@@ -549,12 +619,29 @@ class _CardImage extends StatelessWidget {
           s.contains('goo.gl/maps') ||
           s.contains('google.com/maps') ||
           s.contains('maps.google') ||
-          s.contains('yandex.com/maps') ||
+          s.contains('share.google')) {
+        iconWidget = const FaIcon(
+          FontAwesomeIcons.google,
+          color: Colors.white,
+          size: 48,
+        );
+      } else if (s.contains('yandex.com/maps') ||
           s.contains('yandex.ru/maps') ||
-          s.contains('yandex.o/maps') ||
-          s.contains('maps.apple.com')) {
-        iconWidget = Icon(
-          PhosphorIconsBold.mapPin,
+          s.contains('yandex.o/maps')) {
+        iconWidget = const FaIcon(
+          FontAwesomeIcons.yandex,
+          color: Colors.white,
+          size: 48,
+        );
+      } else if (s.contains('maps.apple.com')) {
+        iconWidget = const FaIcon(
+          FontAwesomeIcons.apple,
+          color: Colors.white,
+          size: 48,
+        );
+      } else if (s.contains('openstreetmap.org')) {
+        iconWidget = const Icon(
+          PhosphorIconsBold.mapTrifold,
           color: Colors.white,
           size: 48,
         );
@@ -705,7 +792,7 @@ class _CardImage extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -817,8 +904,10 @@ class _CardImage extends StatelessWidget {
         url.contains('goo.gl/maps') ||
         url.contains('google.com/maps') ||
         url.contains('maps.google') ||
+        url.contains('share.google') ||
         url.contains('yandex.com/maps') ||
         url.contains('yandex.ru/maps') ||
-        url.contains('maps.apple.com');
+        url.contains('maps.apple.com') ||
+        url.contains('openstreetmap.org');
   }
 }

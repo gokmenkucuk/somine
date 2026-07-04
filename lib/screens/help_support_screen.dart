@@ -110,7 +110,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   'Aşağıdaki SSS bölümünü inceleyin veya bize ulaşın',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -312,7 +312,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.1),
+                  color: context.colors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: context.colors.primary, size: 22),
@@ -342,7 +342,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               ),
               Icon(
                 CupertinoIcons.chevron_right,
-                color: context.colors.body.withOpacity(0.5),
+                color: context.colors.body.withValues(alpha: 0.5),
                 size: 18,
               ),
             ],

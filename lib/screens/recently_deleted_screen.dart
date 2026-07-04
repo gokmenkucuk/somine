@@ -9,7 +9,6 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 class RecentlyDeletedScreen extends ConsumerStatefulWidget {
   const RecentlyDeletedScreen({super.key});
@@ -111,7 +110,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -226,7 +225,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                       "Silinen öğeler burada 30 gün saklanır, sonra otomatik olarak silinir.",
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
-                        color: context.colors.body.withOpacity(0.5),
+                        color: context.colors.body.withValues(alpha: 0.5),
                         fontSize: 14,
                       ),
                     ),
@@ -243,10 +242,10 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                 margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.1),
+                  color: context.colors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: context.colors.primary.withOpacity(0.2),
+                    color: context.colors.primary.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -359,7 +358,7 @@ class _DeletedItemCard extends ConsumerWidget {
                     fontSize: 12,
                     color: daysRemaining != null && daysRemaining <= 7 
                       ? Colors.orange 
-                      : context.colors.body.withOpacity(0.6),
+                      : context.colors.body.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -513,7 +512,7 @@ class _DeletedItemCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),

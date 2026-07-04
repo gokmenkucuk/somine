@@ -241,7 +241,7 @@ class PaywallScreen extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: context.colors.primary, size: 20),
@@ -278,7 +278,7 @@ class PaywallScreen extends ConsumerWidget {
           color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isYearly ? context.colors.primary : context.colors.hint.withOpacity(0.2),
+            color: isYearly ? context.colors.primary : context.colors.hint.withValues(alpha: 0.2),
             width: isYearly ? 2 : 1,
           ),
         ),
@@ -418,7 +418,7 @@ class PaywallScreen extends ConsumerWidget {
           color: context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isPopular ? context.colors.primary : context.colors.hint.withOpacity(0.2),
+            color: isPopular ? context.colors.primary : context.colors.hint.withValues(alpha: 0.2),
             width: isPopular ? 2 : 1,
           ),
         ),

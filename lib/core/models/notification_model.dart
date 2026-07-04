@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum NotificationType {
   shareRequest, // Paylaşım isteği geldi
   shareAccepted, // Paylaşımım kabul edildi
@@ -27,23 +25,6 @@ class NotificationModel {
     required this.createdAt,
   });
 
-  factory NotificationModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return NotificationModel(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      type: NotificationType.values.firstWhere(
-        (t) => t.name == data['type'],
-        orElse: () => NotificationType.shareRequest,
-      ),
-      title: data['title'] ?? '',
-      message: data['message'] ?? '',
-      data: Map<String, dynamic>.from(data['data'] ?? {}),
-      isRead: data['isRead'] ?? false,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
-
   factory NotificationModel.fromApi(
     Map<String, dynamic> json, {
     required String userId,
@@ -66,18 +47,6 @@ class NotificationModel {
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
     );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'userId': userId,
-      'type': type.name,
-      'title': title,
-      'message': message,
-      'data': data,
-      'isRead': isRead,
-      'createdAt': Timestamp.fromDate(createdAt),
-    };
   }
 
   NotificationModel copyWith({

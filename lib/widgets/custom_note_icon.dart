@@ -28,11 +28,11 @@ class CustomNoteIcon extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Container(height: 2.5, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(1))),
+           Container(height: 2.5, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(1))),
            const SizedBox(height: 4),
-           Container(height: 2.5, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), borderRadius: BorderRadius.circular(1))),
+           Container(height: 2.5, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(1))),
            const SizedBox(height: 4),
-           Container(height: 2.5, width: size * 0.5, decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(1))),
+           Container(height: 2.5, width: size * 0.5, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(1))),
         ],
       ),
     );

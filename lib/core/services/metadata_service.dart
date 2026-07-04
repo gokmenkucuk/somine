@@ -850,6 +850,7 @@ class MetadataService {
         lower.contains('goo.gl/maps') ||
         lower.contains('google.com/maps') ||
         lower.contains('maps.google') ||
+        lower.contains('share.google') ||
         lower.contains('yandex.com/maps') ||
         lower.contains('yandex.ru/maps') ||
         lower.contains('maps.apple.com');
@@ -858,7 +859,9 @@ class MetadataService {
   /// Check if URL is a Google Maps short link (maps.app.goo.gl or goo.gl/maps)
   static bool _isGoogleMapsShortLink(String url) {
     final lower = url.toLowerCase();
-    return lower.contains('maps.app.goo.gl') || lower.contains('goo.gl/maps');
+    return lower.contains('maps.app.goo.gl') ||
+        lower.contains('goo.gl/maps') ||
+        lower.contains('share.google');
   }
 
   /// Extract title from Google Maps short link URL directly

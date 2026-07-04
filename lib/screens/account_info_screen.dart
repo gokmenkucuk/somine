@@ -397,7 +397,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: context.colors.primary, size: 22),
@@ -458,7 +458,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: context.colors.primary, size: 22),
@@ -525,7 +525,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
               ),
               Icon(
                 CupertinoIcons.chevron_right,
-                color: color.withOpacity(0.5),
+                color: color.withValues(alpha: 0.5),
                 size: 18,
               ),
             ],
@@ -629,9 +629,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               setState(() {
                                 _currentDisplayName = controller.text.trim();
                               });
-                              Navigator.pop(ctx);
+                              if (ctx.mounted) Navigator.pop(ctx);
                               SuccessNotificationSheet.show(
-                                this.context,
+                                this.context, // ignore: use_build_context_synchronously
                                 title: 'Ad Güncellendi',
                                 message:
                                     'Görünen adınız başarıyla değiştirildi.',
@@ -639,10 +639,12 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             }
                           }
                         } catch (e) {
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(
-                            this.context,
-                          ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                          if (mounted) {
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            ScaffoldMessenger.of(
+                              this.context, // ignore: use_build_context_synchronously
+                            ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -866,24 +868,26 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                           controller.text.toLowerCase().trim(),
                                         );
 
-                                        Navigator.pop(ctx);
+                                        if (ctx.mounted) Navigator.pop(ctx);
 
                                         _loadUserData(); // Reload
 
                                         if (mounted) {
                                           SuccessNotificationSheet.show(
-                                            this.context,
+                                            this.context, // ignore: use_build_context_synchronously
                                             title: 'Kullanıcı Adı Güncellendi',
                                             message:
                                                 'Yeni kullanıcı adın: @${controller.text.toLowerCase().trim()}',
                                           );
                                         }
                                       } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          this.context,
-                                        ).showSnackBar(
-                                          SnackBar(content: Text('Hata: $e')),
-                                        );
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(
+                                            this.context, // ignore: use_build_context_synchronously
+                                          ).showSnackBar(
+                                            SnackBar(content: Text('Hata: $e')),
+                                          );
+                                        }
                                       }
                                     }
                                     : null,

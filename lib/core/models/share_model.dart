@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum ShareStatus { pending, accepted, rejected }
 
 class ShareModel {
@@ -31,27 +29,6 @@ class ShareModel {
     this.rejectedAt,
   });
 
-  factory ShareModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return ShareModel(
-      id: doc.id,
-      fromUserId: data['fromUserId'] ?? '',
-      fromUserName: data['fromUserName'] ?? '',
-      fromUserEmail: data['fromUserEmail'] ?? '',
-      toUserId: data['toUserId'] ?? '',
-      toUserEmail: data['toUserEmail'] ?? '',
-      categoryId: data['categoryId'] ?? '',
-      categoryName: data['categoryName'] ?? '',
-      status: ShareStatus.values.firstWhere(
-        (s) => s.name == data['status'],
-        orElse: () => ShareStatus.pending,
-      ),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      acceptedAt: (data['acceptedAt'] as Timestamp?)?.toDate(),
-      rejectedAt: (data['rejectedAt'] as Timestamp?)?.toDate(),
-    );
-  }
-
   factory ShareModel.fromApi(Map<String, dynamic> json) {
     return ShareModel(
       id: json['id'] as String?,
@@ -74,22 +51,6 @@ class ShareModel {
       acceptedAt: DateTime.tryParse(json['acceptedAt'] as String? ?? ''),
       rejectedAt: DateTime.tryParse(json['rejectedAt'] as String? ?? ''),
     );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'fromUserId': fromUserId,
-      'fromUserName': fromUserName,
-      'fromUserEmail': fromUserEmail,
-      'toUserId': toUserId,
-      'toUserEmail': toUserEmail,
-      'categoryId': categoryId,
-      'categoryName': categoryName,
-      'status': status.name,
-      'createdAt': Timestamp.fromDate(createdAt),
-      if (acceptedAt != null) 'acceptedAt': Timestamp.fromDate(acceptedAt!),
-      if (rejectedAt != null) 'rejectedAt': Timestamp.fromDate(rejectedAt!),
-    };
   }
 
   ShareModel copyWith({

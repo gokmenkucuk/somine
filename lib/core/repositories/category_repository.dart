@@ -1,38 +1,25 @@
-import 'dart:async';
+import 'dart:async' hide TimeoutException;
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/backend_realtime_service.dart';
 
 class CategoryRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
   final BackendRealtimeService _backendRealtimeService =
       BackendRealtimeService();
   final http.Client _httpClient = http.Client();
-
-  CollectionReference<Map<String, dynamic>> get _categoriesCollection =>
-      _firestore.collection('categories');
+  static const Duration _requestTimeout = Duration(seconds: 15);
 
   Future<List<CategoryModel>> getCategories(String userId) async {
     try {
-      if (_useBackendForCurrentUser(userId)) {
-        return _getCategoriesFromApi(userId);
-      }
-
-      final snapshot =
-          await _categoriesCollection.where('userId', isEqualTo: userId).get();
-
-      final categories =
-          snapshot.docs.map((doc) => CategoryModel.fromFirestore(doc)).toList();
-      categories.sort((a, b) => a.order.compareTo(b.order));
-      return categories;
+      return await _getCategoriesFromApi(userId);
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error getting categories: $e');
       rethrow;
@@ -42,17 +29,10 @@ class CategoryRepository {
   Future<CategoryModel?> getCategory(String categoryId) async {
     try {
       final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final categories = await _getCategoriesFromApi(currentUserId);
-        final match = categories.where((c) => c.id == categoryId).firstOrNull;
-        if (match != null) return match;
-      }
+      if (currentUserId == null) return null;
 
-      final doc = await _categoriesCollection.doc(categoryId).get();
-      if (doc.exists) {
-        return CategoryModel.fromFirestore(doc);
-      }
-      return null;
+      final categories = await _getCategoriesFromApi(currentUserId);
+      return categories.where((c) => c.id == categoryId).firstOrNull;
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error getting category: $e');
       rethrow;
@@ -61,15 +41,7 @@ class CategoryRepository {
 
   Future<CategoryModel> createCategory(CategoryModel category) async {
     try {
-      if (_useBackendForCurrentUser(category.userId)) {
-        return _createCategoryViaApi(category);
-      }
-
-      final docRef = await _categoriesCollection.add(category.toFirestore());
-      debugPrint('✅ [CategoryRepository] Category created: ${docRef.id}');
-
-      final doc = await docRef.get();
-      return CategoryModel.fromFirestore(doc);
+      return await _createCategoryViaApi(category);
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error creating category: $e');
       rethrow;
@@ -100,20 +72,7 @@ class CategoryRepository {
 
   Future<void> updateCategory(CategoryModel category) async {
     try {
-      if (_useBackendForCurrentUser(category.userId)) {
-        await _updateCategoryViaApi(category);
-        return;
-      }
-
-      await _categoriesCollection.doc(category.id).update({
-        'name': category.name,
-        'icon': category.icon,
-        'color': category.color,
-        'order': category.order,
-        'isVault': category.isVault,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      debugPrint('✅ [CategoryRepository] Category updated: ${category.id}');
+      await _updateCategoryViaApi(category);
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error updating category: $e');
       rethrow;
@@ -122,13 +81,7 @@ class CategoryRepository {
 
   Future<void> deleteCategory(String categoryId) async {
     try {
-      if (_backendAuthService.isEnabled) {
-        await _deleteCategoryViaApi(categoryId);
-        return;
-      }
-
-      await _categoriesCollection.doc(categoryId).delete();
-      debugPrint('✅ [CategoryRepository] Category deleted: $categoryId');
+      await _deleteCategoryViaApi(categoryId);
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error deleting category: $e');
       rethrow;
@@ -137,24 +90,7 @@ class CategoryRepository {
 
   Future<void> reorderCategories(List<CategoryModel> categories) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        await _reorderCategoriesViaApi(categories);
-        return;
-      }
-
-      final batch = _firestore.batch();
-
-      for (int i = 0; i < categories.length; i++) {
-        final category = categories[i];
-        batch.update(_categoriesCollection.doc(category.id), {
-          'order': i,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
-
-      await batch.commit();
-      debugPrint('✅ [CategoryRepository] Categories reordered');
+      await _reorderCategoriesViaApi(categories);
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error reordering categories: $e');
       rethrow;
@@ -162,35 +98,28 @@ class CategoryRepository {
   }
 
   Stream<List<CategoryModel>> streamCategories(String userId) async* {
-    if (!_useBackendForCurrentUser(userId)) {
-      yield* _categoriesCollection
-          .where('userId', isEqualTo: userId)
-          .snapshots()
-          .map((snapshot) {
-            final categories =
-                snapshot.docs
-                    .map((doc) => CategoryModel.fromFirestore(doc))
-                    .toList();
-            categories.sort((a, b) => a.order.compareTo(b.order));
-            return categories;
-          });
-      return;
-    }
+    while (true) {
+      try {
+        var categories = await _getCategoriesFromApi(userId);
+        var lastSignature = _categoriesSignature(categories);
+        yield categories;
 
-    var categories = await _getCategoriesFromApi(userId);
-    var lastSignature = _categoriesSignature(categories);
-    yield categories;
+        await for (final _ in _backendRealtimeService.categoriesChanges) {
+          categories = await _getCategoriesFromApi(userId);
+          final signature = _categoriesSignature(categories);
 
-    await for (final _ in _backendRealtimeService.categoriesChanges) {
-      categories = await _getCategoriesFromApi(userId);
-      final signature = _categoriesSignature(categories);
+          if (signature == lastSignature) {
+            continue;
+          }
 
-      if (signature == lastSignature) {
-        continue;
+          lastSignature = signature;
+          yield categories;
+        }
+      } catch (error, stackTrace) {
+        debugPrint('❌ [CategoryRepository] streamCategories failed: $error');
+        yield* Stream<List<CategoryModel>>.error(error, stackTrace);
+        await Future<void>.delayed(const Duration(seconds: 5));
       }
-
-      lastSignature = signature;
-      yield categories;
     }
   }
 
@@ -210,16 +139,14 @@ class CategoryRepository {
     }
   }
 
-  bool _useBackendForCurrentUser(String userId) {
-    return _backendAuthService.isEnabled &&
-        FirebaseAuth.instance.currentUser?.uid == userId;
-  }
-
   Future<List<CategoryModel>> _getCategoriesFromApi(String userId) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.get(
-      _buildUri('/api/categories'),
-      headers: _jsonHeaders(accessToken),
+    final response = await _withTimeout(
+      _httpClient.get(
+        _buildUri('/api/categories'),
+        headers: _jsonHeaders(accessToken),
+      ),
+      'fetch categories',
     );
 
     _throwIfNotSuccessful(response, action: 'fetch categories');
@@ -236,10 +163,13 @@ class CategoryRepository {
 
   Future<CategoryModel> _createCategoryViaApi(CategoryModel category) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.post(
-      _buildUri('/api/categories'),
-      headers: _jsonHeaders(accessToken),
-      body: jsonEncode(category.toApiCreateRequest()),
+    final response = await _withTimeout(
+      _httpClient.post(
+        _buildUri('/api/categories'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode(category.toApiCreateRequest()),
+      ),
+      'create category',
     );
 
     _throwIfNotSuccessful(response, action: 'create category');
@@ -250,10 +180,13 @@ class CategoryRepository {
 
   Future<void> _updateCategoryViaApi(CategoryModel category) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.put(
-      _buildUri('/api/categories/${category.id}'),
-      headers: _jsonHeaders(accessToken),
-      body: jsonEncode(category.toApiUpdateRequest()),
+    final response = await _withTimeout(
+      _httpClient.put(
+        _buildUri('/api/categories/${category.id}'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode(category.toApiUpdateRequest()),
+      ),
+      'update category',
     );
 
     _throwIfNotSuccessful(response, action: 'update category');
@@ -261,9 +194,12 @@ class CategoryRepository {
 
   Future<void> _deleteCategoryViaApi(String categoryId) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.delete(
-      _buildUri('/api/categories/$categoryId'),
-      headers: _jsonHeaders(accessToken),
+    final response = await _withTimeout(
+      _httpClient.delete(
+        _buildUri('/api/categories/$categoryId'),
+        headers: _jsonHeaders(accessToken),
+      ),
+      'delete category',
     );
 
     _throwIfNotSuccessful(response, action: 'delete category');
@@ -271,15 +207,18 @@ class CategoryRepository {
 
   Future<void> _reorderCategoriesViaApi(List<CategoryModel> categories) async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.patch(
-      _buildUri('/api/categories/reorder'),
-      headers: _jsonHeaders(accessToken),
-      body: jsonEncode({
-        'items': [
-          for (int i = 0; i < categories.length; i++)
-            {'id': categories[i].id, 'sortOrder': i},
-        ],
-      }),
+    final response = await _withTimeout(
+      _httpClient.patch(
+        _buildUri('/api/categories/reorder'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode({
+          'items': [
+            for (int i = 0; i < categories.length; i++)
+              {'id': categories[i].id, 'sortOrder': i},
+          ],
+        }),
+      ),
+      'reorder categories',
     );
 
     _throwIfNotSuccessful(response, action: 'reorder categories');
@@ -291,7 +230,10 @@ class CategoryRepository {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('No backend access token available.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
     return accessToken;
@@ -315,14 +257,63 @@ class CategoryRepository {
     };
   }
 
+  Future<T> _withTimeout<T>(Future<T> future, String action) {
+    return future.timeout(
+      _requestTimeout,
+      onTimeout:
+          () =>
+              throw TimeoutException(
+                '$action timed out after ${_requestTimeout.inSeconds} seconds',
+                userMessage:
+                    'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.',
+              ),
+    );
+  }
+
   void _throwIfNotSuccessful(http.Response response, {required String action}) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
 
-    throw Exception(
-      'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
+    // Log for debugging (not shown to user)
+    debugPrint(
+      'API Error [$action]: ${response.statusCode} - ${response.body}',
     );
+
+    // Throw typed exception
+    throw switch (response.statusCode) {
+      401 => UnauthorizedException(
+        '$action: unauthorized',
+        userMessage: 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => ConflictException(
+        '$action: conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        '$action failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => ServerException(
+        '$action: server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => ServerException(
+        '$action failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'Geçersiz istek. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 
   String _categoriesSignature(List<CategoryModel> categories) {

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
+import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 
 class PreferencesService {
@@ -19,7 +21,7 @@ class PreferencesService {
   PreferencesService._internal();
 
   final BackendAuthService _backendAuthService = BackendAuthService();
-  final http.Client _httpClient = http.Client();
+  final ApiClient _apiClient = ApiClient();
 
   Future<List<String>> getSearchHistoryFirebase(String userId) async {
     if (_shouldUseBackend(userId)) {
@@ -158,19 +160,18 @@ class PreferencesService {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('No backend access token available.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri('/api/users/me/search-history'),
       headers: _jsonHeaders(accessToken),
     );
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to fetch search history. Status: ${response.statusCode}. Body: ${response.body}',
-      );
-    }
+    _throwIfNotSuccessful(response, action: 'fetch search history');
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final terms =
@@ -187,20 +188,19 @@ class PreferencesService {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('No backend access token available.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
-    final response = await _httpClient.put(
+    final response = await _apiClient.put(
       _buildUri('/api/users/me/search-history'),
       headers: _jsonHeaders(accessToken),
       body: jsonEncode({'terms': history}),
     );
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to update search history. Status: ${response.statusCode}. Body: ${response.body}',
-      );
-    }
+    _throwIfNotSuccessful(response, action: 'update search history');
   }
 
   Future<void> _persistLocalHistory(List<String> history) async {
@@ -246,5 +246,47 @@ class PreferencesService {
       if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
       'Authorization': 'Bearer $accessToken',
     };
+  }
+
+  void _throwIfNotSuccessful(http.Response response, {required String action}) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    debugPrint('API Error [$action]: ${response.statusCode}');
+
+    throw switch (response.statusCode) {
+      401 => const UnauthorizedException(
+        'preferences request unauthorized',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => const ConflictException(
+        'preferences request conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        'preferences request failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => const ServerException(
+        'preferences server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => const ServerException(
+        'preferences request failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 }

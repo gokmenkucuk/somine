@@ -45,8 +45,8 @@ class InviteFriendScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    context.colors.primary.withOpacity(0.2),
-                    context.colors.secondary.withOpacity(0.1),
+                    context.colors.primary.withValues(alpha: 0.2),
+                    context.colors.secondary.withValues(alpha: 0.1),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -95,7 +95,7 @@ class InviteFriendScreen extends StatelessWidget {
                 color: context.colors.surfaceWhite,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: context.colors.primary.withOpacity(0.2),
+                  color: context.colors.primary.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -127,7 +127,7 @@ class InviteFriendScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: context.colors.primary.withOpacity(0.1),
+                        color: context.colors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -162,7 +162,7 @@ class InviteFriendScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Share.share(shareMessage);
+                  SharePlus.instance.share(ShareParams(text: shareMessage));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
@@ -201,7 +201,7 @@ class InviteFriendScreen extends StatelessWidget {
                   icon: PhosphorIconsRegular.whatsappLogo,
                   label: 'WhatsApp',
                   color: const Color(0xFF25D366),
-                  onTap: () => Share.share(shareMessage),
+                  onTap: () => SharePlus.instance.share(ShareParams(text: shareMessage)),
                 ),
                 const SizedBox(width: 16),
                 _buildSocialButton(
@@ -209,7 +209,7 @@ class InviteFriendScreen extends StatelessWidget {
                   icon: PhosphorIconsRegular.telegramLogo,
                   label: 'Telegram',
                   color: const Color(0xFF0088CC),
-                  onTap: () => Share.share(shareMessage),
+                  onTap: () => SharePlus.instance.share(ShareParams(text: shareMessage)),
                 ),
                 const SizedBox(width: 16),
                 _buildSocialButton(
@@ -217,7 +217,7 @@ class InviteFriendScreen extends StatelessWidget {
                   icon: PhosphorIconsRegular.messengerLogo,
                   label: 'Messenger',
                   color: const Color(0xFF0084FF),
-                  onTap: () => Share.share(shareMessage),
+                  onTap: () => SharePlus.instance.share(ShareParams(text: shareMessage)),
                 ),
               ],
             ),
@@ -242,7 +242,7 @@ class InviteFriendScreen extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: color, size: 28),

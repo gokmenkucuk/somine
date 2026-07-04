@@ -85,7 +85,7 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -96,7 +96,7 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
@@ -129,7 +129,7 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     height: 1.5,
                   ),
                 ),
@@ -180,7 +180,7 @@ class _SuccessNotificationSheetState extends State<SuccessNotificationSheet> {
                   child: Icon(
                     PhosphorIconsLight.x,
                     size: 20,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ),

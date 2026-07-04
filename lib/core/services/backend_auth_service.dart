@@ -5,15 +5,17 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/backend_auth_session.dart';
+import 'package:somine_app/core/services/api_client.dart';
 
 enum BackendIdentityProvider { google, apple }
 
 class BackendAuthService {
-  final http.Client _httpClient;
+  final ApiClient _apiClient;
 
   BackendAuthService({http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+    : _apiClient = ApiClient(httpClient);
 
   bool get isEnabled => ApiConfig.isBackendAuthEnabled;
 
@@ -127,7 +129,7 @@ class BackendAuthService {
     }
 
     try {
-      final response = await _httpClient.post(
+      final response = await _apiClient.post(
         _buildUri('/api/auth/logout'),
         headers: _jsonHeaders(bearerToken: session.accessToken),
         body: jsonEncode({'refreshToken': session.refreshToken}),
@@ -135,7 +137,7 @@ class BackendAuthService {
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         debugPrint(
-          '⚠️ [BackendAuthService] Logout request failed: ${response.statusCode} ${response.body}',
+          '⚠️ [BackendAuthService] Logout request failed: ${response.statusCode}',
         );
       }
     } catch (e) {
@@ -154,7 +156,7 @@ class BackendAuthService {
       BackendIdentityProvider.apple => '/api/auth/apple',
     };
 
-    final response = await _httpClient.post(
+    final response = await _apiClient.post(
       _buildUri(endpoint),
       headers: _jsonHeaders(),
       body: jsonEncode({'idToken': firebaseIdToken}),
@@ -167,7 +169,7 @@ class BackendAuthService {
   }
 
   Future<BackendAuthSession> _refresh(String refreshToken) async {
-    final response = await _httpClient.post(
+    final response = await _apiClient.post(
       _buildUri('/api/auth/refresh'),
       headers: _jsonHeaders(),
       body: jsonEncode({'refreshToken': refreshToken}),
@@ -216,8 +218,40 @@ class BackendAuthService {
       return;
     }
 
-    throw Exception(
-      'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
-    );
+    debugPrint('API Error [$action]: ${response.statusCode}');
+
+    throw switch (response.statusCode) {
+      401 => UnauthorizedException(
+        '$action: unauthorized',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => ConflictException(
+        '$action: conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        '$action failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => ServerException(
+        '$action: server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => ServerException(
+        '$action failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 }

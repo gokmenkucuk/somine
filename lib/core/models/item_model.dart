@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/utils/content_preview_policy.dart';
 
 /// Type of saved item
 enum ItemType { link, note, image }
@@ -106,34 +106,6 @@ class ItemModel {
     this.hasReminder = false,
   });
 
-  /// Create from Firestore document
-  factory ItemModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
-    return ItemModel(
-      id: doc.id,
-      userId: data['userId'] as String,
-      categoryId: data['categoryId'] as String?,
-      type: ItemType.values.firstWhere(
-        (e) => e.name == data['type'],
-        orElse: () => ItemType.link,
-      ),
-      url: data['url'] as String?,
-      note: data['note'] as String?,
-      imageUrl: data['imageUrl'] as String?,
-      ogMetadata: OGMetadata.fromMap(
-        data['ogMetadata'] as Map<String, dynamic>?,
-      ),
-      isFavorite: data['isFavorite'] as bool? ?? false,
-      order: data['order'] as int? ?? 0,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      isDeleted: data['isDeleted'] as bool? ?? false,
-      deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
-      reminderId: data['reminderId'] as String?,
-      hasReminder: data['hasReminder'] as bool? ?? false,
-    );
-  }
-
   factory ItemModel.fromApi(
     Map<String, dynamic> json, {
     required String userId,
@@ -204,27 +176,6 @@ class ItemModel {
     };
   }
 
-  /// Convert to Firestore map
-  Map<String, dynamic> toFirestore() {
-    return {
-      'userId': userId,
-      'categoryId': categoryId,
-      'type': type.name,
-      'url': url,
-      'note': note,
-      'imageUrl': imageUrl,
-      'ogMetadata': ogMetadata?.toMap(),
-      'isFavorite': isFavorite,
-      'order': order,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-      'isDeleted': isDeleted,
-      'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
-      'reminderId': reminderId,
-      'hasReminder': hasReminder,
-    };
-  }
-
   /// Create a copy with updated fields
   ItemModel copyWith({
     String? id,
@@ -281,12 +232,24 @@ class ItemModel {
 
   /// Get display image (from OG metadata or item imageUrl)
   String? get displayImage {
-    final img = ogMetadata?.imageUrl ?? imageUrl;
+    final img =
+        ContentPreviewPolicy.canUsePreviewImage(
+              url: url,
+              imageUrl: ogMetadata?.imageUrl,
+            )
+            ? ogMetadata?.imageUrl
+            : imageUrl;
     if (img != null) {
-      String correctedImg = img.trim().replaceAll('\n', '').replaceAll('\r', '');
+      String correctedImg = img
+          .trim()
+          .replaceAll('\n', '')
+          .replaceAll('\r', '');
       // Fix old IP address
       if (correctedImg.contains('46.224.146.102')) {
-        correctedImg = correctedImg.replaceAll('http://46.224.146.102', ApiConfig.baseUrl);
+        correctedImg = correctedImg.replaceAll(
+          'http://46.224.146.102',
+          ApiConfig.baseUrl,
+        );
       }
       // Migrate old public /storage/ path to authenticated /api/storage/ path
       if (correctedImg.contains(ApiConfig.baseUrl) &&

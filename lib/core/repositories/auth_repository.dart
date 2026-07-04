@@ -4,6 +4,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
+import 'package:somine_app/core/repositories/share_repository.dart';
+import 'package:somine_app/core/repositories/notification_repository.dart';
+import 'package:somine_app/core/repositories/storage_repository.dart';
 import 'package:somine_app/core/models/backend_auth_session.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
@@ -15,6 +18,9 @@ class AuthRepository {
   final UserRepository _userRepository = UserRepository();
   final CategoryRepository _categoryRepository = CategoryRepository();
   final ItemRepository _itemRepository = ItemRepository();
+  final ShareRepository _shareRepository = ShareRepository();
+  final NotificationRepository _notificationRepository = NotificationRepository();
+  final StorageRepository _storageRepository = StorageRepository();
   final BackendAuthService _backendAuthService = BackendAuthService();
   final SubscriptionService _subscriptionService = SubscriptionService();
 
@@ -413,7 +419,31 @@ class AuthRepository {
         debugPrint('⚠️ [AuthRepository] Error deleting categories: $e');
       }
 
-      // 3. Delete user document
+      // 3. Delete all user shares
+      try {
+        await _shareRepository.deleteAllUserShares(userId);
+        debugPrint('✅ [AuthRepository] User shares deleted');
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Error deleting shares: $e');
+      }
+
+      // 4. Delete all user notifications
+      try {
+        await _notificationRepository.deleteAllUserNotifications(userId);
+        debugPrint('✅ [AuthRepository] User notifications deleted');
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Error deleting notifications: $e');
+      }
+
+      // 5. Delete all user storage files
+      try {
+        await _storageRepository.deleteAllUserFiles(userId);
+        debugPrint('✅ [AuthRepository] User storage files deleted');
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Error deleting storage files: $e');
+      }
+
+      // 6. Delete user document
       try {
         await _userRepository.deleteUser(userId);
         debugPrint('✅ [AuthRepository] User document deleted');
@@ -421,7 +451,7 @@ class AuthRepository {
         debugPrint('⚠️ [AuthRepository] Error deleting user doc: $e');
       }
 
-      // 4. Delete Firebase Auth account
+      // 7. Delete Firebase Auth account
       try {
         await user.delete();
         debugPrint('✅ [AuthRepository] Firebase Auth account deleted');
@@ -435,7 +465,7 @@ class AuthRepository {
         }
       }
 
-      // 5. Clean up Google Sign In (after successful deletion)
+      // 8. Clean up Google Sign In (after successful deletion)
       try {
         await _googleSignIn.signOut();
         await _googleSignIn.disconnect();
@@ -466,10 +496,15 @@ class AuthRepository {
       );
 
       if (providerId == 'google.com') {
+        // Force account selection by signing out first
+        try {
+          await _googleSignIn.signOut();
+        } catch (_) {}
+        
         // Reauthenticate with Google
         final googleUser = await _googleSignIn.signIn();
         if (googleUser == null) {
-          throw Exception('Google reauthentication cancelled');
+          throw Exception('Google doğrulama işlemi iptal edildi');
         }
         final googleAuth = await googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
@@ -486,6 +521,12 @@ class AuthRepository {
       } else {
         debugPrint('⚠️ [AuthRepository] Unknown provider: $providerId');
       }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-mismatch') {
+        throw Exception('Lütfen hesabı silmek için asıl giriş yaptığınız hesabı seçin. Farklı bir hesap seçtiniz.');
+      }
+      debugPrint('❌ [AuthRepository] Reauthentication error: $e');
+      rethrow;
     } catch (e) {
       debugPrint('❌ [AuthRepository] Reauthentication error: $e');
       rethrow;

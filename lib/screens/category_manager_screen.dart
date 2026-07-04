@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/category_model.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
-import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
-import 'package:somine_app/core/design/design_tokens.dart';
 
 class CategoryManagerScreen extends ConsumerStatefulWidget {
   const CategoryManagerScreen({super.key});
@@ -161,22 +161,35 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => _CategoryFormSheet(
         initialName: category.name,
-        initialEmoji: category.emoji,
+        initialEmoji: category.icon,
         isEditing: true,
-        onSave: (name, emoji) => _updateCategory(category, name, emoji),
+        onSave: (name, icon) => _updateCategory(category, name, icon),
       ),
     );
   }
 
-  Future<void> _createCategory(String name, String? emoji) async {
+  Future<void> _createCategory(String name, String? icon) async {
+    final existing = ref.read(categoriesProvider).valueOrNull ?? [];
+    final isDuplicate = existing.any(
+      (c) => c.name.trim().toLowerCase() == name.trim().toLowerCase(),
+    );
+    if (isDuplicate) {
+      _showErrorSnackbar('"$name" adında bir kategori zaten var');
+      return;
+    }
+
     try {
+      final userId = ref.read(currentUserProvider)?.uid ?? '';
       final categoryRepo = ref.read(categoryRepositoryProvider);
+      final now = DateTime.now();
       await categoryRepo.createCategory(
         CategoryModel(
           id: '',
+          userId: userId,
           name: name,
-          emoji: emoji,
-          createdAt: DateTime.now(),
+          icon: icon,
+          createdAt: now,
+          updatedAt: now,
         ),
       );
       if (mounted) {
@@ -191,12 +204,23 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
   Future<void> _updateCategory(
     CategoryModel category,
     String name,
-    String? emoji,
+    String? icon,
   ) async {
+    final existing = ref.read(categoriesProvider).valueOrNull ?? [];
+    final isDuplicate = existing.any(
+      (c) =>
+          c.id != category.id &&
+          c.name.trim().toLowerCase() == name.trim().toLowerCase(),
+    );
+    if (isDuplicate) {
+      _showErrorSnackbar('"$name" adında bir kategori zaten var');
+      return;
+    }
+
     try {
       final categoryRepo = ref.read(categoryRepositoryProvider);
       await categoryRepo.updateCategory(
-        category.copyWith(name: name, emoji: emoji),
+        category.copyWith(name: name, icon: icon, updatedAt: DateTime.now()),
       );
       if (mounted) {
         Navigator.pop(context);
@@ -209,7 +233,6 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
 
   Future<void> _confirmDelete(BuildContext context, CategoryModel category) async {
     // Check item count directly from repository (Source of Truth)
-    // Providers might be filtered or not listening
     try {
       final itemRepo = ref.read(itemRepositoryProvider);
       final count = await itemRepo.getActiveItemCountInCategory(category.userId, category.id);
@@ -219,16 +242,15 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       if (!mounted) return;
 
       if (count == 0) {
-        // Empty category - Standard delete
-        _showStandardDeleteDialog(context, category);
+        _showStandardDeleteDialog(this.context, category); // ignore: use_build_context_synchronously
       } else {
-        // Non-empty category - Advanced actions
-        _showAdvancedDeleteDialog(context, category, count);
+        _showAdvancedDeleteDialog(this.context, category, count); // ignore: use_build_context_synchronously
       }
     } catch (e) {
       debugPrint("Error checking category items: $e");
-      // Fallback to standard dialog if check fails, but maybe warn
-      if (mounted) _showStandardDeleteDialog(context, category);
+      if (mounted) {
+        _showStandardDeleteDialog(this.context, category); // ignore: use_build_context_synchronously
+      }
     }
   }
 
@@ -289,7 +311,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             // Move Option
             _buildActionButton(
               context,
-              icon: PhosphorIconsLight.folderNotchPlus,
+              icon: PhosphorIconsRegular.folderSimplePlus,
               text: 'İçerikleri Başka Koleksiyona Taşı',
               color: context.colors.primary,
               onTap: () {
@@ -332,9 +354,9 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isDestructive ? Colors.red.withOpacity(0.08) : context.colors.backgroundTop,
+          color: isDestructive ? Colors.red.withValues(alpha: 0.08) : context.colors.backgroundTop,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDestructive ? Colors.red.withOpacity(0.2) : Colors.transparent),
+          border: Border.all(color: isDestructive ? Colors.red.withValues(alpha: 0.2) : Colors.transparent),
         ),
         child: Row(
           children: [
@@ -343,7 +365,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             Expanded(
               child: Text(text, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: isDestructive ? Colors.red : context.colors.headline)),
             ),
-            Icon(PhosphorIconsLight.caretRight, size: 16, color: isDestructive ? Colors.red.withOpacity(0.5) : context.colors.hint),
+            Icon(PhosphorIconsLight.caretRight, size: 16, color: isDestructive ? Colors.red.withValues(alpha: 0.5) : context.colors.hint),
           ],
         ),
       ),
@@ -380,7 +402,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
                 itemBuilder: (context, index) {
                   final cat = targets[index];
                   return ListTile(
-                    leading: Text(cat.emoji ?? '📁', style: const TextStyle(fontSize: 24)),
+                    leading: Text(cat.icon ?? '📁', style: const TextStyle(fontSize: 24)),
                     title: Text(cat.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
                     onTap: () {
                       Navigator.pop(context);
@@ -483,7 +505,7 @@ class _AddCategoryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(SoMineTokens.radiusRound),
           boxShadow: [
             BoxShadow(
-              color: context.colors.premiumShadow.withOpacity(0.3),
+              color: context.colors.premiumShadow.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -541,7 +563,7 @@ class _CategoryTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(SoMineTokens.radiusLarge),
           boxShadow: [
              BoxShadow(
-               color: context.colors.premiumShadow.withOpacity(0.05),
+               color: context.colors.premiumShadow.withValues(alpha: 0.05),
                offset: const Offset(0, 4),
                blurRadius: 12,
              )
@@ -559,7 +581,7 @@ class _CategoryTile extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  category.emoji ?? '📁',
+                  category.icon ?? '📁',
                   style: const TextStyle(fontSize: 24),
                 ),
               ),
@@ -693,15 +715,14 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     return Container(
       margin: const EdgeInsets.all(SoMineTokens.spacingL),
       decoration: BoxDecoration(
-      decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(SoMineTokens.radiusXLarge),
         boxShadow: [
           BoxShadow(
-             color: context.colors.premiumShadow.withOpacity(0.1),
+             color: context.colors.premiumShadow.withValues(alpha: 0.1),
              offset: const Offset(0, -4),
-             blurRadius: 20
-          )
+             blurRadius: 20,
+          ),
         ],
       ),
       child: Padding(
@@ -721,7 +742,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: context.colors.hint.withOpacity(0.3),
+                  color: context.colors.hint.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -870,7 +891,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                         borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
                         boxShadow: [
                           BoxShadow(
-                            color: context.colors.primary.withOpacity(0.3),
+                            color: context.colors.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),

@@ -9,6 +9,7 @@ import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/screens/share_requests_screen.dart';
 import 'package:somine_app/screens/my_shares_screen.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationsScreen extends ConsumerWidget {
@@ -81,7 +82,10 @@ class NotificationsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => ErrorStateWidget(
+          message: 'Bildirimler yüklenemedi. Lütfen tekrar deneyin.',
+          onRetry: () => ref.invalidate(notificationsProvider),
+        ),
       ),
     );
   }
@@ -98,7 +102,7 @@ class NotificationsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Bildirim Yok',
+            'Bildirim yok',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -113,7 +117,7 @@ class NotificationsScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: context.colors.body.withOpacity(0.7),
+                color: context.colors.body.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -177,14 +181,14 @@ class _NotificationCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: notification.isRead
               ? context.colors.surfaceWhite
-              : context.colors.primary.withOpacity(0.05),
+              : context.colors.primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: notification.isRead
               ? null
-              : Border.all(color: context.colors.primary.withOpacity(0.2)),
+              : Border.all(color: context.colors.primary.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -198,7 +202,7 @@ class _NotificationCard extends ConsumerWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Center(

@@ -29,6 +29,7 @@ class BackendRealtimeService {
   HubConnection? _notificationsConnection;
   Future<void>? _connectOperation;
   String? _connectedUserId;
+  bool _isDisposed = false;
 
   Stream<Map<String, dynamic>> get itemsChanges =>
       _itemsChangedController.stream;
@@ -41,11 +42,15 @@ class BackendRealtimeService {
     if (!ApiConfig.isBackendAuthEnabled) {
       return Future.value();
     }
+    if (_isDisposed) {
+      return Future.value();
+    }
 
-    return _connectOperation ??=
-        _connectForCurrentUserInternal().whenComplete(() {
-          _connectOperation = null;
-        });
+    return _connectOperation ??= _connectForCurrentUserInternal().whenComplete(
+      () {
+        _connectOperation = null;
+      },
+    );
   }
 
   Future<void> disconnect() async {
@@ -90,8 +95,24 @@ class BackendRealtimeService {
     }
   }
 
+  Future<void> dispose() async {
+    if (_isDisposed) {
+      return;
+    }
+
+    _isDisposed = true;
+    await disconnect();
+    await _itemsChangedController.close();
+    await _categoriesChangedController.close();
+    await _notificationsChangedController.close();
+  }
+
   Future<void> _connectForCurrentUserInternal() async {
     final user = FirebaseAuth.instance.currentUser;
+    if (_isDisposed) {
+      return;
+    }
+
     if (user == null) {
       await disconnect();
       return;
@@ -120,17 +141,29 @@ class BackendRealtimeService {
     _itemsConnection ??= _buildConnection(
       path: '/hub/items',
       eventName: 'items_changed',
-      onEvent: (payload) => _itemsChangedController.add(payload),
+      onEvent: (payload) {
+        if (!_itemsChangedController.isClosed) {
+          _itemsChangedController.add(payload);
+        }
+      },
     );
     _categoriesConnection ??= _buildConnection(
       path: '/hub/categories',
       eventName: 'categories_changed',
-      onEvent: (payload) => _categoriesChangedController.add(payload),
+      onEvent: (payload) {
+        if (!_categoriesChangedController.isClosed) {
+          _categoriesChangedController.add(payload);
+        }
+      },
     );
     _notificationsConnection ??= _buildConnection(
       path: '/hub/notifications',
       eventName: 'notifications_changed',
-      onEvent: (payload) => _notificationsChangedController.add(payload),
+      onEvent: (payload) {
+        if (!_notificationsChangedController.isClosed) {
+          _notificationsChangedController.add(payload);
+        }
+      },
     );
 
     await _startConnection(_itemsConnection, label: 'items');
@@ -143,22 +176,22 @@ class BackendRealtimeService {
     required String eventName,
     required void Function(Map<String, dynamic> payload) onEvent,
   }) {
-    final connection = HubConnectionBuilder()
-        .withUrl(
-          _buildHubUrl(path),
-          options: HttpConnectionOptions(
-            headers: _apiKeyHeaders(),
-            accessTokenFactory: () async {
-              final user = FirebaseAuth.instance.currentUser;
-              final accessToken = await _backendAuthService.getValidAccessToken(
-                firebaseUser: user,
-              );
-              return accessToken ?? '';
-            },
-          ),
-        )
-        .withAutomaticReconnect(retryDelays: const [0, 2000, 5000, 10000])
-        .build();
+    final connection =
+        HubConnectionBuilder()
+            .withUrl(
+              _buildHubUrl(path),
+              options: HttpConnectionOptions(
+                headers: _apiKeyHeaders(),
+                accessTokenFactory: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  final accessToken = await _backendAuthService
+                      .getValidAccessToken(firebaseUser: user);
+                  return accessToken ?? '';
+                },
+              ),
+            )
+            .withAutomaticReconnect(retryDelays: const [0, 2000, 5000, 10000])
+            .build();
 
     connection.on(eventName, (arguments) {
       final payload = _extractPayload(arguments);
@@ -241,9 +274,7 @@ class BackendRealtimeService {
     }
 
     if (first is Map) {
-      return first.map(
-        (key, value) => MapEntry(key.toString(), value),
-      );
+      return first.map((key, value) => MapEntry(key.toString(), value));
     }
 
     return null;

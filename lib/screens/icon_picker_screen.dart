@@ -66,10 +66,12 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
       }
     } catch (e) {
       debugPrint('Error changing icon: $e');
-      if (mounted) setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hata oluştu: ${e.toString()}')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata oluştu: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -119,18 +121,18 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       color: isSelected 
-                          ? context.colors.primary.withOpacity(0.1) 
+                          ? context.colors.primary.withValues(alpha: 0.1) 
                           : context.colors.surfaceWhite,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: isSelected 
                             ? context.colors.primary 
-                            : (isLocked ? context.colors.secondary.withOpacity(0.2) : Colors.transparent),
+                            : (isLocked ? context.colors.secondary.withValues(alpha: 0.2) : Colors.transparent),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
-                          ? [BoxShadow(color: context.colors.primary.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))]
-                          : [BoxShadow(color: context.colors.premiumShadow.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                          ? [BoxShadow(color: context.colors.primary.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))]
+                          : [BoxShadow(color: context.colors.premiumShadow.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -145,7 +147,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                                 borderRadius: BorderRadius.circular(18),
                                 color: context.colors.backgroundTop, // Placeholder bg
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))
                                 ],
                               ),
                               child: ClipRRect(
@@ -165,7 +167,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                               Positioned.fill(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.4),
+                                    color: Colors.black.withValues(alpha: 0.4),
                                     borderRadius: BorderRadius.circular(18),
                                   ),
                                   child: Center(

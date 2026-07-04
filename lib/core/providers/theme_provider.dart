@@ -33,7 +33,6 @@ class ThemeNotifier extends StateNotifier<AppThemeEnum> {
     switch (val) {
       case 'midnight': return AppThemeEnum.midnight;
       case 'vibe': return AppThemeEnum.vibe;
-      case 'air':
       default: return AppThemeEnum.air;
     }
   }
@@ -42,8 +41,7 @@ class ThemeNotifier extends StateNotifier<AppThemeEnum> {
     switch (theme) {
       case AppThemeEnum.midnight: return 'midnight';
       case AppThemeEnum.vibe: return 'vibe';
-      case AppThemeEnum.air:
-      default: return 'air';
+      case AppThemeEnum.air: return 'air';
     }
   }
 }

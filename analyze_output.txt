@@ -1,0 +1,46 @@
+Analyzing somine_app...                                         
+
+warning • The value of the local variable 'context' isn't used • lib/core/services/notification_service.dart:175:17 • unused_local_variable
+warning • The declaration '_showPasswordChangeDialog' isn't referenced • lib/screens/account_info_screen.dart:922:8 • unused_element
+warning • The value of the field '_textAnimation' isn't used • lib/screens/add_content_screen.dart:63:26 • unused_field
+warning • The value of the field '_hasClipboardContent' isn't used • lib/screens/add_content_screen.dart:75:8 • unused_field
+warning • The value of the field '_isUploadingImage' isn't used • lib/screens/add_content_screen.dart:98:8 • unused_field
+warning • The declaration '_handlePaste' isn't referenced • lib/screens/add_content_screen.dart:511:8 • unused_element
+warning • The declaration '_isFacebookUrl' isn't referenced • lib/screens/add_content_screen.dart:849:8 • unused_element
+warning • The declaration '_showSuccess' isn't referenced • lib/screens/add_content_screen.dart:1410:8 • unused_element
+warning • The declaration '_buildManualEntryHeader' isn't referenced • lib/screens/add_content_screen.dart:1829:10 • unused_element
+warning • The declaration '_buildLoadingState' isn't referenced • lib/screens/add_content_screen.dart:1834:10 • unused_element
+warning • The declaration '_buildMapPreview' isn't referenced • lib/screens/add_content_screen.dart:2050:10 • unused_element
+warning • The declaration '_buildAmbientAnimationCore' isn't referenced • lib/screens/add_content_screen.dart:2312:10 • unused_element
+warning • The declaration '_getPlatformColor' isn't referenced • lib/screens/add_content_screen.dart:3211:9 • unused_element
+warning • The declaration '_WavyStreamPainter' isn't referenced • lib/screens/add_content_screen.dart:3389:7 • unused_element
+warning • The value of the field 'error' isn't used • lib/screens/add_content_screen.dart:3649:37 • unused_field
+warning • The declaration '_buildAddCatalogButton' isn't referenced • lib/screens/catalog_screen.dart:1134:10 • unused_element
+warning • The value of the local variable 'recentUsers' isn't used • lib/screens/catalog_screen.dart:1562:32 • unused_local_variable
+warning • The value of the local variable 'isLoadingRecent' isn't used • lib/screens/catalog_screen.dart:1563:10 • unused_local_variable
+warning • The value of the local variable 'catColor' isn't used • lib/screens/catalog_screen.dart:2522:37 • unused_local_variable
+warning • The value of the local variable 'isNote' isn't used • lib/screens/catalog_screen.dart:2983:11 • unused_local_variable
+warning • The declaration '_deleteSelectedItems' isn't referenced • lib/screens/catalog_screen.dart:4405:16 • unused_element
+warning • The value of the local variable 'isKnownBrand' isn't used • lib/screens/item_feed_screen.dart:1231:11 • unused_local_variable
+warning • The declaration '_buildNoteCard' isn't referenced • lib/screens/item_feed_screen.dart:1488:10 • unused_element
+warning • The declaration '_buildFallbackView' isn't referenced • lib/screens/item_feed_screen.dart:1669:10 • unused_element
+warning • The declaration '_buildNotepadGraphic' isn't referenced • lib/screens/item_feed_screen.dart:1720:10 • unused_element
+warning • The declaration '_buildPlatformIconWidget' isn't referenced • lib/screens/item_feed_screen.dart:1781:10 • unused_element
+warning • A value for optional parameter 'borderRadius' isn't ever given • lib/screens/item_feed_screen.dart:1945:61 • unused_element_parameter
+warning • The declaration '_SloganGradientTransform' isn't referenced • lib/screens/login_screen.dart:320:7 • unused_element
+warning • The value of the field '_progressAnimation' isn't used • lib/screens/onboarding_prep_screen.dart:36:26 • unused_field
+warning • A value for optional parameter 'trailing' isn't ever given • lib/screens/settings_screen.dart:359:10 • unused_element_parameter
+warning • The value of the local variable 'iconColor' isn't used • lib/widgets/item_card.dart:583:11 • unused_local_variable
+warning • The value of the local variable 'iconSize' isn't used • lib/widgets/item_card.dart:585:12 • unused_local_variable
+   info • Don't invoke 'print' in production code • scratch/test.dart:17:3 • avoid_print
+   info • Don't invoke 'print' in production code • scratch/test.dart:30:7 • avoid_print
+   info • Don't invoke 'print' in production code • scripts/fetch_demo_assets.dart:109:3 • avoid_print
+   info • Statements in an if should be enclosed in a block • scripts/fetch_demo_assets.dart:136:46 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • scripts/fetch_demo_assets.dart:137:42 • curly_braces_in_flow_control_structures
+   info • Empty catch block • scripts/fetch_demo_assets.dart:155:19 • empty_catches
+   info • Empty catch block • scripts/fetch_demo_assets.dart:179:21 • empty_catches
+   info • Don't invoke 'print' in production code • scripts/fetch_demo_assets.dart:193:9 • avoid_print
+   info • Don't invoke 'print' in production code • scripts/fetch_demo_assets.dart:198:21 • avoid_print
+   info • Don't invoke 'print' in production code • scripts/fetch_demo_assets.dart:213:3 • avoid_print
+   info • Don't invoke 'print' in production code • scripts/fetch_demo_assets.dart:228:3 • avoid_print
+

@@ -1,41 +1,32 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
+import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 
 class ReminderRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
-  final http.Client _httpClient = http.Client();
-
-  CollectionReference get _remindersCollection =>
-      _firestore.collection('reminders');
+  final ApiClient _apiClient = ApiClient();
 
   Future<ReminderModel> createReminder(ReminderModel reminder) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.post(
-          _buildUri('/api/reminders'),
-          headers: _jsonHeaders(accessToken),
-          body: jsonEncode(reminder.toApiCreateRequest()),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.post(
+        _buildUri('/api/reminders'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode(reminder.toApiCreateRequest()),
+      );
 
-        _throwIfNotSuccessful(response, action: 'create reminder');
-        return ReminderModel.fromApi(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-      }
-
-      final docRef = await _remindersCollection.add(reminder.toFirestore());
-      final doc = await docRef.get();
-      return ReminderModel.fromFirestore(doc);
+      _throwIfNotSuccessful(response, action: 'create reminder');
+      return ReminderModel.fromApi(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error creating reminder: $e');
       rethrow;
@@ -44,28 +35,20 @@ class ReminderRepository {
 
   Future<ReminderModel?> getReminder(String reminderId) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.get(
-          _buildUri('/api/reminders/$reminderId'),
-          headers: _jsonHeaders(accessToken),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.get(
+        _buildUri('/api/reminders/$reminderId'),
+        headers: _jsonHeaders(accessToken),
+      );
 
-        if (response.statusCode == 404) {
-          return null;
-        }
-
-        _throwIfNotSuccessful(response, action: 'fetch reminder');
-        return ReminderModel.fromApi(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
+      if (response.statusCode == 404) {
+        return null;
       }
 
-      final doc = await _remindersCollection.doc(reminderId).get();
-      if (doc.exists) {
-        return ReminderModel.fromFirestore(doc);
-      }
-      return null;
+      _throwIfNotSuccessful(response, action: 'fetch reminder');
+      return ReminderModel.fromApi(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error getting reminder: $e');
       rethrow;
@@ -74,36 +57,14 @@ class ReminderRepository {
 
   Future<List<ReminderModel>> getUserReminders(String userId) async {
     try {
-      if (_useBackendForCurrentUser(userId)) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.get(
-          _buildUri('/api/reminders'),
-          headers: _jsonHeaders(accessToken),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.get(
+        _buildUri('/api/reminders'),
+        headers: _jsonHeaders(accessToken),
+      );
 
-        _throwIfNotSuccessful(response, action: 'fetch reminders');
-        return _parseReminderList(response.body);
-      }
-
-      final itemsSnapshot =
-          await _firestore
-              .collection('items')
-              .where('userId', isEqualTo: userId)
-              .where('hasReminder', isEqualTo: true)
-              .get();
-
-      if (itemsSnapshot.docs.isEmpty) return [];
-
-      final itemIds = itemsSnapshot.docs.map((d) => d.id).toList();
-      final remindersSnapshot =
-          await _remindersCollection
-              .where('itemId', whereIn: itemIds)
-              .where('isActive', isEqualTo: true)
-              .get();
-
-      return remindersSnapshot.docs
-          .map((doc) => ReminderModel.fromFirestore(doc))
-          .toList();
+      _throwIfNotSuccessful(response, action: 'fetch reminders');
+      return _parseReminderList(response.body);
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error getting user reminders: $e');
       rethrow;
@@ -112,26 +73,15 @@ class ReminderRepository {
 
   Future<ReminderModel?> getItemReminder(String itemId) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.get(
-          _buildUri('/api/reminders', queryParameters: {'itemId': itemId}),
-          headers: _jsonHeaders(accessToken),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.get(
+        _buildUri('/api/reminders', queryParameters: {'itemId': itemId}),
+        headers: _jsonHeaders(accessToken),
+      );
 
-        _throwIfNotSuccessful(response, action: 'fetch item reminder');
-        final reminders = await _parseReminderList(response.body);
-        return reminders.isEmpty ? null : reminders.first;
-      }
-
-      final snapshot =
-          await _remindersCollection
-              .where('itemId', isEqualTo: itemId)
-              .limit(1)
-              .get();
-
-      if (snapshot.docs.isEmpty) return null;
-      return ReminderModel.fromFirestore(snapshot.docs.first);
+      _throwIfNotSuccessful(response, action: 'fetch item reminder');
+      final reminders = await _parseReminderList(response.body);
+      return reminders.isEmpty ? null : reminders.first;
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error getting item reminder: $e');
       rethrow;
@@ -140,29 +90,14 @@ class ReminderRepository {
 
   Future<void> updateReminder(ReminderModel reminder) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.put(
-          _buildUri('/api/reminders/${reminder.id}'),
-          headers: _jsonHeaders(accessToken),
-          body: jsonEncode(reminder.toApiUpdateRequest()),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.put(
+        _buildUri('/api/reminders/${reminder.id}'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode(reminder.toApiUpdateRequest()),
+      );
 
-        _throwIfNotSuccessful(response, action: 'update reminder');
-        return;
-      }
-
-      await _remindersCollection.doc(reminder.id).update({
-        'reminderDate': Timestamp.fromDate(reminder.reminderDate),
-        'reminderTime': {
-          'hour': reminder.reminderTime.hour,
-          'minute': reminder.reminderTime.minute,
-        },
-        'repeat': reminder.repeat.name,
-        'isActive': reminder.isActive,
-        'customRepeatDays': reminder.customRepeatDays,
-        'customRepeatMinutes': reminder.customRepeatMinutes,
-      });
+      _throwIfNotSuccessful(response, action: 'update reminder');
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error updating reminder: $e');
       rethrow;
@@ -171,17 +106,12 @@ class ReminderRepository {
 
   Future<void> toggleReminder(String reminderId, bool isActive) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final reminder = await getReminder(reminderId);
-        if (reminder == null) {
-          throw Exception('Reminder not found');
-        }
-
-        await updateReminder(reminder.copyWith(isActive: isActive));
-        return;
+      final reminder = await getReminder(reminderId);
+      if (reminder == null) {
+        throw Exception('Reminder not found');
       }
 
-      await _remindersCollection.doc(reminderId).update({'isActive': isActive});
+      await updateReminder(reminder.copyWith(isActive: isActive));
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error toggling reminder: $e');
       rethrow;
@@ -190,18 +120,13 @@ class ReminderRepository {
 
   Future<void> deleteReminder(String reminderId) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.delete(
-          _buildUri('/api/reminders/$reminderId'),
-          headers: _jsonHeaders(accessToken),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.delete(
+        _buildUri('/api/reminders/$reminderId'),
+        headers: _jsonHeaders(accessToken),
+      );
 
-        _throwIfNotSuccessful(response, action: 'delete reminder');
-        return;
-      }
-
-      await _remindersCollection.doc(reminderId).delete();
+      _throwIfNotSuccessful(response, action: 'delete reminder');
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error deleting reminder: $e');
       rethrow;
@@ -210,23 +135,9 @@ class ReminderRepository {
 
   Future<void> deleteItemReminders(String itemId) async {
     try {
-      if (_shouldUseBackendForCurrentUser()) {
-        final reminder = await getItemReminder(itemId);
-        if (reminder?.id == null) return;
-        await deleteReminder(reminder!.id!);
-        return;
-      }
-
-      final snapshot =
-          await _remindersCollection.where('itemId', isEqualTo: itemId).get();
-
-      if (snapshot.docs.isEmpty) return;
-
-      final batch = _firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
+      final reminder = await getItemReminder(itemId);
+      if (reminder?.id == null) return;
+      await deleteReminder(reminder!.id!);
     } catch (e) {
       debugPrint('❌ [ReminderRepository] Error deleting item reminders: $e');
       rethrow;
@@ -255,43 +166,10 @@ class ReminderRepository {
   }
 
   Stream<List<ReminderModel>> streamUserReminders(String userId) async* {
-    if (!_useBackendForCurrentUser(userId)) {
-      yield* _firestore
-          .collection('items')
-          .where('userId', isEqualTo: userId)
-          .where('hasReminder', isEqualTo: true)
-          .snapshots()
-          .asyncMap((itemsSnapshot) async {
-            if (itemsSnapshot.docs.isEmpty) return <ReminderModel>[];
-
-            final itemIds = itemsSnapshot.docs.map((d) => d.id).toList();
-            final remindersSnapshot =
-                await _remindersCollection
-                    .where('itemId', whereIn: itemIds)
-                    .where('isActive', isEqualTo: true)
-                    .get();
-
-            return remindersSnapshot.docs
-                .map((doc) => ReminderModel.fromFirestore(doc))
-                .toList();
-          });
-      return;
-    }
-
     while (true) {
       yield await getUserReminders(userId);
       await Future<void>.delayed(const Duration(seconds: 2));
     }
-  }
-
-  bool _shouldUseBackendForCurrentUser() {
-    return _backendAuthService.isEnabled &&
-        FirebaseAuth.instance.currentUser != null;
-  }
-
-  bool _useBackendForCurrentUser(String userId) {
-    return _backendAuthService.isEnabled &&
-        FirebaseAuth.instance.currentUser?.uid == userId;
   }
 
   Future<List<ReminderModel>> _parseReminderList(String responseBody) async {
@@ -308,7 +186,10 @@ class ReminderRepository {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('Backend access token could not be obtained.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
     return accessToken;
@@ -340,8 +221,40 @@ class ReminderRepository {
       return;
     }
 
-    throw Exception(
-      'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
-    );
+    debugPrint('API Error [$action]: ${response.statusCode}');
+
+    throw switch (response.statusCode) {
+      401 => const UnauthorizedException(
+        'reminder request unauthorized',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => const ConflictException(
+        'reminder request conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        'reminder request failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => const ServerException(
+        'reminder server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => const ServerException(
+        'reminder request failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 }

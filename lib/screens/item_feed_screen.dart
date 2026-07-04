@@ -4,30 +4,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/widgets/custom_note_icon.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'dart:ui' as ui;
 
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
-import 'package:somine_app/core/providers/auth_providers.dart';
-import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart'; // Added for drag state
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
-import 'package:somine_app/core/utils/demo_seeder.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
-import 'package:somine_app/widgets/item_card.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/core/providers/notification_providers.dart';
-import 'package:somine_app/screens/search_screen.dart';
 
 enum ViewMode { square, masonry, feed }
 
@@ -115,8 +108,15 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
     // Listen for item changes to trigger fade-in after layout
     ref.listen<PaginatedItemsState>(paginatedFeedProvider, (previous, next) {
-      if (!next.isLoading && next.items.isNotEmpty) {
-        _onItemsLoaded(next.items.length);
+      if (!next.isLoading) {
+        if (next.items.isNotEmpty) {
+          _onItemsLoaded(next.items.length);
+        } else if (_contentOpacity == 0.0) {
+          // Items empty and loading done → hide skeleton, show empty state
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _contentOpacity = 1.0);
+          });
+        }
       }
     });
 
@@ -139,7 +139,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final items = feedState.items;
 
     // Ensure content is visible if items already loaded (e.g., after theme change)
-    if (items.isNotEmpty && _contentOpacity == 0.0 && !feedState.isLoading) {
+    if (_contentOpacity == 0.0 && !feedState.isLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -201,8 +201,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: context.colors.surfaceWhite.withOpacity(
-                                0.6,
+                              color: context.colors.surfaceWhite.withValues(alpha: 0.6,
                               ),
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -235,7 +234,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                                 height: 48,
                                 decoration: BoxDecoration(
                                   color: context.colors.surfaceWhite
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: context.colors.surfaceWhite,
@@ -461,6 +460,20 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     child: CustomScrollView(
                       controller: _scrollController,
                       slivers: [
+                        // Error State
+                        if (feedState.hasError && items.isEmpty)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: ErrorStateWidget(
+                              message:
+                                  feedState.errorMessage ?? 'Bilinmeyen hata',
+                              onRetry: () {
+                                ref
+                                    .read(paginatedFeedProvider.notifier)
+                                    .loadInitial();
+                              },
+                            ),
+                          ),
                         // Content Grid
                         SliverPadding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -526,7 +539,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
               isSelected
                   ? [
                     BoxShadow(
-                      color: context.colors.premiumShadow.withOpacity(0.08),
+                      color: context.colors.premiumShadow.withValues(alpha: 0.08),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -576,12 +589,19 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             }
           }
 
-          // Trigger skeleton loading for smooth transition
+          // Trigger skeleton loading for smooth transition only when target has items
           if (ref.read(selectedCategoryIdProvider) != category?.id) {
-            setState(() {
-              _contentOpacity = 0.0; // Show skeleton
-              _lastItemCount = 0; // Reset item count to re-trigger fade-in
-            });
+            final cachedItems = ref.read(catalogItemsProvider).value ?? [];
+            final targetHasItems =
+                category == null
+                    ? cachedItems.isNotEmpty
+                    : cachedItems.any((item) => item.categoryId == category.id);
+            if (targetHasItems) {
+              setState(() {
+                _contentOpacity = 0.0;
+                _lastItemCount = 0;
+              });
+            }
           }
           ref.read(selectedCategoryIdProvider.notifier).state = category?.id;
         },
@@ -595,7 +615,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 isSelected
                     ? LinearGradient(
                       colors: [
-                        context.colors.secondary.withOpacity(0.5),
+                        context.colors.secondary.withValues(alpha: 0.5),
                         context.colors.surfaceWhite,
                       ],
                       begin: Alignment.topLeft,
@@ -608,7 +628,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 isSelected
                     ? null
                     : (isVault
-                        ? context.colors.primary.withOpacity(0.1)
+                        ? context.colors.primary.withValues(alpha: 0.1)
                         : context.colors.surfaceWhite),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
@@ -616,7 +636,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                   isSelected
                       ? Colors.transparent
                       : (isVault
-                          ? context.colors.primary.withOpacity(0.5)
+                          ? context.colors.primary.withValues(alpha: 0.5)
                           : context.colors.secondary),
               width: 1.5,
             ),
@@ -624,14 +644,14 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 isSelected
                     ? [
                       BoxShadow(
-                        color: context.colors.secondary.withOpacity(0.35),
+                        color: context.colors.secondary.withValues(alpha: 0.35),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ]
                     : [
                       BoxShadow(
-                        color: context.colors.premiumShadow.withOpacity(0.03),
+                        color: context.colors.premiumShadow.withValues(alpha: 0.03),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -691,7 +711,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: context.colors.premiumShadow.withOpacity(0.05),
+                        color: context.colors.premiumShadow.withValues(alpha: 0.05),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -705,7 +725,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  "Koleksiyonun Boş",
+                  "Henüz içerik yok",
                   style: GoogleFonts.outfit(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -714,7 +734,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Henüz hiç içerik eklememişsin.\nLinklerini ve notlarını kaydetmeye başla!",
+                  "Kaydettiğin bağlantılar, notlar ve görseller burada görünecek.",
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
@@ -735,8 +755,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       );
     }
 
-    if (items.isEmpty && isLoading) {
-      // Skeleton Loading - Adapt to current view mode
+    if (items.isEmpty && isLoading && _lastItemCount == 0) {
+      // Skeleton Loading - only on initial load, not on loadMore with empty results
       switch (_viewMode) {
         case ViewMode.square:
           return SliverGrid(
@@ -848,21 +868,22 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final source = item.url ?? '';
 
     // Helper to check for known brands
-    bool _isMapUrl(String url) {
+    bool isMapUrl(String url) {
       return url.contains('maps.app.goo.gl') ||
           url.contains('goo.gl/maps') ||
           url.contains('google.com/maps') ||
           url.contains('maps.google') ||
+          url.contains('share.google') ||
           url.contains('yandex.com/maps') ||
           url.contains('yandex.ru/maps') ||
           url.contains('maps.apple.com');
     }
 
-    bool _isKnownBrandSite(String? url) {
+    bool isKnownBrandSite(String? url) {
       if (url == null) return false;
       final lowerUrl = url.toLowerCase();
       // Exclude Maps services - they return real map images
-      if (_isMapUrl(lowerUrl)) return false;
+      if (isMapUrl(lowerUrl)) return false;
 
       final knownBrands = ['google', 'yandex'];
       return knownBrands.any((brand) => lowerUrl.contains(brand));
@@ -884,6 +905,14 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           size: 14,
           color: context.colors.primary,
         );
+      } else if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
+          s.contains('google.com/maps') || s.contains('maps.google') ||
+          s.contains('share.google')) {
+        iconWidget = FaIcon(FontAwesomeIcons.google, size: 13, color: context.colors.primary);
+      } else if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) {
+        iconWidget = FaIcon(FontAwesomeIcons.yandex, size: 13, color: context.colors.primary);
+      } else if (s.contains('maps.apple.com')) {
+        iconWidget = FaIcon(FontAwesomeIcons.apple, size: 13, color: context.colors.primary);
       } else if (s.contains('instagram')) {
         iconWidget = FaIcon(
           FontAwesomeIcons.instagram,
@@ -1054,6 +1083,14 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           size: 48,
           color: Colors.white,
         );
+      } else if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
+          s.contains('google.com/maps') || s.contains('maps.google') ||
+          s.contains('share.google')) {
+        iconWidget = const FaIcon(FontAwesomeIcons.google, size: 40, color: Colors.white);
+      } else if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) {
+        iconWidget = const FaIcon(FontAwesomeIcons.yandex, size: 40, color: Colors.white);
+      } else if (s.contains('maps.apple.com')) {
+        iconWidget = const FaIcon(FontAwesomeIcons.apple, size: 40, color: Colors.white);
       } else if (s.contains('twitter') || s.contains('x.com')) {
         iconWidget = FaIcon(
           FontAwesomeIcons.xTwitter,
@@ -1222,10 +1259,10 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
     // Determine if we should show the image or the branded placeholder
     // If it's a known brand (Google, Yandex, etc.) and NOT a map, we prefer the clean icon placeholder (fallback view)
-    final isKnownBrand = _isKnownBrandSite(source);
+    final isKnownBrand = isKnownBrandSite(source);
     // Maps always show image if available. Other known brands show placeholder.
     // Regular sites show image if available.
-    final bool shouldShowImage = hasImage;
+    final bool shouldShowImage = hasImage && !isMapUrl(source.toLowerCase());
 
     Widget contentHeader;
 
@@ -1404,7 +1441,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             color: context.colors.surfaceWhite,
             boxShadow: [
               BoxShadow(
-                color: context.colors.premiumShadow.withOpacity(0.08),
+                color: context.colors.premiumShadow.withValues(alpha: 0.08),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -1440,7 +1477,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                   children: [
                     contentHeader,
                     // Thin grey line above text area
-                    Container(height: 1, color: Colors.grey.withOpacity(0.15)),
+                    Container(height: 1, color: Colors.grey.withValues(alpha: 0.15)),
                     Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -1557,7 +1594,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: context.colors.premiumShadow.withOpacity(0.08),
+                color: context.colors.premiumShadow.withValues(alpha: 0.08),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -1600,7 +1637,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withOpacity(0.15),
+                              color: context.colors.primary.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -1725,7 +1762,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: context.colors.primary.withOpacity(0.3),
+            color: context.colors.primary.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1740,7 +1777,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             height: 2,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(1),
             ),
           ),
@@ -1749,7 +1786,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             height: 2,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(1),
             ),
           ),
@@ -1758,7 +1795,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             height: 2,
             width: 16,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(1),
             ),
           ),
@@ -1808,7 +1845,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         color: context.colors.surfaceWhite,
         boxShadow: [
           BoxShadow(
-            color: context.colors.premiumShadow.withOpacity(0.04),
+            color: context.colors.premiumShadow.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1936,7 +1973,7 @@ class _ShimmerBox extends StatefulWidget {
   final double? width;
   final double borderRadius;
 
-  const _ShimmerBox({required this.height, this.width, this.borderRadius = 0});
+  const _ShimmerBox({super.key, required this.height, this.width, this.borderRadius = 8.0});
 
   @override
   State<_ShimmerBox> createState() => _ShimmerBoxState();
@@ -1980,9 +2017,9 @@ class _ShimmerBoxState extends State<_ShimmerBox>
               begin: Alignment((_animation.value - 1), 0),
               end: Alignment(_animation.value, 0),
               colors: [
-                context.colors.hint.withOpacity(0.1),
-                context.colors.hint.withOpacity(0.05),
-                context.colors.hint.withOpacity(0.1),
+                context.colors.hint.withValues(alpha: 0.1),
+                context.colors.hint.withValues(alpha: 0.05),
+                context.colors.hint.withValues(alpha: 0.1),
               ],
             ),
           ),

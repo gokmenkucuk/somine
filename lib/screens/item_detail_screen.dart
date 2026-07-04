@@ -11,7 +11,6 @@ import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/widgets/reminder_indicator.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'youtube_fullscreen_screen.dart';
@@ -186,7 +185,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
+                              color: Colors.red.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -269,7 +268,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                     width: 70,
                                     height: 70,
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
+                                      color: Colors.black.withValues(alpha: 0.6),
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
@@ -308,7 +307,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
+                                      color: Colors.black.withValues(alpha: 0.6),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -492,7 +491,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           color: context.colors.surfaceWhite,
           boxShadow: [
             BoxShadow(
-              color: context.colors.premiumShadow.withOpacity(0.05),
+              color: context.colors.premiumShadow.withValues(alpha: 0.05),
               offset: const Offset(0, -4),
               blurRadius: 16,
             ),

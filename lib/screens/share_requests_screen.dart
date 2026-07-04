@@ -8,6 +8,7 @@ import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/screens/shared_collection_view_screen.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class ShareRequestsScreen extends ConsumerWidget {
@@ -49,7 +50,10 @@ class ShareRequestsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => ErrorStateWidget(
+          message: 'Paylaşım istekleri yüklenemedi. Lütfen tekrar deneyin.',
+          onRetry: () => ref.invalidate(pendingShareRequestsProvider),
+        ),
       ),
     );
   }
@@ -66,7 +70,7 @@ class ShareRequestsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Bekleyen İstek Yok',
+            'Bekleyen istek yok',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -77,11 +81,11 @@ class ShareRequestsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Arkadaşlarınız koleksiyon paylaştığında burada görünecek.',
+              'Yeni paylaşım istekleri burada görünecek.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: context.colors.body.withOpacity(0.7),
+                color: context.colors.body.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -106,7 +110,7 @@ class _ShareRequestCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -170,7 +174,7 @@ class _ShareRequestCard extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

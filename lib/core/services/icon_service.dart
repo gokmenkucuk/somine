@@ -50,7 +50,7 @@ class IconService {
       } else {
         await FlutterDynamicIcon.setAlternateIconName(key);
       }
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Handle known errors (e.g. user cancelled)
       rethrow;
     }

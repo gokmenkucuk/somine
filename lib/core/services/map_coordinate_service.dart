@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -360,7 +359,7 @@ class MapCoordinateService {
   static String _cacheKey(double lat, double lng) {
     final roundedLat = (lat * 1e6).round() / 1e6;
     final roundedLng = (lng * 1e6).round() / 1e6;
-    return '${_cachePrefix}${roundedLat}_$roundedLng';
+    return '$_cachePrefix${roundedLat}_$roundedLng';
   }
 
   /// Cleans up old cache entries, keeping only _maxCacheEntries
@@ -401,7 +400,8 @@ class MapCoordinateService {
     if (lowerUrl.contains('google.com/maps') ||
         lowerUrl.contains('maps.google.com') ||
         lowerUrl.contains('maps.app.goo.gl') ||
-        lowerUrl.contains('goo.gl/maps')) {
+        lowerUrl.contains('goo.gl/maps') ||
+        lowerUrl.contains('share.google')) {
       return MapProvider.googleMaps;
     }
 

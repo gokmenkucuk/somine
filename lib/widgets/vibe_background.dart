@@ -21,8 +21,8 @@ class VibeBackground extends StatelessWidget {
                   center: const Alignment(0.8, 0.3), // Top-right
                   radius: 1.0,
                   colors: [
-                    const Color(0xFFC41E3A).withOpacity(0.5), // Dark Red glow
-                    const Color(0xFFC41E3A).withOpacity(0.2),
+                    const Color(0xFFC41E3A).withValues(alpha: 0.5), // Dark Red glow
+                    const Color(0xFFC41E3A).withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.3, 0.7],
@@ -39,7 +39,7 @@ class VibeBackground extends StatelessWidget {
                   center: const Alignment(-0.8, -0.5), // Top-left
                   radius: 1.2,
                   colors: [
-                    const Color(0xFF2A4A6A).withOpacity(0.3), // Subtle teal/blue
+                    const Color(0xFF2A4A6A).withValues(alpha: 0.3), // Subtle teal/blue
                     Colors.transparent,
                   ],
                 ),
@@ -76,16 +76,16 @@ class GlassCard extends StatelessWidget {
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withValues(alpha: 0.85),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           width: 1,
         ),
       ),

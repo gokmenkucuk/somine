@@ -16,7 +16,6 @@ class AppTheme {
       case AppThemeEnum.vibe:
         return _vibeTheme;
       case AppThemeEnum.air:
-      default:
         return _airTheme;
     }
   }
@@ -64,12 +63,7 @@ class AppTheme {
 
   // ================= MIDNIGHT THEME (Dark) =================
   static ThemeData get _midnightTheme {
-    // Midnight Palette (Updated)
-    const bgDark = Color(0xFF121212); // Keep for fallbacks
-    const gradientStart = Color(0xFF2DD4BF); // Canlı Turkuaz
-    const gradientEnd = Color(0xFF0EA5E9); // Okyanus Mavisi
-    
-    // Primary/Secondary can match the gradient or be contrast
+    const bgDark = Color(0xFF121212);
     const primaryColor = Color(0xFF2DD4BF); 
     const secondaryColor = Color(0xFF0EA5E9);
     
@@ -149,7 +143,7 @@ class AppTheme {
           iconActive: primaryVibe,
           iconInactive: iconDim,
           surfaceWhite: surfaceVibe,
-          premiumShadow: primaryVibe.withOpacity(0.3),
+          premiumShadow: primaryVibe.withValues(alpha: 0.3),
         ),
       ],
       colorScheme: const ColorScheme.dark(

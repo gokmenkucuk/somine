@@ -6,10 +6,9 @@ class ApiConfig {
     defaultValue: 'https://api.somineapp.com',
   );
 
-  static const String apiKey = String.fromEnvironment(
-    'SOMINE_API_KEY',
-    defaultValue: 'a148c8a4a82faab8fb7743d5903fe7128fa405a17b8e257942d7ecbd3035b92a',
-  );
+  // Key koda gömülmez; build'e --dart-define=SOMINE_API_KEY=... ile verilir
+  // (bkz. PLAN.md Ek A). Boş bırakılırsa X-SoMine-Api-Key header'ı gönderilmez.
+  static const String apiKey = String.fromEnvironment('SOMINE_API_KEY');
 
   static String get baseUrl => _baseUrlOverride.trim();
 

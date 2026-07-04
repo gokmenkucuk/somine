@@ -16,9 +16,10 @@ import 'package:somine_app/widgets/item_detail_bottom_sheet.dart'; // Import Det
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/services/preferences_service.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
-
+import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/services/vault_service.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -33,11 +34,15 @@ class _SearchScreenState extends State<SearchScreen> {
   final ItemRepository _itemRepository = ItemRepository();
   final CategoryRepository _categoryRepository = CategoryRepository();
 
-  List<ItemModel> _allItems = [];
   List<ItemModel> _filteredItems = [];
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
-  StreamSubscription? _itemsSubscription; // Subscription for live updates
+  String? _errorMessage;
+  Timer? _searchDebounce;
+  int _currentPage = 1;
+  bool _hasMore = true;
+  bool _isFetchingMore = false;
+  final ScrollController _scrollController = ScrollController();
 
   String? _selectedPlatform;
   bool _isVaultSearch = false;
@@ -59,7 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
           setState(() {
             _isVaultSearch = false;
           });
-          _performSearch();
+          _scheduleSearch();
         } else {
           // Enable Vault Search (Require Auth)
           final vaultService = VaultService();
@@ -72,7 +77,7 @@ class _SearchScreenState extends State<SearchScreen> {
               _isVaultSearch = true;
               // Reset platform if needed? No, can search youtube in vault.
             });
-            _performSearch();
+            _scheduleSearch();
           }
         }
       },
@@ -87,14 +92,14 @@ class _SearchScreenState extends State<SearchScreen> {
             color:
                 isSelected
                     ? context.colors.primary
-                    : context.colors.primary.withOpacity(0.2),
+                    : context.colors.primary.withValues(alpha: 0.2),
             width: 1.5,
           ),
           boxShadow:
               isSelected
                   ? [
                     BoxShadow(
-                      color: context.colors.primary.withOpacity(0.3),
+                      color: context.colors.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -133,46 +138,42 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _loadHistory();
-    _subscribeToItems(); // Use subscription instead of fetch
-    _searchController.addListener(_performSearch);
-
-    // Auto-focus disabled - was causing keyboard to open on cold start
-    // due to IndexedStack rendering all screens at once
-    // Future.delayed(const Duration(milliseconds: 400), () {
-    //   if (mounted) {
-    //     _searchFocusNode.requestFocus();
-    //   }
-    // });
+    _loadCategories();
+    _searchController.addListener(_scheduleSearch);
+    _scrollController.addListener(_onScroll);
   }
 
-  void _subscribeToItems() {
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _fetchMoreResults();
+    }
+  }
+
+  Future<void> _loadCategories() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      setState(() => _isLoading = true);
+    if (user == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
 
-      // 1. Fetch Categories once (or stream if needed, but usually static enough)
-      _categoryRepository.getCategories(user.uid).then((categories) {
-        if (mounted) setState(() => _categories = categories);
-      });
-
-      // 2. Stream Items
-      _itemsSubscription = _itemRepository
-          .streamItems(user.uid)
-          .listen(
-            (items) {
-              if (mounted) {
-                setState(() {
-                  _allItems = items;
-                  _isLoading = false;
-                });
-                _performSearch(); // Re-run search with new data
-              }
-            },
-            onError: (e) {
-              debugPrint("Error streaming items: $e");
-              if (mounted) setState(() => _isLoading = false);
-            },
-          );
+    try {
+      final categories = await _categoryRepository.getCategories(user.uid);
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = FailureMapper.toUserMessage(error);
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -197,69 +198,185 @@ class _SearchScreenState extends State<SearchScreen> {
     _loadHistory();
   }
 
-  void _performSearch() {
-    final query = _searchController.text.toLowerCase();
+  void _scheduleSearch() {
+    _searchDebounce?.cancel();
+
+    if (!_isSearching) {
+      if (mounted) {
+        setState(() {
+          _filteredItems = [];
+          _errorMessage = null;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
 
     setState(() {
-      if (!_isSearching) {
-        _filteredItems = [];
-        return;
-      }
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-      // Identify Vault Categories
+    _searchDebounce = Timer(const Duration(milliseconds: 300), _performSearch);
+  }
+
+  Future<void> _performSearch() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) {
+        setState(() {
+          _filteredItems = [];
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    final query = _searchController.text.trim();
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _currentPage = 1;
+      _hasMore = true;
+      _filteredItems = [];
+    });
+
+    try {
       final vaultIds =
           _categories.where((c) => c.isVault).map((c) => c.id).toSet();
 
-      _filteredItems =
-          _allItems.where((item) {
-            // 1. Vault Filter Logic
-            if (_isVaultSearch) {
-              // Must be in a vault category
-              if (!vaultIds.contains(item.categoryId)) return false;
-            } else {
-              // Must NOT be in a vault category
-              if (vaultIds.contains(item.categoryId)) return false;
+      if (!_isSearching) {
+        setState(() {
+          _isLoading = false;
+          _hasMore = false;
+          _filteredItems = [];
+        });
+        return;
+      }
+
+      List<ItemModel> filtered = [];
+      bool hasMore = true;
+      int page = _currentPage;
+      int attempts = 0;
+
+      while (filtered.length < 10 && hasMore && attempts < 5) {
+        attempts++;
+        final result = await _itemRepository.searchItemsPaginated(
+          user.uid,
+          query,
+          page: page,
+          limit: 20,
+        );
+
+        final currentFiltered = result.items.where((item) {
+          if (_isVaultSearch) {
+            if (!vaultIds.contains(item.categoryId)) return false;
+          } else if (vaultIds.contains(item.categoryId)) {
+            return false;
+          }
+
+          if (_selectedPlatform != null) {
+            final filter = _selectedPlatform!;
+            if (filter == 'Web') {
+              return item.platform == 'Web';
             }
+            return item.platform == filter;
+          }
 
-            bool matchesQuery = true;
-            bool matchesPlatform = true;
+          return true;
+        }).toList();
 
-            // Text Search
-            if (query.isNotEmpty) {
-              final searchTerms =
-                  query.split(' ').where((s) => s.isNotEmpty).toList();
-              final searchableText =
-                  '${item.displayTitle} ${item.note ?? ''} ${item.url ?? ''}'
-                      .toLowerCase();
+        filtered.addAll(currentFiltered);
+        hasMore = result.hasMore;
+        page = result.nextPage ?? page + 1;
+      }
 
-              // Check if ALL terms are present in the searchable text
-              matchesQuery = searchTerms.every(
-                (term) => searchableText.contains(term),
-              );
-            }
+      if (mounted) {
+        setState(() {
+          _filteredItems = filtered;
+          _isLoading = false;
+          _hasMore = hasMore;
+          _currentPage = page;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = FailureMapper.toUserMessage(error);
+          _filteredItems = [];
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
-            // Platform Filter
-            if (_selectedPlatform != null) {
-              final filter =
-                  _selectedPlatform!; // No lowercase needed, we match exact platform name from model
+  Future<void> _fetchMoreResults() async {
+    if (_isFetchingMore || !_hasMore) return;
 
-              if (filter == 'Web') {
-                matchesPlatform = item.platform == 'Web';
-              } else {
-                matchesPlatform = item.platform == filter;
-              }
-            }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    final query = _searchController.text.trim();
+    if (!_isSearching) return;
 
-            return matchesQuery && matchesPlatform;
-          }).toList();
-    });
+    setState(() => _isFetchingMore = true);
+
+    try {
+      final vaultIds = _categories.where((c) => c.isVault).map((c) => c.id).toSet();
+
+      List<ItemModel> newFiltered = [];
+      bool hasMore = _hasMore;
+      int page = _currentPage;
+      int attempts = 0;
+
+      while (newFiltered.length < 10 && hasMore && attempts < 5) {
+        attempts++;
+        final result = await _itemRepository.searchItemsPaginated(
+          user.uid,
+          query,
+          page: page,
+          limit: 20,
+        );
+
+        final currentFiltered = result.items.where((item) {
+          if (_isVaultSearch) {
+            if (!vaultIds.contains(item.categoryId)) return false;
+          } else if (vaultIds.contains(item.categoryId)) {
+            return false;
+          }
+          if (_selectedPlatform != null) {
+            final filter = _selectedPlatform!;
+            if (filter == 'Web') return item.platform == 'Web';
+            return item.platform == filter;
+          }
+          return true;
+        }).toList();
+
+        newFiltered.addAll(currentFiltered);
+        hasMore = result.hasMore;
+        page = result.nextPage ?? page + 1;
+      }
+
+      if (mounted) {
+        setState(() {
+          _filteredItems.addAll(newFiltered);
+          _hasMore = hasMore;
+          _currentPage = page;
+          _isFetchingMore = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) setState(() => _isFetchingMore = false);
+    }
   }
 
   @override
   void dispose() {
-    _itemsSubscription?.cancel(); // Cancel subscription
+    _searchDebounce?.cancel();
     _searchFocusNode.dispose();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -505,8 +622,8 @@ class _SearchScreenState extends State<SearchScreen> {
         // Oil Green Gradient Border
         gradient: LinearGradient(
           colors: [
-            context.colors.primary.withOpacity(0.7),
-            context.colors.secondary.withOpacity(0.7),
+            context.colors.primary.withValues(alpha: 0.7),
+            context.colors.secondary.withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -516,7 +633,7 @@ class _SearchScreenState extends State<SearchScreen> {
           BoxShadow(
             color: const Color(
               0xFF6E8E91,
-            ).withOpacity(0.25), // Increased opacity for glow
+            ).withValues(alpha: 0.25), // Increased opacity for glow
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -566,7 +683,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -608,7 +725,7 @@ class _SearchScreenState extends State<SearchScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -658,7 +775,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Divider(height: 1, color: context.colors.hint.withOpacity(0.2)),
+            Divider(height: 1, color: context.colors.hint.withValues(alpha: 0.2)),
             Flexible(
               child: ListView.separated(
                 physics: const BouncingScrollPhysics(),
@@ -668,7 +785,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 separatorBuilder:
                     (c, i) => Divider(
                       height: 1,
-                      color: context.colors.hint.withOpacity(0.2),
+                      color: context.colors.hint.withValues(alpha: 0.2),
                     ),
                 itemBuilder: (context, index) {
                   return FadeInUp(
@@ -723,8 +840,8 @@ class _SearchScreenState extends State<SearchScreen> {
           } else {
             _selectedPlatform = label;
           }
-          _performSearch(); // Trigger search on filter change
         });
+        _scheduleSearch();
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -793,26 +910,52 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // --- Search Results Grid (Masonry) ---
   Widget _buildSearchResults() {
-    // Check if we have any results
-    if (_filteredItems.isEmpty) return _buildNoResults();
+    // Show error state if there's an error
+    if (_errorMessage != null) {
+      return ErrorStateWidget(
+        message: _errorMessage!,
+        onRetry: () {
+          setState(() {
+            _errorMessage = null;
+            _isLoading = true;
+          });
+          _scheduleSearch();
+        },
+      );
+    }
 
-    return MasonryGridView.count(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      physics: const BouncingScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      itemCount: _filteredItems.length,
-      itemBuilder: (context, index) {
-        final item = _filteredItems[index];
-        final cat =
-            _categories.where((c) => c.id == item.categoryId).firstOrNull;
-        return FadeInUp(
-          duration: const Duration(milliseconds: 400),
-          delay: Duration(milliseconds: index * 50),
-          child: _buildResultCard(item, cat?.name ?? 'Genel'),
-        );
-      },
+    // Check if we have any results
+    if (_filteredItems.isEmpty && !_isLoading) return _buildNoResults();
+
+    return Column(
+      children: [
+        Expanded(
+          child: MasonryGridView.count(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            physics: const BouncingScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            itemCount: _filteredItems.length,
+            itemBuilder: (context, index) {
+              final item = _filteredItems[index];
+              final cat =
+                  _categories.where((c) => c.id == item.categoryId).firstOrNull;
+              return FadeInUp(
+                duration: const Duration(milliseconds: 400),
+                delay: Duration(milliseconds: (index % 10) * 50),
+                child: _buildResultCard(item, cat?.name ?? 'Genel'),
+              );
+            },
+          ),
+        ),
+        if (_isFetchingMore)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16.0, top: 8.0),
+            child: CupertinoActivityIndicator(),
+          ),
+      ],
     );
   }
 
@@ -869,7 +1012,7 @@ class _SearchScreenState extends State<SearchScreen> {
         color: context.colors.surfaceWhite,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1035,7 +1178,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            "Farklı bir arama yapmayı dene",
+            "Farklı bir anahtar kelime veya filtre deneyebilirsin.",
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w400,
@@ -1059,7 +1202,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             // Header Text
             Text(
-              "Koleksiyonlarını Keşfet",
+              "Aramaya başla",
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 16,
@@ -1072,9 +1215,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Info Card 1: Platform Filters
             _buildInfoCard(
-              title: "Kaynaklara Göre Süz",
+              title: "Kaynağa göre filtrele",
               description:
-                  "Instagram, YouTube veya Web... İlgilendiğin kaynağın ikonuna dokunarak sadece oradan gelen içerikleri gör.",
+                  "Instagram, YouTube veya web içeriklerini platform ikonlarıyla hızlıca ayır.",
               icon: PhosphorIconsDuotone.funnel,
               accentColor: const Color(0xFF0EA5E9), // Light Blue
             ),
@@ -1083,9 +1226,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Info Card 2: Search
             _buildInfoCard(
-              title: "Detaylı Arama",
+              title: "Kaydettiklerinde ara",
               description:
-                  "Başlık, not veya link... Aklına gelen herhangi bir anahtar kelimeyi yaz, saniyeler içinde bul.",
+                  "Başlık, not veya bağlantı içeriğine göre sonuçları listele.",
               icon: PhosphorIconsDuotone.magnifyingGlass,
               accentColor: const Color(0xFF10B981), // Emerald Green
             ),
@@ -1110,7 +1253,7 @@ class _SearchScreenState extends State<SearchScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -1123,7 +1266,7 @@ class _SearchScreenState extends State<SearchScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
+              color: accentColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: accentColor, size: 24),

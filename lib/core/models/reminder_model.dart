@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 enum RepeatFrequency {
@@ -37,33 +36,6 @@ class ReminderModel {
     this.customRepeatDays,
     this.customRepeatMinutes,
   });
-
-  factory ReminderModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    final timeData = data['reminderTime'] as Map<String, dynamic>;
-
-    return ReminderModel(
-      id: doc.id,
-      itemId: data['itemId'] as String,
-      reminderDate: (data['reminderDate'] as Timestamp).toDate(),
-      reminderTime: TimeOfDay(
-        hour: timeData['hour'] as int,
-        minute: timeData['minute'] as int,
-      ),
-      repeat: RepeatFrequency.values.firstWhere(
-        (e) => e.name == data['repeat'],
-        orElse: () => RepeatFrequency.none,
-      ),
-      isActive: data['isActive'] as bool? ?? true,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      lastTriggered:
-          data['lastTriggered'] != null
-              ? (data['lastTriggered'] as Timestamp).toDate()
-              : null,
-      customRepeatDays: data['customRepeatDays'] as int?,
-      customRepeatMinutes: data['customRepeatMinutes'] as int?,
-    );
-  }
 
   factory ReminderModel.fromApi(Map<String, dynamic> json) {
     return ReminderModel(
@@ -122,24 +94,6 @@ class ReminderModel {
       'reminderMinute': reminderTime.minute,
       'repeatType': repeat.index,
       'isActive': isActive,
-      'customRepeatDays': customRepeatDays,
-      'customRepeatMinutes': customRepeatMinutes,
-    };
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'itemId': itemId,
-      'reminderDate': Timestamp.fromDate(reminderDate),
-      'reminderTime': {
-        'hour': reminderTime.hour,
-        'minute': reminderTime.minute,
-      },
-      'repeat': repeat.name,
-      'isActive': isActive,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'lastTriggered':
-          lastTriggered != null ? Timestamp.fromDate(lastTriggered!) : null,
       'customRepeatDays': customRepeatDays,
       'customRepeatMinutes': customRepeatMinutes,
     };

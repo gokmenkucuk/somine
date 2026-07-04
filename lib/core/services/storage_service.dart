@@ -1,22 +1,23 @@
+import 'dart:async' hide TimeoutException;
 import 'dart:io';
 import 'dart:convert';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
+import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
 
 class StorageService {
-  // Use default instance - let auto-config handle the bucket
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final BackendAuthService _backendAuthService = BackendAuthService();
-  final http.Client _httpClient = http.Client();
+  final ApiClient _apiClient = ApiClient();
+  static const Duration _uploadTimeout = Duration(seconds: 60);
 
-  /// Uploads an image from a URL to Firebase Storage
-  /// Returns the download URL or null if failed
+  /// Uploads an image from a URL to backend storage
+  /// Returns the file URL or null if failed
   Future<String?> uploadImageFromUrl(String url, String userId) async {
     try {
       if (url.contains('/storage/')) {
@@ -26,7 +27,7 @@ class StorageService {
       // 1. Download image
       final uri = Uri.parse(url);
       final referer = resolveRefererForUrl(url);
-      final response = await http.get(
+      final response = await _apiClient.get(
         uri,
         headers: {
           'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
@@ -47,33 +48,12 @@ class StorageService {
               ? headerType
               : _getContentType(_getExtensionFromUrl(url));
 
-      if (_backendAuthService.isEnabled) {
-        return _uploadBytesViaApi(
-          response.bodyBytes,
-          fileName:
-              '${DateTime.now().millisecondsSinceEpoch}${_getExtensionFromUrl(url)}',
-          contentType: contentType,
-        );
-      }
-
-      // 2. Generate filename
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = _getExtensionFromUrl(url);
-      final filename = 'items/$userId/$timestamp$extension';
-
-      // 3. Upload to Storage
-      final ref = _storage.ref().child(filename);
-      // Simple metadata
-      final metadata = SettableMetadata(
-        contentType: _getContentType(extension),
+      return await _uploadBytesViaApi(
+        response.bodyBytes,
+        fileName:
+            '${DateTime.now().millisecondsSinceEpoch}${_getExtensionFromUrl(url)}',
+        contentType: contentType,
       );
-
-      await ref.putData(response.bodyBytes, metadata);
-
-      // 4. Get Download URL
-      final downloadUrl = await ref.getDownloadURL();
-      debugPrint('✅ [StorageService] Image uploaded: $downloadUrl');
-      return downloadUrl;
     } catch (e) {
       debugPrint('❌ [StorageService] Error uploading image: $e');
       return null;
@@ -109,39 +89,15 @@ class StorageService {
     }
   }
 
-  /// Uploads a file to Firebase Storage
-  /// Returns the download URL or null if failed
+  /// Uploads a file to backend storage
+  /// Returns the file URL or null if failed
   Future<String?> uploadFile(File file, String path) async {
     try {
-      if (_backendAuthService.isEnabled) {
-        return _uploadBytesViaApi(
-          await file.readAsBytes(),
-          fileName: _basename(path.isNotEmpty ? path : file.path),
-          contentType: _getContentType(_extension(file.path).toLowerCase()),
-        );
-      }
-
-      final ref = _storage.ref().child(path);
-
-      debugPrint(
-        '🔵 [StorageService] Uploading to: $path (${_storage.bucket})',
+      return await _uploadBytesViaApi(
+        await file.readAsBytes(),
+        fileName: _basename(path.isNotEmpty ? path : file.path),
+        contentType: _getContentType(_extension(file.path).toLowerCase()),
       );
-      debugPrint('🔵 [StorageService] File path: ${file.path}');
-
-      // Read file bytes first (like uploadImageFromUrl)
-      final bytes = await file.readAsBytes();
-      debugPrint('🔵 [StorageService] Bytes read: ${bytes.length}');
-
-      // Simple metadata (like uploadImageFromUrl)
-      final metadata = SettableMetadata(contentType: 'image/jpeg');
-
-      // Use putData (like uploadImageFromUrl - this works!)
-      await ref.putData(bytes, metadata);
-
-      // Get Download URL directly (no retry logic needed like uploadImageFromUrl)
-      final downloadUrl = await ref.getDownloadURL();
-      debugPrint('✅ [StorageService] File uploaded: $downloadUrl');
-      return downloadUrl;
     } catch (e, stackTrace) {
       debugPrint('❌ [StorageService] Error: $e');
       debugPrint('❌ [StorageService] Stack: $stackTrace');
@@ -149,55 +105,15 @@ class StorageService {
     }
   }
 
-  /// Uploads bytes to Firebase Storage
-  /// Returns the download URL or null if failed
+  /// Uploads bytes to backend storage
+  /// Returns the file URL or null if failed
   Future<String?> uploadBytes(Uint8List bytes, String path) async {
     try {
-      if (_backendAuthService.isEnabled) {
-        return _uploadBytesViaApi(
-          bytes,
-          fileName: _basename(path),
-          contentType: _getContentType(_extension(path).toLowerCase()),
-        );
-      }
-
-      debugPrint('🔵 [StorageService] uploadBytes called. Path: $path');
-      debugPrint('🔵 [StorageService] Bucket: ${_storage.bucket}');
-      debugPrint('🔵 [StorageService] Bytes length: ${bytes.length}');
-
-      final ref = _storage.ref().child(path);
-      debugPrint('🔵 [StorageService] Full path: ${ref.fullPath}');
-
-      // Simple metadata
-      final metadata = SettableMetadata(contentType: 'image/jpeg');
-
-      debugPrint('🔵 [StorageService] Starting putData...');
-      final uploadTask = ref.putData(bytes, metadata);
-
-      // Wait for upload with detailed logging
-      debugPrint('🔵 [StorageService] Waiting for upload to complete...');
-      final snapshot = await uploadTask;
-
-      debugPrint(
-        '📊 [StorageService] Upload snapshot state: ${snapshot.state}',
+      return await _uploadBytesViaApi(
+        bytes,
+        fileName: _basename(path),
+        contentType: _getContentType(_extension(path).toLowerCase()),
       );
-      debugPrint(
-        '📊 [StorageService] Upload total bytes: ${snapshot.totalBytes}',
-      );
-
-      if (snapshot.state == TaskState.success) {
-        debugPrint(
-          '✅ [StorageService] Upload successful, getting download URL...',
-        );
-        final downloadUrl = await ref.getDownloadURL();
-        debugPrint('✅ [StorageService] Bytes uploaded: $downloadUrl');
-        return downloadUrl;
-      } else {
-        debugPrint(
-          '❌ [StorageService] Upload failed with state: ${snapshot.state}',
-        );
-        return null;
-      }
     } catch (e, stackTrace) {
       debugPrint('❌ [StorageService] Error: $e');
       debugPrint('❌ [StorageService] Stack: $stackTrace');
@@ -207,59 +123,24 @@ class StorageService {
 
   Future<String?> uploadProfileImage(File file, String userId) async {
     try {
-      if (_backendAuthService.isEnabled) {
-        final uploadedUrl = await _uploadBytesViaApi(
-          await file.readAsBytes(),
-          fileName: 'profile_$userId.jpg',
-          contentType: 'image/jpeg',
-        );
-
-        if (uploadedUrl == null) {
-          return null;
-        }
-
-        return '$uploadedUrl?t=${DateTime.now().millisecondsSinceEpoch}';
-      }
-
-      final filename = 'users/$userId/profile.jpg';
-      final ref = _storage.ref().child(filename);
-
-      debugPrint('🔵 [StorageService] Starting upload to: $filename');
-
-      final metadata = SettableMetadata(
+      final uploadedUrl = await _uploadBytesViaApi(
+        await file.readAsBytes(),
+        fileName: 'profile_$userId.jpg',
         contentType: 'image/jpeg',
-        customMetadata: {'uploadedBy': userId, 'type': 'profile_photo'},
       );
 
-      final bytes = await file.readAsBytes();
-
-      // Perform upload
-      final uploadTask = ref.putData(bytes, metadata);
-      final snapshot = await uploadTask;
-
-      if (snapshot.state == TaskState.success) {
-        debugPrint(
-          '✅ [StorageService] Upload task success. Bytes: ${snapshot.totalBytes}',
-        );
-
-        final downloadUrl = await ref.getDownloadURL();
-        debugPrint('✅ [StorageService] Got download URL: $downloadUrl');
-
-        // Cache busting param
-        return '$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}';
-      } else {
-        debugPrint(
-          '❌ [StorageService] Upload failed or cancelled. State: ${snapshot.state}',
-        );
+      if (uploadedUrl == null) {
         return null;
       }
+
+      return '$uploadedUrl?t=${DateTime.now().millisecondsSinceEpoch}';
     } catch (e) {
       debugPrint('❌ [StorageService] Error uploading profile image: $e');
       return null;
     }
   }
 
-  /// Delete file from Firebase Storage
+  /// Delete file from backend storage
   Future<void> deleteFile(String downloadUrl) async {
     try {
       // Handle base64 data URLs - can't delete from Storage
@@ -270,46 +151,42 @@ class StorageService {
         return;
       }
 
-      if (_backendAuthService.isEnabled) {
-        final fileName = _extractStoredFileName(downloadUrl);
-        if (fileName == null) {
-          debugPrint(
-            '⚠️ [StorageService] Could not resolve backend file name from URL',
-          );
-          return;
-        }
-
-        final accessToken = await _backendAuthService.getValidAccessToken(
-          firebaseUser: FirebaseAuth.instance.currentUser,
-        );
-
-        if (accessToken == null || accessToken.isEmpty) {
-          throw Exception('Backend access token could not be obtained.');
-        }
-
-        final response = await _httpClient.delete(
-          _buildUri('/api/storage/$fileName'),
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $accessToken',
-            if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
-          },
-        );
-
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          debugPrint('✅ [StorageService] File deleted via backend: $fileName');
-          return;
-        }
-
+      final fileName = _extractStoredFileName(downloadUrl);
+      if (fileName == null) {
         debugPrint(
-          '❌ [StorageService] Backend delete failed: ${response.statusCode} ${response.body}',
+          '⚠️ [StorageService] Could not resolve backend file name from URL',
         );
         return;
       }
 
-      final ref = _storage.refFromURL(downloadUrl);
-      await ref.delete();
-      debugPrint('✅ [StorageService] File deleted: $downloadUrl');
+      final accessToken = await _backendAuthService.getValidAccessToken(
+        firebaseUser: FirebaseAuth.instance.currentUser,
+      );
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw const UnauthorizedException(
+          'backend access token missing',
+          userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+        );
+      }
+
+      final response = await _apiClient.delete(
+        _buildUri('/api/storage/$fileName'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+          if (ApiConfig.apiKey.isNotEmpty) 'X-SoMine-Api-Key': ApiConfig.apiKey,
+        },
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint('✅ [StorageService] File deleted via backend: $fileName');
+        return;
+      }
+
+      debugPrint(
+        '❌ [StorageService] Backend delete failed: ${response.statusCode}',
+      );
     } catch (e) {
       debugPrint('❌ [StorageService] Error deleting file: $e');
     }
@@ -325,7 +202,10 @@ class StorageService {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('Backend access token could not be obtained.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
     final request = http.MultipartRequest(
@@ -346,13 +226,47 @@ class StorageService {
       ),
     );
 
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
+    final streamedResponse = await request.send().timeout(
+      _uploadTimeout,
+      onTimeout:
+          () => throw const TimeoutException(
+            'upload file timed out',
+            userMessage: 'Yükleme zaman aşımına uğradı. Lütfen tekrar deneyin.',
+          ),
+    );
+    final response = await http.Response.fromStream(streamedResponse).timeout(
+      _uploadTimeout,
+      onTimeout:
+          () => throw const TimeoutException(
+            'read upload response timed out',
+            userMessage: 'Yükleme zaman aşımına uğradı. Lütfen tekrar deneyin.',
+          ),
+    );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Failed to upload file. Status: ${response.statusCode}. Body: ${response.body}',
-      );
+      debugPrint('API Error [upload file]: ${response.statusCode}');
+      throw switch (response.statusCode) {
+        401 => const UnauthorizedException(
+          'upload file unauthorized',
+          userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+        ),
+        409 => const ConflictException(
+          'upload file conflict',
+          userMessage: 'Bu işlem zaten yapıldı.',
+        ),
+        >= 400 && < 500 => ValidationException(
+          'upload file failed',
+          userMessage: _parseApiError(response.body),
+        ),
+        >= 500 => const ServerException(
+          'upload file server error',
+          userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+        ),
+        _ => const ServerException(
+          'upload file failed',
+          userMessage: 'Dosya yüklenemedi. Lütfen tekrar deneyin.',
+        ),
+      };
     }
 
     final payload = jsonDecode(response.body) as Map<String, dynamic>;
@@ -366,6 +280,17 @@ class StorageService {
             ? baseUrl.substring(0, baseUrl.length - 1)
             : baseUrl;
     return Uri.parse('$normalizedBase$path');
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'Dosya yüklenemedi. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'Dosya yüklenemedi. Lütfen tekrar deneyin.';
+    }
   }
 
   String? _extractStoredFileName(String url) {

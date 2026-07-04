@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class CategoryModel {
   final String id;
   final String userId;
@@ -22,24 +20,6 @@ class CategoryModel {
     required this.createdAt,
     required this.updatedAt,
   });
-
-  /// Create from Firestore document
-  factory CategoryModel.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data()!;
-    return CategoryModel(
-      id: doc.id,
-      userId: data['userId'] as String,
-      name: data['name'] as String,
-      icon: data['icon'] as String?,
-      color: data['color'] as String?,
-      order: data['order'] as int? ?? 0,
-      isVault: data['isVault'] as bool? ?? false,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
 
   factory CategoryModel.fromApi(
     Map<String, dynamic> json, {
@@ -68,20 +48,6 @@ class CategoryModel {
 
   Map<String, dynamic> toApiUpdateRequest() {
     return {'name': name, 'icon': icon, 'color': color, 'isVault': isVault};
-  }
-
-  /// Convert to Firestore map
-  Map<String, dynamic> toFirestore() {
-    return {
-      'userId': userId,
-      'name': name,
-      'icon': icon,
-      'color': color,
-      'order': order,
-      'isVault': isVault,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
   }
 
   /// Create a copy with updated fields

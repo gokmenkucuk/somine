@@ -7,6 +7,7 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/screens/shared_collection_view_screen.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class SharedWithMeScreen extends ConsumerWidget {
@@ -48,7 +49,10 @@ class SharedWithMeScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => ErrorStateWidget(
+          message: 'Paylaşımlar yüklenemedi. Lütfen tekrar deneyin.',
+          onRetry: () => ref.invalidate(sharedWithMeProvider),
+        ),
       ),
     );
   }
@@ -65,7 +69,7 @@ class SharedWithMeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Paylaşılan Koleksiyon Yok',
+            'Paylaşılan koleksiyon yok',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -76,11 +80,11 @@ class SharedWithMeScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Arkadaşlarınız sizinle koleksiyon paylaştığında ve siz kabul ettiğinizde burada görünecek.',
+              'Kabul ettiğin paylaşımlar burada görünecek.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: context.colors.body.withOpacity(0.7),
+                color: context.colors.body.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -114,7 +118,7 @@ class _SharedCollectionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -167,7 +171,7 @@ class _SharedCollectionCard extends StatelessWidget {
                     timeago.format(share.acceptedAt ?? share.createdAt, locale: 'tr'),
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: context.colors.hint.withOpacity(0.7),
+                      color: context.colors.hint.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

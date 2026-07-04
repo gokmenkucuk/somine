@@ -477,7 +477,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
         color: context.colors.surfaceWhite,
         child: Column(
           children: [
-            Container(
+            SizedBox(
               height: 200,
               child: CupertinoDatePicker(
                 mode: CupertinoDatePickerMode.date,
@@ -511,7 +511,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
         color: context.colors.surfaceWhite,
         child: Column(
           children: [
-            Container(
+            SizedBox(
               height: 200,
               child: CupertinoDatePicker(
                 mode: CupertinoDatePickerMode.time,
@@ -551,7 +551,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
         color: context.colors.surfaceWhite,
         child: Column(
           children: [
-            Container(
+            SizedBox(
               height: 200,
               child: CupertinoPicker(
                 itemExtent: 40,
@@ -957,7 +957,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
       case RepeatFrequency.customMinutes:
         if (_customMinutes != null) {
           if (_customMinutes! < 60) {
-            return '${_customMinutes} dakikada bir';
+            return '$_customMinutes dakikada bir';
           } else {
             final hours = _customMinutes! ~/ 60;
             return '$hours saatte bir';

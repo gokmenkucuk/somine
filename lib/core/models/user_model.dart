@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class UserModel {
   final String uid;
   final String? email;
@@ -20,35 +18,6 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
   });
-
-  /// Create from Firestore document
-  factory UserModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
-    return UserModel(
-      uid: doc.id,
-      email: data['email'] as String?,
-      displayName: data['displayName'] as String?,
-      username: data['username'] as String?,
-      photoURL: data['photoURL'] as String?,
-      photoBase64: data['photoBase64'] as String?,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
-
-  /// Convert to Firestore map
-  Map<String, dynamic> toFirestore() {
-    return {
-      'uid': uid,
-      'email': email,
-      'displayName': displayName,
-      'username': username,
-      'photoURL': photoURL,
-      'photoBase64': photoBase64,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
 
   /// Create a copy with updated fields
   UserModel copyWith({

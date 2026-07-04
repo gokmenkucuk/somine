@@ -159,6 +159,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
     _itemsRealtimeSubscription?.cancel();
     _categoriesRealtimeSubscription?.cancel();
     _notificationsRealtimeSubscription?.cancel();
+    unawaited(_backendRealtimeService.dispose());
     super.dispose();
   }
 

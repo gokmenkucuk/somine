@@ -222,7 +222,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                     hintStyle: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
-                      color: DesignTokens.textSecondary.withOpacity(0.5),
+                      color: DesignTokens.textSecondary.withValues(alpha: 0.5),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -290,7 +290,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                     hintStyle: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
-                      color: DesignTokens.textSecondary.withOpacity(0.5),
+                      color: DesignTokens.textSecondary.withValues(alpha: 0.5),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -358,10 +358,10 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withOpacity(0.1),
+                            color: AppColors.secondary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: AppColors.secondary.withOpacity(0.3),
+                              color: AppColors.secondary.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(

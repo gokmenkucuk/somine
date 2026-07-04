@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Pagination
 
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -8,6 +7,7 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 
 // ==================== Repository Providers ====================
 
@@ -41,7 +41,7 @@ final currentUserModelProvider = StreamProvider<UserModel?>((ref) {
       return Stream.value(null);
     },
     loading: () => Stream.value(null),
-    error: (_, __) => Stream.value(null),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
   );
 });
 
@@ -60,7 +60,7 @@ final categoriesProvider = StreamProvider<List<CategoryModel>>((ref) {
       return Stream.value([]);
     },
     loading: () => Stream.value([]),
-    error: (_, __) => Stream.value([]),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
   );
 });
 
@@ -92,12 +92,15 @@ final itemsProvider = StreamProvider<List<ItemModel>>((ref) {
   return authState.when(
     data: (user) {
       if (user != null) {
-        return itemRepository.streamItems(user.uid, categoryId: selectedCategoryId);
+        return itemRepository.streamItems(
+          user.uid,
+          categoryId: selectedCategoryId,
+        );
       }
       return Stream.value([]);
     },
     loading: () => Stream.value([]),
-    error: (_, __) => Stream.value([]),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
   );
 });
 
@@ -105,9 +108,9 @@ final itemsProvider = StreamProvider<List<ItemModel>>((ref) {
 final catalogItemsProvider = StreamProvider<List<ItemModel>>((ref) {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
-  
+
   // Explicitly NOT watching selectedCategoryIdProvider
-  
+
   return authState.when(
     data: (user) {
       if (user != null) {
@@ -116,12 +119,14 @@ final catalogItemsProvider = StreamProvider<List<ItemModel>>((ref) {
       return Stream.value([]);
     },
     loading: () => Stream.value([]),
-    error: (_, __) => Stream.value([]),
+    error: (error, stackTrace) => Stream.error(error, stackTrace),
   );
 });
 
 /// Favorite items for current user
-final favoriteItemsProvider = FutureProvider<List<ItemModel>>((ref) async {
+final favoriteItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((
+  ref,
+) async {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
 
@@ -138,7 +143,9 @@ final favoriteItemsProvider = FutureProvider<List<ItemModel>>((ref) async {
 });
 
 /// Deleted items for current user (Recently Deleted)
-final deletedItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((ref) async {
+final deletedItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((
+  ref,
+) async {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
 
@@ -188,7 +195,7 @@ final searchResultsProvider = FutureProvider<List<ItemModel>>((ref) async {
   final isVaultSearch = ref.watch(isVaultSearchProvider);
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
-  
+
   // Need categories to identify Vaults
   final categoriesAsync = ref.watch(categoriesProvider);
   final categories = categoriesAsync.value ?? [];
@@ -199,22 +206,25 @@ final searchResultsProvider = FutureProvider<List<ItemModel>>((ref) async {
     data: (user) async {
       if (user != null) {
         var items = await itemRepository.searchItems(user.uid, query);
-        
+
         // Identify Vault Categories
-        final vaultIds = categories.where((c) => c.isVault).map((c) => c.id).toSet();
-        
+        final vaultIds =
+            categories.where((c) => c.isVault).map((c) => c.id).toSet();
+
         if (isVaultSearch) {
-           // SHOW ONLY VAULT ITEMS
-           if (vaultIds.isNotEmpty) {
-             items = items.where((i) => vaultIds.contains(i.categoryId)).toList();
-           } else {
-             items = []; // No vault categories -> No vault items
-           }
+          // SHOW ONLY VAULT ITEMS
+          if (vaultIds.isNotEmpty) {
+            items =
+                items.where((i) => vaultIds.contains(i.categoryId)).toList();
+          } else {
+            items = []; // No vault categories -> No vault items
+          }
         } else {
-           // HIDE VAULT ITEMS (Standard Mode)
-           if (vaultIds.isNotEmpty) {
-             items = items.where((i) => !vaultIds.contains(i.categoryId)).toList();
-           }
+          // HIDE VAULT ITEMS (Standard Mode)
+          if (vaultIds.isNotEmpty) {
+            items =
+                items.where((i) => !vaultIds.contains(i.categoryId)).toList();
+          }
         }
         return items;
       }
@@ -225,39 +235,44 @@ final searchResultsProvider = FutureProvider<List<ItemModel>>((ref) async {
   );
 });
 
-
 // ==================== Pagination Provider ====================
 
 class PaginatedItemsState {
   final List<ItemModel> items;
   final bool isLoading;
   final bool hasMore;
-  final DocumentSnapshot? lastDocument;
   final int nextPage;
+  final String? errorMessage;
+
+  bool get hasError => errorMessage != null;
 
   PaginatedItemsState({
     this.items = const [],
     this.isLoading = false,
     this.hasMore = true,
-    this.lastDocument,
     this.nextPage = 1,
+    this.errorMessage,
   });
 
   PaginatedItemsState copyWith({
     List<ItemModel>? items,
     bool? isLoading,
     bool? hasMore,
-    DocumentSnapshot? lastDocument,
     int? nextPage,
+    String? errorMessage,
   }) {
     return PaginatedItemsState(
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
-      lastDocument: lastDocument ?? this.lastDocument,
       nextPage: nextPage ?? this.nextPage,
+      errorMessage: errorMessage,
     );
   }
+
+  @override
+  String toString() =>
+      'PaginatedItemsState(items: ${items.length}, isLoading: $isLoading, hasMore: $hasMore, hasError: $hasError)';
 }
 
 class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
@@ -269,7 +284,11 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
 
   PaginatedItemsNotifier(this._repository) : super(PaginatedItemsState());
 
-  void setParams(String userId, String? categoryId, List<CategoryModel> categories) {
+  void setParams(
+    String userId,
+    String? categoryId,
+    List<CategoryModel> categories,
+  ) {
     final nextCategoriesSignature = _buildCategoriesSignature(categories);
     final changed =
         _userId != userId ||
@@ -280,7 +299,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
     _categoryId = categoryId;
     _categories = categories;
     _categoriesSignature = nextCategoriesSignature;
-    
+
     if (changed) {
       loadInitial();
     }
@@ -288,31 +307,31 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
 
   Future<void> loadInitial() async {
     if (_userId == null) return;
-    
+
     // Reset state
-    state = PaginatedItemsState(isLoading: true);
-    
+    state = PaginatedItemsState(isLoading: true, errorMessage: null);
+
     try {
-      final initialBatch = await _loadBatch(
-        page: 1,
-        lastDocument: null,
-      );
+      final initialBatch = await _loadBatch(page: 1);
       if (!mounted) return;
 
-      if (!mounted) return;
-      
       state = state.copyWith(
         items: initialBatch,
         isLoading: false,
         hasMore: _lastBatchHasMore,
-        lastDocument: _lastBatchLastDocument,
         nextPage: _lastBatchNextPage,
+        errorMessage: null,
       );
     } catch (e) {
-      if (mounted) state = state.copyWith(isLoading: false, hasMore: false);
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          hasMore: false,
+          errorMessage: FailureMapper.toUserMessage(e),
+        );
+      }
     }
   }
-  
 
   String _buildCategoriesSignature(List<CategoryModel> categories) {
     return categories
@@ -326,53 +345,80 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
   Future<void> loadMore() async {
     if (_userId == null || state.isLoading || !state.hasMore) return;
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final nextBatch = await _loadBatch(
-        page: state.nextPage,
-        lastDocument: state.lastDocument,
-      );
+      final nextBatch = await _loadBatch(page: state.nextPage);
       if (!mounted) return;
-      
+
       state = state.copyWith(
         items: [...state.items, ...nextBatch],
         isLoading: false,
         hasMore: _lastBatchHasMore,
-        lastDocument: _lastBatchLastDocument,
         nextPage: _lastBatchNextPage,
+        errorMessage: null,
       );
-
     } catch (e) {
-       if (mounted) state = state.copyWith(isLoading: false);
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: FailureMapper.toUserMessage(e),
+        );
+      }
     }
   }
 
+  void removeItemsOptimistically(Set<String> itemIds) {
+    if (itemIds.isEmpty) return;
+    state = state.copyWith(
+      items: state.items.where((item) => !itemIds.contains(item.id)).toList(),
+      errorMessage: null,
+    );
+  }
+
+  void restoreItemsOptimistically(List<ItemModel> items) {
+    if (items.isEmpty) return;
+
+    final merged = <ItemModel>[
+      ...state.items,
+      ...items.where(
+        (item) => state.items.every((existing) => existing.id != item.id),
+      ),
+    ];
+
+    merged.sort((a, b) {
+      final orderDiff = a.order.compareTo(b.order);
+      if (orderDiff != 0) return orderDiff;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+
+    state = state.copyWith(items: merged, errorMessage: null);
+  }
+
   bool _lastBatchHasMore = true;
-  DocumentSnapshot? _lastBatchLastDocument;
   int _lastBatchNextPage = 1;
 
-  Future<List<ItemModel>> _loadBatch({
-    required int page,
-    required DocumentSnapshot? lastDocument,
-  }) async {
+  Future<List<ItemModel>> _loadBatch({required int page}) async {
     const visibleBatchSize = 5;
+    const maxEmptyBatches = 3;
+    int emptyBatchCount = 0;
+
     final items = <ItemModel>[];
     var currentPage = page;
-    var currentLastDocument = lastDocument;
     var sourceHasMore = true;
     final vaultIds =
         _categoryId == null
             ? _categories.where((c) => c.isVault).map((c) => c.id).toSet()
             : const <String?>{};
 
-    while (items.length < visibleBatchSize && sourceHasMore) {
+    while (items.length < visibleBatchSize &&
+        sourceHasMore &&
+        emptyBatchCount < maxEmptyBatches) {
       final result = await _repository.getItemsPaginated(
         _userId!,
         categoryId: _categoryId,
         limit: visibleBatchSize,
         page: currentPage,
-        startAfter: currentLastDocument,
       );
 
       var batchItems = result.items;
@@ -383,34 +429,45 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
                 .toList();
       }
 
-      items.addAll(batchItems);
-      sourceHasMore = result.hasMore;
-      currentLastDocument = result.lastDocument;
-      currentPage = result.nextPage ?? currentPage;
-
-      if (result.items.isEmpty) {
-        break;
+      if (batchItems.isEmpty) {
+        emptyBatchCount++;
+        if (result.items.isEmpty) {
+          // Source has no more items
+          sourceHasMore = false;
+          break;
+        }
+        // Continue to fetch next batch to find non-vault items
+        sourceHasMore = result.hasMore;
+        currentPage = result.nextPage ?? currentPage;
+        continue;
       }
+
+      items.addAll(batchItems);
+      emptyBatchCount = 0; // Reset empty counter when we get items
+      sourceHasMore = result.hasMore;
+      currentPage = result.nextPage ?? currentPage;
     }
 
     _lastBatchHasMore = sourceHasMore;
-    _lastBatchLastDocument = currentLastDocument;
     _lastBatchNextPage = currentPage;
 
     return items.take(visibleBatchSize).toList();
   }
 }
 
-final paginatedFeedProvider = StateNotifierProvider.autoDispose<PaginatedItemsNotifier, PaginatedItemsState>((ref) {
+final paginatedFeedProvider = StateNotifierProvider.autoDispose<
+  PaginatedItemsNotifier,
+  PaginatedItemsState
+>((ref) {
   final authState = ref.watch(authStateProvider);
   final repo = ref.watch(itemRepositoryProvider);
   final catId = ref.watch(selectedCategoryIdProvider);
   final categories = ref.watch(categoriesProvider).value ?? [];
   final notifier = PaginatedItemsNotifier(repo);
-  
+
   if (authState.value != null) {
-     notifier.setParams(authState.value!.uid, catId, categories);
+    notifier.setParams(authState.value!.uid, catId, categories);
   }
-  
+
   return notifier;
 });

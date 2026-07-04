@@ -9,14 +9,11 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
-import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as parser;
-
-import 'dart:ui' as import_dart_ui;
-import 'dart:math' as math;
-// import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/services/metadata_service.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
+import 'package:somine_app/core/utils/content_preview_policy.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class EditContentScreen extends StatefulWidget {
   final ItemModel item;
@@ -107,10 +104,10 @@ class _EditContentScreenState extends State<EditContentScreen>
     // Pre-fill data from ItemModel
     _titleController.text = widget.item.displayTitle;
     _noteController.text = widget.item.note ?? "";
-    _ogMetadata =
-        widget
-            .item
-            .ogMetadata; // Initialize metadata FIRST to avoid unnecessary fetch
+    _ogMetadata = ContentPreviewPolicy.sanitizeMetadataForUrl(
+      widget.item.url,
+      widget.item.ogMetadata,
+    );
 
     if (widget.item.categoryId != null) {
       _selectedCategoryIds.add(widget.item.categoryId!);
@@ -228,10 +225,12 @@ class _EditContentScreenState extends State<EditContentScreen>
   String _detectPlatform(String url) {
     final lowerUrl = url.toLowerCase();
     if (lowerUrl.contains('instagram.com')) return 'Instagram';
-    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be'))
+    if (lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be')) {
       return 'YouTube';
-    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com'))
+    }
+    if (lowerUrl.contains('twitter.com') || lowerUrl.contains('x.com')) {
       return 'X';
+    }
     if (lowerUrl.contains('tiktok.com')) return 'TikTok';
     if (lowerUrl.contains('linkedin.com')) return 'LinkedIn';
     if (lowerUrl.contains('spotify.com')) return 'Spotify';
@@ -272,46 +271,22 @@ class _EditContentScreenState extends State<EditContentScreen>
   Future<void> _fetchMetadata(String url) async {
     setState(() => _isLoadingMetadata = true);
     try {
-      final response = await http
-          .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final document = parser.parse(response.body);
-        final metaTags = document.getElementsByTagName('meta');
+      final metadata = await MetadataService.fetchMetadata(url);
+      if (mounted && metadata != null) {
+        final sanitizedMetadata = ContentPreviewPolicy.sanitizeMetadataForUrl(
+          url,
+          metadata.copyWith(siteName: metadata.siteName ?? _detectedPlatform),
+        );
 
-        String? title, description, image, siteName;
-
-        for (var tag in metaTags) {
-          final property = tag.attributes['property'];
-          final name = tag.attributes['name'];
-          final content = tag.attributes['content'];
-
-          if (content == null) continue;
-
-          if (property == 'og:title' || name == 'title') title = content;
-          if (property == 'og:description' || name == 'description') {
-            description = content;
+        setState(() {
+          _ogMetadata = sanitizedMetadata;
+          if (metadata.title != null && _titleController.text.isEmpty) {
+            _titleController.text = metadata.title!;
           }
-          if (property == 'og:image' || name == 'image') image = content;
-          if (property == 'og:site_name') siteName = content;
-        }
-
-        if (mounted) {
-          setState(() {
-            _ogMetadata = OGMetadata(
-              title: title,
-              description: description,
-              imageUrl: image,
-              siteName: siteName ?? _detectedPlatform,
-            );
-            if (title != null && _titleController.text.isEmpty) {
-              _titleController.text = title;
-            }
-            if (image != null) {
-              _resolveImageSize(image);
-            }
-          });
-        }
+          if (sanitizedMetadata?.imageUrl != null) {
+            _resolveImageSize(sanitizedMetadata!.imageUrl!);
+          }
+        });
       }
     } catch (e) {
       debugPrint("Metadata fetch error: $e");
@@ -440,7 +415,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withOpacity(0.3),
+                            color: Colors.red.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -525,7 +500,10 @@ class _EditContentScreenState extends State<EditContentScreen>
         type: _hasLink ? ItemType.link : ItemType.note,
         url: _hasLink ? _detectedLink : null,
         note: noteText,
-        ogMetadata: _ogMetadata,
+        ogMetadata: ContentPreviewPolicy.sanitizeMetadataForUrl(
+          _detectedLink,
+          _ogMetadata,
+        ),
         updatedAt: DateTime.now(),
       );
 
@@ -542,7 +520,10 @@ class _EditContentScreenState extends State<EditContentScreen>
             type: _hasLink ? ItemType.link : ItemType.note,
             url: _hasLink ? _detectedLink : null,
             note: noteText,
-            ogMetadata: _ogMetadata,
+            ogMetadata: ContentPreviewPolicy.sanitizeMetadataForUrl(
+              _detectedLink,
+              _ogMetadata,
+            ),
             createdAt: now,
             updatedAt: now,
           );
@@ -659,10 +640,10 @@ class _EditContentScreenState extends State<EditContentScreen>
 
     // Use ogMetadata image first, fallback to original item image
     final imageUrl = _ogMetadata?.imageUrl ?? widget.item.displayImage;
-    final hasImage =
-        imageUrl != null &&
-        imageUrl.isNotEmpty &&
-        !imageUrl.toLowerCase().contains('.svg');
+    final hasImage = ContentPreviewPolicy.canUsePreviewImage(
+      url: _detectedLink,
+      imageUrl: imageUrl,
+    );
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
@@ -676,8 +657,10 @@ class _EditContentScreenState extends State<EditContentScreen>
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             child:
-                hasImage
-                    ? _buildImageBackground(imageUrl)
+                ContentPreviewPolicy.isMapUrl(_detectedLink)
+                    ? _buildMapPlaceholder()
+                    : hasImage
+                    ? _buildImageBackground(imageUrl!)
                     : _buildPlatformBackground(animate: _isLoadingMetadata),
           ),
         ],
@@ -738,7 +721,9 @@ class _EditContentScreenState extends State<EditContentScreen>
                           height: 48,
                           width: 48,
                           child: CircularProgressIndicator(
-                            color: context.colors.surfaceWhite.withOpacity(0.9),
+                            color: context.colors.surfaceWhite.withValues(
+                              alpha: 0.9,
+                            ),
                             strokeWidth: 4,
                           ),
                         ),
@@ -747,13 +732,13 @@ class _EditContentScreenState extends State<EditContentScreen>
                     : Icon(
                       Icons.edit_note_rounded, // Changed icon for edit
                       size: 64,
-                      color: context.colors.surfaceWhite.withOpacity(0.9),
+                      color: context.colors.surfaceWhite.withValues(alpha: 0.9),
                     ),
                 const SizedBox(height: 12),
                 Text(
                   animate ? "Bağlantı taranıyor..." : "İçeriği düzenle",
                   style: GoogleFonts.poppins(
-                    color: context.colors.surfaceWhite.withOpacity(0.9),
+                    color: context.colors.surfaceWhite.withValues(alpha: 0.9),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -779,6 +764,38 @@ class _EditContentScreenState extends State<EditContentScreen>
           errorWidget: (context, url, error) => _buildPlatformBackground(),
         ),
       ],
+    );
+  }
+
+  Widget _buildMapPlaceholder() {
+    final url = _detectedLink.toLowerCase();
+    final Color iconColor = context.colors.surfaceWhite.withValues(alpha: 0.9);
+    final Widget icon;
+
+    if (ContentPreviewPolicy.isGoogleMapsUrl(url)) {
+      icon = FaIcon(FontAwesomeIcons.google, size: 64, color: iconColor);
+    } else if (ContentPreviewPolicy.isYandexMapsUrl(url)) {
+      icon = FaIcon(FontAwesomeIcons.yandex, size: 64, color: iconColor);
+    } else if (ContentPreviewPolicy.isAppleMapsUrl(url)) {
+      icon = FaIcon(FontAwesomeIcons.apple, size: 64, color: iconColor);
+    } else {
+      icon = Icon(PhosphorIconsBold.mapTrifold, size: 64, color: iconColor);
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [context.colors.primary, context.colors.secondary],
+        ),
+      ),
+      child: Center(child: icon),
     );
   }
 
@@ -870,7 +887,7 @@ class _EditContentScreenState extends State<EditContentScreen>
         color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: context.colors.hint.withOpacity(0.3),
+          color: context.colors.hint.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -898,7 +915,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
-                  color: context.colors.body.withOpacity(0.6),
+                  color: context.colors.body.withValues(alpha: 0.6),
                 ),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -930,7 +947,10 @@ class _EditContentScreenState extends State<EditContentScreen>
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: themeColor.withOpacity(0.5), width: 1.0),
+        border: Border.all(
+          color: themeColor.withValues(alpha: 0.5),
+          width: 1.0,
+        ),
       ),
       child: Row(
         children: [
@@ -1001,7 +1021,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                 isSelected
                     ? LinearGradient(
                       colors: [
-                        context.colors.secondary.withOpacity(0.5),
+                        context.colors.secondary.withValues(alpha: 0.5),
                         context.colors.surfaceWhite,
                       ],
                       begin: Alignment.topLeft,
@@ -1018,7 +1038,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                 isSelected
                     ? [
                       BoxShadow(
-                        color: context.colors.secondary.withOpacity(0.35),
+                        color: context.colors.secondary.withValues(alpha: 0.35),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1068,7 +1088,7 @@ class _EditContentScreenState extends State<EditContentScreen>
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: context.colors.secondary.withOpacity(0.3),
+              color: context.colors.secondary.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -1121,12 +1141,12 @@ class _EditContentScreenState extends State<EditContentScreen>
           color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
           border: Border.all(
-            color: context.colors.hint.withOpacity(0.3),
+            color: context.colors.hint.withValues(alpha: 0.3),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1154,12 +1174,12 @@ class _EditContentScreenState extends State<EditContentScreen>
           color: context.colors.surfaceWhite,
           shape: BoxShape.circle,
           border: Border.all(
-            color: context.colors.hint.withOpacity(0.3),
+            color: context.colors.hint.withValues(alpha: 0.3),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

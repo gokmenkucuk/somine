@@ -1,52 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
-import 'package:somine_app/core/models/notification_model.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/share_model.dart';
-import 'package:somine_app/core/repositories/notification_repository.dart';
+import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 
 class ShareRepository {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final NotificationRepository _notificationRepository =
-      NotificationRepository();
   final BackendAuthService _backendAuthService = BackendAuthService();
-  final http.Client _httpClient = http.Client();
-
-  CollectionReference get _sharesCollection =>
-      _firestore.collection('collection_shares');
-  CollectionReference get _usersCollection => _firestore.collection('users');
+  final ApiClient _apiClient = ApiClient();
 
   Future<Map<String, dynamic>?> findUserByUsername(String username) async {
     try {
       final normalized = username.toLowerCase().trim().replaceAll('@', '');
       if (normalized.isEmpty) return null;
 
-      if (_backendAuthService.isEnabled) {
-        final matches = await _searchUsersViaApi(normalized);
-        for (final match in matches) {
-          if ((match['username'] as String?)?.toLowerCase() == normalized) {
-            return match;
-          }
+      final matches = await _searchUsersViaApi(normalized);
+      for (final match in matches) {
+        if ((match['username'] as String?)?.toLowerCase() == normalized) {
+          return match;
         }
       }
-
-      final snapshot =
-          await _usersCollection
-              .where('username', isEqualTo: normalized)
-              .limit(1)
-              .get();
-
-      if (snapshot.docs.isEmpty) return null;
-
-      final doc = snapshot.docs.first;
-      final data = doc.data() as Map<String, dynamic>;
-      return _mapFirestoreUser(doc.id, data);
+      return null;
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error finding user by username: $e');
       return null;
@@ -58,26 +37,13 @@ class ShareRepository {
       final normalized = email.toLowerCase().trim();
       if (normalized.isEmpty) return null;
 
-      if (_backendAuthService.isEnabled) {
-        final matches = await _searchUsersViaApi(normalized);
-        for (final match in matches) {
-          if ((match['email'] as String?)?.toLowerCase() == normalized) {
-            return match;
-          }
+      final matches = await _searchUsersViaApi(normalized);
+      for (final match in matches) {
+        if ((match['email'] as String?)?.toLowerCase() == normalized) {
+          return match;
         }
       }
-
-      final snapshot =
-          await _usersCollection
-              .where('email', isEqualTo: normalized)
-              .limit(1)
-              .get();
-
-      if (snapshot.docs.isEmpty) return null;
-
-      final doc = snapshot.docs.first;
-      final data = doc.data() as Map<String, dynamic>;
-      return _mapFirestoreUser(doc.id, data);
+      return null;
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error finding user by email: $e');
       return null;
@@ -102,57 +68,28 @@ class ShareRepository {
     int limit = 5,
   }) async {
     try {
-      if (_useBackendForCurrentUser(currentUserId)) {
-        final shares = await _getOutgoingSharesFromApi();
-        final uniqueUsers = <String, Map<String, dynamic>>{};
-
-        for (final share in shares) {
-          if (share.toUserId.isEmpty ||
-              uniqueUsers.containsKey(share.toUserId)) {
-            continue;
-          }
-
-          Map<String, dynamic>? user;
-          if (share.toUserEmail.isNotEmpty) {
-            user = await findUserByEmail(share.toUserEmail);
-          }
-
-          uniqueUsers[share.toUserId] =
-              user ??
-              {
-                'id': share.toUserId,
-                'email': share.toUserEmail,
-                'displayName': share.toUserEmail,
-                'username': null,
-                'photoBase64': null,
-              };
-
-          if (uniqueUsers.length >= limit) break;
-        }
-
-        return uniqueUsers.values.toList();
-      }
-
-      final snapshot =
-          await _sharesCollection
-              .where('fromUserId', isEqualTo: currentUserId)
-              .orderBy('createdAt', descending: true)
-              .limit(20)
-              .get();
-
+      final shares = await _getOutgoingSharesFromApi();
       final uniqueUsers = <String, Map<String, dynamic>>{};
 
-      for (final doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final toUserId = data['toUserId'] as String?;
-
-        if (toUserId != null && !uniqueUsers.containsKey(toUserId)) {
-          final userDoc = await _usersCollection.doc(toUserId).get();
-          if (userDoc.exists) {
-            final userData = userDoc.data() as Map<String, dynamic>;
-            uniqueUsers[toUserId] = _mapFirestoreUser(toUserId, userData);
-          }
+      for (final share in shares) {
+        if (share.toUserId.isEmpty || uniqueUsers.containsKey(share.toUserId)) {
+          continue;
         }
+
+        Map<String, dynamic>? user;
+        if (share.toUserEmail.isNotEmpty) {
+          user = await findUserByEmail(share.toUserEmail);
+        }
+
+        uniqueUsers[share.toUserId] =
+            user ??
+            {
+              'id': share.toUserId,
+              'email': share.toUserEmail,
+              'displayName': share.toUserEmail,
+              'username': null,
+              'photoBase64': null,
+            };
 
         if (uniqueUsers.length >= limit) break;
       }
@@ -174,94 +111,31 @@ class ShareRepository {
     required String categoryName,
   }) async {
     try {
-      if (_useBackendForCurrentUser(fromUserId)) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.post(
-          _buildUri('/api/shares'),
-          headers: _jsonHeaders(accessToken),
-          body: jsonEncode({
-            'categoryId': categoryId,
-            'toUserEmail': toUserEmail,
-            'toUserId': toUserId,
-          }),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.post(
+        _buildUri('/api/shares'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode({
+          'categoryId': categoryId,
+          'toUserEmail': toUserEmail,
+          'toUserId': toUserId,
+        }),
+      );
 
-        if (response.statusCode == 404) {
-          throw Exception('Kullanıcı bulunamadı');
-        }
-        if (response.statusCode == 409) {
-          throw Exception('Bu koleksiyon zaten bu kişiyle paylaşılmış');
-        }
-        if (response.statusCode == 400) {
-          throw Exception('Paylaşım isteği oluşturulamadı');
-        }
-
-        _throwIfNotSuccessful(response, action: 'create share');
-        return ShareModel.fromApi(
-          jsonDecode(response.body) as Map<String, dynamic>,
-        );
-      }
-
-      Map<String, dynamic>? targetUser;
-
-      if (toUserId != null && toUserId.isNotEmpty) {
-        final doc = await _usersCollection.doc(toUserId).get();
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
-          targetUser = _mapFirestoreUser(doc.id, data);
-        }
-      } else {
-        targetUser = await findUserByEmail(toUserEmail);
-      }
-
-      if (targetUser == null) {
+      if (response.statusCode == 404) {
         throw Exception('Kullanıcı bulunamadı');
       }
-
-      if (targetUser['id'] == fromUserId) {
-        throw Exception('Kendinize paylaşım yapamazsınız');
-      }
-
-      final existingShare =
-          await _sharesCollection
-              .where('fromUserId', isEqualTo: fromUserId)
-              .where('toUserId', isEqualTo: targetUser['id'])
-              .where('categoryId', isEqualTo: categoryId)
-              .where('status', isEqualTo: ShareStatus.pending.name)
-              .get();
-
-      if (existingShare.docs.isNotEmpty) {
+      if (response.statusCode == 409) {
         throw Exception('Bu koleksiyon zaten bu kişiyle paylaşılmış');
       }
+      if (response.statusCode == 400) {
+        throw Exception('Paylaşım isteği oluşturulamadı');
+      }
 
-      final share = ShareModel(
-        fromUserId: fromUserId,
-        fromUserName: fromUserName,
-        fromUserEmail: fromUserEmail,
-        toUserId: targetUser['id'] as String? ?? '',
-        toUserEmail: targetUser['email'] as String? ?? '',
-        categoryId: categoryId,
-        categoryName: categoryName,
-        status: ShareStatus.pending,
-        createdAt: DateTime.now(),
+      _throwIfNotSuccessful(response, action: 'create share');
+      return ShareModel.fromApi(
+        jsonDecode(response.body) as Map<String, dynamic>,
       );
-
-      final docRef = await _sharesCollection.add(share.toFirestore());
-
-      await _notificationRepository.createNotification(
-        userId: targetUser['id'] as String? ?? '',
-        type: NotificationType.shareRequest,
-        title: 'Yeni Paylaşım İsteği',
-        message:
-            '$fromUserName "$categoryName" koleksiyonunu sizinle paylaşmak istiyor',
-        data: {
-          'shareId': docRef.id,
-          'categoryName': categoryName,
-          'fromUserName': fromUserName,
-        },
-      );
-
-      return share.copyWith(id: docRef.id);
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error creating share: $e');
       rethrow;
@@ -270,36 +144,13 @@ class ShareRepository {
 
   Future<void> acceptShare(String shareId) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.put(
-          _buildUri('/api/shares/$shareId/accept'),
-          headers: _jsonHeaders(accessToken),
-        );
-
-        _throwIfNotSuccessful(response, action: 'accept share');
-        return;
-      }
-
-      final shareDoc = await _sharesCollection.doc(shareId).get();
-      if (!shareDoc.exists) throw Exception('Paylaşım bulunamadı');
-
-      final share = ShareModel.fromFirestore(shareDoc);
-
-      await _sharesCollection.doc(shareId).update({
-        'status': ShareStatus.accepted.name,
-        'acceptedAt': Timestamp.now(),
-      });
-
-      await _notificationRepository.createNotification(
-        userId: share.fromUserId,
-        type: NotificationType.shareAccepted,
-        title: 'Paylaşım Kabul Edildi',
-        message:
-            '"${share.categoryName}" koleksiyonunu paylaştığınız kişi kabul etti',
-        data: {'shareId': shareId, 'categoryName': share.categoryName},
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.put(
+        _buildUri('/api/shares/$shareId/accept'),
+        headers: _jsonHeaders(accessToken),
       );
+
+      _throwIfNotSuccessful(response, action: 'accept share');
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error accepting share: $e');
       rethrow;
@@ -308,36 +159,13 @@ class ShareRepository {
 
   Future<void> rejectShare(String shareId) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.put(
-          _buildUri('/api/shares/$shareId/reject'),
-          headers: _jsonHeaders(accessToken),
-        );
-
-        _throwIfNotSuccessful(response, action: 'reject share');
-        return;
-      }
-
-      final shareDoc = await _sharesCollection.doc(shareId).get();
-      if (!shareDoc.exists) throw Exception('Paylaşım bulunamadı');
-
-      final share = ShareModel.fromFirestore(shareDoc);
-
-      await _sharesCollection.doc(shareId).update({
-        'status': ShareStatus.rejected.name,
-        'rejectedAt': Timestamp.now(),
-      });
-
-      await _notificationRepository.createNotification(
-        userId: share.fromUserId,
-        type: NotificationType.shareRejected,
-        title: 'Paylaşım Reddedildi',
-        message:
-            '"${share.categoryName}" koleksiyonunu paylaştığınız kişi reddetti',
-        data: {'shareId': shareId, 'categoryName': share.categoryName},
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.put(
+        _buildUri('/api/shares/$shareId/reject'),
+        headers: _jsonHeaders(accessToken),
       );
+
+      _throwIfNotSuccessful(response, action: 'reject share');
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error rejecting share: $e');
       rethrow;
@@ -346,39 +174,13 @@ class ShareRepository {
 
   Future<void> revokeShare(String shareId) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final accessToken = await _requireAccessToken();
-        final response = await _httpClient.delete(
-          _buildUri('/api/shares/$shareId'),
-          headers: _jsonHeaders(accessToken),
-        );
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.delete(
+        _buildUri('/api/shares/$shareId'),
+        headers: _jsonHeaders(accessToken),
+      );
 
-        _throwIfNotSuccessful(response, action: 'revoke share');
-        return;
-      }
-
-      final doc = await _sharesCollection.doc(shareId).get();
-
-      if (doc.exists) {
-        try {
-          final data = doc.data() as Map<String, dynamic>;
-          final toUserId = data['toUserId'] as String?;
-
-          if (toUserId != null) {
-            await _notificationRepository.deleteNotificationsByShareId(
-              toUserId,
-              shareId,
-            );
-          }
-        } catch (e) {
-          debugPrint(
-            '⚠️ [ShareRepository] Could not cleanup notifications: $e',
-          );
-        }
-      }
-
-      await _sharesCollection.doc(shareId).delete();
+      _throwIfNotSuccessful(response, action: 'revoke share');
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error revoking share: $e');
       rethrow;
@@ -386,21 +188,6 @@ class ShareRepository {
   }
 
   Stream<List<ShareModel>> getMyShares(String userId) async* {
-    if (!_useBackendForCurrentUser(userId)) {
-      yield* _sharesCollection
-          .where('fromUserId', isEqualTo: userId)
-          .snapshots()
-          .map((snapshot) {
-            final shares =
-                snapshot.docs
-                    .map((doc) => ShareModel.fromFirestore(doc))
-                    .toList();
-            shares.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            return shares;
-          });
-      return;
-    }
-
     while (true) {
       yield await _getOutgoingSharesFromApi();
       await Future<void>.delayed(const Duration(seconds: 2));
@@ -408,26 +195,6 @@ class ShareRepository {
   }
 
   Stream<List<ShareModel>> getSharedWithMe(String userId) async* {
-    if (!_useBackendForCurrentUser(userId)) {
-      yield* _sharesCollection
-          .where('toUserId', isEqualTo: userId)
-          .where('status', isEqualTo: ShareStatus.accepted.name)
-          .snapshots()
-          .map((snapshot) {
-            final shares =
-                snapshot.docs
-                    .map((doc) => ShareModel.fromFirestore(doc))
-                    .toList();
-            shares.sort((a, b) {
-              final dateA = a.acceptedAt ?? a.createdAt;
-              final dateB = b.acceptedAt ?? b.createdAt;
-              return dateB.compareTo(dateA);
-            });
-            return shares;
-          });
-      return;
-    }
-
     while (true) {
       final shares = await _getIncomingSharesFromApi();
       final accepted =
@@ -445,22 +212,6 @@ class ShareRepository {
   }
 
   Stream<List<ShareModel>> getPendingShareRequests(String userId) async* {
-    if (!_useBackendForCurrentUser(userId)) {
-      yield* _sharesCollection
-          .where('toUserId', isEqualTo: userId)
-          .where('status', isEqualTo: ShareStatus.pending.name)
-          .snapshots()
-          .map((snapshot) {
-            final shares =
-                snapshot.docs
-                    .map((doc) => ShareModel.fromFirestore(doc))
-                    .toList();
-            shares.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            return shares;
-          });
-      return;
-    }
-
     while (true) {
       final shares = await _getIncomingSharesFromApi();
       final pending =
@@ -473,33 +224,38 @@ class ShareRepository {
 
   Future<ShareModel?> getShareById(String shareId) async {
     try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (_backendAuthService.isEnabled && currentUserId != null) {
-        final outgoing = await _getOutgoingSharesFromApi();
-        for (final share in outgoing) {
-          if (share.id == shareId) return share;
-        }
-
-        final incoming = await _getIncomingSharesFromApi();
-        for (final share in incoming) {
-          if (share.id == shareId) return share;
-        }
-
-        return null;
+      final outgoing = await _getOutgoingSharesFromApi();
+      for (final share in outgoing) {
+        if (share.id == shareId) return share;
       }
 
-      final doc = await _sharesCollection.doc(shareId).get();
-      if (!doc.exists) return null;
-      return ShareModel.fromFirestore(doc);
+      final incoming = await _getIncomingSharesFromApi();
+      for (final share in incoming) {
+        if (share.id == shareId) return share;
+      }
+
+      return null;
     } catch (e) {
       debugPrint('❌ [ShareRepository] Error getting share: $e');
       return null;
     }
   }
 
-  bool _useBackendForCurrentUser(String userId) {
-    return _backendAuthService.isEnabled &&
-        FirebaseAuth.instance.currentUser?.uid == userId;
+  /// Revokes outgoing shares. Incoming shares and the rest of the account
+  /// data are removed server-side by DELETE /api/users/me.
+  Future<void> deleteAllUserShares(String userId) async {
+    try {
+      final outgoing = await _getOutgoingSharesFromApi();
+      for (final share in outgoing) {
+        if (share.id != null) {
+          try {
+            await revokeShare(share.id!);
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error deleting all shares: $e');
+    }
   }
 
   Future<List<Map<String, dynamic>>> _searchUsersViaApi(String query) async {
@@ -508,7 +264,7 @@ class ShareRepository {
     }
 
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri('/api/users/search', queryParameters: {'q': query}),
       headers: _jsonHeaders(accessToken),
     );
@@ -525,7 +281,7 @@ class ShareRepository {
 
   Future<List<ShareModel>> _getOutgoingSharesFromApi() async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri('/api/shares/outgoing'),
       headers: _jsonHeaders(accessToken),
     );
@@ -536,7 +292,7 @@ class ShareRepository {
 
   Future<List<ShareModel>> _getIncomingSharesFromApi() async {
     final accessToken = await _requireAccessToken();
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri('/api/shares/incoming'),
       headers: _jsonHeaders(accessToken),
     );
@@ -551,17 +307,6 @@ class ShareRepository {
         .whereType<Map<String, dynamic>>()
         .map(ShareModel.fromApi)
         .toList();
-  }
-
-  Map<String, dynamic> _mapFirestoreUser(String id, Map<String, dynamic> data) {
-    return {
-      'id': id,
-      'email': data['email'],
-      'displayName': data['displayName'] ?? data['email'],
-      'username': data['username'],
-      'photoBase64': data['photoBase64'],
-      'photoUrl': data['photoURL'],
-    };
   }
 
   Map<String, dynamic> _mapApiUser(Map<String, dynamic> json) {
@@ -581,7 +326,10 @@ class ShareRepository {
     );
 
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('Backend access token could not be obtained.');
+      throw const UnauthorizedException(
+        'backend access token missing',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      );
     }
 
     return accessToken;
@@ -613,8 +361,40 @@ class ShareRepository {
       return;
     }
 
-    throw Exception(
-      'Failed to $action. Status: ${response.statusCode}. Body: ${response.body}',
-    );
+    debugPrint('API Error [$action]: ${response.statusCode}');
+
+    throw switch (response.statusCode) {
+      401 => const UnauthorizedException(
+        'share request unauthorized',
+        userMessage: 'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+      ),
+      409 => const ConflictException(
+        'share request conflict',
+        userMessage: 'Bu işlem zaten yapıldı.',
+      ),
+      >= 400 && < 500 => ValidationException(
+        'share request failed',
+        userMessage: _parseApiError(response.body),
+      ),
+      >= 500 => const ServerException(
+        'share server error',
+        userMessage: 'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      ),
+      _ => const ServerException(
+        'share request failed',
+        userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  String _parseApiError(String responseBody) {
+    try {
+      final json = jsonDecode(responseBody) as Map<String, dynamic>?;
+      return json?['message'] as String? ??
+          json?['error'] as String? ??
+          'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    } catch (_) {
+      return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
+    }
   }
 }

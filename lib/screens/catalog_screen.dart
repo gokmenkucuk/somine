@@ -5,11 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
-import 'package:somine_app/core/repositories/item_repository.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -17,8 +15,10 @@ import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/custom_note_icon.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
@@ -155,8 +155,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               ref.read(isReorderingProvider.notifier).state =
                                   false,
                       style: TextButton.styleFrom(
-                        backgroundColor: context.colors.primary.withOpacity(
-                          0.1,
+                        backgroundColor: context.colors.primary.withValues(alpha: 0.1,
                         ),
                         foregroundColor: context.colors.primary,
                         shape: RoundedRectangleBorder(
@@ -182,7 +181,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             padding: const EdgeInsets.all(8),
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withOpacity(0.1),
+                              color: context.colors.primary.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -224,7 +223,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               color:
                                   ref.watch(isVaultUnlockedProvider)
                                       ? context.colors.primary
-                                      : context.colors.primary.withOpacity(0.1),
+                                      : context.colors.primary.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -246,7 +245,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withOpacity(0.1),
+                              color: context.colors.primary.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -285,7 +284,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         isReordering,
                       ),
                   loading: () => const Center(child: SizedBox()),
-                  error: (_, __) => const SizedBox(),
+                  error: (error, _) => ErrorStateWidget(
+                    message: FailureMapper.toUserMessage(error),
+                    onRetry: () => ref.invalidate(catalogItemsProvider),
+                  ),
                 ),
               ),
             ),
@@ -349,31 +351,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             // 3. Main Content
             Expanded(
               child: itemsAsync.when(
-                data:
-                    (items) => categoriesAsync.when(
-                      data:
-                          (categories) => _buildBody(
-                            selectedId,
-                            items,
-                            categories,
-                            ref.watch(isVaultUnlockedProvider),
-                          ),
-                      loading:
-                          () =>
-                              const Center(child: CircularProgressIndicator()),
-                      error:
-                          (_, __) => _buildBody(
-                            selectedId,
-                            items,
-                            [],
-                            false,
-                          ), // Fallback
-                    ),
+                data: (items) => _buildBody(
+                  selectedId,
+                  items,
+                  categoriesAsync.valueOrNull ?? [],
+                  ref.watch(isVaultUnlockedProvider),
+                ),
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (err, stack) => Center(
-                      child: Text('Hata oluştu', style: GoogleFonts.poppins()),
-                    ),
+                error: (err, stack) => ErrorStateWidget(
+                  message: FailureMapper.toUserMessage(err),
+                  onRetry: () => ref.invalidate(catalogItemsProvider),
+                ),
               ),
             ),
           ],
@@ -389,37 +377,20 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     List<CategoryModel> categories,
     bool isVaultUnlocked,
   ) {
+    final itemsByCategory = _groupItemsByCategory(allItems);
     // 1. Identify Locked Categories
     // If a category is Vault AND !isUnlocked -> It is effectively hidden/masked.
     final vaultIds =
         categories.where((c) => c.isVault).map((c) => c.id).toSet();
 
     final filteredItems =
-        allItems.where((item) {
-          if (selectedId == null) {
-            // Tümü View:
-            // If unlocked -> Show ALL.
-            // If locked -> Hide vault items.
-            if (isVaultUnlocked) return true;
-            return !vaultIds.contains(item.categoryId);
-          }
-          if (selectedId == 'uncategorized') {
-            return item.categoryId == null || item.categoryId!.isEmpty;
-          }
-
-          // Specific Category View
-          // Ideally we shouldn't even be here if it's locked and we prevent selection?
-          // But if we are here:
-          if (!isVaultUnlocked && vaultIds.contains(selectedId)) {
-            // User selected a locked vault (maybe via deep link or state persistence?)
-            // Force hide contents or show placeholder?
-            // For now, logic: return true if ID matches. The UI will render empty list if we filter it out?
-            // Better: If locked, return false (empty list). Or show "Locked" UI in body.
-            return false;
-          }
-
-          return item.categoryId == selectedId;
-        }).toList();
+        selectedId == null
+            ? _visibleItems(allItems, vaultIds, isVaultUnlocked)
+            : selectedId == 'uncategorized'
+            ? List<ItemModel>.from(itemsByCategory[null] ?? const [])
+            : (!isVaultUnlocked && vaultIds.contains(selectedId))
+            ? const <ItemModel>[]
+            : List<ItemModel>.from(itemsByCategory[selectedId] ?? const []);
 
     // Special UI for Locked Category Selection (if items empty but category exists)
     if (selectedId != null &&
@@ -432,7 +403,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             Icon(
               PhosphorIconsDuotone.lockKey,
               size: 64,
-              color: context.colors.primary.withOpacity(0.5),
+              color: context.colors.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -473,14 +444,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         final vaultIds =
             categories.where((c) => c.isVault).map((c) => c.id).toSet();
         final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
+        final itemsByCategory = _groupItemsByCategory(allItems);
 
         // Tümü count
-        final allItemsCount =
-            isVaultUnlocked
-                ? allItems.length
-                : allItems
-                    .where((i) => !vaultIds.contains(i.categoryId))
-                    .length;
+        final allItemsCount = _visibleItemsCount(
+          allItems,
+          vaultIds,
+          isVaultUnlocked,
+        );
 
         // Sortable categories (exclude Hızlı, sorted by order)
         final sortedCategories =
@@ -539,26 +510,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           itemBuilder: (context, index) {
                             final cat = sortedCategories[index];
                             final isLocked = cat.isVault && !isVaultUnlocked;
-                            final catItems =
-                                allItems
-                                    .where((i) => i.categoryId == cat.id)
-                                    .toList();
-                            final coverItem = catItems.firstWhere(
-                              (i) =>
-                                  i.displayImage != null &&
-                                  i.displayImage!.isNotEmpty &&
-                                  !i.displayImage!.toLowerCase().endsWith(
-                                    '.svg',
-                                  ),
-                              orElse:
-                                  () => ItemModel(
-                                    id: '',
-                                    userId: '',
-                                    createdAt: DateTime.now(),
-                                    updatedAt: DateTime.now(),
-                                    type: ItemType.note,
-                                  ),
+                            final catItems = _itemsForCategory(
+                              itemsByCategory,
+                              cat.id,
                             );
+                            final coverImageUrl = _findCoverImageUrl(catItems);
 
                             return ReorderableDelayedDragStartListener(
                               key: ValueKey(cat.id),
@@ -568,13 +524,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   _buildImageCatalogCard(
                                     id: cat.id,
                                     name: cat.name,
-                                    imageUrl:
-                                        (coverItem.displayImage != null &&
-                                                coverItem
-                                                    .displayImage!
-                                                    .isNotEmpty)
-                                            ? coverItem.displayImage!
-                                            : null,
+                                    imageUrl: coverImageUrl,
                                     isSelected: selectedId == cat.id,
                                     isLockedVault: isLocked,
                                     itemCount: catItems.length,
@@ -628,33 +578,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       final catIndex = index - 1;
                       final cat = sortedCategories[catIndex];
                       final isLocked = cat.isVault && !isVaultUnlocked;
-                      final catItems =
-                          allItems
-                              .where((i) => i.categoryId == cat.id)
-                              .toList();
-                      final coverItem = catItems.firstWhere(
-                        (i) =>
-                            i.displayImage != null &&
-                            i.displayImage!.isNotEmpty &&
-                            !i.displayImage!.toLowerCase().endsWith('.svg'),
-                        orElse:
-                            () => ItemModel(
-                              id: '',
-                              userId: '',
-                              createdAt: DateTime.now(),
-                              updatedAt: DateTime.now(),
-                              type: ItemType.note,
-                            ),
+                      final catItems = _itemsForCategory(
+                        itemsByCategory,
+                        cat.id,
                       );
+                      final coverImageUrl = _findCoverImageUrl(catItems);
 
                       return _buildImageCatalogCard(
                         id: cat.id,
                         name: cat.name,
-                        imageUrl:
-                            (coverItem.displayImage != null &&
-                                    coverItem.displayImage!.isNotEmpty)
-                                ? coverItem.displayImage!
-                                : null,
+                        imageUrl: coverImageUrl,
                         isSelected: selectedId == cat.id,
                         isLockedVault: isLocked,
                         onLongPress:
@@ -696,8 +629,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 : (onLongPress ?? () => _confirmDelete(context, id!, name)));
 
     return DragTarget<ItemModel>(
-      onWillAccept: (item) => item != null && item.categoryId != id,
-      onAccept: (item) => _moveItemToCategory(item, id),
+      onWillAcceptWithDetails: (item) => item.data.categoryId != id,
+      onAcceptWithDetails: (item) => _moveItemToCategory(item.data, id),
       builder: (context, candidateData, rejectedData) {
         final isHovered = candidateData.isNotEmpty;
 
@@ -708,7 +641,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         // Hover Effect: Stronger Border & Glow
         final hoverBorder = Border.all(color: context.colors.primary, width: 3);
         final hoverShadow = BoxShadow(
-          color: context.colors.primary.withOpacity(0.4),
+          color: context.colors.primary.withValues(alpha: 0.4),
           blurRadius: 12,
           offset: const Offset(0, 4),
         );
@@ -722,13 +655,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 isSelected
                     ? Border.all(color: context.colors.primary, width: 2)
                     : Border.all(
-                      color: context.colors.secondary.withOpacity(0.3),
+                      color: context.colors.secondary.withValues(alpha: 0.3),
                     ),
             boxShadow:
                 isSelected
                     ? [
                       BoxShadow(
-                        color: context.colors.primary.withOpacity(0.15),
+                        color: context.colors.primary.withValues(alpha: 0.15),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -744,7 +677,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   color:
                       isSelected
                           ? context.colors.primary
-                          : context.colors.body.withOpacity(0.4),
+                          : context.colors.body.withValues(alpha: 0.4),
                 ),
               ),
               _buildShelfLabel(
@@ -767,15 +700,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     : (isSelected
                         ? [
                           BoxShadow(
-                            color: context.colors.primary.withOpacity(0.4),
+                            color: context.colors.primary.withValues(alpha: 0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 8),
                           ),
                         ]
                         : [
                           BoxShadow(
-                            color: context.colors.premiumShadow.withOpacity(
-                              0.08,
+                            color: context.colors.premiumShadow.withValues(alpha: 0.08,
                             ),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
@@ -787,7 +719,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     : (isSelected
                         ? Border.all(color: context.colors.primary, width: 2)
                         : Border.all(
-                          color: context.colors.surfaceWhite.withOpacity(0.2),
+                          color: context.colors.surfaceWhite.withValues(alpha: 0.2),
                           width: 1,
                         )),
           );
@@ -819,7 +751,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: LinearGradient(
-                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                   ),
@@ -860,7 +792,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     gradient: primaryGradient, // Border Gradient
                     boxShadow: [
                       BoxShadow(
-                        color: context.colors.primary.withOpacity(0.3),
+                        color: context.colors.primary.withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 6),
                       ),
@@ -920,7 +852,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ? [hoverShadow]
                             : [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -958,7 +890,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     gradient: quickGradient,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 6),
                       ),
@@ -1021,8 +953,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ? [hoverShadow]
                             : [
                               BoxShadow(
-                                color: context.colors.premiumShadow.withOpacity(
-                                  0.08,
+                                color: context.colors.premiumShadow.withValues(alpha: 0.08,
                                 ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
@@ -1066,15 +997,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         : (isSelected
                             ? [
                               BoxShadow(
-                                color: context.colors.primary.withOpacity(0.2),
+                                color: context.colors.primary.withValues(alpha: 0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 6),
                               ),
                             ]
                             : [
                               BoxShadow(
-                                color: context.colors.premiumShadow.withOpacity(
-                                  0.08,
+                                color: context.colors.premiumShadow.withValues(alpha: 0.08,
                                 ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
@@ -1123,10 +1053,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     required bool isSystem,
     required bool isSelected,
   }) {
-    Color textColor = isDarkBg ? Colors.white : context.colors.headline;
-    Color badgeBg = Colors.white.withOpacity(
-      0.9,
-    ); // Always white for consistency
+    Color badgeBg = Colors.white.withValues(alpha: 0.9); // Always white for consistency
     Color badgeText = Colors.black87; // Always dark text for readability
 
     return Stack(
@@ -1170,7 +1097,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               fontWeight: FontWeight.w600,
               color:
                   isDarkBg
-                      ? Colors.white.withOpacity(0.9)
+                      ? Colors.white.withValues(alpha: 0.9)
                       : context.colors.primary,
             ),
           ),
@@ -1209,7 +1136,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               border: Border.all(color: Colors.grey.shade200, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -1230,7 +1157,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: context.colors.headline.withOpacity(0.7),
+                color: context.colors.headline.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -1244,69 +1171,46 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   Widget _buildItemGrid(List<ItemModel> items, List<CategoryModel> categories) {
     if (items.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Organic Icon Background
-            SizedBox(
-              width: 120,
-              height: 120,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Transform.rotate(
-                    angle: -0.2,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: context.colors.primary.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                    ),
-                  ),
-                  Transform.rotate(
-                    angle: 0.2,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6FBFAC).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    PhosphorIconsDuotone.plant,
-                    size: 56,
-                    color: context.colors.primary,
-                  ),
-                ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: context.colors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  PhosphorIconsDuotone.folderOpen,
+                  size: 40,
+                  color: context.colors.primary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Bu Alan Yeşermeyi Bekliyor",
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: context.colors.headline,
+              const SizedBox(height: 20),
+              Text(
+                'Bu koleksiyonda henüz öğe yok',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: context.colors.headline,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                "İlham verici içeriklerini ekle ve koleksiyonunun büyümesini izle.",
+              const SizedBox(height: 8),
+              Text(
+                'Kaydettiğin bağlantılar, notlar ve görseller burada görünecek.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: context.colors.body.withOpacity(0.7),
+                  color: context.colors.body,
+                  height: 1.5,
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -1426,7 +1330,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     title: "Koleksiyon Adını Düzenle",
                     onTap: () {
                       Navigator.pop(ctx);
-                      _showRenameDialog(category.id!, category.name);
+                      _showRenameDialog(category.id, category.name);
                     },
                   ),
                   Divider(color: Colors.grey[100]),
@@ -1574,7 +1478,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             .updateCategory(updated);
                         if (mounted) {
                           SuccessNotificationSheet.show(
-                            context,
+                            this.context, // ignore: use_build_context_synchronously, unnecessary_this
                             title: "Başarılı",
                             message:
                                 updated.isVault
@@ -1594,7 +1498,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     color: Colors.red,
                     onTap: () {
                       Navigator.pop(ctx);
-                      _confirmDelete(context, category.id!, category.name);
+                      _confirmDelete(context, category.id, category.name);
                     },
                   ),
                   const SizedBox(height: 16),
@@ -1616,7 +1520,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: (color ?? context.colors.primary).withOpacity(0.1),
+          color: (color ?? context.colors.primary).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color ?? context.colors.primary, size: 20),
@@ -1729,8 +1633,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                       onPressed: () async {
                                         if (searchController.text
                                             .trim()
-                                            .isEmpty)
+                                            .isEmpty) {
                                           return;
+                                        }
                                         setState(() {
                                           isSearching = true;
                                           hasSearched = false;
@@ -1803,10 +1708,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: context.colors.primary.withOpacity(0.1),
+                          color: context.colors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: context.colors.primary.withOpacity(0.2),
+                            color: context.colors.primary.withValues(alpha: 0.2),
                             width: 1,
                           ),
                         ),
@@ -1995,7 +1900,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       throw Exception("Oturum açık değil");
                     }
 
-                    if (category.id == null || category.id!.isEmpty) {
+                    if (category.id.isEmpty) {
                       throw Exception("Koleksiyon ID bulunamadı");
                     }
 
@@ -2020,15 +1925,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               user['email'] ??
                               '', // Email opsiyonel, boş gidebilir
                           toUserId: user['id'], // ID öncelikli
-                          categoryId: category.id!,
+                          categoryId: category.id,
                           categoryName: category.name,
                         );
 
-                    Navigator.pop(dialogContext);
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
 
                     if (mounted) {
                       SuccessNotificationSheet.show(
-                        context,
+                        this.context, // ignore: use_build_context_synchronously, unnecessary_this
                         title: 'Paylaşım Gönderildi',
                         message: '$displayName paylaşım isteğinizi aldı.',
                       );
@@ -2225,15 +2130,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   fromUserEmail: currentUser.email ?? '',
                   toUserEmail: user['email'],
                   toUserId: user['id'],
-                  categoryId: category.id!,
+                  categoryId: category.id,
                   categoryName: category.name,
                 );
 
-            Navigator.pop(dialogContext);
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
 
             if (mounted) {
               SuccessNotificationSheet.show(
-                context,
+                this.context, // ignore: use_build_context_synchronously, unnecessary_this
                 title: 'Paylaşım Gönderildi',
                 message: '$displayName paylaşım isteğinizi aldı.',
               );
@@ -2614,8 +2519,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: context.colors.primary.withOpacity(
-                                      0.1,
+                                    color: context.colors.primary.withValues(alpha: 0.1,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -2676,7 +2580,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                         if (context.mounted) Navigator.pop(ctx);
                                         if (mounted) {
                                           LimitReachedDialog.show(
-                                            context: context,
+                                            context: this.context, // ignore: use_build_context_synchronously, unnecessary_this
                                             ref: ref,
                                             title: "Koleksiyon Dolu",
                                             message:
@@ -2690,7 +2594,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   }
                                   // --- END LIMIT CHECK ---
 
-                                  Navigator.pop(ctx);
+                                  if (ctx.mounted) Navigator.pop(ctx);
 
                                   if (ref.read(isSelectionModeProvider)) {
                                     // Batch Move
@@ -2709,7 +2613,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                         );
                                     if (mounted) {
                                       SuccessNotificationSheet.show(
-                                        context,
+                                        this.context, // ignore: use_build_context_synchronously, unnecessary_this
                                         title: 'Taşındı',
                                         message:
                                             '${selectedIds.length} içerik "${cat.name}" koleksiyonuna taşındı.',
@@ -2730,7 +2634,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                         .moveToCategory(item.id, cat.id);
                                     if (mounted) {
                                       SuccessNotificationSheet.show(
-                                        context,
+                                        this.context, // ignore: use_build_context_synchronously, unnecessary_this
                                         title: 'Taşındı',
                                         message:
                                             'İçerik "${cat.name}" koleksiyonuna taşındı.',
@@ -2823,7 +2727,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       await ref.read(itemRepositoryProvider).softDeleteItems(ids);
       if (mounted) {
         SuccessNotificationSheet.show(
-          context,
+          this.context, // ignore: use_build_context_synchronously, unnecessary_this
           title: 'Silindi',
           message: '$count içerik başarıyla silindi.',
         );
@@ -2901,7 +2805,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       ref.invalidate(itemCountProvider);
       if (mounted) {
         SuccessNotificationSheet.show(
-          context,
+          this.context, // ignore: use_build_context_synchronously, unnecessary_this
           title: 'Silindi',
           message: 'İçerik başarıyla silindi.',
         );
@@ -2962,7 +2866,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                   ),
                 ],
@@ -2979,7 +2883,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               color: context.colors.surfaceWhite,
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
               ],
             ),
             child: Center(child: Icon(icon, size: 14, color: iconColor)),
@@ -3064,7 +2968,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     Widget contentHeader;
     final isNote = item.type == ItemType.note;
 
-    if (hasImage) {
+    bool isMapUrl(String url) => url.contains('maps.app.goo.gl') ||
+        url.contains('goo.gl/maps') ||
+        url.contains('google.com/maps') ||
+        url.contains('maps.google') ||
+        url.contains('share.google') ||
+        url.contains('yandex.com/maps') ||
+        url.contains('yandex.ru/maps') ||
+        url.contains('maps.apple.com') ||
+        url.contains('openstreetmap.org');
+
+    if (hasImage && !isMapUrl(source.toLowerCase())) {
       contentHeader = Stack(
         children: [
           item.displayImage!.startsWith('http')
@@ -3145,14 +3059,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               isFeedback
                   ? [
                     BoxShadow(
-                      color: context.colors.primary.withOpacity(0.3),
+                      color: context.colors.primary.withValues(alpha: 0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
                   ]
                   : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -3184,8 +3098,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 color:
                                     isSelected
                                         ? context.colors.primary
-                                        : Colors.black.withOpacity(
-                                          0.1,
+                                        : Colors.black.withValues(alpha: 0.1,
                                         ), // Transparent when unselected (User feedback: "no hole")
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -3197,7 +3110,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -3226,7 +3139,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -3242,7 +3155,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
 
               // Thin grey line above text area
-              Container(height: 1, color: Colors.grey.withOpacity(0.15)),
+              Container(height: 1, color: Colors.grey.withValues(alpha: 0.15)),
               // 2. Footer Info (Text Below)
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -3394,10 +3307,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             // But I need to make sure I fetch ALL.
                           ),
                       builder: (context, snapshot) {
-                        if (!snapshot.hasData)
+                        if (!snapshot.hasData) {
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
+                        }
                         return _ReorderList(items: snapshot.data!);
                       },
                     );
@@ -3483,9 +3397,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Hata: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          this.context, // ignore: use_build_context_synchronously, unnecessary_this
+        ).showSnackBar(SnackBar(content: Text("Hata: $e")));
+      }
     }
   }
 
@@ -3494,6 +3410,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final categoriesAsync = ref.read(categoriesProvider);
     final allItems = ref.read(catalogItemsProvider).valueOrNull ?? [];
     final isVaultUnlocked = ref.read(isVaultUnlockedProvider);
+    final itemsByCategory = _groupItemsByCategory(allItems);
 
     categoriesAsync.whenData((categories) {
       final vaultIds =
@@ -3578,17 +3495,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               );
 
                               if (index == 0) {
-                                final allItemsCount =
-                                    isVaultUnlocked
-                                        ? allItems.length
-                                        : allItems
-                                            .where(
-                                              (i) =>
-                                                  !vaultIds.contains(
-                                                    i.categoryId,
-                                                  ),
-                                            )
-                                            .length;
+                                final allItemsCount = _visibleItemsCount(
+                                  allItems,
+                                  vaultIds,
+                                  isVaultUnlocked,
+                                );
 
                                 return _buildGridCollectionCard(
                                   context: context,
@@ -3616,25 +3527,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               final catIndex = index - 1;
                               final cat = sortedCategories[catIndex];
                               final isLocked = cat.isVault && !isVaultUnlocked;
-                              final catItems =
-                                  allItems
-                                      .where((i) => i.categoryId == cat.id)
-                                      .toList();
-                              final coverItem = catItems.firstWhere(
-                                (i) =>
-                                    i.displayImage != null &&
-                                    i.displayImage!.isNotEmpty &&
-                                    !i.displayImage!.toLowerCase().endsWith(
-                                      '.svg',
-                                    ),
-                                orElse:
-                                    () => ItemModel(
-                                      id: '',
-                                      userId: '',
-                                      createdAt: DateTime.now(),
-                                      updatedAt: DateTime.now(),
-                                      type: ItemType.note,
-                                    ),
+                              final catItems = _itemsForCategory(
+                                itemsByCategory,
+                                cat.id,
+                              );
+                              final coverImageUrl = _findCoverImageUrl(
+                                catItems,
                               );
 
                               return _buildGridCollectionCard(
@@ -3642,11 +3540,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 id: cat.id,
                                 name: cat.name,
                                 itemCount: catItems.length,
-                                imageUrl:
-                                    (coverItem.displayImage != null &&
-                                            coverItem.displayImage!.isNotEmpty)
-                                        ? coverItem.displayImage!
-                                        : null,
+                                imageUrl: coverImageUrl,
                                 isVault: cat.isVault,
                                 isLocked: isLocked,
                                 isSelected: selectedId == cat.id,
@@ -3657,8 +3551,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                           reason:
                                               '${cat.name} koleksiyonuna erişmek için doğrulama yapın',
                                         );
-                                    if (result != VaultAuthResult.success)
+                                    if (result != VaultAuthResult.success) {
                                       return;
+                                    }
                                     ref
                                         .read(isVaultUnlockedProvider.notifier)
                                         .state = true;
@@ -3669,7 +3564,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   _scrollToCategory(
                                     index,
                                   ); // Scroll carousel to selected category
-                                  Navigator.pop(ctx);
+                                  if (ctx.mounted) Navigator.pop(ctx);
                                 },
                               );
                             },
@@ -3681,6 +3576,67 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             ),
       );
     });
+  }
+
+  Map<String?, List<ItemModel>> _groupItemsByCategory(List<ItemModel> items) {
+    final grouped = <String?, List<ItemModel>>{};
+    for (final item in items) {
+      final key = _normalizeCategoryKey(item.categoryId);
+      (grouped[key] ??= <ItemModel>[]).add(item);
+    }
+    return grouped;
+  }
+
+  String? _normalizeCategoryKey(String? categoryId) {
+    if (categoryId == null || categoryId.isEmpty) {
+      return null;
+    }
+    return categoryId;
+  }
+
+  List<ItemModel> _itemsForCategory(
+    Map<String?, List<ItemModel>> itemsByCategory,
+    String? categoryId,
+  ) {
+    return itemsByCategory[_normalizeCategoryKey(categoryId)] ?? const [];
+  }
+
+  List<ItemModel> _visibleItems(
+    List<ItemModel> allItems,
+    Set<String> vaultIds,
+    bool isVaultUnlocked,
+  ) {
+    if (isVaultUnlocked) {
+      return allItems;
+    }
+
+    return allItems
+        .where((item) => !vaultIds.contains(item.categoryId))
+        .toList();
+  }
+
+  int _visibleItemsCount(
+    List<ItemModel> allItems,
+    Set<String> vaultIds,
+    bool isVaultUnlocked,
+  ) {
+    if (isVaultUnlocked) {
+      return allItems.length;
+    }
+
+    return allItems.where((item) => !vaultIds.contains(item.categoryId)).length;
+  }
+
+  String? _findCoverImageUrl(List<ItemModel> items) {
+    for (final item in items) {
+      final imageUrl = item.displayImage;
+      if (imageUrl != null &&
+          imageUrl.isNotEmpty &&
+          !imageUrl.toLowerCase().endsWith('.svg')) {
+        return imageUrl;
+      }
+    }
+    return null;
   }
 
   Widget _buildGridCollectionCard({
@@ -3704,15 +3660,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             color:
                 isSelected
                     ? context.colors.primary
-                    : context.colors.secondary.withOpacity(0.3),
+                    : context.colors.secondary.withValues(alpha: 0.3),
             width: isSelected ? 2.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color:
                   isSelected
-                      ? context.colors.primary.withOpacity(0.2)
-                      : context.colors.premiumShadow.withOpacity(0.05),
+                      ? context.colors.primary.withValues(alpha: 0.2)
+                      : context.colors.premiumShadow.withValues(alpha: 0.05),
               blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),
@@ -3762,7 +3718,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       ),
                     if (isLocked)
                       Container(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         child: const Center(
                           child: Icon(
                             PhosphorIconsBold.lockKey,
@@ -3783,7 +3739,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withOpacity(0.4),
+                                color: context.colors.primary.withValues(alpha: 0.4),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -3850,7 +3806,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       return;
     }
 
-    final TextEditingController _controller = TextEditingController();
+    final TextEditingController controller = TextEditingController();
 
     showDialog(
       context: context,
@@ -3888,7 +3844,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ),
                   const SizedBox(height: 20),
                   TextField(
-                    controller: _controller,
+                    controller: controller,
                     autofocus: true,
                     style: GoogleFonts.poppins(color: context.colors.headline),
                     decoration: InputDecoration(
@@ -4028,7 +3984,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     Expanded(
                       child: InkWell(
                         onTap: () async {
-                          if (_controller.text.trim().isNotEmpty &&
+                          if (controller.text.trim().isNotEmpty &&
                               _currentUserId != null) {
                             try {
                               await ref
@@ -4038,7 +3994,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                       id:
                                           DateTime.now().millisecondsSinceEpoch
                                               .toString(),
-                                      name: _controller.text.trim(),
+                                      name: controller.text.trim(),
                                       userId: _currentUserId!,
                                       createdAt: DateTime.now(),
                                       updatedAt: DateTime.now(),
@@ -4084,8 +4040,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.premiumShadow.withOpacity(
-                                  0.3,
+                                color: context.colors.premiumShadow.withValues(alpha: 0.3,
                                 ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
@@ -4133,13 +4088,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (!mounted) return;
 
       if (count == 0) {
-        _showStandardDeleteDialog(context, categoryId, categoryName);
+        _showStandardDeleteDialog(this.context, categoryId, categoryName);
       } else {
-        _showAdvancedDeleteDialog(context, categoryId, categoryName, count);
+        _showAdvancedDeleteDialog(this.context, categoryId, categoryName, count);
       }
     } catch (e) {
       debugPrint("Error checking category items: $e");
-      if (mounted) _showStandardDeleteDialog(context, categoryId, categoryName);
+      if (mounted) _showStandardDeleteDialog(this.context, categoryId, categoryName);
     }
   }
 
@@ -4296,13 +4251,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         decoration: BoxDecoration(
           color:
               isDestructive
-                  ? Colors.red.withOpacity(0.08)
+                  ? Colors.red.withValues(alpha: 0.08)
                   : context.colors.backgroundTop,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color:
                 isDestructive
-                    ? Colors.red.withOpacity(0.2)
+                    ? Colors.red.withValues(alpha: 0.2)
                     : Colors.transparent,
           ),
         ),
@@ -4325,7 +4280,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               size: 16,
               color:
                   isDestructive
-                      ? Colors.red.withOpacity(0.5)
+                      ? Colors.red.withValues(alpha: 0.5)
                       : context.colors.hint,
             ),
           ],
@@ -4431,12 +4386,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('İşlem başarısız oldu'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(this.context) // ignore: use_build_context_synchronously, unnecessary_this
+            .showSnackBar(
+          const SnackBar(
+            content: Text('İşlem başarısız oldu'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -4464,7 +4422,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(
@@ -4510,7 +4468,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -4551,6 +4509,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     try {
       final repo = ref.read(itemRepositoryProvider);
       await repo.softDeleteItems(selectedIds.toList());
+      ref.invalidate(itemCountProvider);
+      ref.invalidate(paginatedFeedProvider);
 
       // Reset Selection
       ref.read(isSelectionModeProvider.notifier).state = false;
@@ -4599,12 +4559,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kategori silinemedi'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(this.context) // ignore: use_build_context_synchronously, unnecessary_this
+            .showSnackBar(
+          const SnackBar(
+            content: Text('Kategori silinemedi'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -4617,7 +4580,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     VoidCallback onSelectAll,
   ) {
     final Color activeColor = context.colors.primary;
-    final Color inactiveColor = Colors.grey.withOpacity(0.5);
+    final Color inactiveColor = Colors.grey.withValues(alpha: 0.5);
     final Color textColor =
         isSelectionMode ? context.colors.primary : inactiveColor;
 
@@ -4637,7 +4600,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   color:
                       isSelectionMode
                           ? context.colors.primary
-                          : context.colors.primary.withOpacity(0.1),
+                          : context.colors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -4725,7 +4688,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 decoration:
                     (isSelectionMode && areAllSelected)
                         ? BoxDecoration(
-                          color: context.colors.primary.withOpacity(0.1),
+                          color: context.colors.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         )
                         : null,
@@ -4793,8 +4756,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: context.colors.primary.withOpacity(
-                                      0.1,
+                                    color: context.colors.primary.withValues(alpha: 0.1,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -4822,11 +4784,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                         .read(itemRepositoryProvider)
                                         .moveItemsToCategory(
                                           selectedIds,
-                                          cat.id!,
+                                          cat.id,
                                         );
                                     if (mounted) {
                                       SuccessNotificationSheet.show(
-                                        context,
+                                        this.context, // ignore: use_build_context_synchronously, unnecessary_this
                                         title: 'Taşındı',
                                         message:
                                             '${selectedIds.length} içerik "${cat.name}" koleksiyonuna taşındı.',

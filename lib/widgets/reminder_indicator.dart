@@ -47,13 +47,13 @@ class ReminderIndicator extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isOverdue
-              ? Colors.red.withOpacity(0.1)
-              : context.colors.primary.withOpacity(0.1),
+              ? Colors.red.withValues(alpha: 0.1)
+              : context.colors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isOverdue
-                ? Colors.red.withOpacity(0.3)
-                : context.colors.primary.withOpacity(0.3),
+                ? Colors.red.withValues(alpha: 0.3)
+                : context.colors.primary.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

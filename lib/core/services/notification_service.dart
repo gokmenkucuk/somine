@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -165,18 +164,19 @@ class NotificationService {
     debugPrint('📱 [NotificationService] Notification tapped: ${response.payload}');
 
     final itemId = response.payload;
-    if (itemId != null && _navigatorKey?.currentState != null) {
+    final navState = _navigatorKey?.currentState;
+    if (itemId != null && navState != null && navState.mounted) {
       try {
         // Item'ı fetch et
         final itemRepo = ItemRepository();
         final item = await itemRepo.getItem(itemId);
 
-        if (item != null && _navigatorKey!.currentContext != null) {
+        if (item != null && navState.mounted && _navigatorKey?.currentContext != null) {
           final context = _navigatorKey!.currentContext!;
-          
+
           List<CategoryModel> categories = [];
           String categoryName = 'Kategori';
-          
+
           if (_currentUserId != null) {
             try {
               final categoryRepo = CategoryRepository();
@@ -190,15 +190,19 @@ class NotificationService {
             }
           }
 
+          // Re-check navigator is still valid after async category fetch
+          if (!navState.mounted || _navigatorKey?.currentContext == null) return;
+          final freshContext = _navigatorKey!.currentContext!;
+
           ItemDetailBottomSheet.show(
-            context,
+            freshContext, // ignore: use_build_context_synchronously
             item,
             categoryName,
             categories,
           );
           debugPrint('✅ [NotificationService] Navigated to item: $itemId via BottomSheet');
         } else {
-          debugPrint('⚠️ [NotificationService] Item not found: $itemId');
+          debugPrint('⚠️ [NotificationService] Item not found or navigator unmounted: $itemId');
         }
       } catch (e) {
         debugPrint('❌ [NotificationService] Error navigating to item: $e');

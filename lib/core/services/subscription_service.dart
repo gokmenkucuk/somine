@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/config/api_config.dart';
+import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 
 /// Subscription tiers
@@ -34,7 +34,7 @@ class SubscriptionService {
   bool _isInitialized = false;
   CustomerInfo? _customerInfo;
   final BackendAuthService _backendAuthService = BackendAuthService();
-  final http.Client _httpClient = http.Client();
+  final ApiClient _apiClient = ApiClient();
   SubscriptionTier _backendTier = SubscriptionTier.starter;
 
   /// Initialize RevenueCat
@@ -99,8 +99,9 @@ class SubscriptionService {
     final id = entitlement.productIdentifier.toLowerCase();
     if (id.contains('week') || id.contains('hafta')) return "Haftalık";
     if (id.contains('month') || id.contains('aylik')) return "Aylık";
-    if (id.contains('annual') || id.contains('year') || id.contains('yillik'))
+    if (id.contains('annual') || id.contains('year') || id.contains('yillik')) {
       return "Yıllık";
+    }
     if (id.contains('life') || id.contains('omur')) return "Ömür Boyu";
 
     return "Premium";
@@ -229,7 +230,7 @@ class SubscriptionService {
       return;
     }
 
-    final response = await _httpClient.post(
+    final response = await _apiClient.post(
       _buildUri('/api/subscriptions/verify'),
       headers: _jsonHeaders(accessToken),
       body: jsonEncode({'receiptData': '', 'platform': _platformName}),
@@ -243,7 +244,7 @@ class SubscriptionService {
     }
 
     debugPrint(
-      'Subscription backend verify failed: ${response.statusCode} ${response.body}',
+      'Subscription backend verify failed: ${response.statusCode}',
     );
   }
 
@@ -262,7 +263,7 @@ class SubscriptionService {
       return;
     }
 
-    final response = await _httpClient.get(
+    final response = await _apiClient.get(
       _buildUri(
         '/api/subscriptions/status',
         queryParameters: {
@@ -280,7 +281,7 @@ class SubscriptionService {
     }
 
     debugPrint(
-      'Subscription backend status failed: ${response.statusCode} ${response.body}',
+      'Subscription backend status failed: ${response.statusCode}',
     );
     _backendTier = currentTierFromRevenueCat;
   }

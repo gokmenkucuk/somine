@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -114,8 +114,9 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final imageUrl = widget.item.displayImage;
     if (imageUrl == null ||
         imageUrl.isEmpty ||
-        imageUrl.toLowerCase().contains('.svg'))
+        imageUrl.toLowerCase().contains('.svg')) {
       return;
+    }
 
     if (!imageUrl.startsWith('http')) {
       AssetImage(imageUrl)
@@ -168,9 +169,29 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     });
   }
 
+  bool _isMapUrl(String? url) {
+    if (url == null) return false;
+    final s = url.toLowerCase();
+    return s.contains('maps.app.goo.gl') ||
+        s.contains('goo.gl/maps') ||
+        s.contains('google.com/maps') ||
+        s.contains('maps.google') ||
+        s.contains('share.google') ||
+        s.contains('yandex.com/maps') ||
+        s.contains('yandex.ru/maps') ||
+        s.contains('maps.apple.com') ||
+        s.contains('openstreetmap.org');
+  }
+
   String _getPlatformName(String? url) {
     if (url == null) return 'Link';
     final s = url.toLowerCase();
+    if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
+        s.contains('google.com/maps') || s.contains('maps.google') ||
+        s.contains('share.google')) return 'Google Maps';
+    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return 'Yandex Harita';
+    if (s.contains('maps.apple.com')) return 'Apple Harita';
+    if (s.contains('openstreetmap.org')) return 'OpenStreetMap';
     if (s.contains('instagram')) return 'Instagram';
     if (s.contains('youtube')) return 'YouTube';
     if (s.contains('x.com') || s.contains('twitter')) return 'X';
@@ -187,13 +208,28 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
   IconData _getPlatformIcon(String? url) {
     if (url == null) return PhosphorIconsBold.link;
+    if (_isMapUrl(url)) return PhosphorIconsBold.mapPin;
     final s = url.toLowerCase();
     if (s.contains('instagram')) return PhosphorIconsBold.instagramLogo;
     if (s.contains('youtube')) return PhosphorIconsBold.youtubeLogo;
-    if (s.contains('x.com') || s.contains('twitter'))
+    if (s.contains('x.com') || s.contains('twitter')) {
       return PhosphorIconsBold.xLogo;
+    }
     if (s.contains('pinterest')) return PhosphorIconsBold.pinterestLogo;
     return PhosphorIconsBold.link;
+  }
+
+  String _getPlatformActionText(String? url) {
+    if (url == null) return "Tarayıcı'da Aç";
+    final s = url.toLowerCase();
+    if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
+        s.contains('google.com/maps') || s.contains('maps.google') ||
+        s.contains('share.google')) return "Google Maps'te Aç";
+    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return "Yandex Harita'da Aç";
+    if (s.contains('maps.apple.com')) return "Apple Harita'da Aç";
+    if (s.contains('openstreetmap.org')) return "OpenStreetMap'te Aç";
+    final name = _getPlatformName(url);
+    return "$name'da Aç";
   }
 
   Future<void> _openInApp() async {
@@ -206,7 +242,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   void _shareLink() {
     final url = widget.item.url;
     if (url != null && url.isNotEmpty) {
-      Share.share(url);
+      SharePlus.instance.share(ShareParams(text: url));
     }
   }
 
@@ -217,8 +253,8 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
         builder: (context) => AddContentScreen(editItem: widget.item),
       ),
     ).then((result) {
-      if (result != null) {
-        Navigator.pop(context, result);
+      if (result != null && mounted) {
+        Navigator.pop(context, result); // ignore: use_build_context_synchronously
       }
     });
   }
@@ -236,6 +272,33 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
         child: Center(
           child: Transform.scale(scale: 2.0, child: const CustomNoteIcon()),
         ),
+      );
+    }
+
+    // Maps: theme gradient background with provider icon
+    if (_isMapUrl(widget.item.url)) {
+      final s = (widget.item.url ?? '').toLowerCase();
+      final Widget mapIcon;
+      if (s.contains('google.com/maps') || s.contains('maps.app.goo') ||
+          s.contains('goo.gl/maps') || s.contains('maps.google') ||
+          s.contains('share.google')) {
+        mapIcon = FaIcon(FontAwesomeIcons.google, size: 56, color: Colors.white.withValues(alpha: 0.9));
+      } else if (s.contains('yandex')) {
+        mapIcon = FaIcon(FontAwesomeIcons.yandex, size: 56, color: Colors.white.withValues(alpha: 0.9));
+      } else if (s.contains('maps.apple.com')) {
+        mapIcon = FaIcon(FontAwesomeIcons.apple, size: 56, color: Colors.white.withValues(alpha: 0.9));
+      } else {
+        mapIcon = Icon(PhosphorIconsBold.mapTrifold, size: 56, color: Colors.white.withValues(alpha: 0.9));
+      }
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [context.colors.primary, context.colors.secondary],
+          ),
+        ),
+        child: Center(child: mapIcon),
       );
     }
 
@@ -291,7 +354,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
@@ -316,10 +379,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final hasImage =
+        !_isMapUrl(widget.item.url) && // Maps never show OG image
         widget.item.displayImage != null &&
         widget.item.displayImage!.isNotEmpty &&
         !widget.item.displayImage!.toLowerCase().contains('.svg');
-    final platformName = _getPlatformName(widget.item.url);
     final platformIcon = _getPlatformIcon(widget.item.url);
 
     // Dynamic Header Calculation
@@ -436,7 +499,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                   BoxShadow(
                                     color: const Color(
                                       0xFF6FBFAC,
-                                    ).withOpacity(0.3),
+                                    ).withValues(alpha: 0.3),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -469,7 +532,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                         Text(
                                           widget.item.type == ItemType.note
                                               ? "Düzenle"
-                                              : "$platformName'da Aç",
+                                              : _getPlatformActionText(widget.item.url),
                                           style: GoogleFonts.poppins(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w600,
@@ -552,7 +615,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: context.colors.primary
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
@@ -607,8 +670,8 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                           textAlign: TextAlign.left,
                           style: GoogleFonts.poppins(
                             fontSize: 11,
-                            color: context.colors.body.withOpacity(
-                              0.9,
+                            color: context.colors.body.withValues(
+                              alpha: 0.9,
                             ), // Darker text
                             fontWeight: FontWeight.w400,
                           ),
@@ -631,20 +694,20 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: context.colors.surfaceWhite.withOpacity(0.85),
+                          color: context.colors.surfaceWhite.withValues(alpha: 0.85),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: context.colors.primary.withOpacity(0.15),
+                            color: context.colors.primary.withValues(alpha: 0.15),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: context.colors.primary.withOpacity(0.12),
+                              color: context.colors.primary.withValues(alpha: 0.12),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -673,20 +736,20 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: context.colors.surfaceWhite.withOpacity(0.85),
+                          color: context.colors.surfaceWhite.withValues(alpha: 0.85),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: context.colors.primary.withOpacity(0.15),
+                            color: context.colors.primary.withValues(alpha: 0.15),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: context.colors.primary.withOpacity(0.12),
+                              color: context.colors.primary.withValues(alpha: 0.12),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -715,20 +778,20 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: context.colors.surfaceWhite.withOpacity(0.85),
+                          color: context.colors.surfaceWhite.withValues(alpha: 0.85),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: context.colors.primary.withOpacity(0.15),
+                            color: context.colors.primary.withValues(alpha: 0.15),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: context.colors.primary.withOpacity(0.12),
+                              color: context.colors.primary.withValues(alpha: 0.12),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
