@@ -70,7 +70,6 @@ export default function Destek() {
     <main className="min-h-screen flex flex-col bg-white">
       <Navbar />
 
-      {/* Header */}
       <section className="pt-32 pb-16 bg-[#E8F1EF]">
         <div className="max-w-4xl mx-auto px-6 sm:px-8">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
@@ -86,11 +85,9 @@ export default function Destek() {
         </div>
       </section>
 
-      {/* Content */}
       <section className="flex-1 bg-white">
         <div className="max-w-4xl mx-auto px-6 sm:px-8 py-16">
 
-          {/* Quick contact cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
             <div className="flex items-center gap-4 bg-[#F4F9F8] rounded-2xl p-5 border border-[#E8F1EF]">
               <div className="w-11 h-11 rounded-xl bg-[#688E8B]/10 flex items-center justify-center shrink-0">
@@ -116,7 +113,6 @@ export default function Destek() {
             </div>
           </div>
 
-          {/* FAQ */}
           <div className="mb-20">
             <h2 className="text-2xl font-semibold text-gray-900 tracking-tight mb-8">
               Sıkça Sorulan Sorular
@@ -139,7 +135,6 @@ export default function Destek() {
             </Accordion>
           </div>
 
-          {/* Contact Form */}
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
               Bize Ulaşın

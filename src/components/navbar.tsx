@@ -46,7 +46,6 @@ export default function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-6 sm:px-8">
         <div className="flex items-center justify-between h-14">
-          {/* Logo */}
           <Link href="/" className="relative z-50">
             <Image
               src="/images/logo.png"
@@ -58,7 +57,6 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -73,7 +71,6 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Link href="/support">
               <Button
@@ -103,7 +100,6 @@ export default function Navbar() {
             </a>
           </div>
 
-          {/* Mobile Menu */}
           <div className="md:hidden relative z-50">
             <Sheet>
               <SheetTrigger asChild>

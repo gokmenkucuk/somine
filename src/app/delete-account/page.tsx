@@ -30,7 +30,6 @@ export default function HesapSilme() {
     <main className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Header */}
       <section className="pt-32 pb-16 bg-[#E8F1EF]">
         <div className="max-w-4xl mx-auto px-6 sm:px-8">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
@@ -42,12 +41,10 @@ export default function HesapSilme() {
         </div>
       </section>
 
-      {/* Content */}
       <section className="flex-1 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="prose prose-slate max-w-none space-y-8">
 
-            {/* How to delete */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center">
@@ -71,7 +68,6 @@ export default function HesapSilme() {
               </div>
             </div>
 
-            {/* What gets deleted */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center">
@@ -107,7 +103,6 @@ export default function HesapSilme() {
               </div>
             </div>
 
-            {/* Warning */}
             <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
@@ -133,7 +128,6 @@ export default function HesapSilme() {
               </div>
             </div>
 
-            {/* Contact */}
             <div className="bg-gradient-to-br from-[#688E8B]/5 to-[#688E8B]/5 rounded-2xl p-6 border border-[#688E8B]/10">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Yardıma mı İhtiyacınız Var?

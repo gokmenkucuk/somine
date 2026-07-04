@@ -13,7 +13,6 @@ export default function KullanimSartlari() {
     <main className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Header */}
       <section className="pt-32 pb-16 bg-[#E8F1EF]">
         <div className="max-w-4xl mx-auto px-6 sm:px-8">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
@@ -25,7 +24,6 @@ export default function KullanimSartlari() {
         </div>
       </section>
 
-      {/* Content */}
       <section className="flex-1 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="prose prose-slate max-w-none space-y-8">
@@ -36,7 +34,6 @@ export default function KullanimSartlari() {
               etmiyorsanız, uygulamayı kullanmamanız gerekmektedir.
             </p>
 
-            {/* Section 1 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">1</span>
@@ -50,7 +47,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Section 2 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">2</span>
@@ -86,7 +82,6 @@ export default function KullanimSartlari() {
               </ul>
             </div>
 
-            {/* Section 3 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">3</span>
@@ -105,7 +100,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Section 4 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">4</span>
@@ -173,7 +167,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Section 5 — Auto Renewal */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">5</span>
@@ -213,7 +206,6 @@ export default function KullanimSartlari() {
               </ul>
             </div>
 
-            {/* Section 6 — Refund */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">6</span>
@@ -228,7 +220,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Section 7 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">7</span>
@@ -264,7 +255,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Section 6 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">8</span>
@@ -292,7 +282,6 @@ export default function KullanimSartlari() {
               </ul>
             </div>
 
-            {/* Section 7 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">9</span>
@@ -307,7 +296,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Section 8 */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">10</span>
@@ -320,7 +308,6 @@ export default function KullanimSartlari() {
               </p>
             </div>
 
-            {/* Contact */}
             <div className="bg-gradient-to-br from-[#688E8B]/5 to-[#688E8B]/5 rounded-2xl p-6 border border-[#688E8B]/10 mt-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Sorularınız mı var?

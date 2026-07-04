@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, Poppins } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -19,16 +20,16 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL("https://somineapp.com"),
   title: {
-    default: "Somine — Dijital Dünyanı Tasarla",
+    default: "Somine — Beğendiklerini Tek Bir Yerde Topla",
     template: "%s | Somine",
   },
   description:
-    "Somine ile sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet. Özenle sakla, keyifle paylaş!",
+    "Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.",
   keywords: [
     "Somine", "içerik koleksiyonlama", "video kaydet", "link koleksiyonu",
     "dijital düzen", "YouTube kaydet", "Instagram kaydet", "kişisel koleksiyon",
     "mobil uygulama", "iOS uygulama", "bookmark manager", "içerik organize",
-    "Pinterest alternatif", "link yönetimi", "koleksiyon uygulaması",
+    "Pinterest", "web linkleri", "içerik kaydet", "link yönetimi", "koleksiyon uygulaması",
   ],
   authors: [{ name: "Somine", url: "https://somineapp.com" }],
   creator: "Somine",
@@ -42,8 +43,8 @@ export const metadata: Metadata = {
     canonical: "https://somineapp.com",
   },
   openGraph: {
-    title: "Somine — Dijital Dünyanı Tasarla",
-    description: "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet.",
+    title: "Somine — Beğendiklerini Tek Bir Yerde Topla",
+    description: "Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri tek bir yerde topla.",
     url: "https://somineapp.com",
     siteName: "Somine",
     type: "website",
@@ -52,8 +53,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Somine — Dijital Dünyanı Tasarla",
-    description: "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize ederek tek bir yerden yönet.",
+    title: "Somine — Beğendiklerini Tek Bir Yerde Topla",
+    description: "Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri tek bir yerde topla.",
     images: ["/images/logo-gradient.png"],
   },
   robots: {
@@ -68,6 +69,20 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-46BXTGD78L"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-46BXTGD78L');
+          `}
+        </Script>
+      </head>
       <body className={`${outfit.variable} ${poppins.variable} antialiased bg-[#688E8B] text-foreground`}>
         {children}
         <Toaster />

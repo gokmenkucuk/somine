@@ -27,7 +27,6 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
 
-          {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-block mb-4">
               <Image
@@ -42,7 +41,6 @@ export default function Footer() {
               Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — Somine hepsini bir araya getirir.
             </p>
 
-            {/* Social */}
             <div className="flex items-center gap-3">
               <a
                 href="https://instagram.com"
@@ -57,7 +55,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* App Links */}
           <div>
             <h3 className="text-[11px] font-semibold text-white/40 mb-4 uppercase tracking-widest">
               Uygulama
@@ -73,7 +70,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Legal Links */}
           <div>
             <h3 className="text-[11px] font-semibold text-white/40 mb-4 uppercase tracking-widest">
               Yasal
@@ -89,7 +85,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Support Links */}
           <div>
             <h3 className="text-[11px] font-semibold text-white/40 mb-4 uppercase tracking-widest">
               Destek
@@ -107,7 +102,6 @@ export default function Footer() {
 
         </div>
 
-        {/* Bottom */}
         <div className="mt-16 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white/30">
             © 2026 Somine. Tüm hakları saklıdır.

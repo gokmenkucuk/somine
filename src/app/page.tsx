@@ -28,7 +28,6 @@ import { Badge } from '@/components/ui/badge'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 
-/* ─── animation helpers ─── */
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
@@ -41,7 +40,6 @@ const scaleIn = {
   visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
 }
 
-/* ─── platform icon data ─── */
 const platformIconsRow1 = [
   {
     name: 'Instagram',
@@ -138,7 +136,6 @@ const platformIconsRow2 = [
   },
 ]
 
-/* ─── hero platform icon blocks ─── */
 const platformBlocks = [
   [
     { name: 'YouTube', path: 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z' },
@@ -231,7 +228,6 @@ function Section({ children, className = '', id }: { children: React.ReactNode; 
   )
 }
 
-/* ─── phone mockup ─── */
 function PhoneMockup({ src, alt, size = 'md' }: { src: string; alt: string; size?: 'sm' | 'md' | 'lg' }) {
   const sizes = { sm: 'w-40 md:w-48', md: 'w-52 md:w-60', lg: 'w-40 sm:w-52 md:w-72' }
   return (
@@ -243,7 +239,6 @@ function PhoneMockup({ src, alt, size = 'md' }: { src: string; alt: string; size
   )
 }
 
-/* ─── app showcase carousel ─── */
 const carouselImages = [
   '/images/mockups/air/karsilama.png',
   '/images/mockups/air/login.png',
@@ -277,7 +272,6 @@ function AppShowcase() {
       </div>
 
       <motion.div variants={fadeUp} className="relative py-4">
-        {/* Fade edges */}
         <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
@@ -315,7 +309,6 @@ function AppShowcase() {
   )
 }
 
-/* ─── main page ─── */
 export default function Home() {
   const heroRef = useRef(null)
 
@@ -382,18 +375,14 @@ export default function Home() {
       />
       <Navbar />
 
-      {/* ══════════ HERO ══════════ */}
       <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #688E8B 0%, #7AA39F 30%, #6FBFAC 60%, #8DD0C0 80%, #A8DDD0 100%)' }}>
-        {/* Ambient glow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-[#95C5C1]/25 via-[#B8DDD9]/15 to-[#D4EDE9]/25 rounded-full blur-[120px]" style={{ animation: 'pulse-glow 6s ease-in-out infinite' }} />
           <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-gradient-to-br from-[#95C5C1]/15 to-transparent rounded-full blur-[80px]" />
         </div>
 
-        {/* Grid pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-        {/* Floating particles */}
         <motion.div
           animate={{ y: [0, -25, 0], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 7, repeat: 9999, ease: 'easeInOut' }}
@@ -417,7 +406,6 @@ export default function Home() {
 
         <div className="max-w-6xl mx-auto px-6 sm:px-8 w-full pt-8 pb-8 md:py-20 relative z-10">
           <div className="grid lg:grid-cols-2 gap-4 lg:gap-12 items-center">
-            {/* Left: Text */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -482,7 +470,6 @@ export default function Home() {
                 </motion.div>
               </motion.div>
 
-              {/* Mobile App Store CTA */}
               <motion.a
                 href="https://apps.apple.com"
                 target="_blank"
@@ -501,11 +488,9 @@ export default function Home() {
                 </div>
               </motion.a>
 
-              {/* Platform Icons */}
               <HeroPlatformIcons />
             </motion.div>
 
-            {/* Right: Phone mockup */}
             <motion.div
               initial={{ opacity: 0, y: 60, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -513,10 +498,8 @@ export default function Home() {
               className="flex justify-center lg:justify-end order-1 lg:order-2"
             >
               <div className="relative">
-                {/* Glow behind phone */}
                 <div className="absolute inset-0 bg-gradient-to-b from-[#95C5C1]/25 via-[#B8DDD9]/10 to-transparent rounded-[3rem] blur-3xl scale-110" />
 
-                {/* Orbiting ring */}
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 25, repeat: 9999, ease: 'linear' }}
@@ -531,7 +514,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -555,7 +537,6 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ══════════ FEATURES BENTO ══════════ */}
       <Section id="ozellikler" className="py-32 bg-[#E8F1EF]">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
@@ -591,10 +572,8 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ══════════ APP SHOWCASE ══════════ */}
       <AppShowcase />
 
-      {/* ══════════ HOW IT WORKS ══════════ */}
       <Section id="nasil-calisir" className="py-32 bg-[#E8F1EF]">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
@@ -607,9 +586,7 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Steps with connecting line */}
           <div className="relative">
-            {/* Connecting line — Segment 1 (desktop) */}
             <div className="hidden md:block absolute top-[4.5rem] left-[22%] w-[23%] h-[2px] overflow-hidden">
               <div className="absolute inset-0 bg-[#D4EDE9]" />
               <div
@@ -621,7 +598,6 @@ export default function Home() {
                 style={{ background: 'linear-gradient(90deg, transparent, #6FBFAC, #6FBFAC, transparent)' }}
               />
             </div>
-            {/* Connecting line — Segment 2 (desktop) */}
             <div className="hidden md:block absolute top-[4.5rem] left-[55%] w-[23%] h-[2px] overflow-hidden">
               <div className="absolute inset-0 bg-[#D4EDE9]" />
               <div
@@ -660,12 +636,10 @@ export default function Home() {
                   variants={fadeUp}
                   className="relative text-center group"
                 >
-                  {/* Step circle with icon */}
                   <div
                     className="relative inline-flex items-center justify-center mb-8 animate-step-bounce"
                     style={{ animationDelay: `${idx * 1.5}s` }}
                   >
-                    {/* Number badge */}
                     <span
                       className="absolute -top-3 -right-3 w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center z-10 shadow-md"
                       style={{ background: 'linear-gradient(135deg, #688E8B, #6FBFAC)' }}
@@ -673,7 +647,6 @@ export default function Home() {
                       {step.num}
                     </span>
 
-                    {/* Icon container */}
                     <div
                       className="w-[7.5rem] h-[7.5rem] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-lg"
                       style={{ background: 'linear-gradient(135deg, #688E8B, #6FBFAC)' }}
@@ -687,7 +660,6 @@ export default function Home() {
                     {step.desc}
                   </p>
 
-                  {/* Mobile connector */}
                   {idx < 2 && (
                     <div className="md:hidden flex justify-center my-4">
                       <div className="relative w-[2px] h-8 overflow-hidden">
@@ -706,15 +678,12 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ══════════ PLATFORM SUPPORT ══════════ */}
       <Section id="platformlar" className="py-32 bg-[#0A0A0A] relative overflow-hidden">
-        {/* Ambient glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#95C5C1]/8 to-[#D4EDE9]/5 rounded-full blur-[100px]" />
         </div>
 
         <div className="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
-          {/* Header */}
           <motion.div variants={fadeUp} className="text-center mb-20">
             <p className="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">Platform Desteği</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">
@@ -727,7 +696,6 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Platform grid */}
         <div className="max-w-4xl mx-auto px-6 sm:px-8 relative z-10">
           <motion.div
             variants={stagger}
@@ -751,7 +719,6 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ══════════ THEMES SHOWCASE ══════════ */}
       <Section id="temalar" className="py-32 bg-[#FAFAFA] overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 sm:px-8">
           <motion.div variants={fadeUp} className="text-center mb-20">
@@ -765,7 +732,6 @@ export default function Home() {
           </motion.div>
 
           <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Air Theme */}
             <motion.div
               variants={fadeUp}
               whileHover={{ y: -8 }}
@@ -804,7 +770,6 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Midnight Theme */}
             <motion.div
               variants={fadeUp}
               whileHover={{ y: -8 }}
@@ -839,7 +804,6 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Vibe Theme */}
             <motion.div
               variants={fadeUp}
               whileHover={{ y: -8 }}
@@ -883,9 +847,7 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ══════════ PREMIUM ══════════ */}
       <Section id="premium" className="py-20 sm:py-28 bg-[#0A0A0A] relative overflow-hidden">
-        {/* Ambient glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#95C5C1]/8 to-[#D4EDE9]/5 rounded-full blur-[100px]" />
         </div>
@@ -902,11 +864,9 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Plan comparison */}
           <motion.div variants={stagger} className="max-w-4xl mx-auto">
             <div className="grid sm:grid-cols-2 gap-6">
 
-              {/* Starter */}
               <motion.div variants={fadeUp} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-2">Ücretsiz</p>
                 <h3 className="text-2xl font-semibold text-white mb-1">Starter</h3>
@@ -934,7 +894,6 @@ export default function Home() {
                 </div>
               </motion.div>
 
-              {/* Premium */}
               <motion.div variants={fadeUp} className="relative bg-gradient-to-b from-[#95C5C1]/10 to-white/[0.02] border border-[#95C5C1]/25 rounded-2xl p-7">
                 <div className="absolute top-4 right-4 text-[11px] font-medium bg-[#95C5C1]/15 text-[#95C5C1] px-3 py-1 rounded-full border border-[#95C5C1]/20">
                   👑 Premium
@@ -967,9 +926,7 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ══════════ CTA ══════════ */}
       <Section className="py-24 sm:py-32 bg-[#0A0A0A] relative overflow-hidden">
-        {/* Glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-[#688E8B]/20 via-[#95C5C1]/10 to-[#D4EDE9]/10 rounded-full blur-[100px]" />
         </div>
@@ -1018,7 +975,6 @@ export default function Home() {
 
       <Footer />
 
-      {/* Scroll to top */}
       <ScrollToTop />
     </main>
   )
