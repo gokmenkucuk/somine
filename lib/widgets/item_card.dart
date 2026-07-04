@@ -74,6 +74,35 @@ class ItemCard extends StatelessWidget {
                     child: _getSourceIcon(context, item.url, isNote),
                   ),
                 ),
+
+                // Reminder Badge (Subtle, Top Right)
+                if (item.hasReminder)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      padding: EdgeInsets.zero,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        PhosphorIconsBold.bellRinging,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
               ],
             ),
 

@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
+import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
+import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/reminder_indicator.dart';
+import 'package:somine_app/widgets/reminder_picker_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'youtube_fullscreen_screen.dart';
@@ -47,6 +52,157 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         });
       }
     }
+  }
+
+  Future<void> _editReminder() async {
+    final result = await ReminderPickerBottomSheet.show(
+      context,
+      existingReminder: _reminder,
+      onDelete: () async {
+        await _deleteReminder();
+      },
+    );
+
+    if (result == null) return;
+
+    try {
+      final scheduler = ReminderSchedulerService();
+      final reminder = result.copyWith(itemId: widget.item.id);
+      await scheduler.updateReminder(reminder, widget.item.displayTitle);
+      if (mounted) {
+        setState(() => _reminder = reminder);
+      }
+    } catch (e) {
+      debugPrint('Error updating reminder: $e');
+    }
+  }
+
+  Future<void> _deleteReminder() async {
+    try {
+      final scheduler = ReminderSchedulerService();
+      await scheduler.cancelReminder(widget.item.id);
+      if (mounted) {
+        setState(() => _reminder = null);
+      }
+    } catch (e) {
+      debugPrint('Error deleting reminder: $e');
+    }
+  }
+
+  Future<void> _addReminder() async {
+    // Limit check
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final subState = ref.read(subscriptionProvider);
+      if (!subState.isPremium) {
+        try {
+          final reminders = await ReminderRepository().getUserReminders(uid);
+          final activeCount = reminders.where((r) => r.isActive).length;
+          final canCreate = ref
+              .read(subscriptionProvider.notifier)
+              .canCreateReminder(activeCount);
+          if (!canCreate) {
+            if (mounted) {
+              await LimitReachedDialog.show(
+                context: context,
+                ref: ref,
+                title: "Hatırlatıcı Sınırına Ulaştın",
+                message:
+                    "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsin. Daha fazlası için Premium'a geçin!",
+                type: LimitType.item,
+              );
+            }
+            return;
+          }
+        } catch (e) {
+          debugPrint('Error checking reminder limit: $e');
+        }
+      }
+    }
+
+    if (!mounted) return;
+    final result = await ReminderPickerBottomSheet.show(context);
+    if (result == null) return;
+
+    try {
+      final scheduler = ReminderSchedulerService();
+      final reminder = result.copyWith(itemId: widget.item.id);
+      final success = await scheduler.scheduleReminder(
+        reminder,
+        widget.item.displayTitle,
+      );
+      if (success && mounted) {
+        setState(() => _reminder = reminder);
+      }
+    } catch (e) {
+      debugPrint('Error scheduling reminder: $e');
+    }
+  }
+
+  Widget _buildAddReminderRow() {
+    return GestureDetector(
+      onTap: _addReminder,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: DesignTokens.primary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: DesignTokens.primary.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    context.colors.primary.withValues(alpha: 0.15),
+                    context.colors.secondary.withValues(alpha: 0.15),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                PhosphorIconsBold.bell,
+                size: 22,
+                color: context.colors.primary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hatırlatıcı Ekle',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: DesignTokens.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    'Bu içerik için hatırlatıcı belirle',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: DesignTokens.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              PhosphorIconsRegular.caretRight,
+              size: 20,
+              color: DesignTokens.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _checkYoutube() {
@@ -397,12 +553,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
                   const SizedBox(height: DesignTokens.spacingLG),
 
-                  // Reminder Indicator
-                  if (_reminder != null)
-                    ReminderIndicator(reminder: _reminder!),
+                  // Reminder Section (interactive)
+                  if (_reminder != null) ...[
+                    ReminderIndicator(
+                      reminder: _reminder!,
+                      onTap: () => _editReminder(),
+                    ),
+                  ] else ...[
+                    _buildAddReminderRow(),
+                  ],
 
-                  if (_reminder != null)
-                    const SizedBox(height: DesignTokens.spacingLG),
+                  const SizedBox(height: DesignTokens.spacingLG),
 
                   // Note Section (Content) - No Label, just text
                   if (widget.item.note != null && widget.item.note!.isNotEmpty)

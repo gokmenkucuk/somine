@@ -1385,8 +1385,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Future<void> _handleReminderAfterSave(String itemId, String noteTitle) async {
-    if (!_isNoteMode) return;
-
     try {
       final scheduler = ReminderSchedulerService();
 
@@ -1408,6 +1406,39 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Future<void> _showReminderPicker() async {
+    // Limit check: only when creating a NEW reminder
+    if (_currentReminder == null) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final subState = ref.read(subscriptionProvider);
+        if (!subState.isPremium) {
+          try {
+            final reminders = await ReminderRepository().getUserReminders(uid);
+            final activeCount = reminders.where((r) => r.isActive).length;
+            final canCreate = ref
+                .read(subscriptionProvider.notifier)
+                .canCreateReminder(activeCount);
+            if (!canCreate) {
+              if (mounted) {
+                await LimitReachedDialog.show(
+                  context: context,
+                  ref: ref,
+                  title: "Hatırlatıcı Sınırına Ulaştın",
+                  message:
+                      "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsin. Daha fazlası için Premium'a geçin!",
+                  type: LimitType.item,
+                );
+              }
+              return;
+            }
+          } catch (e) {
+            debugPrint('Error checking reminder limit: $e');
+          }
+        }
+      }
+    }
+
+    if (!mounted) return;
     final reminder = await ReminderPickerBottomSheet.show(
       context,
       existingReminder: _currentReminder,
@@ -2403,9 +2434,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           if (_isNoteMode) ...[
             const SizedBox(height: 16),
             _buildNoteImagePicker(),
-            const SizedBox(height: 16),
-            _buildReminderPicker(),
           ],
+
+          // Reminder Picker (All content types)
+          const SizedBox(height: 16),
+          _buildReminderPicker(),
 
           const SizedBox(height: 18), // Equal spacing
           // Category Section Header
@@ -2723,7 +2756,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                     )
                   else
                     Text(
-                      'Bu not için hatırlatıcı belirle',
+                      'Bu içerik için hatırlatıcı belirle',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         color: context.colors.hint,
