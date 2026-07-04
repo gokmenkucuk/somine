@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SomineApi.Application;
 using SomineApi.Application.DTOs.Reminders;
+using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Domain.Enums;
 using SomineApi.Infrastructure.Data;
@@ -15,10 +17,12 @@ namespace SomineApi.WebApi.Controllers;
 public class RemindersController : ControllerBase
 {
     private readonly SomineDbContext _dbContext;
+    private readonly ISubscriptionTierService _subscriptionTierService;
 
-    public RemindersController(SomineDbContext dbContext)
+    public RemindersController(SomineDbContext dbContext, ISubscriptionTierService subscriptionTierService)
     {
         _dbContext = dbContext;
+        _subscriptionTierService = subscriptionTierService;
     }
 
     [HttpGet]
@@ -65,6 +69,20 @@ public class RemindersController : ControllerBase
     public async Task<ActionResult<ReminderDto>> CreateReminder([FromBody] CreateReminderRequest request)
     {
         var userId = HttpContext.GetUserId();
+
+        if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.Reminders
+                .CountAsync(r => r.IsActive && _dbContext.Items.Any(i => i.Id == r.ItemId && i.UserId == userId));
+            if (current >= SubscriptionLimits.FreeMaxActiveReminders)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsiniz. Daha fazlası için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxActiveReminders,
+                    current
+                });
+        }
 
         if (request.ReminderHour is < 0 or > 23 || request.ReminderMinute is < 0 or > 59)
             return BadRequest(new { error = "Invalid reminder time" });
@@ -120,6 +138,21 @@ public class RemindersController : ControllerBase
 
         if (request.CustomRepeatDays is < 0 || request.CustomRepeatMinutes is < 0)
             return BadRequest(new { error = "Custom repeat values cannot be negative" });
+
+        if (request.IsActive == true && !reminder.IsActive &&
+            !await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.Reminders
+                .CountAsync(r => r.IsActive && _dbContext.Items.Any(i => i.Id == r.ItemId && i.UserId == userId));
+            if (current >= SubscriptionLimits.FreeMaxActiveReminders)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsiniz. Daha fazlası için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxActiveReminders,
+                    current
+                });
+        }
 
         if (request.ReminderDate.HasValue) reminder.ReminderDate = request.ReminderDate.Value;
         if (request.ReminderHour.HasValue) reminder.ReminderHour = request.ReminderHour.Value;

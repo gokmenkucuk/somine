@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SomineApi.Application;
 using SomineApi.Application.DTOs.Items;
+using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Domain.Enums;
 using SomineApi.Infrastructure.Data;
@@ -17,13 +19,16 @@ public class ItemsController : ControllerBase
 {
     private readonly SomineDbContext _dbContext;
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
+    private readonly ISubscriptionTierService _subscriptionTierService;
 
     public ItemsController(
         SomineDbContext dbContext,
-        IUserRealtimeEventPublisher realtimeEventPublisher)
+        IUserRealtimeEventPublisher realtimeEventPublisher,
+        ISubscriptionTierService subscriptionTierService)
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
+        _subscriptionTierService = subscriptionTierService;
     }
 
     [HttpGet]
@@ -94,6 +99,19 @@ public class ItemsController : ControllerBase
     public async Task<ActionResult<ItemDto>> CreateItem([FromBody] CreateItemRequest request)
     {
         var userId = HttpContext.GetUserId();
+
+        if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.Items.CountAsync(i => i.UserId == userId);
+            if (current >= SubscriptionLimits.FreeMaxItems)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda en fazla 500 içerik kaydedebilirsiniz. Sınırsız içerik için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxItems,
+                    current
+                });
+        }
 
         if (request.CategoryId.HasValue && !await CategoryBelongsToUserAsync(request.CategoryId.Value, userId))
             return BadRequest(new { error = "Target category is invalid" });
@@ -377,6 +395,19 @@ public class ItemsController : ControllerBase
         if (item == null)
             return NotFound(new { error = "Item not found" });
 
+        if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.Items.CountAsync(i => i.UserId == userId);
+            if (current >= SubscriptionLimits.FreeMaxItems)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda en fazla 500 içerik kaydedebilirsiniz. Sınırsız içerik için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxItems,
+                    current
+                });
+        }
+
         item.IsDeleted = false;
         item.DeletedAt = null;
         item.UpdatedAt = DateTime.UtcNow;
@@ -408,6 +439,20 @@ public class ItemsController : ControllerBase
     public async Task<IActionResult> CopyItems([FromBody] CopyItemsRequest request)
     {
         var userId = HttpContext.GetUserId();
+        var distinctItemCount = request.ItemIds.Distinct().Count();
+
+        if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.Items.CountAsync(i => i.UserId == userId);
+            if (current + distinctItemCount > SubscriptionLimits.FreeMaxItems)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda en fazla 500 içerik kaydedebilirsiniz. Sınırsız içerik için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxItems,
+                    current
+                });
+        }
 
         if (request.ItemIds.Count == 0)
             return BadRequest(new { error = "No items provided" });

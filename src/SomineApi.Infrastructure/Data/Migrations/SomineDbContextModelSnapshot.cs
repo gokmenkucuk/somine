@@ -770,6 +770,14 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("photo_url");
 
+                    b.Property<DateTime?>("PremiumCheckedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("premium_checked_at_utc");
+
+                    b.Property<DateTime?>("PremiumExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("premium_expires_at_utc");
+
                     b.Property<string>("SearchHistoryJson")
                         .HasColumnType("text")
                         .HasColumnName("search_history_json");

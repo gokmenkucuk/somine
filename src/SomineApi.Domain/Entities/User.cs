@@ -12,6 +12,8 @@ public class User : IAuditableEntity
     public string? PhotoUrl { get; set; }
     public string? PhotoBase64 { get; set; }
     public string? SearchHistoryJson { get; set; }
+    public DateTime? PremiumExpiresAtUtc { get; set; }
+    public DateTime? PremiumCheckedAtUtc { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

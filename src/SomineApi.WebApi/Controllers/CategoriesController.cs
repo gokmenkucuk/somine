@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SomineApi.Application;
 using SomineApi.Application.DTOs.Categories;
+using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
@@ -16,13 +18,16 @@ public class CategoriesController : ControllerBase
 {
     private readonly SomineDbContext _dbContext;
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
+    private readonly ISubscriptionTierService _subscriptionTierService;
 
     public CategoriesController(
         SomineDbContext dbContext,
-        IUserRealtimeEventPublisher realtimeEventPublisher)
+        IUserRealtimeEventPublisher realtimeEventPublisher,
+        ISubscriptionTierService subscriptionTierService)
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
+        _subscriptionTierService = subscriptionTierService;
     }
 
     [HttpGet]
@@ -43,6 +48,20 @@ public class CategoriesController : ControllerBase
     public async Task<ActionResult<CategoryDto>> CreateCategory([FromBody] CreateCategoryRequest request)
     {
         var userId = HttpContext.GetUserId();
+
+        if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.Categories.CountAsync(c => c.UserId == userId);
+            if (current >= SubscriptionLimits.FreeMaxCategories)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda en fazla 10 koleksiyon oluşturabilirsiniz. Sınırsız koleksiyon için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxCategories,
+                    current
+                });
+        }
+
         var existingCategories = await _dbContext.Categories
             .Where(c => c.UserId == userId)
             .ToListAsync();

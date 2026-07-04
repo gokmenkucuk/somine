@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SomineApi.Application;
 using SomineApi.Application.DTOs.Items;
 using SomineApi.Application.DTOs.Shares;
+using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Domain.Enums;
 using SomineApi.Infrastructure.Data;
@@ -18,19 +20,36 @@ public class SharesController : ControllerBase
 {
     private readonly SomineDbContext _dbContext;
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
+    private readonly ISubscriptionTierService _subscriptionTierService;
 
     public SharesController(
         SomineDbContext dbContext,
-        IUserRealtimeEventPublisher realtimeEventPublisher)
+        IUserRealtimeEventPublisher realtimeEventPublisher,
+        ISubscriptionTierService subscriptionTierService)
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
+        _subscriptionTierService = subscriptionTierService;
     }
 
     [HttpPost]
     public async Task<ActionResult<ShareDto>> CreateShare([FromBody] CreateShareRequest request)
     {
         var userId = HttpContext.GetUserId();
+
+        if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
+        {
+            var current = await _dbContext.CollectionShares
+                .CountAsync(s => s.FromUserId == userId && s.Status != ShareStatus.Rejected);
+            if (current >= SubscriptionLimits.FreeMaxActiveShares)
+                return StatusCode(403, new
+                {
+                    error = "limit_reached",
+                    message = "Ücretsiz planda aynı anda 1 aktif paylaşımınız olabilir. Daha fazlası için Premium'a geçin.",
+                    limit = SubscriptionLimits.FreeMaxActiveShares,
+                    current
+                });
+        }
 
         var fromUser = await _dbContext.Users.FindAsync(userId);
         if (fromUser == null) return Unauthorized();
