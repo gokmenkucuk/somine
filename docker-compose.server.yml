@@ -1,0 +1,26 @@
+services:
+  somine-api:
+    image: ${SOMINE_API_IMAGE:-gokmenkucuk/somineapi:prod_v8}
+    container_name: somine-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5181:8080"
+    volumes:
+      - somine_uploads:/app/uploads
+      - ./secrets/firebase-admin.json:/run/secrets/firebase-admin.json:ro
+      - ./dataprotection-keys:/home/app/.aspnet/DataProtection-Keys
+    networks:
+      - somine-network
+      - postgresql-network
+
+volumes:
+  somine_uploads:
+
+networks:
+  somine-network:
+    driver: bridge
+  postgresql-network:
+    external: true
+    name: postgresql_default
