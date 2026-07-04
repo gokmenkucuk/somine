@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SomineApi.Application;
 using SomineApi.Application.DTOs.Items;
 using SomineApi.Application.DTOs.Shares;
@@ -10,6 +11,8 @@ using SomineApi.Domain.Enums;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
 using SomineApi.WebApi.Hubs;
+using SomineApi.WebApi.Options;
+using System.Security.Cryptography;
 
 namespace SomineApi.WebApi.Controllers;
 
@@ -21,15 +24,18 @@ public class SharesController : ControllerBase
     private readonly SomineDbContext _dbContext;
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
     private readonly ISubscriptionTierService _subscriptionTierService;
+    private readonly PublicWebOptions _publicWebOptions;
 
     public SharesController(
         SomineDbContext dbContext,
         IUserRealtimeEventPublisher realtimeEventPublisher,
-        ISubscriptionTierService subscriptionTierService)
+        ISubscriptionTierService subscriptionTierService,
+        IOptions<PublicWebOptions> publicWebOptions)
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
         _subscriptionTierService = subscriptionTierService;
+        _publicWebOptions = publicWebOptions.Value;
     }
 
     [HttpPost]
@@ -237,6 +243,53 @@ public class SharesController : ControllerBase
         await _realtimeEventPublisher.PublishNotificationsChangedAsync(share.FromUserId, "created", notification.Id, HttpContext.RequestAborted);
         return NoContent();
     }
+
+    // Sahibi için: koleksiyona güvenli, herkese açık paylaşım linki üretir (varsa döndürür değil, rotate eder).
+    [HttpPost("{id}/public-link")]
+    public async Task<ActionResult<PublicLinkDto>> CreatePublicLink(Guid id)
+    {
+        var userId = HttpContext.GetUserId();
+        var share = await _dbContext.CollectionShares.FirstOrDefaultAsync(s => s.Id == id && s.FromUserId == userId);
+
+        if (share == null) return NotFound(new { error = "Share not found" });
+
+        var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == share.CategoryId);
+        if (category != null && category.IsVault)
+            return BadRequest(new { error = "Vault categories cannot be shared publicly" });
+
+        // 128-bit rastgele token, base64url (padding'siz)
+        var token = ToBase64Url(RandomNumberGenerator.GetBytes(16));
+
+        share.PublicLinkToken = token;
+        share.PublicLinkCreatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        var url = $"{_publicWebOptions.BaseUrl.TrimEnd('/')}/s/{token}";
+        return Ok(new PublicLinkDto(token, url));
+    }
+
+    // Sahibi için: herkese açık linki iptal eder.
+    [HttpDelete("{id}/public-link")]
+    public async Task<IActionResult> DeletePublicLink(Guid id)
+    {
+        var userId = HttpContext.GetUserId();
+        var share = await _dbContext.CollectionShares.FirstOrDefaultAsync(s => s.Id == id && s.FromUserId == userId);
+
+        if (share == null) return NotFound(new { error = "Share not found" });
+
+        share.PublicLinkToken = null;
+        share.PublicLinkCreatedAtUtc = null;
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    private static string ToBase64Url(byte[] bytes) =>
+        Convert.ToBase64String(bytes)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> RevokeShare(Guid id)

@@ -1,0 +1,240 @@
+:root {
+    --brand: #10B981;
+    --brand-dark: #059669;
+    --brand-light: #D1FAE5;
+    --ink: #111827;
+    --muted: #6B7280;
+    --bg: #F9FAFB;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
+    --radius: 16px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 8px 24px rgba(16, 185, 129, .06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+.page {
+    min-height: calc(100vh - 60px);
+}
+
+.container {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+a {
+    color: var(--brand-dark);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ---- Share header ---- */
+.share-header {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+    color: #fff;
+    padding: 48px 0 40px;
+}
+
+.share-header .container {
+    text-align: center;
+}
+
+.brand-mark {
+    display: inline-block;
+    font-weight: 700;
+    letter-spacing: .5px;
+    font-size: 15px;
+    opacity: .9;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+}
+
+.share-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.share-sub {
+    font-size: 15px;
+    opacity: .92;
+    margin: 0;
+}
+
+/* ---- Item list ---- */
+.share-body {
+    padding: 28px 0 48px;
+}
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+a.card:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08), 0 12px 32px rgba(16, 185, 129, .1);
+}
+
+.card-media {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    display: block;
+    background: var(--brand-light);
+}
+
+.card-inner {
+    padding: 16px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.card-favicon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.card-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.card-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 0 0 4px;
+    word-break: break-word;
+}
+
+.card-desc {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 6px;
+    word-break: break-word;
+}
+
+.card-site {
+    color: var(--brand-dark);
+    font-size: 12.5px;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.card-note {
+    white-space: pre-wrap;
+    color: var(--ink);
+    font-size: 15px;
+    margin: 0;
+    word-break: break-word;
+}
+
+/* ---- Buttons ---- */
+.btn {
+    display: inline-block;
+    background: var(--brand);
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 26px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+
+.btn:hover {
+    background: var(--brand-dark);
+    text-decoration: none;
+    color: #fff;
+}
+
+.cta {
+    text-align: center;
+    padding: 8px 0 8px;
+}
+
+.cta p {
+    color: var(--muted);
+    margin: 0 0 14px;
+    font-size: 14px;
+}
+
+/* ---- States (empty / not found / index) ---- */
+.center-screen {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.center-card {
+    max-width: 420px;
+}
+
+.center-card .emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.center-card h1 {
+    font-size: 24px;
+    margin: 0 0 10px;
+}
+
+.center-card p {
+    color: var(--muted);
+    margin: 0 0 24px;
+}
+
+/* ---- Footer ---- */
+.site-footer {
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    padding: 18px 0;
+    text-align: center;
+}
+
+@media (max-width: 480px) {
+    .share-title { font-size: 23px; }
+    .share-header { padding: 36px 0 30px; }
+}

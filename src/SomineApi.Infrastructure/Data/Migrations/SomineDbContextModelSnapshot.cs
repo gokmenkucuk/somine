@@ -202,6 +202,15 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("from_user_name");
 
+                    b.Property<DateTime?>("PublicLinkCreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("public_link_created_at_utc");
+
+                    b.Property<string>("PublicLinkToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("public_link_token");
+
                     b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("rejected_at");
@@ -227,6 +236,9 @@ namespace SomineApi.Infrastructure.Data.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("FromUserId");
+
+                    b.HasIndex("PublicLinkToken")
+                        .IsUnique();
 
                     b.HasIndex("ToUserId", "Status");
 

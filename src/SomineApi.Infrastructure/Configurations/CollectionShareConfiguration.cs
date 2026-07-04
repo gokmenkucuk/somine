@@ -25,9 +25,12 @@ public class CollectionShareConfiguration : IEntityTypeConfiguration<CollectionS
         builder.Property(cs => cs.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
         builder.Property(cs => cs.AcceptedAt).HasColumnName("accepted_at");
         builder.Property(cs => cs.RejectedAt).HasColumnName("rejected_at");
+        builder.Property(cs => cs.PublicLinkToken).HasColumnName("public_link_token").HasMaxLength(64);
+        builder.Property(cs => cs.PublicLinkCreatedAtUtc).HasColumnName("public_link_created_at_utc");
 
         builder.HasIndex(cs => new { cs.ToUserId, cs.Status });
         builder.HasIndex(cs => cs.FromUserId);
+        builder.HasIndex(cs => cs.PublicLinkToken).IsUnique();
 
         builder.HasOne(cs => cs.FromUser)
             .WithMany()

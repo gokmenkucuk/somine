@@ -16,6 +16,8 @@ public class CollectionShare
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? AcceptedAt { get; set; }
     public DateTime? RejectedAt { get; set; }
+    public string? PublicLinkToken { get; set; }   // base64url, 128-bit; null = link kapalı
+    public DateTime? PublicLinkCreatedAtUtc { get; set; }
 
     // Navigation properties
     public User FromUser { get; set; } = null!;

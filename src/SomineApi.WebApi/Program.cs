@@ -46,6 +46,8 @@ builder.Services.Configure<ClientRequestSecurityOptions>(
     builder.Configuration.GetSection(ClientRequestSecurityOptions.SectionName));
 builder.Services.Configure<ApiKeyOptions>(
     builder.Configuration.GetSection(ApiKeyOptions.SectionName));
+builder.Services.Configure<PublicWebOptions>(
+    builder.Configuration.GetSection(PublicWebOptions.SectionName));
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -145,6 +147,17 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Herkese açık paylaşım uçları — IP başına 30 istek/dk
+    options.AddPolicy("public", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

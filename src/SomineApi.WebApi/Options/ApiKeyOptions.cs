@@ -7,5 +7,5 @@ public class ApiKeyOptions
     public bool Enabled { get; set; }
     public string Key { get; set; } = string.Empty;
     public string HeaderName { get; set; } = "X-SoMine-Api-Key";
-    public string[] ExemptPaths { get; set; } = ["/health", "/openapi"];
+    public string[] ExemptPaths { get; set; } = ["/health", "/openapi", "/public"];
 }

@@ -1,0 +1,112 @@
+@page "/s/{token}"
+@model ShareModel
+@{
+    ViewData["Title"] = Model.Found && Model.Share != null ? Model.Share.CategoryName : "Bağlantı bulunamadı";
+}
+
+@section Head {
+    <meta name="robots" content="noindex" />
+}
+
+@if (!Model.Found || Model.Share == null)
+{
+    <div class="center-screen">
+        <div class="center-card">
+            <div class="emoji">🔒</div>
+            <h1>Bu bağlantı artık geçerli değil</h1>
+            <p>Paylaşım kaldırılmış veya bağlantı hatalı olabilir.</p>
+            <a class="btn" href="@Model.AppStoreUrl">SoMine'i keşfet</a>
+        </div>
+    </div>
+}
+else
+{
+    <header class="share-header">
+        <div class="container">
+            <span class="brand-mark">SoMine</span>
+            <h1 class="share-title">@Model.Share.CategoryName</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Share.FromUserName))
+            {
+                <p class="share-sub">@Model.Share.FromUserName tarafından paylaşıldı</p>
+            }
+        </div>
+    </header>
+
+    <section class="share-body">
+        <div class="container">
+            @if (Model.Share.Items.Count == 0)
+            {
+                <div class="center-card" style="margin: 20px auto; text-align:center;">
+                    <p>Bu koleksiyonda henüz içerik yok.</p>
+                </div>
+            }
+            else
+            {
+                <div class="item-list">
+                    @foreach (var item in Model.Share.Items)
+                    {
+                        var image = Model.ResolveImageUrl(item.ImageUrl) ?? Model.ResolveImageUrl(item.OgImageUrl);
+                        var favicon = Model.ResolveImageUrl(item.OgFaviconUrl);
+                        var title = !string.IsNullOrWhiteSpace(item.OgTitle) ? item.OgTitle : item.Url;
+
+                        if (item.Type == 1) // Note
+                        {
+                            <div class="card">
+                                <div class="card-inner">
+                                    <div class="card-text">
+                                        <p class="card-note">@item.Note</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(item.Url))
+                        {
+                            <a class="card" href="@item.Url" target="_blank" rel="noopener noreferrer nofollow">
+                                @if (!string.IsNullOrWhiteSpace(image))
+                                {
+                                    <img class="card-media" src="@image" alt="" loading="lazy" />
+                                }
+                                <div class="card-inner">
+                                    @if (!string.IsNullOrWhiteSpace(favicon))
+                                    {
+                                        <img class="card-favicon" src="@favicon" alt="" loading="lazy" />
+                                    }
+                                    <div class="card-text">
+                                        <p class="card-title">@title</p>
+                                        @if (!string.IsNullOrWhiteSpace(item.OgDescription))
+                                        {
+                                            <p class="card-desc">@item.OgDescription</p>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(item.OgSiteName))
+                                        {
+                                            <span class="card-site">@item.OgSiteName</span>
+                                        }
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(image))
+                        {
+                            <div class="card">
+                                <img class="card-media" src="@image" alt="" loading="lazy" />
+                                @if (!string.IsNullOrWhiteSpace(item.Note))
+                                {
+                                    <div class="card-inner">
+                                        <div class="card-text">
+                                            <p class="card-note">@item.Note</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            }
+
+            <div class="cta" style="margin-top: 32px;">
+                <p>Bu koleksiyonu SoMine uygulamasında aç.</p>
+                <a class="btn" href="@Model.AppStoreUrl">SoMine'de aç</a>
+            </div>
+        </div>
+    </section>
+}
