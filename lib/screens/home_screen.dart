@@ -18,6 +18,7 @@ import 'package:somine_app/core/services/share_service.dart';
 import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/models/item_model.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -105,44 +106,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     try {
       // Get selected catalog category if on Catalog tab (index 2)
       final selectedIndex = ref.read(homeTabIndexProvider);
-    String? preSelectedCategoryId;
-    if (selectedIndex == 2) {
-      preSelectedCategoryId = ref.read(selectedCatalogIdProvider);
-      // Don't pre-select special values like 'uncategorized' or null (Tümü)
-      if (preSelectedCategoryId == 'uncategorized') {
-        preSelectedCategoryId = null;
+      String? preSelectedCategoryId;
+      if (selectedIndex == 2) {
+        preSelectedCategoryId = ref.read(selectedCatalogIdProvider);
+        // Don't pre-select special values like 'uncategorized' or null (Tümü)
+        if (preSelectedCategoryId == 'uncategorized') {
+          preSelectedCategoryId = null;
+        }
       }
-    }
 
-    final result = await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: false,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      enableDrag: true,
-      builder:
-          (context) => AddContentScreen(
-            initialText: initialText,
-            preSelectedCategoryId: preSelectedCategoryId,
-          ),
-    );
+      final result = await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: false,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.5),
+        enableDrag: true,
+        builder:
+            (context) => AddContentScreen(
+              initialText: initialText,
+              preSelectedCategoryId: preSelectedCategoryId,
+            ),
+      );
 
-    if (mounted) setState(() => _isOpeningModal = false);
+      if (mounted) setState(() => _isOpeningModal = false);
 
-    if (result == true) {
-      // Refresh feed content
-      ref.invalidate(paginatedFeedProvider);
-      ref.invalidate(itemCountProvider);
+      if (result == true) {
+        // Refresh feed content
+        ref.invalidate(paginatedFeedProvider);
+        ref.invalidate(itemCountProvider);
 
-      if (mounted) {
-        SuccessNotificationSheet.show(
-          context,
-          title: "Başarılı!",
-          message: "İçerik koleksiyona eklendi",
-        );
+        if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          SuccessNotificationSheet.show(
+            context,
+            title: l10n.commonSuccessBang,
+            message: l10n.homeAddSuccessMessage,
+          );
+        }
       }
-    }
     } catch (e) {
       if (mounted) setState(() => _isOpeningModal = false);
     }
@@ -379,13 +381,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ref.invalidate(itemCountProvider);
           if (!context.mounted) return;
 
+          final l10n = AppLocalizations.of(context)!;
+          final fallbackName = l10n.homeItemWord;
           await SuccessNotificationSheet.show(
             context,
-            title: "Silindi",
+            title: l10n.commonDeleted,
             message:
                 isBatchDelete
-                    ? "${removedItems.length} içerik silindi"
-                    : "${details.data.displayTitle.isEmpty ? 'İçerik' : details.data.displayTitle} silindi",
+                    ? l10n.homeBatchDeletedMessage(removedItems.length)
+                    : l10n.homeItemDeletedMessage(
+                      details.data.displayTitle.isEmpty
+                          ? fallbackName
+                          : details.data.displayTitle,
+                    ),
             onUndo: () async {
               ref
                   .read(paginatedFeedProvider.notifier)

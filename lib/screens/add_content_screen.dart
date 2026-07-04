@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -817,6 +818,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   /// Shows a bottom sheet to pick image from gallery or camera
   void _pickNoteImage() {
+    final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -843,7 +846,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   ),
                 ),
                 Text(
-                  "Görsel Ekle",
+                  l10n.addContentImagePickerTitle,
                   style: GoogleFonts.outfit(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -882,7 +885,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "Galeri",
+                                l10n.addContentGallery,
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -924,7 +927,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "Kamera",
+                                l10n.addContentCamera,
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -967,7 +970,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     } catch (e) {
       debugPrint("Error picking image: $e");
       if (mounted) {
-        _showError("Görsel seçilemedi");
+        _showError(AppLocalizations.of(context)!.addContentImagePickFailed);
       }
     }
   }
@@ -988,16 +991,18 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Future<void> _saveContent() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (_isSaving) return;
 
     // Validation: Note mode requires both title and note
     if (_isNoteMode) {
       if (_titleController.text.trim().isEmpty) {
-        _showError("Başlık zorunludur");
+        _showError(l10n.addContentTitleRequired);
         return;
       }
       if (_noteController.text.trim().isEmpty) {
-        _showError("Not zorunludur");
+        _showError(l10n.addContentNoteRequired);
         return;
       }
     } else if (_titleController.text.isEmpty &&
@@ -1013,7 +1018,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       if (quickCat != null) {
         _selectedCategoryIds.add(quickCat.id);
       } else {
-        _showError("Lütfen en az bir koleksiyon seçin");
+        _showError(l10n.addContentSelectCategory);
         return;
       }
     }
@@ -1038,9 +1043,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               LimitReachedDialog.show(
                 context: context,
                 ref: ref,
-                title: "İçerik Sınırına Ulaştın",
-                message:
-                    "Ücretsiz planda en fazla 500 içerik kaydedebilirsin. Sınırsız içerik için Premium'a geçin!",
+                title: l10n.limitItemTitle,
+                message: l10n.limitItemReachedDescription(500),
                 type: LimitType.item,
               );
             }
@@ -1059,7 +1063,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       final userId = FirebaseAuth.instance.currentUser?.uid;
 
       if (userId == null) {
-        if (mounted) _showError("Oturum açmanız gerekiyor");
+        if (mounted) _showError(l10n.addContentLoginRequired);
         return;
       }
 
@@ -1200,7 +1204,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    '$successCount/${results.length} kategoriye eklendi. Kalanları tekrar deneyin.',
+                    l10n.addContentPartialSuccess(successCount, results.length),
                   ),
                   backgroundColor: Colors.orange,
                   duration: const Duration(seconds: 3),
@@ -1211,10 +1215,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             // All failed
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('İçerik eklenemedi. Lütfen tekrar deneyin.'),
+                SnackBar(
+                  content: Text(l10n.addContentAddFailed),
                   backgroundColor: Colors.red,
-                  duration: Duration(seconds: 3),
+                  duration: const Duration(seconds: 3),
                 ),
               );
               return; // Don't close the screen
@@ -1268,10 +1272,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           // All failed
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('İçerik eklenemedi. Lütfen tekrar deneyin.'),
+              SnackBar(
+                content: Text(l10n.addContentAddFailed),
                 backgroundColor: Colors.red,
-                duration: Duration(seconds: 3),
+                duration: const Duration(seconds: 3),
               ),
             );
           }
@@ -1289,7 +1293,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  '$successCount/${results.length} kategoriye eklendi. Kalanları tekrar deneyin.',
+                  l10n.addContentPartialSuccess(successCount, results.length),
                 ),
                 backgroundColor: Colors.orange,
                 duration: const Duration(seconds: 3),
@@ -1305,7 +1309,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       }
     } catch (e) {
       debugPrint("Save error: $e");
-      if (mounted) _showError("Bir hata oluştu");
+      if (mounted) _showError(l10n.addContentGenericError);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -1314,6 +1318,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   /// Starter planında toplam içerik sayısı yumuşak uyarı eşiğine
   /// (450/500) yaklaştıysa/geçtiyse bilgilendirici bir SnackBar gösterir.
   Future<void> _maybeShowItemLimitWarning() async {
+    final l10n = AppLocalizations.of(context)!;
     final subState = ref.read(subscriptionProvider);
     if (subState.isPremium) return;
 
@@ -1324,9 +1329,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (subNotifier.shouldWarnItemLimit(totalItemCount) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            "İçerik hakkın azalıyor: $totalItemCount/500 — Premium'la sınırsıza geç",
-          ),
+          content: Text(l10n.limitItemWarning(totalItemCount)),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 3),
         ),
@@ -1335,13 +1338,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   void _showError(String message) {
+    final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
           (context) => _AlertBottomSheet(
-            title: "Uyarı",
+            title: l10n.addContentWarningTitle,
             message: message,
             type: _AlertType.warning,
           ),
@@ -1349,13 +1354,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   void _showSuccess(String message) {
+    final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
           (context) => _AlertBottomSheet(
-            title: "Başarılı!",
+            title: l10n.commonSuccessBang,
             message: message,
             type: _AlertType.success,
           ),
@@ -1406,6 +1413,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Future<void> _showReminderPicker() async {
+    final l10n = AppLocalizations.of(context)!;
+
     // Limit check: only when creating a NEW reminder
     if (_currentReminder == null) {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -1423,9 +1432,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 await LimitReachedDialog.show(
                   context: context,
                   ref: ref,
-                  title: "Hatırlatıcı Sınırına Ulaştın",
-                  message:
-                      "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsin. Daha fazlası için Premium'a geçin!",
+                  title: l10n.limitReminderTitle,
+                  message: l10n.limitReminderDescription,
                   type: LimitType.item,
                 );
               }
@@ -1495,18 +1503,22 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       }
     } catch (e) {
       debugPrint("Delete error: $e");
-      if (mounted) _showError("Silme işlemi başarısız");
+      if (mounted) {
+        _showError(AppLocalizations.of(context)!.addContentDeleteFailed);
+      }
     }
   }
 
   void _showDeleteConfirmation() {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Center(
             child: Text(
-              "Silme Onayı",
+              l10n.deleteConfirmTitle,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -1518,7 +1530,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Bu içeriği silmek istediğinize emin misiniz?",
+                l10n.deleteItemConfirm,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   color: context.colors.body,
@@ -1550,7 +1562,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       ),
                       child: Center(
                         child: Text(
-                          "Vazgeç",
+                          l10n.commonDiscard,
                           style: GoogleFonts.poppins(
                             color: Colors.grey.shade800,
                             fontWeight: FontWeight.w600,
@@ -1588,7 +1600,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       ),
                       child: Center(
                         child: Text(
-                          "Sil",
+                          l10n.commonDelete,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -1820,6 +1832,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Loading State (Filling Animation)
   Widget _buildLoadingState() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       key: const ValueKey('loading'),
       color: context.colors.surfaceWhite,
@@ -1861,7 +1875,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           const SizedBox(height: 16),
 
           Text(
-            "Yükleniyor...",
+            l10n.addContentLoading,
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -1875,6 +1889,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Platform Background (Gradient Preview Placeholder)
   Widget _buildPlatformBackground({bool animate = false}) {
+    final l10n = AppLocalizations.of(context)!;
     final bool showFavicon =
         !animate &&
         _hasLink &&
@@ -1980,7 +1995,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 const SizedBox(height: 12),
                 Text(
                   animate
-                      ? "Bağlantı taranıyor..."
+                      ? l10n.addContentScanning
                       : ContentPreviewPolicy.shouldShowMissingPreviewLabel(
                         url: _detectedLink,
                         hasImage: ContentPreviewPolicy.canUsePreviewImage(
@@ -1989,10 +2004,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                         ),
                         isKnownBrandSite: _isKnownBrandSite(),
                       )
-                      ? "Önizleme yok"
+                      ? l10n.addContentNoPreview
                       : showFavicon
-                      ? (_ogMetadata?.title ?? "Bağlantı Eklendi")
-                      : "Bağlantı önizlemesi burada görünecek",
+                      ? (_ogMetadata?.title ?? l10n.addContentLinkAdded)
+                      : l10n.addContentPreviewHint,
                   style: GoogleFonts.poppins(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
@@ -2323,6 +2338,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Gradient fallback when no coordinates
   Widget _buildMapGradientFallback() {
+    final l10n = AppLocalizations.of(context)!;
     final url = _detectedLink.toLowerCase();
     List<Color> gradientColors = [
       context.colors.primary,
@@ -2367,7 +2383,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'Harita Konumu',
+                l10n.addContentMapLocation,
                 style: GoogleFonts.poppins(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 14,
@@ -2393,6 +2409,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // ============== CONTROL CENTER ==============
 
   Widget _buildControlCenter() {
+    final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.watch(categoriesProvider);
     final categories = categoriesAsync.value ?? [];
     return Padding(
@@ -2416,7 +2433,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           _buildInputField(
             controller: _titleController,
             icon: PhosphorIconsThin.pencilSimple, // Thin
-            hint: _isNoteMode ? "Başlık *" : "Başlık ekle (opsiyonel)",
+            hint:
+                _isNoteMode
+                    ? l10n.addContentTitleHintNote
+                    : l10n.addContentTitleHintLink,
             isTitle: true,
           ),
 
@@ -2426,7 +2446,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           _buildInputField(
             controller: _noteController,
             icon: PhosphorIconsThin.notePencil, // Thin
-            hint: _isNoteMode ? "Not *" : "Kişisel not ekle (opsiyonel)",
+            hint:
+                _isNoteMode
+                    ? l10n.addContentNoteHintNote
+                    : l10n.addContentNoteHintLink,
             maxLines: _isNoteMode ? 10 : 3, // Balanced size to show collection
           ),
 
@@ -2446,7 +2469,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Koleksiyon Seç",
+                l10n.addContentSelectCollection,
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
@@ -2524,6 +2547,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Widget _buildImagePlaceholder() {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: _pickNoteImage,
       child: Container(
@@ -2553,7 +2578,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Görsel Ekle",
+                    l10n.addContentImagePickerTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -2561,7 +2586,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                     ),
                   ),
                   Text(
-                    "Opsiyonel - Notuna görsel ekleyebilirsin",
+                    l10n.addContentImageOptional,
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       color: context.colors.hint,
@@ -2582,6 +2607,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Widget _buildImagePreview() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -2623,7 +2650,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Görsel Eklendi",
+                  l10n.addContentImageAdded,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -2633,8 +2660,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 const SizedBox(height: 4),
                 Text(
                   _selectedNoteImage != null
-                      ? "Yeni görsel seçildi"
-                      : "Mevcut görsel",
+                      ? l10n.addContentNewImageSelected
+                      : l10n.addContentExistingImage,
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: context.colors.hint,
@@ -2688,6 +2715,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   Widget _buildReminderPicker() {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: _showReminderPicker,
       child: Container(
@@ -2735,8 +2764,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 children: [
                   Text(
                     _hasReminder && _currentReminder != null
-                        ? 'Hatırlatıcı ayarlandı'
-                        : 'Hatırlatıcı Ekle',
+                        ? l10n.reminderSetActive
+                        : l10n.reminderAddTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -2756,7 +2785,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                     )
                   else
                     Text(
-                      'Bu içerik için hatırlatıcı belirle',
+                      l10n.reminderSetHint,
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         color: context.colors.hint,
@@ -2825,25 +2854,27 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   String _getRepeatLabel(RepeatFrequency frequency) {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (frequency) {
       case RepeatFrequency.none:
-        return 'Tek seferlik';
+        return l10n.addContentRepeatOnce;
       case RepeatFrequency.daily:
-        return 'Günlük';
+        return l10n.addContentRepeatDaily;
       case RepeatFrequency.weekly:
-        return 'Haftalık';
+        return l10n.addContentRepeatWeekly;
       case RepeatFrequency.monthly:
-        return 'Aylık';
+        return l10n.addContentRepeatMonthly;
       case RepeatFrequency.yearly:
-        return 'Yıllık';
+        return l10n.addContentRepeatYearly;
       case RepeatFrequency.weekdays:
-        return 'Hafta içi';
+        return l10n.addContentRepeatWeekdays;
       case RepeatFrequency.weekends:
-        return 'Hafta sonu';
+        return l10n.addContentRepeatWeekends;
       case RepeatFrequency.customMinutes:
-        return 'Dakikada bir';
+        return l10n.addContentRepeatCustomMinutes;
       case RepeatFrequency.customDays:
-        return 'Gün bazlı';
+        return l10n.addContentRepeatCustomDays;
     }
   }
 
@@ -2935,6 +2966,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Link Input (Editable)
   Widget _buildLinkPreview() {
+    final l10n = AppLocalizations.of(context)!;
     final hasPlatform = _detectedPlatform.isNotEmpty;
     // Always use Primary Brand Color to match design, ignoring platform specific colors (e.g. Red for YouTube)
     final themeColor = context.colors.primary;
@@ -2982,7 +3014,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 color: context.colors.headline,
               ),
               decoration: InputDecoration(
-                hintText: "Bağlantını buraya yapıştır",
+                hintText: l10n.addContentLinkHint,
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 15, // Matched with Title Input
                   color: context.colors.body.withValues(alpha: 0.6),
@@ -3110,13 +3142,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // ============== MODE TOGGLE (Slide Action Style) ==============
 
   Widget _buildModeToggle() {
+    final l10n = AppLocalizations.of(context)!;
+
     // If in edit mode, show static title instead of toggle
     if (widget.editItem != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 24),
           child: Text(
-            _isNoteMode ? "Notu Düzenle" : "İçeriği Düzenle",
+            _isNoteMode ? l10n.addContentEditNote : l10n.addContentEditContent,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -3134,6 +3168,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // ============== FLOATING DOCK ==============
 
   Widget _buildFloatingDock() {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: _isSaving ? null : _saveContent,
       child: Container(
@@ -3181,7 +3217,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        widget.editItem != null ? "Kaydet" : "Koleksiyona Ekle",
+                        widget.editItem != null
+                            ? l10n.commonSave
+                            : l10n.addContentAddButton,
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -3394,6 +3432,8 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
@@ -3410,7 +3450,7 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Yeni Koleksiyon',
+            l10n.catalogNewCollection,
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -3422,7 +3462,7 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
             controller: _nameController,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Koleksiyon Adı',
+              hintText: l10n.catalogCollectionNameHint,
               filled: true,
               fillColor: context.colors.backgroundTop,
               border: OutlineInputBorder(
@@ -3448,7 +3488,7 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
                 ),
               ),
               child: Text(
-                'Oluştur',
+                l10n.commonCreate,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,

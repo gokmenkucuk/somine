@@ -338,5 +338,835 @@
   "failureUnknown": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
   "@failureUnknown": {
     "description": "User-facing message for an unexpected/unknown error."
+  },
+
+  "commonAll": "Tümü",
+  "@commonAll": {
+    "description": "Common label for 'All', used in feed and catalog category filters."
+  },
+  "commonGuest": "Misafir",
+  "@commonGuest": {
+    "description": "Fallback guest label shown on the feed when the user has no display name."
+  },
+  "commonDefaultUserName": "Kullanıcı",
+  "@commonDefaultUserName": {
+    "description": "Fallback display name shown when a user has no name."
+  },
+  "commonDefaultCategory": "Genel",
+  "@commonDefaultCategory": {
+    "description": "Default category name shown when an item has no category."
+  },
+  "commonCancel": "İptal",
+  "@commonCancel": {
+    "description": "Common Cancel action label used across dialogs."
+  },
+  "commonDelete": "Sil",
+  "@commonDelete": {
+    "description": "Common Delete action label used across dialogs."
+  },
+  "commonSave": "Kaydet",
+  "@commonSave": {
+    "description": "Common Save action label used across dialogs."
+  },
+  "commonDone": "Bitti",
+  "@commonDone": {
+    "description": "Common Done action label used to finish an editing mode."
+  },
+  "commonCreate": "Oluştur",
+  "@commonCreate": {
+    "description": "Common Create action label used in creation dialogs."
+  },
+  "commonDiscard": "Vazgeç",
+  "@commonDiscard": {
+    "description": "Common Discard/Cancel label used in dialogs."
+  },
+  "commonSuccess": "Başarılı",
+  "@commonSuccess": {
+    "description": "Success notification title."
+  },
+  "commonSuccessBang": "Başarılı!",
+  "@commonSuccessBang": {
+    "description": "Success notification title with exclamation."
+  },
+  "commonMoved": "Taşındı",
+  "@commonMoved": {
+    "description": "Notification title shown after moving items."
+  },
+  "commonDeleted": "Silindi",
+  "@commonDeleted": {
+    "description": "Notification title shown after deleting items."
+  },
+  "commonErrorWithDetail": "Hata: {error}",
+  "@commonErrorWithDetail": {
+    "description": "Generic error label followed by the raw error detail.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultName": "Gizli Kasa",
+  "@vaultName": {
+    "description": "Display name for the private vault feature."
+  },
+  "vaultCategoryAuthReason": "{name} koleksiyonuna erişmek için doğrulama yapın",
+  "@vaultCategoryAuthReason": {
+    "description": "Biometric authentication reason shown when accessing a locked vault category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commonEmptyItemsSubtitle": "Kaydettiğin bağlantılar, notlar ve görseller burada görünecek.",
+  "@commonEmptyItemsSubtitle": {
+    "description": "Empty state subtitle shown when a collection or feed has no items."
+  },
+
+  "limitItemReachedDescription": "Ücretsiz planda en fazla {limit} içerik kaydedebilirsin. Sınırsız içerik için Premium'a geçin!",
+  "@limitItemReachedDescription": {
+    "description": "Description shown when the total item limit is reached on the free plan.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "limitItemWarning": "İçerik hakkın azalıyor: {count}/500 — Premium'la sınırsıza geç",
+  "@limitItemWarning": {
+    "description": "Soft warning shown when the user approaches the free plan item limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "limitReminderTitle": "Hatırlatıcı Sınırına Ulaştın",
+  "@limitReminderTitle": {
+    "description": "Title of the limit reached dialog for reminders."
+  },
+  "limitReminderDescription": "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsin. Daha fazlası için Premium'a geçin!",
+  "@limitReminderDescription": {
+    "description": "Description of the reminder limit reached dialog."
+  },
+
+  "reminderAddTitle": "Hatırlatıcı Ekle",
+  "@reminderAddTitle": {
+    "description": "Title/label for the add reminder action."
+  },
+  "reminderSetHint": "Bu içerik için hatırlatıcı belirle",
+  "@reminderSetHint": {
+    "description": "Hint text under the add reminder action."
+  },
+  "reminderSetActive": "Hatırlatıcı ayarlandı",
+  "@reminderSetActive": {
+    "description": "Title shown when a reminder is already set."
+  },
+
+  "deleteConfirmTitle": "Silme Onayı",
+  "@deleteConfirmTitle": {
+    "description": "Title of the delete confirmation dialog."
+  },
+  "deleteItemConfirm": "Bu içeriği silmek istediğinize emin misiniz?",
+  "@deleteItemConfirm": {
+    "description": "Confirmation message before deleting an item."
+  },
+
+  "homeItemWord": "İçerik",
+  "@homeItemWord": {
+    "description": "Generic 'Item/Content' word used as a fallback title."
+  },
+  "homeAddSuccessMessage": "İçerik koleksiyona eklendi",
+  "@homeAddSuccessMessage": {
+    "description": "Success message shown after adding an item to a collection."
+  },
+  "homeItemDeletedMessage": "{name} silindi",
+  "@homeItemDeletedMessage": {
+    "description": "Success message shown after deleting a single item.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBatchDeletedMessage": "{count} içerik silindi",
+  "@homeBatchDeletedMessage": {
+    "description": "Success message shown after batch deleting items.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "feedGreeting": "Merhaba,",
+  "@feedGreeting": {
+    "description": "Greeting label shown at the top of the feed."
+  },
+  "feedSloganTitle": "Dijital İçeriklerini\nKoleksiyona Kaydet",
+  "@feedSloganTitle": {
+    "description": "Main gradient slogan title on the feed."
+  },
+  "feedSloganSubtitle": "Özenle sakla, keyifle paylaş!",
+  "@feedSloganSubtitle": {
+    "description": "Subtitle under the feed slogan."
+  },
+  "feedUnknownError": "Bilinmeyen hata",
+  "@feedUnknownError": {
+    "description": "Fallback error message shown when the feed fails with no message."
+  },
+  "feedEmptyTitle": "Henüz içerik yok",
+  "@feedEmptyTitle": {
+    "description": "Empty state title shown when the feed has no items."
+  },
+  "feedVaultAuthFailed": "Doğrulama başarısız",
+  "@feedVaultAuthFailed": {
+    "description": "Snackbar message shown when vault biometric authentication fails."
+  },
+
+  "catalogTitle": "Koleksiyonlarım",
+  "@catalogTitle": {
+    "description": "Header title of the catalog screen."
+  },
+  "catalogNewButton": "Yeni +",
+  "@catalogNewButton": {
+    "description": "Label for the add new collection button."
+  },
+  "catalogVaultUnlockReason": "Gizli koleksiyonları görüntülemek için doğrulama yapın",
+  "@catalogVaultUnlockReason": {
+    "description": "Biometric auth reason shown when unlocking all vaults."
+  },
+  "catalogCollectionLockedTitle": "Koleksiyon Kilitli",
+  "@catalogCollectionLockedTitle": {
+    "description": "Title shown when a locked vault category is selected."
+  },
+  "catalogCollectionLockedMessage": "İçerikleri görmek için yukarıdan kilidi açın.",
+  "@catalogCollectionLockedMessage": {
+    "description": "Message shown when a locked vault category is selected."
+  },
+  "catalogEmptyCategoryTitle": "Bu koleksiyonda henüz öğe yok",
+  "@catalogEmptyCategoryTitle": {
+    "description": "Empty state title shown when a category has no items."
+  },
+  "catalogEditOrder": "Sıralamayı Düzenle",
+  "@catalogEditOrder": {
+    "description": "Option/title to edit the order of items or categories."
+  },
+  "catalogEditName": "Koleksiyon Adını Düzenle",
+  "@catalogEditName": {
+    "description": "Option to rename a collection."
+  },
+  "catalogShareCollection": "Koleksiyonu Paylaş",
+  "@catalogShareCollection": {
+    "description": "Option/title to share a collection."
+  },
+  "catalogVaultNoShare": "Gizli kasalar paylaşılamaz",
+  "@catalogVaultNoShare": {
+    "description": "Snackbar message explaining vaults cannot be shared."
+  },
+  "premiumFeature": "Premium Özellik",
+  "@premiumFeature": {
+    "description": "Title for premium-gated feature dialogs."
+  },
+  "catalogSharePremiumMessage": "Koleksiyon paylaşma özelliği premium üyelere özeldir. Arkadaşlarınla ortak koleksiyon yönetmek için yükselt!",
+  "@catalogSharePremiumMessage": {
+    "description": "Message for the premium-only collection sharing feature."
+  },
+  "catalogRemoveFromVault": "Gizli Kasadan Çıkar",
+  "@catalogRemoveFromVault": {
+    "description": "Option to remove a collection from the vault."
+  },
+  "catalogAddToVault": "Gizli Kasaya Ekle",
+  "@catalogAddToVault": {
+    "description": "Option to add a collection to the vault."
+  },
+  "catalogVaultPremiumMessage": "Gizli Kasa özelliği premium üyelere özeldir. FaceID/TouchID ile koleksiyonlarını koruma altına al!",
+  "@catalogVaultPremiumMessage": {
+    "description": "Message for the premium-only vault feature."
+  },
+  "catalogVaultPremiumShortMessage": "Gizli Kasa özelliği premium üyelere özeldir.",
+  "@catalogVaultPremiumShortMessage": {
+    "description": "Short message for the premium-only vault feature."
+  },
+  "catalogAddedToVault": "Koleksiyon gizli kasaya eklendi 🔒",
+  "@catalogAddedToVault": {
+    "description": "Success message after adding a collection to the vault."
+  },
+  "catalogRemovedFromVault": "Koleksiyon gizli kasadan çıkarıldı 🔓",
+  "@catalogRemovedFromVault": {
+    "description": "Success message after removing a collection from the vault."
+  },
+  "catalogDeleteCollection": "Koleksiyonu Sil",
+  "@catalogDeleteCollection": {
+    "description": "Option to delete a collection."
+  },
+  "catalogRenameTitle": "Koleksiyon Adı",
+  "@catalogRenameTitle": {
+    "description": "Title of the rename collection dialog."
+  },
+  "catalogRenameHint": "Yeni isim girin",
+  "@catalogRenameHint": {
+    "description": "Hint text in the rename collection dialog."
+  },
+  "catalogRenameSuccess": "Koleksiyon adı güncellendi",
+  "@catalogRenameSuccess": {
+    "description": "Success message after renaming a collection."
+  },
+  "catalogSelectAction": "Seç",
+  "@catalogSelectAction": {
+    "description": "Item action sheet option to select items."
+  },
+  "catalogSortAction": "Sırala",
+  "@catalogSortAction": {
+    "description": "Item action sheet option to sort items."
+  },
+  "catalogMoveToCollection": "Koleksiyona Taşı",
+  "@catalogMoveToCollection": {
+    "description": "Item action sheet option to move an item to a collection."
+  },
+  "catalogDeleteItemAction": "İçeriği Sil",
+  "@catalogDeleteItemAction": {
+    "description": "Item action sheet option to delete an item."
+  },
+  "catalogMoveSelectorTitle": "Taşımak İstediğin Koleksiyonu Seç",
+  "@catalogMoveSelectorTitle": {
+    "description": "Title of the move target selector sheet."
+  },
+  "catalogBatchMovedMessage": "{count} içerik \"{name}\" koleksiyonuna taşındı.",
+  "@catalogBatchMovedMessage": {
+    "description": "Success message after batch moving items to a collection.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogItemMovedMessage": "İçerik \"{name}\" koleksiyonuna taşındı.",
+  "@catalogItemMovedMessage": {
+    "description": "Success message after moving a single item to a collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogBatchMovedCount": "{count} içerik taşındı",
+  "@catalogBatchMovedCount": {
+    "description": "Success message after batch moving items.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogItemMoved": "İçerik taşındı",
+  "@catalogItemMoved": {
+    "description": "Success message after moving a single item."
+  },
+  "catalogMovedAndDeleted": "İçerikler taşındı ve kategori silindi",
+  "@catalogMovedAndDeleted": {
+    "description": "Success message after moving items and deleting the source category."
+  },
+  "catalogOperationFailed": "İşlem başarısız oldu",
+  "@catalogOperationFailed": {
+    "description": "Snackbar message shown when an operation fails."
+  },
+  "catalogDeleteSelectedTitle": "Seçili İçerikleri Sil",
+  "@catalogDeleteSelectedTitle": {
+    "description": "Title of the delete selected items dialog."
+  },
+  "catalogDeleteSelectedConfirm": "{count} içeriği silmek istediğine emin misin?",
+  "@catalogDeleteSelectedConfirm": {
+    "description": "Confirmation message before deleting selected items.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogBatchDeletedMessage": "{count} içerik başarıyla silindi.",
+  "@catalogBatchDeletedMessage": {
+    "description": "Success message after batch deleting items.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogDeleteItemConfirm": "Bu içeriği silmek istediğine emin misin?",
+  "@catalogDeleteItemConfirm": {
+    "description": "Confirmation message before deleting a single item."
+  },
+  "catalogItemDeletedMessage": "İçerik başarıyla silindi.",
+  "@catalogItemDeletedMessage": {
+    "description": "Success message after deleting a single item."
+  },
+  "catalogAllCollections": "Tüm Koleksiyonlar",
+  "@catalogAllCollections": {
+    "description": "Title of the all collections grid sheet."
+  },
+  "catalogCollectionCount": "{count} koleksiyon",
+  "@catalogCollectionCount": {
+    "description": "Total collection count label.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogItemCount": "{count} içerik",
+  "@catalogItemCount": {
+    "description": "Item count label within a collection card.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogNewCollection": "Yeni Koleksiyon",
+  "@catalogNewCollection": {
+    "description": "Title of the new collection dialog."
+  },
+  "catalogCategoryCreated": "Koleksiyon oluşturuldu",
+  "@catalogCategoryCreated": {
+    "description": "Success message shown after creating a regular collection."
+  },
+  "catalogVaultCategoryCreated": "Gizli koleksiyon oluşturuldu",
+  "@catalogVaultCategoryCreated": {
+    "description": "Success message shown after creating a private vault collection."
+  },
+  "catalogNewCollectionHint": "İçeriklerini düzenlemek için yeni bir koleksiyon oluştur.",
+  "@catalogNewCollectionHint": {
+    "description": "Subtitle of the new collection dialog."
+  },
+  "catalogNameHint": "Koleksiyon Adı (Örn: Tatil Planı)",
+  "@catalogNameHint": {
+    "description": "Hint text for the collection name field."
+  },
+  "catalogCollectionNameHint": "Koleksiyon Adı",
+  "@catalogCollectionNameHint": {
+    "description": "Short hint text for the collection name field."
+  },
+  "catalogDeleteCategoryTitle": "Kategoriyi Sil",
+  "@catalogDeleteCategoryTitle": {
+    "description": "Title of the delete category dialog/sheet."
+  },
+  "catalogDeleteCategoryConfirm": "\"{name}\" kategorisini silmek istediğine emin misin?",
+  "@catalogDeleteCategoryConfirm": {
+    "description": "Confirmation message before deleting a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogAdvancedDeleteMessage": "\"{name}\" içinde {count} adet içerik var. Bu içerikleri ne yapmak istersin?",
+  "@catalogAdvancedDeleteMessage": {
+    "description": "Message shown when deleting a category that contains items.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogMoveItemsAction": "İçerikleri Başka Koleksiyona Taşı",
+  "@catalogMoveItemsAction": {
+    "description": "Option to move items before deleting a category."
+  },
+  "catalogDeleteCategoryAndItems": "Kategori ve İçerikleri Sil",
+  "@catalogDeleteCategoryAndItems": {
+    "description": "Option to delete a category together with its items."
+  },
+  "catalogSelectTargetTitle": "Hedef Koleksiyon Seç",
+  "@catalogSelectTargetTitle": {
+    "description": "Title of the target collection selector sheet."
+  },
+  "catalogDeleteSelectedItemsTitle": "Seçilenleri Sil?",
+  "@catalogDeleteSelectedItemsTitle": {
+    "description": "Title of the delete selected items sheet."
+  },
+  "catalogDeleteSelectedItemsMessage": "{count} içerik Son Silinenler'e taşınacak.\nİstediğin zaman geri alabilirsin.",
+  "@catalogDeleteSelectedItemsMessage": {
+    "description": "Message in the delete selected items sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogDeletedToTrashMessage": "{count} içerik Son Silinenler'e taşındı.",
+  "@catalogDeletedToTrashMessage": {
+    "description": "Success message after moving selected items to recently deleted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogCategoryDeleted": "Kategori silindi.",
+  "@catalogCategoryDeleted": {
+    "description": "Success message after deleting a category."
+  },
+  "catalogCategoryDeletedWithItems": "Kategori ve içerikleriyle birlikte silindi.",
+  "@catalogCategoryDeletedWithItems": {
+    "description": "Success message after deleting a category with its items."
+  },
+  "catalogDeleteCategoryFailed": "Kategori silinemedi",
+  "@catalogDeleteCategoryFailed": {
+    "description": "Snackbar message when category deletion fails."
+  },
+  "catalogSelectedCount": "{count} Seçildi",
+  "@catalogSelectedCount": {
+    "description": "Selected items count label.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogMoveSelectedTitle": "Seçilenleri Taşı",
+  "@catalogMoveSelectedTitle": {
+    "description": "Title of the batch move selector sheet."
+  },
+  "catalogSortUpdated": "Sıralama güncellendi.",
+  "@catalogSortUpdated": {
+    "description": "Success message after updating the item order."
+  },
+  "catalogNoItemsToSort": "Sıralanacak içerik yok.",
+  "@catalogNoItemsToSort": {
+    "description": "Empty message in the reorder sheet."
+  },
+  "catalogGenericError": "Bir hata oluştu. Lütfen tekrar deneyin.",
+  "@catalogGenericError": {
+    "description": "Generic error fallback message."
+  },
+
+  "shareSearchHint": "@kullaniciadi veya e-posta",
+  "@shareSearchHint": {
+    "description": "Hint text in the share collection search field."
+  },
+  "shareInfoBanner": "Paylaştığınız kişi içerikleri görüntüleyebilir ve kendi koleksiyonuna kopyalayabilir.",
+  "@shareInfoBanner": {
+    "description": "Info banner in the share collection sheet."
+  },
+  "shareUserNotFound": "Kullanıcı Bulunamadı",
+  "@shareUserNotFound": {
+    "description": "Title shown when no user is found for sharing."
+  },
+  "shareUserNotFoundDetail": "Bu e-posta ile kayıtlı kullanıcı yok.",
+  "@shareUserNotFoundDetail": {
+    "description": "Detail shown when no user is found for sharing."
+  },
+  "shareSearchTitle": "Arkadaş Ara",
+  "@shareSearchTitle": {
+    "description": "Title shown on the initial share search screen."
+  },
+  "shareSearchDetail": "Paylaşmak istediğiniz kişinin e-posta adresini girin.",
+  "@shareSearchDetail": {
+    "description": "Detail shown on the initial share search screen."
+  },
+  "shareRecentTitle": "Son Paylaşılanlar",
+  "@shareRecentTitle": {
+    "description": "Section title for recently shared users."
+  },
+  "shareSentTitle": "Paylaşım Gönderildi",
+  "@shareSentTitle": {
+    "description": "Success title after sending a share invite."
+  },
+  "shareSentMessage": "{name} paylaşım isteğinizi aldı.",
+  "@shareSentMessage": {
+    "description": "Success message after sending a share invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareSendButton": "Paylaşım İsteği Gönder",
+  "@shareSendButton": {
+    "description": "Button label to send a share invite."
+  },
+  "shareErrorNoSession": "Oturum açık değil",
+  "@shareErrorNoSession": {
+    "description": "Error shown when sharing while not signed in."
+  },
+  "shareErrorNoCollectionId": "Koleksiyon ID bulunamadı",
+  "@shareErrorNoCollectionId": {
+    "description": "Error shown when the collection id is missing during sharing."
+  },
+  "shareErrorMissingUser": "Kullanıcı bilgisi eksik (ID veya E-posta bulunamadı)",
+  "@shareErrorMissingUser": {
+    "description": "Error shown when the target user info is missing during sharing."
+  },
+
+  "addContentImagePickerTitle": "Görsel Ekle",
+  "@addContentImagePickerTitle": {
+    "description": "Title of the image picker sheet."
+  },
+  "addContentGallery": "Galeri",
+  "@addContentGallery": {
+    "description": "Gallery option in the image picker."
+  },
+  "addContentCamera": "Kamera",
+  "@addContentCamera": {
+    "description": "Camera option in the image picker."
+  },
+  "addContentImagePickFailed": "Görsel seçilemedi",
+  "@addContentImagePickFailed": {
+    "description": "Error message shown when image picking fails."
+  },
+  "addContentTitleRequired": "Başlık zorunludur",
+  "@addContentTitleRequired": {
+    "description": "Validation error when the note title is empty."
+  },
+  "addContentNoteRequired": "Not zorunludur",
+  "@addContentNoteRequired": {
+    "description": "Validation error when the note content is empty."
+  },
+  "addContentSelectCategory": "Lütfen en az bir koleksiyon seçin",
+  "@addContentSelectCategory": {
+    "description": "Validation error when no category is selected."
+  },
+  "addContentLoginRequired": "Oturum açmanız gerekiyor",
+  "@addContentLoginRequired": {
+    "description": "Error message shown when the user is not signed in."
+  },
+  "addContentPartialSuccess": "{success}/{total} kategoriye eklendi. Kalanları tekrar deneyin.",
+  "@addContentPartialSuccess": {
+    "description": "Snackbar message shown when an item is added to some but not all categories.",
+    "placeholders": {
+      "success": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addContentAddFailed": "İçerik eklenemedi. Lütfen tekrar deneyin.",
+  "@addContentAddFailed": {
+    "description": "Snackbar message shown when adding an item fails."
+  },
+  "addContentGenericError": "Bir hata oluştu",
+  "@addContentGenericError": {
+    "description": "Generic error message shown when saving content fails."
+  },
+  "addContentDeleteFailed": "Silme işlemi başarısız",
+  "@addContentDeleteFailed": {
+    "description": "Error message shown when deleting an item fails."
+  },
+  "addContentWarningTitle": "Uyarı",
+  "@addContentWarningTitle": {
+    "description": "Title of the warning alert bottom sheet."
+  },
+  "addContentLoading": "Yükleniyor...",
+  "@addContentLoading": {
+    "description": "Loading label in the platform background."
+  },
+  "addContentScanning": "Bağlantı taranıyor...",
+  "@addContentScanning": {
+    "description": "Label shown while scanning a link's metadata."
+  },
+  "addContentNoPreview": "Önizleme yok",
+  "@addContentNoPreview": {
+    "description": "Label shown when a link has no preview."
+  },
+  "addContentLinkAdded": "Bağlantı Eklendi",
+  "@addContentLinkAdded": {
+    "description": "Fallback label when a link is added without a title."
+  },
+  "addContentPreviewHint": "Bağlantı önizlemesi burada görünecek",
+  "@addContentPreviewHint": {
+    "description": "Hint shown in the empty link preview."
+  },
+  "addContentMapLocation": "Harita Konumu",
+  "@addContentMapLocation": {
+    "description": "Label shown on the map gradient fallback."
+  },
+  "addContentTitleHintNote": "Başlık *",
+  "@addContentTitleHintNote": {
+    "description": "Title field hint in note mode."
+  },
+  "addContentTitleHintLink": "Başlık ekle (opsiyonel)",
+  "@addContentTitleHintLink": {
+    "description": "Title field hint in link mode."
+  },
+  "addContentNoteHintNote": "Not *",
+  "@addContentNoteHintNote": {
+    "description": "Note field hint in note mode."
+  },
+  "addContentNoteHintLink": "Kişisel not ekle (opsiyonel)",
+  "@addContentNoteHintLink": {
+    "description": "Note field hint in link mode."
+  },
+  "addContentSelectCollection": "Koleksiyon Seç",
+  "@addContentSelectCollection": {
+    "description": "Section header for selecting a collection."
+  },
+  "addContentImageOptional": "Opsiyonel - Notuna görsel ekleyebilirsin",
+  "@addContentImageOptional": {
+    "description": "Subtitle of the add image row."
+  },
+  "addContentImageAdded": "Görsel Eklendi",
+  "@addContentImageAdded": {
+    "description": "Title shown when an image is attached to a note."
+  },
+  "addContentNewImageSelected": "Yeni görsel seçildi",
+  "@addContentNewImageSelected": {
+    "description": "Subtitle shown when a new image is selected."
+  },
+  "addContentExistingImage": "Mevcut görsel",
+  "@addContentExistingImage": {
+    "description": "Subtitle shown for an existing image in edit mode."
+  },
+  "addContentEditNote": "Notu Düzenle",
+  "@addContentEditNote": {
+    "description": "Title shown in edit note mode."
+  },
+  "addContentEditContent": "İçeriği Düzenle",
+  "@addContentEditContent": {
+    "description": "Title shown in edit content mode."
+  },
+  "addContentLinkHint": "Bağlantını buraya yapıştır",
+  "@addContentLinkHint": {
+    "description": "Hint text in the link input field."
+  },
+  "addContentAddButton": "Koleksiyona Ekle",
+  "@addContentAddButton": {
+    "description": "Floating dock button label to add content to a collection."
+  },
+  "addContentRepeatOnce": "Tek seferlik",
+  "@addContentRepeatOnce": {
+    "description": "Repeat frequency label: once."
+  },
+  "addContentRepeatDaily": "Günlük",
+  "@addContentRepeatDaily": {
+    "description": "Repeat frequency label: daily."
+  },
+  "addContentRepeatWeekly": "Haftalık",
+  "@addContentRepeatWeekly": {
+    "description": "Repeat frequency label: weekly."
+  },
+  "addContentRepeatMonthly": "Aylık",
+  "@addContentRepeatMonthly": {
+    "description": "Repeat frequency label: monthly."
+  },
+  "addContentRepeatYearly": "Yıllık",
+  "@addContentRepeatYearly": {
+    "description": "Repeat frequency label: yearly."
+  },
+  "addContentRepeatWeekdays": "Hafta içi",
+  "@addContentRepeatWeekdays": {
+    "description": "Repeat frequency label: weekdays."
+  },
+  "addContentRepeatWeekends": "Hafta sonu",
+  "@addContentRepeatWeekends": {
+    "description": "Repeat frequency label: weekends."
+  },
+  "addContentRepeatCustomMinutes": "Dakikada bir",
+  "@addContentRepeatCustomMinutes": {
+    "description": "Repeat frequency label: every few minutes."
+  },
+  "addContentRepeatCustomDays": "Gün bazlı",
+  "@addContentRepeatCustomDays": {
+    "description": "Repeat frequency label: custom days."
+  },
+
+  "searchBrowseSources": "Kaynaklara Göz At",
+  "@searchBrowseSources": {
+    "description": "Section header above the platform filter chips."
+  },
+  "searchVaultChip": "Gizli",
+  "@searchVaultChip": {
+    "description": "Label for the vault search filter chip."
+  },
+  "searchVaultAuthReason": "Gizli arama yapmak için doğrulama yapın",
+  "@searchVaultAuthReason": {
+    "description": "Biometric auth reason shown when enabling vault search."
+  },
+  "searchTitleAra": "Ara ",
+  "@searchTitleAra": {
+    "description": "First (light) part of the search header title."
+  },
+  "searchTitleDiscover": "ve Keşfet",
+  "@searchTitleDiscover": {
+    "description": "Second (bold) part of the search header title."
+  },
+  "searchSubtitle": "Koleksiyonlarında arama yap...",
+  "@searchSubtitle": {
+    "description": "Subtitle under the search header title."
+  },
+  "searchFieldHint": "Aramak için bir şeyler yaz...",
+  "@searchFieldHint": {
+    "description": "Hint text in the search field."
+  },
+  "searchRecentTitle": "Son Aramalar",
+  "@searchRecentTitle": {
+    "description": "Section title for recent searches."
+  },
+  "searchClear": "Temizle",
+  "@searchClear": {
+    "description": "Action to clear the recent search history."
+  },
+  "searchNoResults": "Sonuç bulunamadı",
+  "@searchNoResults": {
+    "description": "Title shown when a search returns no results."
+  },
+  "searchNoResultsHint": "Farklı bir anahtar kelime veya filtre deneyebilirsin.",
+  "@searchNoResultsHint": {
+    "description": "Hint shown when a search returns no results."
+  },
+  "searchStartPrompt": "Aramaya başla",
+  "@searchStartPrompt": {
+    "description": "Header shown on the empty search state."
+  },
+  "searchFilterByPlatform": "Kaynağa göre filtrele",
+  "@searchFilterByPlatform": {
+    "description": "Info card title for filtering by platform."
+  },
+  "searchFilterByPlatformDesc": "Instagram, YouTube veya web içeriklerini platform ikonlarıyla hızlıca ayır.",
+  "@searchFilterByPlatformDesc": {
+    "description": "Info card description for filtering by platform."
+  },
+  "searchInSavedTitle": "Kaydettiklerinde ara",
+  "@searchInSavedTitle": {
+    "description": "Info card title for searching saved items."
+  },
+  "searchInSavedDesc": "Başlık, not veya bağlantı içeriğine göre sonuçları listele.",
+  "@searchInSavedDesc": {
+    "description": "Info card description for searching saved items."
+  },
+
+  "itemDetailAddNoteHint": "Bir not ekle...",
+  "@itemDetailAddNoteHint": {
+    "description": "Hint shown when an item has no note."
+  },
+  "itemDetailLinkOpenFailed": "Link açılamadı: {url}",
+  "@itemDetailLinkOpenFailed": {
+    "description": "Snackbar message shown when a link cannot be opened.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "itemDetailOpenInBrowser": "Tarayıcıda Aç",
+  "@itemDetailOpenInBrowser": {
+    "description": "Button label to open a web link in the browser."
+  },
+  "itemDetailOpenInPlatform": "{platform}'da Aç",
+  "@itemDetailOpenInPlatform": {
+    "description": "Button label to open a link in a specific platform.",
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -56,6 +57,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _isVaultSearch;
 
   Widget _buildVaultFilterChip() {
+    final l10n = AppLocalizations.of(context)!;
     final isSelected = _isVaultSearch;
     return GestureDetector(
       onTap: () async {
@@ -69,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
           // Enable Vault Search (Require Auth)
           final vaultService = VaultService();
           final result = await vaultService.authenticate(
-            reason: 'Gizli arama yapmak için doğrulama yapın',
+            reason: l10n.searchVaultAuthReason,
           );
 
           if (result == VaultAuthResult.success) {
@@ -118,7 +120,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(width: 6),
             Text(
-              "Gizli",
+              l10n.searchVaultChip,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -269,23 +271,24 @@ class _SearchScreenState extends State<SearchScreen> {
           limit: 20,
         );
 
-        final currentFiltered = result.items.where((item) {
-          if (_isVaultSearch) {
-            if (!vaultIds.contains(item.categoryId)) return false;
-          } else if (vaultIds.contains(item.categoryId)) {
-            return false;
-          }
+        final currentFiltered =
+            result.items.where((item) {
+              if (_isVaultSearch) {
+                if (!vaultIds.contains(item.categoryId)) return false;
+              } else if (vaultIds.contains(item.categoryId)) {
+                return false;
+              }
 
-          if (_selectedPlatform != null) {
-            final filter = _selectedPlatform!;
-            if (filter == 'Web') {
-              return item.platform == 'Web';
-            }
-            return item.platform == filter;
-          }
+              if (_selectedPlatform != null) {
+                final filter = _selectedPlatform!;
+                if (filter == 'Web') {
+                  return item.platform == 'Web';
+                }
+                return item.platform == filter;
+              }
 
-          return true;
-        }).toList();
+              return true;
+            }).toList();
 
         filtered.addAll(currentFiltered);
         hasMore = result.hasMore;
@@ -316,14 +319,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    
+
     final query = _searchController.text.trim();
     if (!_isSearching) return;
 
     setState(() => _isFetchingMore = true);
 
     try {
-      final vaultIds = _categories.where((c) => c.isVault).map((c) => c.id).toSet();
+      final vaultIds =
+          _categories.where((c) => c.isVault).map((c) => c.id).toSet();
 
       List<ItemModel> newFiltered = [];
       bool hasMore = _hasMore;
@@ -339,19 +343,20 @@ class _SearchScreenState extends State<SearchScreen> {
           limit: 20,
         );
 
-        final currentFiltered = result.items.where((item) {
-          if (_isVaultSearch) {
-            if (!vaultIds.contains(item.categoryId)) return false;
-          } else if (vaultIds.contains(item.categoryId)) {
-            return false;
-          }
-          if (_selectedPlatform != null) {
-            final filter = _selectedPlatform!;
-            if (filter == 'Web') return item.platform == 'Web';
-            return item.platform == filter;
-          }
-          return true;
-        }).toList();
+        final currentFiltered =
+            result.items.where((item) {
+              if (_isVaultSearch) {
+                if (!vaultIds.contains(item.categoryId)) return false;
+              } else if (vaultIds.contains(item.categoryId)) {
+                return false;
+              }
+              if (_selectedPlatform != null) {
+                final filter = _selectedPlatform!;
+                if (filter == 'Web') return item.platform == 'Web';
+                return item.platform == filter;
+              }
+              return true;
+            }).toList();
 
         newFiltered.addAll(currentFiltered);
         hasMore = result.hasMore;
@@ -399,6 +404,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
@@ -430,7 +437,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 horizontal: 24.0,
                               ),
                               child: Text(
-                                "Kaynaklara Göz At",
+                                l10n.searchBrowseSources,
                                 style: GoogleFonts.poppins(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
@@ -558,7 +565,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      "Ara ",
+                                      l10n.searchTitleAra,
                                       style: GoogleFonts.poppins(
                                         fontSize: 26,
                                         fontWeight: FontWeight.w300,
@@ -567,7 +574,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       ),
                                     ),
                                     Text(
-                                      "ve Keşfet",
+                                      l10n.searchTitleDiscover,
                                       style: GoogleFonts.poppins(
                                         fontSize: 26,
                                         fontWeight: FontWeight.w600,
@@ -579,7 +586,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Koleksiyonlarında arama yap...",
+                                  l10n.searchSubtitle,
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w400,
@@ -615,6 +622,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Extracted Search Bar for reusing
   Widget _buildSearchBar() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       height: 58,
       padding: const EdgeInsets.all(1.0), // Reduced Border Width further
@@ -657,7 +666,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               cursorColor: const Color(0xFF6E8E91), // Match cursor to theme
               decoration: InputDecoration(
-                hintText: "Aramak için bir şeyler yaz...",
+                hintText: l10n.searchFieldHint,
                 hintStyle: GoogleFonts.poppins(
                   color: context.colors.hint,
                   fontSize: 15,
@@ -713,6 +722,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildRecentSearchesSection() {
+    final l10n = AppLocalizations.of(context)!;
     if (_recentSearches.isEmpty) return _buildEmptyState();
 
     return Align(
@@ -750,7 +760,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          "Son Aramalar",
+                          l10n.searchRecentTitle,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -762,7 +772,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     GestureDetector(
                       onTap: _clearAllSearches,
                       child: Text(
-                        "Temizle",
+                        l10n.searchClear,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -775,7 +785,10 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Divider(height: 1, color: context.colors.hint.withValues(alpha: 0.2)),
+            Divider(
+              height: 1,
+              color: context.colors.hint.withValues(alpha: 0.2),
+            ),
             Flexible(
               child: ListView.separated(
                 physics: const BouncingScrollPhysics(),
@@ -1158,6 +1171,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildNoResults() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1169,7 +1184,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            "Sonuç bulunamadı",
+            l10n.searchNoResults,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -1178,7 +1193,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            "Farklı bir anahtar kelime veya filtre deneyebilirsin.",
+            l10n.searchNoResultsHint,
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w400,
@@ -1192,6 +1207,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Boş State
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
+
     return FadeInUp(
       delay: const Duration(milliseconds: 300),
       child: SingleChildScrollView(
@@ -1202,7 +1219,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             // Header Text
             Text(
-              "Aramaya başla",
+              l10n.searchStartPrompt,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 16,
@@ -1215,9 +1232,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Info Card 1: Platform Filters
             _buildInfoCard(
-              title: "Kaynağa göre filtrele",
-              description:
-                  "Instagram, YouTube veya web içeriklerini platform ikonlarıyla hızlıca ayır.",
+              title: l10n.searchFilterByPlatform,
+              description: l10n.searchFilterByPlatformDesc,
               icon: PhosphorIconsDuotone.funnel,
               accentColor: const Color(0xFF0EA5E9), // Light Blue
             ),
@@ -1226,9 +1242,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Info Card 2: Search
             _buildInfoCard(
-              title: "Kaydettiklerinde ara",
-              description:
-                  "Başlık, not veya bağlantı içeriğine göre sonuçları listele.",
+              title: l10n.searchInSavedTitle,
+              description: l10n.searchInSavedDesc,
               icon: PhosphorIconsDuotone.magnifyingGlass,
               accentColor: const Color(0xFF10B981), // Emerald Green
             ),

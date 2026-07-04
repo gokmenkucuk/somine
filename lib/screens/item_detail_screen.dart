@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -90,6 +91,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Future<void> _addReminder() async {
+    final l10n = AppLocalizations.of(context)!;
     // Limit check
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
@@ -106,9 +108,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               await LimitReachedDialog.show(
                 context: context,
                 ref: ref,
-                title: "Hatırlatıcı Sınırına Ulaştın",
-                message:
-                    "Ücretsiz planda en fazla 3 aktif hatırlatıcı kurabilirsin. Daha fazlası için Premium'a geçin!",
+                title: l10n.limitReminderTitle,
+                message: l10n.limitReminderDescription,
                 type: LimitType.item,
               );
             }
@@ -140,6 +141,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Widget _buildAddReminderRow() {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: _addReminder,
       child: Container(
@@ -177,7 +180,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hatırlatıcı Ekle',
+                    l10n.reminderAddTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -185,7 +188,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   Text(
-                    'Bu içerik için hatırlatıcı belirle',
+                    l10n.reminderSetHint,
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       color: DesignTokens.textTertiary,
@@ -246,6 +249,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Future<void> _launchUrl(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (widget.item.url != null) {
       final uri = Uri.parse(widget.item.url!);
       if (await canLaunchUrl(uri)) {
@@ -253,7 +258,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Link açılamadı: ${widget.item.url}')),
+            SnackBar(
+              content: Text(l10n.itemDetailLinkOpenFailed(widget.item.url!)),
+            ),
           );
         }
       }
@@ -261,13 +268,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Future<void> _deleteItem(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder:
           (context) => AlertDialog(
             title: Center(
               child: Text(
-                'Silme Onayı',
+                l10n.deleteConfirmTitle,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
@@ -279,7 +288,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Bu içeriği silmek istediğinize emin misiniz?',
+                  l10n.deleteItemConfirm,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     color: context.colors.body,
@@ -314,7 +323,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            "İptal",
+                            l10n.commonCancel,
                             style: GoogleFonts.poppins(
                               color: Colors.grey.shade800,
                               fontWeight: FontWeight.w600,
@@ -349,7 +358,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            "Sil",
+                            l10n.commonDelete,
                             style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
@@ -374,12 +383,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final l10n = AppLocalizations.of(context)!;
     final categories = categoriesAsync.asData?.value ?? [];
     final category = categories.cast<CategoryModel?>().firstWhere(
       (c) => c?.id == widget.item.categoryId,
       orElse: () => null,
     );
-    final categoryName = category?.name ?? 'Genel';
+    final categoryName = category?.name ?? l10n.commonDefaultCategory;
 
     return Scaffold(
       backgroundColor: context.colors.surfaceWhite,
@@ -424,7 +434,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                     width: 70,
                                     height: 70,
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
@@ -463,7 +475,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -588,7 +602,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         // TODO: Open edit modal
                       },
                       child: Text(
-                        'Bir not ekle...',
+                        l10n.itemDetailAddNoteHint,
                         style: GoogleFonts.kalam(
                           fontSize: 16,
                           color: DesignTokens.textTertiary,
@@ -741,7 +755,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
   // Helper for dynamic text
   String _getPlatformActionText(String platform) {
-    if (platform == 'Web') return 'Tarayıcıda Aç';
-    return '$platform\'da Aç'; // e.g. "Instagram'da Aç"
+    final l10n = AppLocalizations.of(context)!;
+    if (platform == 'Web') return l10n.itemDetailOpenInBrowser;
+    return l10n.itemDetailOpenInPlatform(platform); // e.g. "Open in Instagram"
   }
 }

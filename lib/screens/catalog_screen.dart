@@ -24,6 +24,7 @@ import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>(
@@ -122,6 +123,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final selectedId = ref.watch(selectedCatalogIdProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final itemsAsync = ref.watch(catalogItemsProvider);
@@ -141,7 +143,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Koleksiyonlarım",
+                    l10n.catalogTitle,
                     style: GoogleFonts.outfit(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -155,7 +157,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               ref.read(isReorderingProvider.notifier).state =
                                   false,
                       style: TextButton.styleFrom(
-                        backgroundColor: context.colors.primary.withValues(alpha: 0.1,
+                        backgroundColor: context.colors.primary.withValues(
+                          alpha: 0.1,
                         ),
                         foregroundColor: context.colors.primary,
                         shape: RoundedRectangleBorder(
@@ -167,7 +170,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         ),
                       ),
                       child: Text(
-                        "Bitti",
+                        l10n.commonDone,
                         style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
                       ),
                     )
@@ -181,7 +184,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             padding: const EdgeInsets.all(8),
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(alpha: 0.1),
+                              color: context.colors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -206,8 +211,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               // Unlock via Auth
                               final vaultService = VaultService();
                               final result = await vaultService.authenticate(
-                                reason:
-                                    'Gizli koleksiyonları görüntülemek için doğrulama yapın',
+                                reason: l10n.catalogVaultUnlockReason,
                               );
                               if (result == VaultAuthResult.success) {
                                 ref
@@ -223,7 +227,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               color:
                                   ref.watch(isVaultUnlockedProvider)
                                       ? context.colors.primary
-                                      : context.colors.primary.withValues(alpha: 0.1),
+                                      : context.colors.primary.withValues(
+                                        alpha: 0.1,
+                                      ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -245,7 +251,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(alpha: 0.1),
+                              color: context.colors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -284,10 +292,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         isReordering,
                       ),
                   loading: () => const Center(child: SizedBox()),
-                  error: (error, _) => ErrorStateWidget(
-                    message: FailureMapper.toUserMessage(error),
-                    onRetry: () => ref.invalidate(catalogItemsProvider),
-                  ),
+                  error:
+                      (error, _) => ErrorStateWidget(
+                        message: FailureMapper.toUserMessage(error),
+                        onRetry: () => ref.invalidate(catalogItemsProvider),
+                      ),
                 ),
               ),
             ),
@@ -351,17 +360,19 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             // 3. Main Content
             Expanded(
               child: itemsAsync.when(
-                data: (items) => _buildBody(
-                  selectedId,
-                  items,
-                  categoriesAsync.valueOrNull ?? [],
-                  ref.watch(isVaultUnlockedProvider),
-                ),
+                data:
+                    (items) => _buildBody(
+                      selectedId,
+                      items,
+                      categoriesAsync.valueOrNull ?? [],
+                      ref.watch(isVaultUnlockedProvider),
+                    ),
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => ErrorStateWidget(
-                  message: FailureMapper.toUserMessage(err),
-                  onRetry: () => ref.invalidate(catalogItemsProvider),
-                ),
+                error:
+                    (err, stack) => ErrorStateWidget(
+                      message: FailureMapper.toUserMessage(err),
+                      onRetry: () => ref.invalidate(catalogItemsProvider),
+                    ),
               ),
             ),
           ],
@@ -377,6 +388,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     List<CategoryModel> categories,
     bool isVaultUnlocked,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final itemsByCategory = _groupItemsByCategory(allItems);
     // 1. Identify Locked Categories
     // If a category is Vault AND !isUnlocked -> It is effectively hidden/masked.
@@ -407,7 +419,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              "Koleksiyon Kilitli",
+              l10n.catalogCollectionLockedTitle,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -416,7 +428,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "İçerikleri görmek için yukarıdan kilidi açın.",
+              l10n.catalogCollectionLockedMessage,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: context.colors.body,
@@ -438,6 +450,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     List<ItemModel> allItems,
     bool isReordering,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return categoriesAsync.when(
       data: (categories) {
         // Vault detection
@@ -469,7 +482,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         padding: const EdgeInsets.only(left: 20),
                         child: _buildImageCatalogCard(
                           id: null,
-                          name: "Tümü",
+                          name: l10n.commonAll,
                           imageUrl: null,
                           isSelected: selectedId == null,
                           isSystem: true,
@@ -565,7 +578,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       if (index == 0) {
                         return _buildImageCatalogCard(
                           id: null,
-                          name: "Tümü",
+                          name: l10n.commonAll,
                           imageUrl: null,
                           isSelected: selectedId == null,
                           isSystem: true,
@@ -700,14 +713,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     : (isSelected
                         ? [
                           BoxShadow(
-                            color: context.colors.primary.withValues(alpha: 0.4),
+                            color: context.colors.primary.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 12,
                             offset: const Offset(0, 8),
                           ),
                         ]
                         : [
                           BoxShadow(
-                            color: context.colors.premiumShadow.withValues(alpha: 0.08,
+                            color: context.colors.premiumShadow.withValues(
+                              alpha: 0.08,
                             ),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
@@ -719,7 +735,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     : (isSelected
                         ? Border.all(color: context.colors.primary, width: 2)
                         : Border.all(
-                          color: context.colors.surfaceWhite.withValues(alpha: 0.2),
+                          color: context.colors.surfaceWhite.withValues(
+                            alpha: 0.2,
+                          ),
                           width: 1,
                         )),
           );
@@ -751,7 +769,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: LinearGradient(
-                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.7),
+                      Colors.transparent,
+                    ],
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                   ),
@@ -953,7 +974,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ? [hoverShadow]
                             : [
                               BoxShadow(
-                                color: context.colors.premiumShadow.withValues(alpha: 0.08,
+                                color: context.colors.premiumShadow.withValues(
+                                  alpha: 0.08,
                                 ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
@@ -997,14 +1019,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         : (isSelected
                             ? [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.2),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.2,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 6),
                               ),
                             ]
                             : [
                               BoxShadow(
-                                color: context.colors.premiumShadow.withValues(alpha: 0.08,
+                                color: context.colors.premiumShadow.withValues(
+                                  alpha: 0.08,
                                 ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
@@ -1053,7 +1078,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     required bool isSystem,
     required bool isSelected,
   }) {
-    Color badgeBg = Colors.white.withValues(alpha: 0.9); // Always white for consistency
+    Color badgeBg = Colors.white.withValues(
+      alpha: 0.9,
+    ); // Always white for consistency
     Color badgeText = Colors.black87; // Always dark text for readability
 
     return Stack(
@@ -1118,6 +1145,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Widget _buildAddCatalogButton() {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: _showAddCategoryDialog,
       child: Column(
@@ -1153,7 +1181,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 20),
             child: Text(
-              "Yeni +",
+              l10n.catalogNewButton,
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -1169,6 +1197,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   // --- CONTENT GRID ---
 
   Widget _buildItemGrid(List<ItemModel> items, List<CategoryModel> categories) {
+    final l10n = AppLocalizations.of(context)!;
     if (items.isEmpty) {
       return Center(
         child: Padding(
@@ -1191,7 +1220,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Bu koleksiyonda henüz öğe yok',
+                l10n.catalogEmptyCategoryTitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 18,
@@ -1201,7 +1230,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Kaydettiğin bağlantılar, notlar ve görseller burada görünecek.',
+                l10n.commonEmptyItemsSubtitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
@@ -1288,6 +1317,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   // --- EDIT & RENAME LOGIC ---
 
   void _showEditCategoryOptions(BuildContext context, CategoryModel category) {
+    final l10n = AppLocalizations.of(context)!;
     final isPremium = ref.read(isPremiumProvider);
 
     showModalBottomSheet(
@@ -1318,7 +1348,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   const SizedBox(height: 24),
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.list,
-                    title: "Sıralamayı Düzenle",
+                    title: l10n.catalogEditOrder,
                     onTap: () {
                       Navigator.pop(ctx);
                       ref.read(isReorderingProvider.notifier).state = true;
@@ -1327,7 +1357,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   Divider(color: Colors.grey[100]),
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.pencilSimple,
-                    title: "Koleksiyon Adını Düzenle",
+                    title: l10n.catalogEditName,
                     onTap: () {
                       Navigator.pop(ctx);
                       _showRenameDialog(category.id, category.name);
@@ -1339,7 +1369,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     opacity: category.isVault ? 0.4 : 1.0,
                     child: _buildOptionTile(
                       icon: PhosphorIconsRegular.shareNetwork,
-                      title: "Koleksiyonu Paylaş",
+                      title: l10n.catalogShareCollection,
                       color:
                           category.isVault
                               ? Colors.grey
@@ -1347,7 +1377,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       trailing:
                           category.isVault
                               ? Text(
-                                "Gizli Kasa",
+                                l10n.vaultName,
                                 style: GoogleFonts.poppins(
                                   fontSize: 10,
                                   color: Colors.grey,
@@ -1385,7 +1415,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                "Gizli kasalar paylaşılamaz",
+                                l10n.catalogVaultNoShare,
                                 style: GoogleFonts.poppins(),
                               ),
                               backgroundColor: Colors.grey[700],
@@ -1399,9 +1429,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           LimitReachedDialog.show(
                             context: context,
                             ref: ref,
-                            title: "Premium Özellik",
-                            message:
-                                "Koleksiyon paylaşma özelliği premium üyelere özeldir. Arkadaşlarınla ortak koleksiyon yönetmek için yükselt!",
+                            title: l10n.premiumFeature,
+                            message: l10n.catalogSharePremiumMessage,
                             type: LimitType.collection,
                           );
                           return;
@@ -1421,8 +1450,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             : PhosphorIconsRegular.lock,
                     title:
                         category.isVault
-                            ? "Gizli Kasadan Çıkar"
-                            : "Gizli Kasaya Ekle",
+                            ? l10n.catalogRemoveFromVault
+                            : l10n.catalogAddToVault,
                     color:
                         category.isVault
                             ? Colors.green
@@ -1460,9 +1489,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         LimitReachedDialog.show(
                           context: context,
                           ref: ref,
-                          title: "Premium Özellik",
-                          message:
-                              "Gizli Kasa özelliği premium üyelere özeldir. FaceID/TouchID ile koleksiyonlarını koruma altına al!",
+                          title: l10n.premiumFeature,
+                          message: l10n.catalogVaultPremiumMessage,
                           type: LimitType.collection,
                         );
                         return;
@@ -1479,11 +1507,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         if (mounted) {
                           SuccessNotificationSheet.show(
                             this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                            title: "Başarılı",
+                            title: l10n.commonSuccess,
                             message:
                                 updated.isVault
-                                    ? "Koleksiyon gizli kasaya eklendi 🔒"
-                                    : "Koleksiyon gizli kasadan çıkarıldı 🔓",
+                                    ? l10n.catalogAddedToVault
+                                    : l10n.catalogRemovedFromVault,
                           );
                         }
                       } catch (e) {
@@ -1494,7 +1522,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   Divider(color: Colors.grey[100]),
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.trash,
-                    title: "Koleksiyonu Sil",
+                    title: l10n.catalogDeleteCollection,
                     color: Colors.red,
                     onTap: () {
                       Navigator.pop(ctx);
@@ -1540,6 +1568,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showShareCollectionDialog(CategoryModel category) {
+    final l10n = AppLocalizations.of(context)!;
     final searchController = TextEditingController();
     Map<String, dynamic>? foundUser;
     bool isSearching = false;
@@ -1582,7 +1611,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         child: Column(
                           children: [
                             Text(
-                              "Koleksiyonu Paylaş",
+                              l10n.catalogShareCollection,
                               style: GoogleFonts.outfit(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -1607,7 +1636,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         child: TextField(
                           controller: searchController,
                           decoration: InputDecoration(
-                            hintText: "@kullaniciadi veya e-posta",
+                            hintText: l10n.shareSearchHint,
                             hintStyle: TextStyle(color: context.colors.hint),
                             prefixIcon: Icon(
                               PhosphorIconsRegular.at,
@@ -1711,7 +1740,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           color: context.colors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: context.colors.primary.withValues(alpha: 0.2),
+                            color: context.colors.primary.withValues(
+                              alpha: 0.2,
+                            ),
                             width: 1,
                           ),
                         ),
@@ -1725,7 +1756,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Paylaştığınız kişi içerikleri görüntüleyebilir ve kendi koleksiyonuna kopyalayabilir.',
+                                l10n.shareInfoBanner,
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   color: context.colors.headline,
@@ -1801,8 +1832,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     StateSetter setState,
     ValueChanged<String> onError,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final avatarImage = _buildUserAvatarImage(user['photoBase64']);
-    final displayName = _safeUserDisplayName(user['displayName']);
+    final displayName = _safeUserDisplayName(user['displayName'], l10n);
     final userInitial = _safeUserInitial(displayName);
 
     return Padding(
@@ -1897,19 +1929,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   try {
                     final currentUser = ref.read(authStateProvider).valueOrNull;
                     if (currentUser == null) {
-                      throw Exception("Oturum açık değil");
+                      throw Exception(l10n.shareErrorNoSession);
                     }
 
                     if (category.id.isEmpty) {
-                      throw Exception("Koleksiyon ID bulunamadı");
+                      throw Exception(l10n.shareErrorNoCollectionId);
                     }
 
                     // Email zorunluluğunu kaldırdık, ID varsa yeterli
                     if ((user['id'] == null || user['id'].isEmpty) &&
                         (user['email'] == null || user['email'].isEmpty)) {
-                      throw Exception(
-                        "Kullanıcı bilgisi eksik (ID veya E-posta bulunamadı)",
-                      );
+                      throw Exception(l10n.shareErrorMissingUser);
                     }
 
                     await ref
@@ -1919,7 +1949,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           fromUserName:
                               currentUser.displayName ??
                               currentUser.email ??
-                              'Kullanıcı',
+                              l10n.commonDefaultUserName,
                           fromUserEmail: currentUser.email ?? '',
                           toUserEmail:
                               user['email'] ??
@@ -1934,12 +1964,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     if (mounted) {
                       SuccessNotificationSheet.show(
                         this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                        title: 'Paylaşım Gönderildi',
-                        message: '$displayName paylaşım isteğinizi aldı.',
+                        title: l10n.shareSentTitle,
+                        message: l10n.shareSentMessage(displayName),
                       );
                     }
                   } catch (e) {
-                    onError(_userFacingErrorMessage(e));
+                    onError(_userFacingErrorMessage(e, l10n));
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1957,7 +1987,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     const Icon(PhosphorIconsRegular.paperPlaneTilt, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'Paylaşım İsteği Gönder',
+                      l10n.shareSendButton,
                       style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -1971,6 +2001,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Widget _buildNoUserFound(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1982,7 +2013,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Kullanıcı Bulunamadı',
+            l10n.shareUserNotFound,
             style: GoogleFonts.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -1991,7 +2022,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Bu e-posta ile kayıtlı kullanıcı yok.',
+            l10n.shareUserNotFoundDetail,
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: context.colors.body,
@@ -2003,6 +2034,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Widget _buildSearchHint(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2014,7 +2046,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Arkadaş Ara',
+            l10n.shareSearchTitle,
             style: GoogleFonts.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -2025,7 +2057,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Paylaşmak istediğiniz kişinin e-posta adresini girin.',
+              l10n.shareSearchDetail,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
@@ -2046,6 +2078,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     Function(Map<String, dynamic>) onUserSelected,
     ValueChanged<String> onError,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final currentUser = ref.read(authStateProvider).valueOrNull;
     if (currentUser == null) return _buildSearchHint(context);
 
@@ -2070,7 +2103,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Son Paylaşılanlar',
+                l10n.shareRecentTitle,
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -2107,8 +2140,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     CategoryModel category,
     ValueChanged<String> onError,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final avatarImage = _buildUserAvatarImage(user['photoBase64']);
-    final displayName = _safeUserDisplayName(user['displayName']);
+    final displayName = _safeUserDisplayName(user['displayName'], l10n);
     final userInitial = _safeUserInitial(displayName);
 
     return Material(
@@ -2126,7 +2160,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   fromUserName:
                       currentUser.displayName ??
                       currentUser.email ??
-                      'Kullanıcı',
+                      l10n.commonDefaultUserName,
                   fromUserEmail: currentUser.email ?? '',
                   toUserEmail: user['email'],
                   toUserId: user['id'],
@@ -2139,12 +2173,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             if (mounted) {
               SuccessNotificationSheet.show(
                 this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                title: 'Paylaşım Gönderildi',
-                message: '$displayName paylaşım isteğinizi aldı.',
+                title: l10n.shareSentTitle,
+                message: l10n.shareSentMessage(displayName),
               );
             }
           } catch (e) {
-            onError(_userFacingErrorMessage(e));
+            onError(_userFacingErrorMessage(e, l10n));
           }
         },
         borderRadius: BorderRadius.circular(12),
@@ -2240,11 +2274,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     }
   }
 
-  String _safeUserDisplayName(dynamic displayName) {
-    if (displayName is! String) return 'Kullanıcı';
+  String _safeUserDisplayName(dynamic displayName, AppLocalizations l10n) {
+    if (displayName is! String) return l10n.commonDefaultUserName;
 
     final normalized = displayName.trim();
-    if (normalized.isEmpty) return 'Kullanıcı';
+    if (normalized.isEmpty) return l10n.commonDefaultUserName;
 
     return normalized;
   }
@@ -2256,10 +2290,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     return String.fromCharCode(normalized.runes.first).toUpperCase();
   }
 
-  String _userFacingErrorMessage(Object error) {
+  String _userFacingErrorMessage(Object error, AppLocalizations l10n) {
     final raw = error.toString().trim();
     if (raw.isEmpty) {
-      return 'Bir hata oluştu. Lütfen tekrar deneyin.';
+      return l10n.catalogGenericError;
     }
 
     const prefix = 'Exception:';
@@ -2271,6 +2305,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showRenameDialog(String categoryId, String currentName) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: currentName);
     showDialog(
       context: context,
@@ -2284,14 +2319,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             title: Text(
-              "Koleksiyon Adı",
+              l10n.catalogRenameTitle,
               style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
             ),
             content: TextField(
               controller: controller,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: "Yeni isim girin",
+                hintText: l10n.catalogRenameHint,
                 hintStyle: TextStyle(color: context.colors.hint),
                 filled: true,
                 fillColor: context.colors.backgroundTop,
@@ -2305,7 +2340,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  "Vazgeç",
+                  l10n.commonDiscard,
                   style: GoogleFonts.outfit(color: context.colors.hint),
                 ),
               ),
@@ -2323,7 +2358,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ),
                 ),
                 child: Text(
-                  "Kaydet",
+                  l10n.commonSave,
                   style: GoogleFonts.outfit(color: Colors.white),
                 ), // Button text stays white usually
               ),
@@ -2345,10 +2380,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       await repo.updateCategory(category);
       ref.invalidate(categoriesProvider);
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         SuccessNotificationSheet.show(
           context,
-          title: "Başarılı",
-          message: "Koleksiyon adı güncellendi",
+          title: l10n.commonSuccess,
+          message: l10n.catalogRenameSuccess,
         );
       }
     } catch (e) {
@@ -2363,6 +2399,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     ItemModel item,
     List<ItemModel> allItems,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2393,7 +2430,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   // Select Action
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.checkCircle,
-                    title: "Seç",
+                    title: l10n.catalogSelectAction,
                     onTap: () {
                       Navigator.pop(ctx);
                       ref.read(isSelectionModeProvider.notifier).state = true;
@@ -2407,7 +2444,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   // Sort Action
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.sortAscending,
-                    title: "Sırala",
+                    title: l10n.catalogSortAction,
                     onTap: () {
                       Navigator.pop(ctx);
                       // Sort the current view's list
@@ -2423,7 +2460,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   // Move Action
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.arrowsOutCardinal,
-                    title: "Koleksiyona Taşı",
+                    title: l10n.catalogMoveToCollection,
                     onTap: () {
                       Navigator.pop(ctx);
                       _showMoveSelector(context, item);
@@ -2435,7 +2472,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   // Delete Action
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.trash,
-                    title: "İçeriği Sil",
+                    title: l10n.catalogDeleteItemAction,
                     color: Colors.red,
                     onTap: () {
                       Navigator.pop(ctx);
@@ -2455,6 +2492,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showMoveSelector(BuildContext context, ItemModel item) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -2482,7 +2520,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    "Taşımak İstediğin Koleksiyonu Seç",
+                    l10n.catalogMoveSelectorTitle,
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -2519,7 +2557,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: context.colors.primary.withValues(alpha: 0.1,
+                                    color: context.colors.primary.withValues(
+                                      alpha: 0.1,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -2559,9 +2598,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                     if (mounted) {
                                       SuccessNotificationSheet.show(
                                         this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                                        title: 'Taşındı',
-                                        message:
-                                            '${selectedIds.length} içerik "${cat.name}" koleksiyonuna taşındı.',
+                                        title: l10n.commonMoved,
+                                        message: l10n.catalogBatchMovedMessage(
+                                          selectedIds.length,
+                                          cat.name,
+                                        ),
                                       );
                                       ref
                                           .read(
@@ -2580,9 +2621,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                     if (mounted) {
                                       SuccessNotificationSheet.show(
                                         this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                                        title: 'Taşındı',
-                                        message:
-                                            'İçerik "${cat.name}" koleksiyonuna taşındı.',
+                                        title: l10n.commonMoved,
+                                        message: l10n.catalogItemMovedMessage(
+                                          cat.name,
+                                        ),
                                       );
                                     }
                                   }
@@ -2595,7 +2637,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             () => const Center(
                               child: CircularProgressIndicator(),
                             ),
-                        error: (e, s) => Center(child: Text("Hata: $e")),
+                        error:
+                            (e, s) => Center(
+                              child: Text(
+                                l10n.commonErrorWithDetail(e.toString()),
+                              ),
+                            ),
                       );
                     },
                   ),
@@ -2607,6 +2654,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _confirmDeleteSelected(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final count = ref.read(selectedItemsProvider).length;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -2614,7 +2662,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           (context) => AlertDialog(
             title: Center(
               child: Text(
-                'Seçili İçerikleri Sil',
+                l10n.catalogDeleteSelectedTitle,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
@@ -2623,7 +2671,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
             ),
             content: Text(
-              '$count içeriği silmek istediğine emin misin?',
+              l10n.catalogDeleteSelectedConfirm(count),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: context.colors.body,
@@ -2641,7 +2689,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     child: TextButton(
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
-                        'İptal',
+                        l10n.commonCancel,
                         style: GoogleFonts.poppins(color: context.colors.hint),
                       ),
                     ),
@@ -2656,7 +2704,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         ),
                       ),
                       child: Text(
-                        'Sil',
+                        l10n.commonDelete,
                         style: GoogleFonts.poppins(color: Colors.white),
                       ),
                     ),
@@ -2673,8 +2721,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (mounted) {
         SuccessNotificationSheet.show(
           this.context, // ignore: use_build_context_synchronously, unnecessary_this
-          title: 'Silindi',
-          message: '$count içerik başarıyla silindi.',
+          title: l10n.commonDeleted,
+          message: l10n.catalogBatchDeletedMessage(count),
         );
         ref.invalidate(paginatedFeedProvider);
         ref.invalidate(itemCountProvider);
@@ -2685,13 +2733,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _confirmDeleteItem(BuildContext context, ItemModel item) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder:
           (ctx) => AlertDialog(
             title: Center(
               child: Text(
-                "İçeriği Sil",
+                l10n.catalogDeleteItemAction,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
@@ -2700,7 +2749,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
             ),
             content: Text(
-              "Bu içeriği silmek istediğine emin misin?",
+              l10n.catalogDeleteItemConfirm,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: context.colors.body,
@@ -2718,7 +2767,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     child: TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
                       child: Text(
-                        "İptal",
+                        l10n.commonCancel,
                         style: GoogleFonts.poppins(color: context.colors.hint),
                       ),
                     ),
@@ -2733,7 +2782,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         ),
                       ),
                       child: Text(
-                        "Sil",
+                        l10n.commonDelete,
                         style: GoogleFonts.poppins(color: Colors.white),
                       ),
                     ),
@@ -2751,8 +2800,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (mounted) {
         SuccessNotificationSheet.show(
           this.context, // ignore: use_build_context_synchronously, unnecessary_this
-          title: 'Silindi',
-          message: 'İçerik başarıyla silindi.',
+          title: l10n.commonDeleted,
+          message: l10n.catalogItemDeletedMessage,
         );
       }
     }
@@ -2764,12 +2813,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     List<ItemModel> allItems, {
     bool isFeedback = false,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     final hasImage = item.displayImage != null && item.displayImage!.isNotEmpty;
     final source = item.url ?? '';
 
     // Resolve Category Name
     final cat = categories.where((c) => c.id == item.categoryId).firstOrNull;
-    final categoryName = cat?.name ?? 'Genel';
+    final categoryName = cat?.name ?? l10n.commonDefaultCategory;
 
     // Helper to build Platform Icon (Matches ItemFeedScreen exactly - Green Color)
     Widget buildPlatformIcon() {
@@ -2828,7 +2878,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               color: context.colors.surfaceWhite,
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                ),
               ],
             ),
             child: Center(child: Icon(icon, size: 14, color: iconColor)),
@@ -2913,7 +2966,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     Widget contentHeader;
     final isNote = item.type == ItemType.note;
 
-    bool isMapUrl(String url) => url.contains('maps.app.goo.gl') ||
+    bool isMapUrl(String url) =>
+        url.contains('maps.app.goo.gl') ||
         url.contains('goo.gl/maps') ||
         url.contains('google.com/maps') ||
         url.contains('maps.google') ||
@@ -3043,7 +3097,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 color:
                                     isSelected
                                         ? context.colors.primary
-                                        : Colors.black.withValues(alpha: 0.1,
+                                        : Colors.black.withValues(
+                                          alpha: 0.1,
                                         ), // Transparent when unselected (User feedback: "no hole")
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -3269,6 +3324,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _moveItemToCategory(ItemModel item, String? targetCategoryId) async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       final isSelectionMode = ref.read(isSelectionModeProvider);
       final selectedItems = ref.read(selectedItemsProvider);
@@ -3284,8 +3341,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         if (mounted) {
           SuccessNotificationSheet.show(
             context,
-            title: "Taşındı",
-            message: "${itemsToMove.length} içerik taşındı",
+            title: l10n.commonMoved,
+            message: l10n.catalogBatchMovedCount(itemsToMove.length),
           );
           // Clear selection
           ref.read(isSelectionModeProvider.notifier).state = false;
@@ -3300,8 +3357,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         if (mounted) {
           SuccessNotificationSheet.show(
             context,
-            title: "Taşındı",
-            message: "İçerik taşındı",
+            title: l10n.commonMoved,
+            message: l10n.catalogItemMoved,
           );
         }
       }
@@ -3309,13 +3366,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           this.context, // ignore: use_build_context_synchronously, unnecessary_this
-        ).showSnackBar(SnackBar(content: Text("Hata: $e")));
+        ).showSnackBar(
+          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
+        );
       }
     }
   }
 
-  // GRID VIEW MODAL - Shows all collections in a grid format
   void _showCollectionsGridSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.read(categoriesProvider);
     final allItems = ref.read(catalogItemsProvider).valueOrNull ?? [];
     final isVaultUnlocked = ref.read(isVaultUnlockedProvider);
@@ -3367,7 +3426,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "Tüm Koleksiyonlar",
+                                l10n.catalogAllCollections,
                                 style: GoogleFonts.outfit(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -3375,7 +3434,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 ),
                               ),
                               Text(
-                                "${sortedCategories.length + 1} koleksiyon",
+                                l10n.catalogCollectionCount(
+                                  sortedCategories.length + 1,
+                                ),
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   color: context.colors.hint,
@@ -3413,7 +3474,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 return _buildGridCollectionCard(
                                   context: context,
                                   id: null,
-                                  name: "Tümü",
+                                  name: l10n.commonAll,
                                   itemCount: allItemsCount,
                                   imageUrl: null,
                                   isVault: false,
@@ -3457,8 +3518,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   if (isLocked) {
                                     final result = await VaultService()
                                         .authenticate(
-                                          reason:
-                                              '${cat.name} koleksiyonuna erişmek için doğrulama yapın',
+                                          reason: l10n.vaultCategoryAuthReason(
+                                            cat.name,
+                                          ),
                                         );
                                     if (result != VaultAuthResult.success) {
                                       return;
@@ -3648,7 +3710,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.4),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.4,
+                                ),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -3681,7 +3745,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     ),
                   ),
                   Text(
-                    "$itemCount içerik",
+                    AppLocalizations.of(context)!.catalogItemCount(itemCount),
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       color: context.colors.hint,
@@ -3697,6 +3761,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showAddCategoryDialog() {
+    final l10n = AppLocalizations.of(context)!;
+
     // Check subscription limit
     final isPremium = ref.read(isPremiumProvider);
     final categories = ref.read(categoriesProvider).valueOrNull ?? [];
@@ -3733,7 +3799,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 borderRadius: BorderRadius.circular(24),
               ),
               title: Text(
-                "Yeni Koleksiyon",
+                l10n.catalogNewCollection,
                 style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w700,
                   color: context.colors.headline,
@@ -3744,7 +3810,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "İçeriklerini düzenlemek için yeni bir koleksiyon oluştur.",
+                    l10n.catalogNewCollectionHint,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: context.colors.body,
@@ -3757,7 +3823,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     autofocus: true,
                     style: GoogleFonts.poppins(color: context.colors.headline),
                     decoration: InputDecoration(
-                      hintText: "Koleksiyon Adı (Örn: Tatil Planı)",
+                      hintText: l10n.catalogNameHint,
                       hintStyle: GoogleFonts.poppins(
                         color: context.colors.hint,
                         fontSize: 14,
@@ -3788,9 +3854,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           LimitReachedDialog.show(
                             context: context,
                             ref: ref,
-                            title: "Premium Özellik",
-                            message:
-                                "Gizli Kasa özelliği premium üyelere özeldir.",
+                            title: l10n.premiumFeature,
+                            message: l10n.catalogVaultPremiumShortMessage,
                             type: LimitType.collection,
                           );
                           return;
@@ -3800,7 +3865,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       title: Row(
                         children: [
                           Text(
-                            "Gizli Kasa",
+                            l10n.vaultName,
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
@@ -3877,7 +3942,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              "Vazgeç",
+                              l10n.commonDiscard,
                               style: GoogleFonts.poppins(
                                 color: Colors.grey.shade800,
                                 fontWeight: FontWeight.w600,
@@ -3919,18 +3984,22 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               if (context.mounted) {
                                 SuccessNotificationSheet.show(
                                   context,
-                                  title: "Başarılı!",
+                                  title: l10n.commonSuccessBang,
                                   message:
                                       isVault
-                                          ? "Gizli koleksiyon oluşturuldu"
-                                          : "Koleksiyon oluşturuldu",
+                                          ? l10n.catalogVaultCategoryCreated
+                                          : l10n.catalogCategoryCreated,
                                 );
                               }
                             } catch (e) {
                               debugPrint("Error creating category: $e");
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("Hata: $e")),
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.commonErrorWithDetail(e.toString()),
+                                    ),
+                                  ),
                                 );
                               }
                             }
@@ -3949,7 +4018,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.premiumShadow.withValues(alpha: 0.3,
+                                color: context.colors.premiumShadow.withValues(
+                                  alpha: 0.3,
                                 ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
@@ -3958,7 +4028,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              "Oluştur",
+                              l10n.commonCreate,
                               style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -3999,11 +4069,22 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (count == 0) {
         _showStandardDeleteDialog(this.context, categoryId, categoryName);
       } else {
-        _showAdvancedDeleteDialog(this.context, categoryId, categoryName, count);
+        _showAdvancedDeleteDialog(
+          this.context,
+          categoryId,
+          categoryName,
+          count,
+        );
       }
     } catch (e) {
       debugPrint("Error checking category items: $e");
-      if (mounted) _showStandardDeleteDialog(this.context, categoryId, categoryName);
+      if (mounted) {
+        _showStandardDeleteDialog(
+          this.context, // ignore: unnecessary_this
+          categoryId,
+          categoryName,
+        );
+      }
     }
   }
 
@@ -4012,6 +4093,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     String categoryId,
     String categoryName,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder:
@@ -4020,16 +4103,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
-            title: const Text('Kategoriyi Sil'),
-            content: Text(
-              '"$categoryName" kategorisini silmek istediğine emin misin?',
-            ),
+            title: Text(l10n.catalogDeleteCategoryTitle),
+            content: Text(l10n.catalogDeleteCategoryConfirm(categoryName)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'İptal',
-                  style: TextStyle(color: Colors.grey),
+                child: Text(
+                  l10n.commonCancel,
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ),
               TextButton(
@@ -4037,9 +4118,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   Navigator.pop(context);
                   _deleteCategory(categoryId, deleteItems: false);
                 },
-                child: const Text(
-                  'Sil',
-                  style: TextStyle(
+                child: Text(
+                  l10n.commonDelete,
+                  style: const TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
                   ),
@@ -4056,6 +4137,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     String categoryName,
     int count,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -4081,7 +4164,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   ),
                 ),
                 Text(
-                  'Kategoriyi Sil',
+                  l10n.catalogDeleteCategoryTitle,
                   style: GoogleFonts.outfit(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -4090,7 +4173,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '"$categoryName" içinde $count adet içerik var. Bu içerikleri ne yapmak istersin?',
+                  l10n.catalogAdvancedDeleteMessage(categoryName, count),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
@@ -4103,7 +4186,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 _buildActionButton(
                   context,
                   icon: PhosphorIconsRegular.arrowsOutCardinal,
-                  text: 'İçerikleri Başka Koleksiyona Taşı',
+                  text: l10n.catalogMoveItemsAction,
                   color: context.colors.primary,
                   onTap: () {
                     Navigator.pop(context);
@@ -4116,7 +4199,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 _buildActionButton(
                   context,
                   icon: PhosphorIconsLight.trash,
-                  text: 'Kategori ve İçerikleri Sil',
+                  text: l10n.catalogDeleteCategoryAndItems,
                   color: Colors.red,
                   isDestructive: true,
                   onTap: () {
@@ -4130,7 +4213,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
-                    'Vazgeç',
+                    l10n.commonDiscard,
                     style: GoogleFonts.poppins(
                       color: context.colors.hint,
                       fontWeight: FontWeight.w600,
@@ -4199,6 +4282,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showMoveTargetSelector(BuildContext context, String sourceCategoryId) {
+    final l10n = AppLocalizations.of(context)!;
     final categories = ref.read(categoriesProvider).value ?? [];
     // Exclude current category
     final targets = categories.where((c) => c.id != sourceCategoryId).toList();
@@ -4230,7 +4314,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Text(
-                    'Hedef Koleksiyon Seç',
+                    l10n.catalogSelectTargetTitle,
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -4269,6 +4353,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Future<void> _moveItemsAndDelete(String sourceId, String targetId) async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       final userId = _currentUserId;
       if (userId == null) return;
@@ -4290,16 +4376,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (mounted) {
         SuccessNotificationSheet.show(
           context,
-          title: "Taşındı",
-          message: "İçerikler taşındı ve kategori silindi",
+          title: l10n.commonMoved,
+          message: l10n.catalogMovedAndDeleted,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(this.context) // ignore: use_build_context_synchronously, unnecessary_this
-            .showSnackBar(
-          const SnackBar(
-            content: Text('İşlem başarısız oldu'),
+        ScaffoldMessenger.of(context) // ignore: use_build_context_synchronously
+        .showSnackBar(
+          SnackBar(
+            content: Text(l10n.catalogOperationFailed),
             backgroundColor: Colors.red,
           ),
         );
@@ -4308,6 +4394,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   Future<void> _deleteSelectedItems(WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final selectedIds = ref.read(selectedItemsProvider);
     if (selectedIds.isEmpty) return;
 
@@ -4344,7 +4431,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
                 // Title
                 Text(
-                  "Seçilenleri Sil?",
+                  l10n.catalogDeleteSelectedItemsTitle,
                   style: GoogleFonts.outfit(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -4356,7 +4443,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
                 // Message
                 Text(
-                  "${selectedIds.length} içerik Son Silinenler'e taşınacak.\nİstediğin zaman geri alabilirsin.",
+                  l10n.catalogDeleteSelectedItemsMessage(selectedIds.length),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 15,
@@ -4385,7 +4472,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        "Sil",
+                        l10n.commonDelete,
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -4401,7 +4488,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
-                    "Vazgeç",
+                    l10n.commonDiscard,
                     style: GoogleFonts.outfit(
                       color: context.colors.hint,
                       fontWeight: FontWeight.w600,
@@ -4429,8 +4516,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         // Custom Success Toast
         SuccessNotificationSheet.show(
           context,
-          title: "Silindi",
-          message: "${selectedIds.length} içerik Son Silinenler'e taşındı.",
+          title: l10n.commonDeleted,
+          message: l10n.catalogDeletedToTrashMessage(selectedIds.length),
         );
       }
     } catch (e) {
@@ -4442,6 +4529,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     String categoryId, {
     required bool deleteItems,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       final categoryRepo = ref.read(categoryRepositoryProvider);
       final itemRepo = ref.read(itemRepositoryProvider);
@@ -4462,17 +4551,19 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       if (mounted) {
         SuccessNotificationSheet.show(
           context,
-          title: 'Silindi',
+          title: l10n.commonDeleted,
           message:
-              'Kategori ${deleteItems ? "ve içerikleriyle birlikte" : ""} silindi.',
+              deleteItems
+                  ? l10n.catalogCategoryDeletedWithItems
+                  : l10n.catalogCategoryDeleted,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(this.context) // ignore: use_build_context_synchronously, unnecessary_this
-            .showSnackBar(
-          const SnackBar(
-            content: Text('Kategori silinemedi'),
+        ScaffoldMessenger.of(context) // ignore: use_build_context_synchronously
+        .showSnackBar(
+          SnackBar(
+            content: Text(l10n.catalogDeleteCategoryFailed),
             backgroundColor: Colors.red,
           ),
         );
@@ -4488,6 +4579,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     VoidCallback onToggleMode,
     VoidCallback onSelectAll,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final Color activeColor = context.colors.primary;
     final Color inactiveColor = Colors.grey.withValues(alpha: 0.5);
     final Color textColor =
@@ -4526,7 +4618,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
           // Selected Count Text
           Text(
-            "$count Seçildi",
+            l10n.catalogSelectedCount(count),
             style: GoogleFonts.outfit(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -4615,6 +4707,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 
   void _showBatchMoveSelector(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -4642,7 +4736,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    "Seçilenleri Taşı",
+                    l10n.catalogMoveSelectedTitle,
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -4665,7 +4759,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: context.colors.primary.withValues(alpha: 0.1,
+                                    color: context.colors.primary.withValues(
+                                      alpha: 0.1,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -4698,9 +4793,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                     if (mounted) {
                                       SuccessNotificationSheet.show(
                                         this.context, // ignore: use_build_context_synchronously, unnecessary_this
-                                        title: 'Taşındı',
-                                        message:
-                                            '${selectedIds.length} içerik "${cat.name}" koleksiyonuna taşındı.',
+                                        title: l10n.commonMoved,
+                                        message: l10n.catalogBatchMovedMessage(
+                                          selectedIds.length,
+                                          cat.name,
+                                        ),
                                       );
                                       ref
                                           .read(
@@ -4721,7 +4818,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             () => const Center(
                               child: CircularProgressIndicator(),
                             ),
-                        error: (e, s) => Center(child: Text("Hata: $e")),
+                        error:
+                            (e, s) => Center(
+                              child: Text(
+                                l10n.commonErrorWithDetail(e.toString()),
+                              ),
+                            ),
                       );
                     },
                   ),
@@ -4753,6 +4855,8 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
   }
 
   Future<void> _saveOrder() async {
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() => _isSaving = true);
     try {
       // Update order index based on list position
@@ -4772,15 +4876,15 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
         Navigator.pop(context);
         SuccessNotificationSheet.show(
           context,
-          title: 'Başarılı',
-          message: 'Sıralama güncellendi.',
+          title: l10n.commonSuccess,
+          message: l10n.catalogSortUpdated,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Hata: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
+        );
         setState(() => _isSaving = false);
       }
     }
@@ -4788,6 +4892,8 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         // Header
@@ -4805,7 +4911,7 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    "Sıralamayı Düzenle",
+                    l10n.catalogEditOrder,
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -4823,7 +4929,7 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
                   : TextButton(
                     onPressed: _saveOrder,
                     child: Text(
-                      "Bitti",
+                      l10n.commonDone,
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -4841,7 +4947,7 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
           Padding(
             padding: const EdgeInsets.all(32.0),
             child: Text(
-              "Sıralanacak içerik yok.",
+              l10n.catalogNoItemsToSort,
               style: GoogleFonts.poppins(color: Colors.grey),
             ),
           ),

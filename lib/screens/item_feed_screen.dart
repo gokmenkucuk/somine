@@ -21,6 +21,7 @@ import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/core/providers/notification_providers.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 enum ViewMode { square, masonry, feed }
 
@@ -88,6 +89,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final userAsync = ref.watch(currentUserModelProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final selCategory = ref.watch(selectedCategoryIdProvider);
@@ -120,7 +122,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       }
     });
 
-    final rawName = userAsync.value?.displayName?.split(' ').first ?? 'Misafir';
+    final rawName =
+        userAsync.value?.displayName?.split(' ').first ?? l10n.commonGuest;
     final userName =
         rawName.isNotEmpty
             ? '${rawName[0].toUpperCase()}${rawName.substring(1)}'
@@ -174,7 +177,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Merhaba,",
+                          l10n.feedGreeting,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -201,7 +204,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: context.colors.surfaceWhite.withValues(alpha: 0.6,
+                              color: context.colors.surfaceWhite.withValues(
+                                alpha: 0.6,
                               ),
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -233,8 +237,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: context.colors.surfaceWhite
-                                      .withValues(alpha: 0.6),
+                                  color: context.colors.surfaceWhite.withValues(
+                                    alpha: 0.6,
+                                  ),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: context.colors.surfaceWhite,
@@ -307,7 +312,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                                 ];
 
                         return Text(
-                          "Dijital İçeriklerini\nKoleksiyona Kaydet",
+                          l10n.feedSloganTitle,
                           style: GoogleFonts.outfit(
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
@@ -328,7 +333,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "Özenle sakla, keyifle paylaş!",
+                      l10n.feedSloganSubtitle,
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
@@ -359,7 +364,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         child: _buildCategoryChip(
                           ref,
                           null,
-                          "Tümü",
+                          l10n.commonAll,
                           selCategory == null,
                         ),
                       );
@@ -426,7 +431,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            "Tümü",
+                            l10n.commonAll,
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -466,7 +471,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             hasScrollBody: false,
                             child: ErrorStateWidget(
                               message:
-                                  feedState.errorMessage ?? 'Bilinmeyen hata',
+                                  feedState.errorMessage ??
+                                  l10n.feedUnknownError,
                               onRetry: () {
                                 ref
                                     .read(paginatedFeedProvider.notifier)
@@ -539,7 +545,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
               isSelected
                   ? [
                     BoxShadow(
-                      color: context.colors.premiumShadow.withValues(alpha: 0.08),
+                      color: context.colors.premiumShadow.withValues(
+                        alpha: 0.08,
+                      ),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -561,6 +569,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     String label,
     bool isSelected,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final isVault = category?.isVault ?? false;
 
     return Padding(
@@ -571,8 +580,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           if (isVault && !isSelected) {
             final vaultService = VaultService();
             final result = await vaultService.authenticate(
-              reason:
-                  '${category?.name ?? "Gizli Kasa"} koleksiyonuna erişmek için doğrulama yapın',
+              reason: l10n.vaultCategoryAuthReason(
+                category?.name ?? l10n.vaultName,
+              ),
             );
 
             if (result == VaultAuthResult.canceled) {
@@ -582,7 +592,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             if (result != VaultAuthResult.success) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Doğrulama başarısız')),
+                  SnackBar(content: Text(l10n.feedVaultAuthFailed)),
                 );
               }
               return;
@@ -651,7 +661,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     ]
                     : [
                       BoxShadow(
-                        color: context.colors.premiumShadow.withValues(alpha: 0.03),
+                        color: context.colors.premiumShadow.withValues(
+                          alpha: 0.03,
+                        ),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -694,6 +706,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     List<CategoryModel> categories,
     bool isLoading,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     if (items.isEmpty && !isLoading) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -711,7 +724,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: context.colors.premiumShadow.withValues(alpha: 0.05),
+                        color: context.colors.premiumShadow.withValues(
+                          alpha: 0.05,
+                        ),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -725,7 +740,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  "Henüz içerik yok",
+                  l10n.feedEmptyTitle,
                   style: GoogleFonts.outfit(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -734,7 +749,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Kaydettiğin bağlantılar, notlar ve görseller burada görünecek.",
+                  l10n.commonEmptyItemsSubtitle,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
@@ -794,7 +809,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
     String getBadge(ItemModel item) {
       final cat = categories.where((c) => c.id == item.categoryId).firstOrNull;
-      return cat?.name ?? 'Genel';
+      return cat?.name ?? l10n.commonDefaultCategory;
     }
 
     switch (_viewMode) {
@@ -905,14 +920,29 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           size: 14,
           color: context.colors.primary,
         );
-      } else if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
-          s.contains('google.com/maps') || s.contains('maps.google') ||
+      } else if (s.contains('maps.app.goo.gl') ||
+          s.contains('goo.gl/maps') ||
+          s.contains('google.com/maps') ||
+          s.contains('maps.google') ||
           s.contains('share.google')) {
-        iconWidget = FaIcon(FontAwesomeIcons.google, size: 13, color: context.colors.primary);
-      } else if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) {
-        iconWidget = FaIcon(FontAwesomeIcons.yandex, size: 13, color: context.colors.primary);
+        iconWidget = FaIcon(
+          FontAwesomeIcons.google,
+          size: 13,
+          color: context.colors.primary,
+        );
+      } else if (s.contains('yandex.com/maps') ||
+          s.contains('yandex.ru/maps')) {
+        iconWidget = FaIcon(
+          FontAwesomeIcons.yandex,
+          size: 13,
+          color: context.colors.primary,
+        );
       } else if (s.contains('maps.apple.com')) {
-        iconWidget = FaIcon(FontAwesomeIcons.apple, size: 13, color: context.colors.primary);
+        iconWidget = FaIcon(
+          FontAwesomeIcons.apple,
+          size: 13,
+          color: context.colors.primary,
+        );
       } else if (s.contains('instagram')) {
         iconWidget = FaIcon(
           FontAwesomeIcons.instagram,
@@ -1083,14 +1113,29 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           size: 48,
           color: Colors.white,
         );
-      } else if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
-          s.contains('google.com/maps') || s.contains('maps.google') ||
+      } else if (s.contains('maps.app.goo.gl') ||
+          s.contains('goo.gl/maps') ||
+          s.contains('google.com/maps') ||
+          s.contains('maps.google') ||
           s.contains('share.google')) {
-        iconWidget = const FaIcon(FontAwesomeIcons.google, size: 40, color: Colors.white);
-      } else if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) {
-        iconWidget = const FaIcon(FontAwesomeIcons.yandex, size: 40, color: Colors.white);
+        iconWidget = const FaIcon(
+          FontAwesomeIcons.google,
+          size: 40,
+          color: Colors.white,
+        );
+      } else if (s.contains('yandex.com/maps') ||
+          s.contains('yandex.ru/maps')) {
+        iconWidget = const FaIcon(
+          FontAwesomeIcons.yandex,
+          size: 40,
+          color: Colors.white,
+        );
       } else if (s.contains('maps.apple.com')) {
-        iconWidget = const FaIcon(FontAwesomeIcons.apple, size: 40, color: Colors.white);
+        iconWidget = const FaIcon(
+          FontAwesomeIcons.apple,
+          size: 40,
+          color: Colors.white,
+        );
       } else if (s.contains('twitter') || s.contains('x.com')) {
         iconWidget = FaIcon(
           FontAwesomeIcons.xTwitter,
@@ -1477,7 +1522,10 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                   children: [
                     contentHeader,
                     // Thin grey line above text area
-                    Container(height: 1, color: Colors.grey.withValues(alpha: 0.15)),
+                    Container(
+                      height: 1,
+                      color: Colors.grey.withValues(alpha: 0.15),
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -1637,7 +1685,9 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(alpha: 0.15),
+                              color: context.colors.primary.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -1973,7 +2023,12 @@ class _ShimmerBox extends StatefulWidget {
   final double? width;
   final double borderRadius;
 
-  const _ShimmerBox({super.key, required this.height, this.width, this.borderRadius = 8.0});
+  const _ShimmerBox({
+    super.key,
+    required this.height,
+    this.width,
+    this.borderRadius = 8.0,
+  });
 
   @override
   State<_ShimmerBox> createState() => _ShimmerBoxState();
