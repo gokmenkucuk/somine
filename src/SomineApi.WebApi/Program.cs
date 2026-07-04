@@ -10,7 +10,9 @@ using SomineApi.WebApi.Logging;
 using SomineApi.WebApi.Middleware;
 using SomineApi.WebApi.Options;
 using SomineApi.WebApi.Security;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,7 +96,9 @@ builder.Services.AddHealthChecks();
 // OpenAPI (.NET 10 native)
 builder.Services.AddOpenApi();
 
-// CORS
+// CORS — mobil istemciler Origin göndermez; tarayıcı erişimi yalnızca
+// yapılandırılmış origin'lere açılır. Origin yapılandırılmamışsa hiçbir
+// cross-origin isteğe izin verilmez (önceki any-origin fallback kaldırıldı).
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -106,12 +110,41 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod()
                   .AllowAnyHeader();
         }
-        else
-        {
-            policy.AllowAnyMethod()
-                  .AllowAnyHeader();
-        }
     });
+});
+
+// Rate limiting — kimlikli isteklerde kullanıcı, kimliksizlerde IP başına pencere
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+            ? httpContext.User.FindFirst("sub")?.Value
+              ?? httpContext.User.Identity.Name
+              ?? "authenticated"
+            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 300,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+
+    // Auth uçları için daha dar pencere (brute force / token farming önlemi)
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
 });
 
 // Sentry
@@ -151,6 +184,8 @@ app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 

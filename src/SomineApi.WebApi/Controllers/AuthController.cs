@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SomineApi.Application.DTOs.Auth;
 using SomineApi.Application.Interfaces;
@@ -12,6 +13,7 @@ namespace SomineApi.WebApi.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly IJwtService _jwtService;
@@ -234,21 +236,9 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("account")]
-    [Authorize]
-    public async Task<IActionResult> DeleteAccount()
-    {
-        var userId = HttpContext.GetUserId();
-
-        var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null)
-            return NotFound(new { error = "User not found" });
-
-        _dbContext.Users.Remove(user);
-        await _dbContext.SaveChangesAsync();
-
-        return NoContent();
-    }
+    // Hesap silme: DELETE /api/users/me (UsersController) — tüm veriyi temizler.
+    // Eski DeleteAccount kaldırıldı: yalnızca user satırını siliyordu ve
+    // collection_shares Restrict FK'sı nedeniyle paylaşımı olan kullanıcıda patlıyordu.
 
     private static void RevokeSession(AuthSession session)
     {
