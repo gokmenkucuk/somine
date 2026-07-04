@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
@@ -68,6 +69,7 @@ class LimitReachedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCollection = type == LimitType.collection;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -98,7 +100,7 @@ class LimitReachedDialog extends StatelessWidget {
 
           // Title
           Text(
-            title ?? (isCollection ? "Koleksiyon Sınırına Ulaştın" : "İçerik Sınırına Ulaştın"),
+            title ?? (isCollection ? l10n.limitCollectionTitle : l10n.limitItemTitle),
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -112,8 +114,8 @@ class LimitReachedDialog extends StatelessWidget {
           // Description
           Text(
             description ?? (isCollection
-                ? "Ücretsiz planda en fazla $maxCount koleksiyon oluşturabilirsin."
-                : "Her koleksiyonda en fazla $maxCount içerik ekleyebilirsin."),
+                ? l10n.limitCollectionDescription(maxCount ?? 0)
+                : l10n.limitItemDescription(maxCount ?? 0)),
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
               fontSize: 15,
@@ -133,7 +135,7 @@ class LimitReachedDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                "$currentCount / $maxCount",
+                l10n.limitCountStatus(currentCount!, maxCount!),
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -173,7 +175,7 @@ class LimitReachedDialog extends StatelessWidget {
                   const Icon(PhosphorIconsBold.crown, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    "PREMIUM'a Yükselt",
+                    l10n.limitUpgradeCta,
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -191,7 +193,7 @@ class LimitReachedDialog extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              "Şimdilik Değil",
+              l10n.limitNotNow,
               style: GoogleFonts.outfit(
                 color: context.colors.hint,
               ),

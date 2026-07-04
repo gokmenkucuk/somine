@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:somine_app/widgets/user_avatar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
@@ -39,6 +40,7 @@ class ProfileScreen extends ConsumerWidget {
     final collectionCount = categoriesAsync.valueOrNull?.length ?? 0;
     
     final user = ref.watch(authStateProvider).valueOrNull;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -67,7 +69,7 @@ class ProfileScreen extends ConsumerWidget {
 
                           // Name
                           Text(
-                            user?.displayName ?? "isimsiz",
+                            user?.displayName ?? l10n.profileDefaultName,
                             style: GoogleFonts.outfit(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -85,7 +87,7 @@ class ProfileScreen extends ConsumerWidget {
                                 end: Alignment.bottomRight,
                               ).createShader(bounds),
                                 child: Text(
-                                "İşte benim dijital dünyam!",
+                                l10n.profileBioTagline,
                                 style: GoogleFonts.outfit(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -124,17 +126,17 @@ class ProfileScreen extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildStatItem(
-                              context, 
-                              "İçerik", 
-                              itemCount.toString(), 
+                              context,
+                              l10n.profileStatContent,
+                              itemCount.toString(),
                               PhosphorIconsRegular.article,
                               onTap: () => ref.read(homeTabIndexProvider.notifier).state = 0, // Feed Tab
                             ),
                             _buildVerticalDivider(context),
                             _buildStatItem(
-                              context, 
-                              "Koleksiyon", 
-                              collectionCount.toString(), 
+                              context,
+                              l10n.profileStatCollection,
+                              collectionCount.toString(),
                               PhosphorIconsRegular.cards,
                               onTap: () => ref.read(homeTabIndexProvider.notifier).state = 2, // Catalog Tab
                             ),
@@ -157,7 +159,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.person_circle,
-                                title: "Hesap Bilgileri",
+                                title: l10n.profileMenuAccountInfo,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -171,7 +173,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.paintbrush,
-                                title: "Görünüm & App İkonu",
+                                title: l10n.profileMenuAppearance,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -187,7 +189,7 @@ class ProfileScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
 
                           // Membership Plan (Standalone Highlighted)
-                          _buildMembershipCard(context, isPro: isPro, ref: ref),
+                          _buildMembershipCard(context, isPro: isPro, ref: ref, l10n: l10n),
 
                           const SizedBox(height: 20),
 
@@ -198,7 +200,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: PhosphorIconsRegular.cards,
-                                title: "Paylaştıklarım",
+                                title: l10n.profileMenuMyShares,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -212,7 +214,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItemWithBadge(
                                 context,
                                 icon: PhosphorIconsRegular.cards,
-                                title: "Benimle Paylaşılanlar",
+                                title: l10n.profileMenuSharedWithMe,
                                 badgeCount: ref.watch(pendingShareRequestCountProvider),
                                 onTap: () {
                                   final pendingCount = ref.read(pendingShareRequestCountProvider);
@@ -230,7 +232,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItemWithBadge(
                                 context,
                                 icon: PhosphorIconsRegular.bell,
-                                title: "Bildirimler",
+                                title: l10n.profileMenuNotifications,
                                 badgeCount: ref.watch(unreadNotificationCountProvider).valueOrNull ?? 0,
                                 onTap: () {
                                   Navigator.push(
@@ -253,7 +255,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.trash,
-                                title: "Son Silinenler",
+                                title: l10n.profileMenuRecentlyDeleted,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -267,7 +269,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.gear,
-                                title: "Bildirim Ayarları",
+                                title: l10n.profileMenuNotificationSettings,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -289,7 +291,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.gift,
-                                title: "Arkadaşını Davet Et",
+                                title: l10n.profileMenuInviteFriend,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -303,7 +305,7 @@ class ProfileScreen extends ConsumerWidget {
                               _buildMenuItem(
                                 context,
                                 icon: CupertinoIcons.question_circle,
-                                title: "Yardım ve Destek",
+                                title: l10n.profileMenuHelpSupport,
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -339,16 +341,16 @@ class ProfileScreen extends ConsumerWidget {
                                   final shouldLogout = await showCupertinoDialog<bool>(
                                     context: context,
                                     builder: (context) => CupertinoAlertDialog(
-                                      title: const Text('Çıkış Yap'),
-                                      content: const Text('Hesabınızdan çıkmak istediğinize emin misiniz?'),
+                                      title: Text(l10n.profileLogout),
+                                      content: Text(l10n.profileLogoutConfirmMessage),
                                       actions: [
                                         CupertinoDialogAction(
-                                          child: const Text('İptal'),
+                                          child: Text(l10n.profileCancel),
                                           onPressed: () => Navigator.pop(context, false),
                                         ),
                                         CupertinoDialogAction(
                                           isDestructiveAction: true,
-                                          child: const Text('Çıkış Yap'),
+                                          child: Text(l10n.profileLogout),
                                           onPressed: () => Navigator.pop(context, true),
                                         ),
                                       ],
@@ -393,7 +395,7 @@ class ProfileScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 16),
                                       Text(
-                                        "Çıkış Yap",
+                                        l10n.profileLogout,
                                         style: GoogleFonts.outfit(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
@@ -430,18 +432,16 @@ class ProfileScreen extends ConsumerWidget {
                                   final shouldDelete = await showCupertinoDialog<bool>(
                                     context: context,
                                     builder: (context) => CupertinoAlertDialog(
-                                      title: const Text('Hesabı Sil'),
-                                      content: const Text(
-                                        'Bu işlem geri alınamaz! Tüm verileriniz (içerikler, koleksiyonlar) kalıcı olarak silinecek. Devam etmek istiyor musunuz?'
-                                      ),
+                                      title: Text(l10n.profileDeleteAccount),
+                                      content: Text(l10n.profileDeleteAccountMessage),
                                       actions: [
                                         CupertinoDialogAction(
-                                          child: const Text('İptal'),
+                                          child: Text(l10n.profileCancel),
                                           onPressed: () => Navigator.pop(context, false),
                                         ),
                                         CupertinoDialogAction(
                                           isDestructiveAction: true,
-                                          child: const Text('Hesabı Sil'),
+                                          child: Text(l10n.profileDeleteAccount),
                                           onPressed: () => Navigator.pop(context, true),
                                         ),
                                       ],
@@ -486,7 +486,7 @@ class ProfileScreen extends ConsumerWidget {
                                       
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Hesap silinemedi: $e')),
+                                          SnackBar(content: Text(l10n.profileDeleteAccountFailed(e.toString()))),
                                         );
                                       }
                                     }
@@ -514,7 +514,7 @@ class ProfileScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 16),
                                       Text(
-                                        "Hesabı Sil",
+                                        l10n.profileDeleteAccount,
                                         style: GoogleFonts.outfit(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
@@ -555,7 +555,7 @@ class ProfileScreen extends ConsumerWidget {
 
   // --- Helpers ---
 
-  Widget _buildMembershipCard(BuildContext context, {required bool isPro, required WidgetRef ref}) {
+  Widget _buildMembershipCard(BuildContext context, {required bool isPro, required WidgetRef ref, required AppLocalizations l10n}) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   
   // Gradient like Tümü button for Midnight, solid for Air
@@ -635,7 +635,7 @@ class ProfileScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Üyelik Planı",
+                        l10n.profileMembershipTitle,
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -651,9 +651,9 @@ class ProfileScreen extends ConsumerWidget {
                         child: Consumer(
                           builder: (context, ref, child) {
                             final pkgName = ref.watch(activePackageNameProvider);
-                            final badgeText = isPro 
-                                ? "PREMIUM${pkgName.isNotEmpty ? ' - ${pkgName.toUpperCase()}' : ''}" 
-                                : "STANDART";
+                            final badgeText = isPro
+                                ? "PREMIUM${pkgName.isNotEmpty ? ' - ${pkgName.toUpperCase()}' : ''}"
+                                : l10n.profileMembershipBadgeStandard;
                             return Text(
                               badgeText,
                               style: GoogleFonts.outfit(

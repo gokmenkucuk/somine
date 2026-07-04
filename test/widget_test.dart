@@ -7,6 +7,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'package:somine_app/main.dart';
 
@@ -26,7 +27,12 @@ void main() {
         overrides: [
           authStateProvider.overrideWith((ref) => Stream.value(null)),
         ],
-        child: const MaterialApp(home: AuthWrapper()),
+        child: const MaterialApp(
+          locale: Locale('tr'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AuthWrapper(),
+        ),
       ),
     );
 

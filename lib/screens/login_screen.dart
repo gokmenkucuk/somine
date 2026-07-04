@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemUiOverlayStyle için gerekli
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -56,9 +57,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Giriş hatası: $e')));
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.loginErrorMessage(e.toString()))),
+        );
       }
     }
   }
@@ -96,15 +98,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Giriş hatası: $e')));
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.loginErrorMessage(e.toString()))),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Beyaz zemin üzerinde durum çubuğu ikonlarının (saat, pil) siyah olması için:
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
@@ -151,7 +155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const Spacer(flex: 2),
 
                       // Slogan (Left-aligned, no period)
-                      const _ShimmerSlogan(),
+                      _ShimmerSlogan(l10n: l10n),
 
                       const SizedBox(height: 48),
 
@@ -162,7 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         _SocialButton(
                           onPressed: _signInWithApple,
                           icon: Icons.apple,
-                          label: 'Apple ile Devam Et',
+                          label: l10n.loginAppleContinue,
                           backgroundColor: Colors.black,
                           textColor: Colors.white,
                         ),
@@ -174,7 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _SocialButton(
                         onPressed: _signInWithGoogle,
                         icon: Icons.g_mobiledata,
-                        label: 'Google ile Devam Et',
+                        label: l10n.loginGoogleContinue,
                         backgroundColor: Colors.white,
                         textColor: Colors.black87,
                         hasShadow: true,
@@ -188,7 +192,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text.rich(
                           TextSpan(
-                            text: 'Devam ederek ',
+                            text: l10n.loginLegalPrefix,
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey,
@@ -204,7 +208,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     }
                                   },
                                   child: Text(
-                                    'Kullanım Koşulları',
+                                    l10n.legalTermsOfService,
                                     style: GoogleFonts.poppins(
                                       fontSize: 11,
                                       color: Colors.grey.shade700,
@@ -213,7 +217,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              TextSpan(text: ' ve '),
+                              TextSpan(text: l10n.loginLegalAnd),
                               WidgetSpan(
                                 child: GestureDetector(
                                   onTap: () async {
@@ -223,7 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     }
                                   },
                                   child: Text(
-                                    'Gizlilik Politikası',
+                                    l10n.legalPrivacyPolicy,
                                     style: GoogleFonts.poppins(
                                       fontSize: 11,
                                       color: Colors.grey.shade700,
@@ -232,7 +236,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const TextSpan(text: '\'nı kabul etmiş olursunuz.'),
+                              TextSpan(text: l10n.loginLegalSuffix),
                             ],
                           ),
                           textAlign: TextAlign.center,
@@ -255,7 +259,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 // ... _ShimmerSlogan ve _SloganGradientTransform kısımları aynen kalacak ...
 // (Burayı kısaltıyorum, yukarıdaki kodunun aynısı kalabilir)
 class _ShimmerSlogan extends StatefulWidget {
-  const _ShimmerSlogan();
+  final AppLocalizations l10n;
+
+  const _ShimmerSlogan({required this.l10n});
 
   @override
   State<_ShimmerSlogan> createState() => _ShimmerSloganState();
@@ -286,7 +292,7 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Dijital',
+          widget.l10n.loginSloganLine1,
           style: GoogleFonts.poppins(
             fontSize: 36,
             fontWeight: FontWeight.bold,
@@ -295,7 +301,7 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
           ),
         ),
         Text(
-          'Dünyanı',
+          widget.l10n.loginSloganLine2,
           style: GoogleFonts.poppins(
             fontSize: 36,
             fontWeight: FontWeight.bold,
@@ -304,7 +310,7 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
           ),
         ),
         Text(
-          'Tasarla',
+          widget.l10n.loginSloganLine3,
           style: GoogleFonts.poppins(
             fontSize: 36,
             fontWeight: FontWeight.bold,

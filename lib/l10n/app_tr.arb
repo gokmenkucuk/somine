@@ -1,0 +1,342 @@
+{
+  "@@locale": "tr",
+
+  "legalTermsOfService": "Kullanım Koşulları",
+  "@legalTermsOfService": {
+    "description": "Link label for Terms of Service, used in login and paywall legal text."
+  },
+  "legalPrivacyPolicy": "Gizlilik Politikası",
+  "@legalPrivacyPolicy": {
+    "description": "Link label for Privacy Policy, used in login and paywall legal text."
+  },
+
+  "loginErrorMessage": "Giriş hatası: {error}",
+  "@loginErrorMessage": {
+    "description": "Snackbar message shown when Google/Apple sign-in fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loginAppleContinue": "Apple ile Devam Et",
+  "@loginAppleContinue": {
+    "description": "Continue with Apple button label on the login screen."
+  },
+  "loginGoogleContinue": "Google ile Devam Et",
+  "@loginGoogleContinue": {
+    "description": "Continue with Google button label on the login screen."
+  },
+  "loginSloganLine1": "Dijital",
+  "@loginSloganLine1": {
+    "description": "First line of the shimmering login slogan."
+  },
+  "loginSloganLine2": "Dünyanı",
+  "@loginSloganLine2": {
+    "description": "Second line of the shimmering login slogan."
+  },
+  "loginSloganLine3": "Tasarla",
+  "@loginSloganLine3": {
+    "description": "Third line of the shimmering login slogan."
+  },
+  "loginLegalPrefix": "Devam ederek ",
+  "@loginLegalPrefix": {
+    "description": "Text preceding the Terms of Service link in the login legal notice."
+  },
+  "loginLegalAnd": " ve ",
+  "@loginLegalAnd": {
+    "description": "Conjunction between the Terms of Service and Privacy Policy links."
+  },
+  "loginLegalSuffix": "'nı kabul etmiş olursunuz.",
+  "@loginLegalSuffix": {
+    "description": "Text following the Privacy Policy link in the login legal notice."
+  },
+
+  "settingsHeaderProfile": "Profil",
+  "@settingsHeaderProfile": {
+    "description": "Header title on the settings screen."
+  },
+  "settingsSectionSettings": "Ayarlar",
+  "@settingsSectionSettings": {
+    "description": "Section header for the settings list."
+  },
+  "settingsNotificationsTitle": "Bildirimler",
+  "@settingsNotificationsTitle": {
+    "description": "Settings item title for notification preferences."
+  },
+  "settingsNotificationsSubtitle": "Bildirim tercihlerini yönet",
+  "@settingsNotificationsSubtitle": {
+    "description": "Settings item subtitle for notification preferences."
+  },
+  "settingsAppearanceTitle": "Görünüm",
+  "@settingsAppearanceTitle": {
+    "description": "Settings item title for appearance/theme."
+  },
+  "settingsAppearanceSubtitle": "Tema ve görünüm ayarları",
+  "@settingsAppearanceSubtitle": {
+    "description": "Settings item subtitle for appearance/theme."
+  },
+  "settingsBackupTitle": "Yedekleme",
+  "@settingsBackupTitle": {
+    "description": "Settings item title for backup."
+  },
+  "settingsBackupSubtitle": "Verilerini yedekle ve geri yükle",
+  "@settingsBackupSubtitle": {
+    "description": "Settings item subtitle for backup."
+  },
+  "settingsSectionSupport": "Destek",
+  "@settingsSectionSupport": {
+    "description": "Section header for the support list."
+  },
+  "settingsHelpCenter": "Yardım Merkezi",
+  "@settingsHelpCenter": {
+    "description": "Settings item title linking to the help center."
+  },
+  "settingsSendFeedback": "Geri Bildirim Gönder",
+  "@settingsSendFeedback": {
+    "description": "Settings item title for sending feedback via email."
+  },
+  "settingsRateApp": "Uygulamayı Değerlendir",
+  "@settingsRateApp": {
+    "description": "Settings item title for rating the app."
+  },
+  "settingsLogout": "Çıkış Yap",
+  "@settingsLogout": {
+    "description": "Logout button label and confirmation dialog action/title on the settings screen."
+  },
+  "settingsLogoutConfirm": "Hesabından çıkış yapmak istediğine emin misin?",
+  "@settingsLogoutConfirm": {
+    "description": "Confirmation dialog message before logging out on the settings screen."
+  },
+  "settingsCancel": "İptal",
+  "@settingsCancel": {
+    "description": "Cancel action on the settings screen logout confirmation dialog."
+  },
+  "settingsDefaultUserName": "Kullanıcı",
+  "@settingsDefaultUserName": {
+    "description": "Fallback display name shown when the user has no display name."
+  },
+  "settingsDefaultGuestLabel": "Misafir",
+  "@settingsDefaultGuestLabel": {
+    "description": "Fallback label shown instead of an email for guest users."
+  },
+
+  "profileDefaultName": "isimsiz",
+  "@profileDefaultName": {
+    "description": "Fallback name shown on the profile screen when the user has no display name."
+  },
+  "profileBioTagline": "İşte benim dijital dünyam!",
+  "@profileBioTagline": {
+    "description": "Tagline shown under the user's name on the profile screen."
+  },
+  "profileStatContent": "İçerik",
+  "@profileStatContent": {
+    "description": "Label for the item count stat on the profile screen."
+  },
+  "profileStatCollection": "Koleksiyon",
+  "@profileStatCollection": {
+    "description": "Label for the collection count stat on the profile screen."
+  },
+  "profileMenuAccountInfo": "Hesap Bilgileri",
+  "@profileMenuAccountInfo": {
+    "description": "Profile menu item for account information."
+  },
+  "profileMenuAppearance": "Görünüm & App İkonu",
+  "@profileMenuAppearance": {
+    "description": "Profile menu item for appearance and app icon settings."
+  },
+  "profileMenuMyShares": "Paylaştıklarım",
+  "@profileMenuMyShares": {
+    "description": "Profile menu item for items the user has shared."
+  },
+  "profileMenuSharedWithMe": "Benimle Paylaşılanlar",
+  "@profileMenuSharedWithMe": {
+    "description": "Profile menu item for items shared with the user."
+  },
+  "profileMenuNotifications": "Bildirimler",
+  "@profileMenuNotifications": {
+    "description": "Profile menu item for notifications."
+  },
+  "profileMenuRecentlyDeleted": "Son Silinenler",
+  "@profileMenuRecentlyDeleted": {
+    "description": "Profile menu item for recently deleted items."
+  },
+  "profileMenuNotificationSettings": "Bildirim Ayarları",
+  "@profileMenuNotificationSettings": {
+    "description": "Profile menu item for notification settings."
+  },
+  "profileMenuInviteFriend": "Arkadaşını Davet Et",
+  "@profileMenuInviteFriend": {
+    "description": "Profile menu item for inviting a friend."
+  },
+  "profileMenuHelpSupport": "Yardım ve Destek",
+  "@profileMenuHelpSupport": {
+    "description": "Profile menu item for help and support."
+  },
+  "profileLogout": "Çıkış Yap",
+  "@profileLogout": {
+    "description": "Logout button label and confirmation dialog title/action on the profile screen."
+  },
+  "profileLogoutConfirmMessage": "Hesabınızdan çıkmak istediğinize emin misiniz?",
+  "@profileLogoutConfirmMessage": {
+    "description": "Confirmation dialog message before logging out on the profile screen."
+  },
+  "profileCancel": "İptal",
+  "@profileCancel": {
+    "description": "Cancel action on the profile screen confirmation dialogs."
+  },
+  "profileDeleteAccount": "Hesabı Sil",
+  "@profileDeleteAccount": {
+    "description": "Delete account button label and confirmation dialog title/action."
+  },
+  "profileDeleteAccountMessage": "Bu işlem geri alınamaz! Tüm verileriniz (içerikler, koleksiyonlar) kalıcı olarak silinecek. Devam etmek istiyor musunuz?",
+  "@profileDeleteAccountMessage": {
+    "description": "Confirmation dialog message before permanently deleting the account."
+  },
+  "profileDeleteAccountFailed": "Hesap silinemedi: {error}",
+  "@profileDeleteAccountFailed": {
+    "description": "Snackbar message shown when account deletion fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "profileMembershipTitle": "Üyelik Planı",
+  "@profileMembershipTitle": {
+    "description": "Title of the membership plan card on the profile screen."
+  },
+  "profileMembershipBadgeStandard": "STANDART",
+  "@profileMembershipBadgeStandard": {
+    "description": "Badge text shown for non-premium users on the membership plan card."
+  },
+
+  "paywallSubtitle": "Premium Üyelik",
+  "@paywallSubtitle": {
+    "description": "Subtitle shown under the PREMIUM title on the paywall screen."
+  },
+  "paywallFeatureUnlimited": "Sınırsız Koleksiyon & İçerik",
+  "@paywallFeatureUnlimited": {
+    "description": "Paywall feature list item: unlimited collections and items."
+  },
+  "paywallFeatureVault": "Gizli Kasa (FaceID/TouchID)",
+  "@paywallFeatureVault": {
+    "description": "Paywall feature list item: private vault with biometrics."
+  },
+  "paywallFeatureThemes": "Premium Temalar",
+  "@paywallFeatureThemes": {
+    "description": "Paywall feature list item: premium themes."
+  },
+  "paywallFeatureAppIcons": "Özel Uygulama İkonları",
+  "@paywallFeatureAppIcons": {
+    "description": "Paywall feature list item: custom app icons."
+  },
+  "paywallFeatureSmartSearch": "Akıllı Arama",
+  "@paywallFeatureSmartSearch": {
+    "description": "Paywall feature list item: smart search."
+  },
+  "paywallFeatureQuickWidget": "Hızlı Widget Ekleme",
+  "@paywallFeatureQuickWidget": {
+    "description": "Paywall feature list item: quick widget add."
+  },
+  "paywallRestoreSuccess": "Satın almalar geri yüklendi!",
+  "@paywallRestoreSuccess": {
+    "description": "Snackbar message shown after purchases are successfully restored."
+  },
+  "paywallRestoreEmpty": "Geri yüklenecek satın alma bulunamadı.",
+  "@paywallRestoreEmpty": {
+    "description": "Snackbar message shown when there are no purchases to restore."
+  },
+  "paywallRestoreButton": "Satın Almaları Geri Yükle",
+  "@paywallRestoreButton": {
+    "description": "Button label to restore previous purchases on the paywall screen."
+  },
+  "paywallLegalDisclosure": "Abonelik seçtiğiniz plana göre otomatik olarak yenilenir. Mevcut dönem bitmeden en az 24 saat önce iptal etmezseniz aboneliğiniz otomatik olarak yenilenir. Aboneliğinizi istediğiniz zaman Ayarlar > Apple Kimliği > Abonelikler üzerinden yönetebilir veya iptal edebilirsiniz.",
+  "@paywallLegalDisclosure": {
+    "description": "App Store required legal disclosure text about auto-renewing subscriptions."
+  },
+  "paywallMostPopularBadge": "EN POPÜLER",
+  "@paywallMostPopularBadge": {
+    "description": "Badge shown on the most popular subscription package."
+  },
+  "paywallLifetimeBadge": "ÖMÜR BOYU",
+  "@paywallLifetimeBadge": {
+    "description": "Badge shown on the lifetime subscription package."
+  },
+  "paywallComingSoon": "Satın alma yakında aktif olacak!",
+  "@paywallComingSoon": {
+    "description": "Snackbar message shown when tapping a placeholder package before purchases are configured."
+  },
+
+  "limitCollectionTitle": "Koleksiyon Sınırına Ulaştın",
+  "@limitCollectionTitle": {
+    "description": "Title of the limit reached dialog for collections."
+  },
+  "limitItemTitle": "İçerik Sınırına Ulaştın",
+  "@limitItemTitle": {
+    "description": "Title of the limit reached dialog for items."
+  },
+  "limitCollectionDescription": "Ücretsiz planda en fazla {limit} koleksiyon oluşturabilirsin.",
+  "@limitCollectionDescription": {
+    "description": "Description of the collection limit reached dialog.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "limitItemDescription": "Her koleksiyonda en fazla {limit} içerik ekleyebilirsin.",
+  "@limitItemDescription": {
+    "description": "Description of the item limit reached dialog.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "limitCountStatus": "{current} / {limit}",
+  "@limitCountStatus": {
+    "description": "Current usage versus limit, shown as a small status chip in the limit reached dialog.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "limitUpgradeCta": "PREMIUM'a Yükselt",
+  "@limitUpgradeCta": {
+    "description": "Call-to-action button label to upgrade to premium from the limit reached dialog."
+  },
+  "limitNotNow": "Şimdilik Değil",
+  "@limitNotNow": {
+    "description": "Dismiss button label on the limit reached dialog."
+  },
+
+  "failureTimeout": "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.",
+  "@failureTimeout": {
+    "description": "User-facing message for a connection timeout error."
+  },
+  "failureNetwork": "İnternet bağlantınızı kontrol edin.",
+  "@failureNetwork": {
+    "description": "User-facing message for a network connectivity error."
+  },
+  "failureUnauthorized": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
+  "@failureUnauthorized": {
+    "description": "User-facing message for an expired session/unauthorized error."
+  },
+  "failureServer": "Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.",
+  "@failureServer": {
+    "description": "User-facing message for a server error."
+  },
+  "failureConflict": "Bu işlem zaten yapıldı.",
+  "@failureConflict": {
+    "description": "User-facing message for a conflict error (action already performed)."
+  },
+  "failureUnknown": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+  "@failureUnknown": {
+    "description": "User-facing message for an unexpected/unknown error."
+  }
+}

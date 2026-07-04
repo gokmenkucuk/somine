@@ -1,17 +1,32 @@
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:somine_app/core/exceptions/network_exceptions.dart';
 
 class FailureMapper {
-  static String toUserMessage(Object error) {
+  /// Maps a caught [error] to a user-facing message.
+  ///
+  /// [l10n] should be passed whenever available (i.e. from any call site
+  /// that has a [BuildContext], via `AppLocalizations.of(context)`) so the
+  /// message is localized. Call sites without access to localization (e.g.
+  /// background/repository layers not yet wired for locale-aware infra) may
+  /// omit it; a Turkish fallback is used in that case pending their own
+  /// migration.
+  static String toUserMessage(Object error, [AppLocalizations? l10n]) {
     return switch (error) {
-      TimeoutException() => 'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.',
-      NetworkFailure() => 'İnternet bağlantınızı kontrol edin.',
+      TimeoutException() =>
+        l10n?.failureTimeout ??
+            'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.',
+      NetworkFailure() =>
+        l10n?.failureNetwork ?? 'İnternet bağlantınızı kontrol edin.',
       UnauthorizedException() =>
-        'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
+        l10n?.failureUnauthorized ??
+            'Oturum süresi doldu. Lütfen tekrar giriş yapın.',
       ServerException() =>
-        'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+        l10n?.failureServer ??
+            'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
       ValidationException e => e.userMessage,
-      ConflictException() => 'Bu işlem zaten yapıldı.',
-      _ => 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.',
+      ConflictException() => l10n?.failureConflict ?? 'Bu işlem zaten yapıldı.',
+      _ => l10n?.failureUnknown ??
+          'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.',
     };
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -13,6 +14,7 @@ class PaywallScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subscriptionState = ref.watch(subscriptionProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundTop,
@@ -70,7 +72,7 @@ class PaywallScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
 
                     Text(
-                      "Premium Üyelik",
+                      l10n.paywallSubtitle,
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         color: context.colors.hint,
@@ -80,12 +82,12 @@ class PaywallScreen extends ConsumerWidget {
                     const SizedBox(height: 32),
 
                     // Features List
-                    _buildFeatureItem(context, PhosphorIconsRegular.infinity, "Sınırsız Koleksiyon & İçerik"),
-                    _buildFeatureItem(context, PhosphorIconsRegular.vault, "Gizli Kasa (FaceID/TouchID)"),
-                    _buildFeatureItem(context, PhosphorIconsRegular.palette, "Premium Temalar"),
-                    _buildFeatureItem(context, PhosphorIconsRegular.appStoreLogo, "Özel Uygulama İkonları"),
-                    _buildFeatureItem(context, PhosphorIconsRegular.magnifyingGlass, "Akıllı Arama"),
-                    _buildFeatureItem(context, PhosphorIconsRegular.lightning, "Hızlı Widget Ekleme"),
+                    _buildFeatureItem(context, PhosphorIconsRegular.infinity, l10n.paywallFeatureUnlimited),
+                    _buildFeatureItem(context, PhosphorIconsRegular.vault, l10n.paywallFeatureVault),
+                    _buildFeatureItem(context, PhosphorIconsRegular.palette, l10n.paywallFeatureThemes),
+                    _buildFeatureItem(context, PhosphorIconsRegular.appStoreLogo, l10n.paywallFeatureAppIcons),
+                    _buildFeatureItem(context, PhosphorIconsRegular.magnifyingGlass, l10n.paywallFeatureSmartSearch),
+                    _buildFeatureItem(context, PhosphorIconsRegular.lightning, l10n.paywallFeatureQuickWidget),
 
                     const SizedBox(height: 40),
 
@@ -94,7 +96,7 @@ class PaywallScreen extends ConsumerWidget {
                       const Center(child: CircularProgressIndicator())
                     else if (subscriptionState.availablePackages.isNotEmpty)
                       ...subscriptionState.availablePackages.map(
-                        (package) => _buildPackageCard(context, ref, package),
+                        (package) => _buildPackageCard(context, ref, package, l10n),
                       )
                     else
                       // Fallback: Show placeholder cards when RevenueCat products not configured
@@ -102,6 +104,7 @@ class PaywallScreen extends ConsumerWidget {
                         _buildPlaceholderPackageCard(
                           context,
                           ref,
+                          l10n,
                           title: "Haftalık Plan",
                           price: "₺29,99",
                           description: "Her hafta otomatik yenilenir",
@@ -110,6 +113,7 @@ class PaywallScreen extends ConsumerWidget {
                         _buildPlaceholderPackageCard(
                           context,
                           ref,
+                          l10n,
                           title: "Aylık Plan",
                           price: "₺79,99",
                           description: "Her ay otomatik yenilenir",
@@ -118,6 +122,7 @@ class PaywallScreen extends ConsumerWidget {
                         _buildPlaceholderPackageCard(
                           context,
                           ref,
+                          l10n,
                           title: "Yıllık Plan",
                           price: "₺699,99",
                           description: "%27 indirimli, yılda bir kez ödeme",
@@ -135,7 +140,7 @@ class PaywallScreen extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                success ? "Satın almalar geri yüklendi!" : "Geri yüklenecek satın alma bulunamadı.",
+                                success ? l10n.paywallRestoreSuccess : l10n.paywallRestoreEmpty,
                               ),
                             ),
                           );
@@ -143,7 +148,7 @@ class PaywallScreen extends ConsumerWidget {
                         }
                       },
                       child: Text(
-                        "Satın Almaları Geri Yükle",
+                        l10n.paywallRestoreButton,
                         style: GoogleFonts.outfit(
                           color: context.colors.hint,
                           decoration: TextDecoration.underline,
@@ -157,10 +162,7 @@ class PaywallScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
-                        "Abonelik seçtiğiniz plana göre otomatik olarak yenilenir. "
-                        "Mevcut dönem bitmeden en az 24 saat önce iptal etmezseniz "
-                        "aboneliğiniz otomatik olarak yenilenir. Aboneliğinizi istediğiniz zaman "
-                        "Ayarlar > Apple Kimliği > Abonelikler üzerinden yönetebilir veya iptal edebilirsiniz.",
+                        l10n.paywallLegalDisclosure,
                         style: GoogleFonts.outfit(
                           fontSize: 11,
                           color: context.colors.hint,
@@ -184,7 +186,7 @@ class PaywallScreen extends ConsumerWidget {
                             }
                           },
                           child: Text(
-                            "Kullanım Koşulları",
+                            l10n.legalTermsOfService,
                             style: GoogleFonts.outfit(
                               fontSize: 11,
                               color: context.colors.hint,
@@ -210,7 +212,7 @@ class PaywallScreen extends ConsumerWidget {
                             }
                           },
                           child: Text(
-                            "Gizlilik Politikası",
+                            l10n.legalPrivacyPolicy,
                             style: GoogleFonts.outfit(
                               fontSize: 11,
                               color: context.colors.hint,
@@ -260,7 +262,7 @@ class PaywallScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPackageCard(BuildContext context, WidgetRef ref, Package package) {
+  Widget _buildPackageCard(BuildContext context, WidgetRef ref, Package package, AppLocalizations l10n) {
     final isYearly = package.packageType == PackageType.annual;
     final isLifetime = package.packageType == PackageType.lifetime;
 
@@ -307,7 +309,7 @@ class PaywallScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "EN POPÜLER",
+                            l10n.paywallMostPopularBadge,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -325,7 +327,7 @@ class PaywallScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "ÖMÜR BOYU",
+                            l10n.paywallLifetimeBadge,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -394,7 +396,8 @@ class PaywallScreen extends ConsumerWidget {
   /// Placeholder package card (shown when RevenueCat products not configured)
   Widget _buildPlaceholderPackageCard(
     BuildContext context,
-    WidgetRef ref, {
+    WidgetRef ref,
+    AppLocalizations l10n, {
     required String title,
     required String price,
     required String description,
@@ -406,7 +409,7 @@ class PaywallScreen extends ConsumerWidget {
         // Show message that purchases will be available soon
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Satın alma yakında aktif olacak!"),
+            content: Text(l10n.paywallComingSoon),
             backgroundColor: context.colors.primary,
           ),
         );
@@ -447,7 +450,7 @@ class PaywallScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "EN POPÜLER",
+                            l10n.paywallMostPopularBadge,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -465,7 +468,7 @@ class PaywallScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "ÖMÜR BOYU",
+                            l10n.paywallLifetimeBadge,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,

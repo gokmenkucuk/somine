@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
@@ -11,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).valueOrNull;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -21,7 +23,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(SoMineTokens.spacingL),
                 child: Text(
-                  'Profil',
+                  l10n.settingsHeaderProfile,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
               ),
@@ -29,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
 
             // Profil kartı
             SliverToBoxAdapter(
-              child: _ProfileCard(user: user),
+              child: _ProfileCard(user: user, l10n: l10n),
             ),
 
             const SliverToBoxAdapter(
@@ -43,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
                   horizontal: SoMineTokens.spacingL,
                 ),
                 child: Text(
-                  'Ayarlar',
+                  l10n.settingsSectionSettings,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: SoMineTokens.textSecondary,
                   ),
@@ -60,20 +62,20 @@ class SettingsScreen extends ConsumerWidget {
                 items: [
                   _SettingsItem(
                     icon: Icons.notifications_outlined,
-                    title: 'Bildirimler',
-                    subtitle: 'Bildirim tercihlerini yönet',
+                    title: l10n.settingsNotificationsTitle,
+                    subtitle: l10n.settingsNotificationsSubtitle,
                     onTap: () {},
                   ),
                   _SettingsItem(
                     icon: Icons.palette_outlined,
-                    title: 'Görünüm',
-                    subtitle: 'Tema ve görünüm ayarları',
+                    title: l10n.settingsAppearanceTitle,
+                    subtitle: l10n.settingsAppearanceSubtitle,
                     onTap: () {},
                   ),
                   _SettingsItem(
                     icon: Icons.cloud_outlined,
-                    title: 'Yedekleme',
-                    subtitle: 'Verilerini yedekle ve geri yükle',
+                    title: l10n.settingsBackupTitle,
+                    subtitle: l10n.settingsBackupSubtitle,
                     onTap: () {},
                   ),
                 ],
@@ -91,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
                   horizontal: SoMineTokens.spacingL,
                 ),
                 child: Text(
-                  'Destek',
+                  l10n.settingsSectionSupport,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: SoMineTokens.textSecondary,
                   ),
@@ -108,17 +110,17 @@ class SettingsScreen extends ConsumerWidget {
                 items: [
                   _SettingsItem(
                     icon: Icons.help_outline_rounded,
-                    title: 'Yardım Merkezi',
+                    title: l10n.settingsHelpCenter,
                     onTap: () => _launchUrl('https://somine.app/help'),
                   ),
                   _SettingsItem(
                     icon: Icons.mail_outline_rounded,
-                    title: 'Geri Bildirim Gönder',
+                    title: l10n.settingsSendFeedback,
                     onTap: () => _launchUrl('mailto:hello@somine.app'),
                   ),
                   _SettingsItem(
                     icon: Icons.star_outline_rounded,
-                    title: 'Uygulamayı Değerlendir',
+                    title: l10n.settingsRateApp,
                     onTap: () {},
                   ),
                 ],
@@ -136,7 +138,8 @@ class SettingsScreen extends ConsumerWidget {
                   horizontal: SoMineTokens.spacingL,
                 ),
                 child: _LogoutButton(
-                  onTap: () => _showLogoutDialog(context, ref),
+                  label: l10n.settingsLogout,
+                  onTap: () => _showLogoutDialog(context, ref, l10n),
                 ),
               ),
             ),
@@ -173,19 +176,19 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SoMineTokens.radiusLarge),
         ),
-        title: const Text('Çıkış Yap'),
-        content: const Text('Hesabından çıkış yapmak istediğine emin misin?'),
+        title: Text(l10n.settingsLogout),
+        content: Text(l10n.settingsLogoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+            child: Text(l10n.settingsCancel),
           ),
           TextButton(
             onPressed: () {
@@ -196,7 +199,7 @@ class SettingsScreen extends ConsumerWidget {
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
             ),
-            child: const Text('Çıkış Yap'),
+            child: Text(l10n.settingsLogout),
           ),
         ],
       ),
@@ -207,8 +210,9 @@ class SettingsScreen extends ConsumerWidget {
 /// Profil kartı
 class _ProfileCard extends StatelessWidget {
   final dynamic user;
+  final AppLocalizations l10n;
 
-  const _ProfileCard({this.user});
+  const _ProfileCard({this.user, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +261,7 @@ class _ProfileCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.displayName ?? 'Kullanıcı',
+                  user?.displayName ?? l10n.settingsDefaultUserName,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -265,7 +269,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  user?.email ?? 'Misafir',
+                  user?.email ?? l10n.settingsDefaultGuestLabel,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.85),
                   ),
@@ -421,8 +425,9 @@ class _SettingsItem extends StatelessWidget {
 /// Çıkış butonu
 class _LogoutButton extends StatelessWidget {
   final VoidCallback? onTap;
+  final String label;
 
-  const _LogoutButton({this.onTap});
+  const _LogoutButton({this.onTap, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +450,7 @@ class _LogoutButton extends StatelessWidget {
             ),
             const SizedBox(width: SoMineTokens.spacingS),
             Text(
-              'Çıkış Yap',
+              label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: Colors.red.shade400,
               ),
