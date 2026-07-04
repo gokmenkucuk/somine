@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SomineApi.Domain.Entities;
+using System.Text.Json;
 
 namespace SomineApi.Infrastructure.Data;
 
@@ -26,6 +27,16 @@ public class SomineDbContext : DbContext
 
         // Apply all configurations from assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(SomineDbContext).Assembly);
+
+        if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            modelBuilder.Entity<Notification>()
+                .Property(n => n.Data)
+                .HasConversion(
+                    value => value == null ? null : value.RootElement.GetRawText(),
+                    value => string.IsNullOrWhiteSpace(value) ? null : JsonDocument.Parse(value, new JsonDocumentOptions()))
+                .HasColumnType("TEXT");
+        }
 
         // Global query filter for soft delete on Items
         modelBuilder.Entity<Item>().HasQueryFilter(i => !i.IsDeleted);

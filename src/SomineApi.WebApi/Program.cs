@@ -212,3 +212,5 @@ Directory.CreateDirectory(uploadsPath);
 // See: GET /api/storage/{fileName}
 
 app.Run();
+
+public partial class Program;
