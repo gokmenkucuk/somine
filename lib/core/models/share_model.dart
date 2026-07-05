@@ -13,6 +13,7 @@ class ShareModel {
   final DateTime createdAt;
   final DateTime? acceptedAt;
   final DateTime? rejectedAt;
+  final String? publicLinkToken;
 
   ShareModel({
     this.id,
@@ -27,6 +28,7 @@ class ShareModel {
     required this.createdAt,
     this.acceptedAt,
     this.rejectedAt,
+    this.publicLinkToken,
   });
 
   factory ShareModel.fromApi(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class ShareModel {
           DateTime.now(),
       acceptedAt: DateTime.tryParse(json['acceptedAt'] as String? ?? ''),
       rejectedAt: DateTime.tryParse(json['rejectedAt'] as String? ?? ''),
+      publicLinkToken: json['publicLinkToken'] as String?,
     );
   }
 
@@ -66,6 +69,7 @@ class ShareModel {
     DateTime? createdAt,
     DateTime? acceptedAt,
     DateTime? rejectedAt,
+    String? publicLinkToken,
   }) {
     return ShareModel(
       id: id ?? this.id,
@@ -80,6 +84,7 @@ class ShareModel {
       createdAt: createdAt ?? this.createdAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,
       rejectedAt: rejectedAt ?? this.rejectedAt,
+      publicLinkToken: publicLinkToken ?? this.publicLinkToken,
     );
   }
 }

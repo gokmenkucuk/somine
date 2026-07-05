@@ -187,6 +187,38 @@ class ShareRepository {
     }
   }
 
+  Future<String> createPublicLink(String shareId) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.post(
+        _buildUri('/api/shares/$shareId/public-link'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfNotSuccessful(response, action: 'create public link');
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      return payload['url'] as String? ?? '';
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error creating public link: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> revokePublicLink(String shareId) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.delete(
+        _buildUri('/api/shares/$shareId/public-link'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfNotSuccessful(response, action: 'revoke public link');
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error revoking public link: $e');
+      rethrow;
+    }
+  }
+
   Stream<List<ShareModel>> getMyShares(String userId) async* {
     while (true) {
       yield await _getOutgoingSharesFromApi();

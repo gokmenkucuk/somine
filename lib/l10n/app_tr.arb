@@ -1507,6 +1507,50 @@
   "@mySharesRevokedMessage": {
     "description": "Message of the confirmation sheet shown after revoking a share."
   },
+  "mySharesPublicLinkOpen": "Link açık",
+  "@mySharesPublicLinkOpen": {
+    "description": "Badge label shown when a public link is active for a share."
+  },
+  "mySharesPublicLinkShare": "Linki Paylaş",
+  "@mySharesPublicLinkShare": {
+    "description": "Button label to create and share a public link."
+  },
+  "mySharesPublicLinkCopy": "Linki Kopyala",
+  "@mySharesPublicLinkCopy": {
+    "description": "Menu item label to copy an active public link."
+  },
+  "mySharesPublicLinkCopied": "Link kopyalandı.",
+  "@mySharesPublicLinkCopied": {
+    "description": "SnackBar message shown after copying a public link."
+  },
+  "mySharesPublicLinkRefresh": "Linki Yenile",
+  "@mySharesPublicLinkRefresh": {
+    "description": "Menu item and confirmation button label to rotate a public link."
+  },
+  "mySharesPublicLinkRefreshDialogTitle": "Linki Yenile",
+  "@mySharesPublicLinkRefreshDialogTitle": {
+    "description": "Title of the confirmation dialog for rotating a public link."
+  },
+  "mySharesPublicLinkRefreshDialogMessage": "Eski link geçersiz kalır. Devam etmek istiyor musunuz?",
+  "@mySharesPublicLinkRefreshDialogMessage": {
+    "description": "Message of the confirmation dialog warning that rotating invalidates the old public link."
+  },
+  "mySharesPublicLinkRevoke": "Linki İptal Et",
+  "@mySharesPublicLinkRevoke": {
+    "description": "Menu item and confirmation button label to revoke a public link."
+  },
+  "mySharesPublicLinkRevokeDialogTitle": "Linki İptal Et",
+  "@mySharesPublicLinkRevokeDialogTitle": {
+    "description": "Title of the confirmation dialog for revoking a public link."
+  },
+  "mySharesPublicLinkRevokeDialogMessage": "Bu linke sahip kişiler erişimi kaybeder. İptal etmek istiyor musunuz?",
+  "@mySharesPublicLinkRevokeDialogMessage": {
+    "description": "Message of the confirmation dialog warning that revoking disables public link access."
+  },
+  "mySharesPublicLinkRevoked": "Link iptal edildi.",
+  "@mySharesPublicLinkRevoked": {
+    "description": "SnackBar message shown after revoking a public link."
+  },
 
   "shareRequestActionSheetDefaultCategory": "Koleksiyon",
   "@shareRequestActionSheetDefaultCategory": {

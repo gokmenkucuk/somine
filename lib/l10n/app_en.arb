@@ -350,6 +350,50 @@
   "mySharesRevokeDialogMessage": "Are you sure you want to revoke this share?",
   "mySharesRevokedTitle": "Revoked",
   "mySharesRevokedMessage": "The share was successfully revoked.",
+  "mySharesPublicLinkOpen": "Link open",
+  "@mySharesPublicLinkOpen": {
+    "description": "Badge label shown when a public link is active for a share."
+  },
+  "mySharesPublicLinkShare": "Share Link",
+  "@mySharesPublicLinkShare": {
+    "description": "Button label to create and share a public link."
+  },
+  "mySharesPublicLinkCopy": "Copy Link",
+  "@mySharesPublicLinkCopy": {
+    "description": "Menu item label to copy an active public link."
+  },
+  "mySharesPublicLinkCopied": "Link copied.",
+  "@mySharesPublicLinkCopied": {
+    "description": "SnackBar message shown after copying a public link."
+  },
+  "mySharesPublicLinkRefresh": "Refresh Link",
+  "@mySharesPublicLinkRefresh": {
+    "description": "Menu item and confirmation button label to rotate a public link."
+  },
+  "mySharesPublicLinkRefreshDialogTitle": "Refresh Link",
+  "@mySharesPublicLinkRefreshDialogTitle": {
+    "description": "Title of the confirmation dialog for rotating a public link."
+  },
+  "mySharesPublicLinkRefreshDialogMessage": "The old link will become invalid. Do you want to continue?",
+  "@mySharesPublicLinkRefreshDialogMessage": {
+    "description": "Message of the confirmation dialog warning that rotating invalidates the old public link."
+  },
+  "mySharesPublicLinkRevoke": "Cancel Link",
+  "@mySharesPublicLinkRevoke": {
+    "description": "Menu item and confirmation button label to revoke a public link."
+  },
+  "mySharesPublicLinkRevokeDialogTitle": "Cancel Link",
+  "@mySharesPublicLinkRevokeDialogTitle": {
+    "description": "Title of the confirmation dialog for revoking a public link."
+  },
+  "mySharesPublicLinkRevokeDialogMessage": "Anyone with this link will lose access. Do you want to cancel it?",
+  "@mySharesPublicLinkRevokeDialogMessage": {
+    "description": "Message of the confirmation dialog warning that revoking disables public link access."
+  },
+  "mySharesPublicLinkRevoked": "Link cancelled.",
+  "@mySharesPublicLinkRevoked": {
+    "description": "SnackBar message shown after revoking a public link."
+  },
 
   "shareRequestActionSheetDefaultCategory": "Collection",
   "shareRequestActionSheetDefaultUser": "A user",
