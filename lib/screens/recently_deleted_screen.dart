@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -41,12 +42,13 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
   }
 
   Future<void> _deleteAllItems(List<ItemModel> items) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Center(
           child: Text(
-            'Silme Onayı',
+            l10n.deleteConfirmTitle,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               fontSize: 20,
@@ -58,7 +60,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${items.length} öğe kalıcı olarak silinecek. Bu işlem geri alınamaz.',
+              l10n.recentlyDeletedDeleteAllConfirm(items.length),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: context.colors.body,
@@ -86,7 +88,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        "Vazgeç",
+                        l10n.commonDiscard,
                         style: GoogleFonts.poppins(
                           color: context.colors.body,
                           fontWeight: FontWeight.w600,
@@ -118,7 +120,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        "Sil",
+                        l10n.commonDelete,
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -144,16 +146,16 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
         if (mounted) {
           SuccessNotificationSheet.show(
             context,
-            title: 'Tümü Silindi',
-            message: '${items.length} öğe kalıcı olarak silindi.',
+            title: l10n.recentlyDeletedAllDeletedTitle,
+            message: l10n.recentlyDeletedAllDeletedMessage(items.length),
           );
         }
       } catch (e) {
         if (mounted) {
           SuccessNotificationSheet.show(
             context,
-            title: 'Hata',
-            message: 'Silme işlemi sırasında bir hata oluştu.',
+            title: l10n.commonError,
+            message: l10n.recentlyDeletedDeleteError,
           );
         }
       }
@@ -162,6 +164,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final deletedItemsAsync = ref.watch(deletedItemsProvider);
 
     return Scaffold(
@@ -174,7 +177,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Son Silinenler",
+          l10n.recentlyDeletedTitle,
           style: GoogleFonts.poppins(
             color: context.colors.headline,
             fontWeight: FontWeight.w600,
@@ -188,7 +191,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                 ? TextButton(
                     onPressed: () => _deleteAllItems(items),
                     child: Text(
-                      'Tümünü Sil',
+                      l10n.recentlyDeletedDeleteAll,
                       style: GoogleFonts.poppins(
                         color: Colors.redAccent,
                         fontWeight: FontWeight.w500,
@@ -212,7 +215,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                   Icon(PhosphorIconsRegular.trash, size: 64, color: context.colors.iconInactive),
                   const SizedBox(height: 16),
                   Text(
-                    "Henüz silinen öğe yok",
+                    l10n.recentlyDeletedEmptyTitle,
                     style: GoogleFonts.poppins(
                       color: context.colors.body,
                       fontSize: 16,
@@ -222,7 +225,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      "Silinen öğeler burada 30 gün saklanır, sonra otomatik olarak silinir.",
+                      l10n.recentlyDeletedEmptySubtitle,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         color: context.colors.body.withValues(alpha: 0.5),
@@ -259,7 +262,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Buradaki öğeler 30 gün sonra otomatik olarak silinecektir.',
+                        l10n.recentlyDeletedInfoBanner,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           color: context.colors.headline,
@@ -291,7 +294,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
         ),
         error: (error, stack) => Center(
           child: Text(
-            'Bir hata oluştu',
+            l10n.addContentGenericError,
             style: GoogleFonts.poppins(color: context.colors.body),
           ),
         ),
@@ -307,6 +310,7 @@ class _DeletedItemCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // Kalan günleri hesapla
     final daysRemaining = _getDaysRemaining();
     
@@ -351,9 +355,9 @@ class _DeletedItemCard extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  daysRemaining != null 
-                    ? '$daysRemaining gün içinde silinecek'
-                    : 'Silindi',
+                  daysRemaining != null
+                    ? l10n.recentlyDeletedDaysRemaining(daysRemaining)
+                    : l10n.commonDeleted,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: daysRemaining != null && daysRemaining <= 7 
@@ -374,14 +378,14 @@ class _DeletedItemCard extends ConsumerWidget {
                   await _restoreItem(context, ref, item.id);
                 },
                 icon: Icon(PhosphorIconsRegular.arrowCounterClockwise, color: context.colors.primary),
-                tooltip: 'Geri Yükle',
+                tooltip: l10n.recentlyDeletedRestore,
               ),
               IconButton(
                 onPressed: () async {
                    await _confirmPermanentDelete(context, ref, item.id);
                 },
                 icon: Icon(PhosphorIconsRegular.trash, color: Colors.redAccent),
-                tooltip: 'Kalıcı Sil',
+                tooltip: l10n.recentlyDeletedPermanentDelete,
               ),
             ],
           ),
@@ -410,6 +414,7 @@ class _DeletedItemCard extends ConsumerWidget {
   }
 
   Future<void> _restoreItem(BuildContext context, WidgetRef ref, String itemId) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       ref.read(categoryRepositoryProvider); // Access repo via provider if needed, or directly
       // Using ItemRepository directly for simplicity as usually done in this codebase for actions
@@ -427,28 +432,29 @@ class _DeletedItemCard extends ConsumerWidget {
       if (context.mounted) {
         SuccessNotificationSheet.show(
           context,
-          title: 'Geri Yüklendi',
-          message: 'Öğe başarıyla geri yüklendi.',
+          title: l10n.recentlyDeletedRestoredTitle,
+          message: l10n.recentlyDeletedRestoredMessage,
         );
       }
     } catch (e) {
       if (context.mounted) {
         SuccessNotificationSheet.show(
           context,
-          title: 'Hata',
-          message: 'Bir hata oluştu.',
+          title: l10n.commonError,
+          message: l10n.recentlyDeletedGenericError,
         );
       }
     }
   }
 
   Future<void> _confirmPermanentDelete(BuildContext context, WidgetRef ref, String itemId) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Center(
           child: Text(
-            'Silme Onayı',
+            l10n.deleteConfirmTitle,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               fontSize: 20,
@@ -460,7 +466,7 @@ class _DeletedItemCard extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Bu içeriği silmek istediğinize emin misiniz?',
+              l10n.deleteItemConfirm,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: context.colors.body,
@@ -488,7 +494,7 @@ class _DeletedItemCard extends ConsumerWidget {
                     ),
                     child: Center(
                       child: Text(
-                        "Vazgeç",
+                        l10n.commonDiscard,
                         style: GoogleFonts.poppins(
                           color: context.colors.body,
                           fontWeight: FontWeight.w600,
@@ -520,7 +526,7 @@ class _DeletedItemCard extends ConsumerWidget {
                     ),
                     child: Center(
                       child: Text(
-                        "Sil",
+                        l10n.commonDelete,
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -544,8 +550,8 @@ class _DeletedItemCard extends ConsumerWidget {
         if (context.mounted) {
           SuccessNotificationSheet.show(
             context,
-            title: 'Kalıcı Olarak Silindi',
-            message: 'Öğe kalıcı olarak silindi.',
+            title: l10n.recentlyDeletedPermanentlyDeletedTitle,
+            message: l10n.recentlyDeletedPermanentlyDeletedMessage,
           );
         }
       } catch (e) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -18,6 +19,7 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
@@ -29,7 +31,7 @@ class NotificationsScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Bildirimler',
+          l10n.notificationsLabel,
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
             color: context.colors.headline,
@@ -40,7 +42,7 @@ class NotificationsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => _markAllAsRead(context, ref),
             child: Text(
-              'Tümünü Oku',
+              l10n.notificationsMarkAllRead,
               style: GoogleFonts.poppins(
                 color: context.colors.primary,
                 fontWeight: FontWeight.w600,
@@ -83,7 +85,7 @@ class NotificationsScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
-          message: 'Bildirimler yüklenemedi. Lütfen tekrar deneyin.',
+          message: l10n.notificationsLoadError,
           onRetry: () => ref.invalidate(notificationsProvider),
         ),
       ),
@@ -91,6 +93,7 @@ class NotificationsScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -102,7 +105,7 @@ class NotificationsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Bildirim yok',
+            l10n.notificationsEmptyTitle,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -113,7 +116,7 @@ class NotificationsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Yeni bildirimler geldiğinde burada görünecek.',
+              l10n.notificationsEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -142,7 +145,10 @@ class NotificationsScreen extends ConsumerWidget {
       await ref.read(notificationRepositoryProvider).deleteNotification(notificationId);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Silinemedi: $e')));
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.notificationsDeleteFailed(e.toString()))),
+        );
       }
     }
   }

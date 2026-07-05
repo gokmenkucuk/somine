@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -48,23 +49,28 @@ class _ShareRequestActionSheetState
 
   String get _categoryName {
     final value = widget.notification.data['categoryName']?.toString().trim();
-    return value == null || value.isEmpty ? 'Koleksiyon' : value;
+    if (value != null && value.isNotEmpty) return value;
+    return AppLocalizations.of(context)!.shareRequestActionSheetDefaultCategory;
   }
 
   String get _fromUserName {
     final value = widget.notification.data['fromUserName']?.toString().trim();
-    return value == null || value.isEmpty ? 'Bir kullanıcı' : value;
+    if (value != null && value.isNotEmpty) return value;
+    return AppLocalizations.of(context)!.shareRequestActionSheetDefaultUser;
   }
 
   String get _userInitial {
     final normalized = _fromUserName.trim();
-    if (normalized.isEmpty) return 'U';
+    if (normalized.isEmpty) {
+      return AppLocalizations.of(context)!.shareRequestActionSheetDefaultInitial;
+    }
     return String.fromCharCode(normalized.runes.first).toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final l10n = AppLocalizations.of(context)!;
 
     return SafeArea(
       top: false,
@@ -128,7 +134,7 @@ class _ShareRequestActionSheetState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Yeni paylaşım isteği',
+                                l10n.shareRequestActionSheetTitle,
                                 style: GoogleFonts.outfit(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
@@ -137,7 +143,7 @@ class _ShareRequestActionSheetState
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '$_fromUserName sizinle bir koleksiyon paylaşmak istiyor.',
+                                l10n.shareRequestActionSheetSubtitle(_fromUserName),
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   height: 1.4,
@@ -178,7 +184,7 @@ class _ShareRequestActionSheetState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Paylaşılan koleksiyon',
+                                  l10n.shareRequestActionSheetSharedCollection,
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     color: colors.hint,
@@ -229,7 +235,7 @@ class _ShareRequestActionSheetState
                                       ),
                                     )
                                     : Text(
-                                      'Reddet',
+                                      l10n.shareRequestsReject,
                                       style: GoogleFonts.outfit(
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -263,7 +269,7 @@ class _ShareRequestActionSheetState
                                       ),
                                     )
                                     : Text(
-                                      'Kabul Et',
+                                      l10n.shareRequestsAccept,
                                       style: GoogleFonts.outfit(
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -281,7 +287,7 @@ class _ShareRequestActionSheetState
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       child: Text(
-                        'Daha sonra bak',
+                        l10n.shareRequestActionSheetLater,
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -289,7 +295,7 @@ class _ShareRequestActionSheetState
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
-                          'İstek bilgisi eksik olduğu için bu bildirim hızlı aksiyon sunamıyor.',
+                          l10n.shareRequestActionSheetMissingInfo,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: colors.hint,
@@ -318,25 +324,27 @@ class _ShareRequestActionSheetState
 
       if (!mounted) return;
 
+      final l10n = AppLocalizations.of(context)!;
       Navigator.of(context).pop(true);
       SuccessNotificationSheet.show(
         context,
         title:
             action == _ShareRequestAction.accept
-                ? 'Kabul Edildi'
-                : 'Reddedildi',
+                ? l10n.shareRequestsAcceptedTitle
+                : l10n.shareRequestsRejectedTitle,
         message:
             action == _ShareRequestAction.accept
-                ? '"$_categoryName" koleksiyonu artık hesabınızda kullanılabilir.'
-                : 'Paylaşım isteği reddedildi.',
+                ? l10n.shareRequestActionSheetAcceptedMessage(_categoryName)
+                : l10n.shareRequestsRejectedMessage,
       );
     } catch (error) {
       if (!mounted) return;
 
       setState(() => _activeAction = _ShareRequestAction.none);
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Hata: $error')));
+      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorWithDetail(error.toString()))));
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
@@ -41,6 +42,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
       appBar: AppBar(
@@ -51,7 +53,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Bildirim Ayarları',
+          l10n.notificationSettingsTitle,
           style: GoogleFonts.poppins(
             color: context.colors.headline,
             fontWeight: FontWeight.w600,
@@ -95,7 +97,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Bildirimler',
+                        l10n.notificationsLabel,
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -103,7 +105,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         ),
                       ),
                       Text(
-                        'Güncellemelerden haberdar ol',
+                        l10n.notificationSettingsHeaderSubtitle,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           color: context.colors.body,
@@ -119,27 +121,27 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           const SizedBox(height: 24),
 
           // Push Notifications Section
-          _buildSectionTitle(context, 'Anlık Bildirimler'),
+          _buildSectionTitle(context, l10n.notificationSettingsPushSection),
           const SizedBox(height: 12),
           _buildToggleCard(
             context,
             icon: PhosphorIconsRegular.deviceMobile,
-            title: 'Push Bildirimleri',
-            subtitle: 'Yeni içerik ve güncellemeler',
+            title: l10n.notificationSettingsPushTitle,
+            subtitle: l10n.notificationSettingsPushSubtitle,
             value: _pushEnabled,
             onChanged: (value) {
               setState(() => _pushEnabled = value);
               _saveSetting('notification_push', value);
             },
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           _buildToggleCard(
             context,
             icon: PhosphorIconsRegular.alarm,
-            title: 'Hatırlatıcılar',
-            subtitle: 'Kaydettiğin içerikleri hatırlat',
+            title: l10n.notificationSettingsRemindersTitle,
+            subtitle: l10n.notificationSettingsRemindersSubtitle,
             value: _reminderEnabled,
             onChanged: (value) {
               setState(() => _reminderEnabled = value);
@@ -150,27 +152,27 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           const SizedBox(height: 24),
 
           // Email Notifications Section
-          _buildSectionTitle(context, 'E-posta Bildirimleri'),
+          _buildSectionTitle(context, l10n.notificationSettingsEmailSection),
           const SizedBox(height: 12),
           _buildToggleCard(
             context,
             icon: PhosphorIconsRegular.envelope,
-            title: 'E-posta Bildirimleri',
-            subtitle: 'Önemli güncellemeler e-posta ile',
+            title: l10n.notificationSettingsEmailSection,
+            subtitle: l10n.notificationSettingsEmailSubtitle,
             value: _emailEnabled,
             onChanged: (value) {
               setState(() => _emailEnabled = value);
               _saveSetting('notification_email', value);
             },
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           _buildToggleCard(
             context,
             icon: PhosphorIconsRegular.calendar,
-            title: 'Haftalık Özet',
-            subtitle: 'Her hafta özet e-postası al',
+            title: l10n.notificationSettingsWeeklyDigestTitle,
+            subtitle: l10n.notificationSettingsWeeklyDigestSubtitle,
             value: _weeklyDigest,
             onChanged: (value) {
               setState(() => _weeklyDigest = value);

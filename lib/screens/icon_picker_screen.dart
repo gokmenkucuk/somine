@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -56,9 +57,10 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
       await _loadCurrentIcon();
       
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${icon.name} uygulandı!'),
+            content: Text(l10n.iconPickerApplied(icon.name)),
             backgroundColor: context.colors.primary,
             behavior: SnackBarBehavior.floating,
           ),
@@ -68,8 +70,9 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
       debugPrint('Error changing icon: $e');
       if (mounted) {
         setState(() => _isLoading = false);
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: ${e.toString()}')),
+          SnackBar(content: Text(l10n.iconPickerError(e.toString()))),
         );
       }
     }
@@ -79,6 +82,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
   Widget build(BuildContext context) {
     final subscriptionState = ref.watch(subscriptionProvider);
     final isPremium = subscriptionState.isPremium;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundTop,
@@ -90,7 +94,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Uygulama İkonu",
+          l10n.iconPickerTitle,
           style: GoogleFonts.outfit(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -191,7 +195,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                         if (isLocked) ...[
                           const SizedBox(height: 4),
                           Text(
-                            "Premium",
+                            l10n.iconPickerPremiumBadge,
                             style: GoogleFonts.poppins(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,

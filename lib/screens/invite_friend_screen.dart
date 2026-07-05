@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,10 +11,14 @@ class InviteFriendScreen extends StatelessWidget {
   const InviteFriendScreen({super.key});
 
   static const String appStoreLink = 'https://apps.apple.com/app/somine';
-  static const String shareMessage = 'So Mine\'ı dene! Tüm kaydettiğin içerikleri tek yerde topla. 📌✨ $appStoreLink';
+
+  static String shareMessageFor(AppLocalizations l10n) =>
+      l10n.inviteFriendShareMessage(appStoreLink);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final shareMessage = shareMessageFor(l10n);
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
       appBar: AppBar(
@@ -24,7 +29,7 @@ class InviteFriendScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Arkadaşını Davet Et',
+          l10n.inviteFriendTitle,
           style: GoogleFonts.poppins(
             color: context.colors.headline,
             fontWeight: FontWeight.w600,
@@ -65,7 +70,7 @@ class InviteFriendScreen extends StatelessWidget {
             
             // Title
             Text(
-              'Arkadaşlarınla Paylaş!',
+              l10n.inviteFriendShareHeadline,
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -77,7 +82,7 @@ class InviteFriendScreen extends StatelessWidget {
             const SizedBox(height: 12),
             
             Text(
-              'So Mine\'ı sevdiğin kişilerle paylaş.\nOnlar da içeriklerini kolayca organize etsin!',
+              l10n.inviteFriendShareSubtitle,
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 color: context.colors.body,
@@ -117,7 +122,7 @@ class InviteFriendScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Link kopyalandı!',
+                            l10n.inviteFriendLinkCopied,
                             style: GoogleFonts.poppins(),
                           ),
                           duration: const Duration(seconds: 2),
@@ -140,7 +145,7 @@ class InviteFriendScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Kopyala',
+                            l10n.inviteFriendCopy,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -179,7 +184,7 @@ class InviteFriendScreen extends StatelessWidget {
                     const Icon(PhosphorIconsRegular.shareFat, size: 20),
                     const SizedBox(width: 10),
                     Text(
-                      'Paylaş',
+                      l10n.inviteFriendShareButton,
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

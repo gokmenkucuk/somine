@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -16,6 +17,7 @@ class SharedWithMeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sharedWithMeAsync = ref.watch(sharedWithMeProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
@@ -27,7 +29,7 @@ class SharedWithMeScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Benimle Paylaşılanlar',
+          l10n.sharedWithMeTitle,
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
             color: context.colors.headline,
@@ -50,7 +52,7 @@ class SharedWithMeScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
-          message: 'Paylaşımlar yüklenemedi. Lütfen tekrar deneyin.',
+          message: l10n.sharedWithMeLoadError,
           onRetry: () => ref.invalidate(sharedWithMeProvider),
         ),
       ),
@@ -58,6 +60,7 @@ class SharedWithMeScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -69,7 +72,7 @@ class SharedWithMeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Paylaşılan koleksiyon yok',
+            l10n.sharedWithMeEmptyTitle,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -80,7 +83,7 @@ class SharedWithMeScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Kabul ettiğin paylaşımlar burada görünecek.',
+              l10n.sharedWithMeEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -101,6 +104,7 @@ class _SharedCollectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -161,7 +165,7 @@ class _SharedCollectionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${share.fromUserName} tarafından',
+                    l10n.sharedWithMeFromUser(share.fromUserName),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: context.colors.hint,

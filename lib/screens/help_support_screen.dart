@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
@@ -17,26 +18,26 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   String _appVersion = '';
   final Set<int> _expandedItems = {};
 
-  final List<Map<String, String>> _faqItems = [
+  List<Map<String, String>> _faqItems(AppLocalizations l10n) => [
     {
-      'question': 'So Mine nasıl çalışır?',
-      'answer': 'So Mine, Instagram, YouTube, Twitter ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.',
+      'question': l10n.helpSupportFaqQ1,
+      'answer': l10n.helpSupportFaqA1,
     },
     {
-      'question': 'Koleksiyonlar nasıl oluşturulur?',
-      'answer': 'Koleksiyonlar sekmesinde sağ üstteki + butonuna basarak yeni koleksiyon oluşturabilirsiniz. Koleksiyonlarınıza isim ve emoji atayabilirsiniz.',
+      'question': l10n.helpSupportFaqQ2,
+      'answer': l10n.helpSupportFaqA2,
     },
     {
-      'question': 'Premium özellikleri nelerdir?',
-      'answer': 'Premium ile sınırsız koleksiyon, özel app ikonları, widget desteği ve daha fazla özelliğe erişebilirsiniz.',
+      'question': l10n.helpSupportFaqQ3,
+      'answer': l10n.helpSupportFaqA3,
     },
     {
-      'question': 'Verilerim güvende mi?',
-      'answer': 'Evet! Tüm verileriniz Firebase güvenlik altyapısıyla şifrelenerek saklanır. Gizli Kasa özelliği ile hassas içeriklerinizi Face ID/Touch ID ile koruyabilirsiniz.',
+      'question': l10n.helpSupportFaqQ4,
+      'answer': l10n.helpSupportFaqA4,
     },
     {
-      'question': 'İçeriklerimi nasıl silebilirim?',
-      'answer': 'İçerik kartına uzun basarak silme seçeneğine ulaşabilirsiniz. Silinen içerikler 30 gün boyunca "Son Silinenler" bölümünde saklanır.',
+      'question': l10n.helpSupportFaqQ5,
+      'answer': l10n.helpSupportFaqA5,
     },
   ];
 
@@ -55,6 +56,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final faqItems = _faqItems(l10n);
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
       appBar: AppBar(
@@ -65,7 +68,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Yardım ve Destek',
+          l10n.helpSupportTitle,
           style: GoogleFonts.poppins(
             color: context.colors.headline,
             fontWeight: FontWeight.w600,
@@ -98,7 +101,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Nasıl yardımcı olabiliriz?',
+                  l10n.helpSupportHeaderTitle,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -107,7 +110,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Aşağıdaki SSS bölümünü inceleyin veya bize ulaşın',
+                  l10n.helpSupportHeaderSubtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: Colors.white.withValues(alpha: 0.8),
@@ -122,7 +125,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
           // FAQ Section
           Text(
-            'Sık Sorulan Sorular',
+            l10n.helpSupportFaqTitle,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -131,8 +134,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           ),
           const SizedBox(height: 12),
 
-          ...List.generate(_faqItems.length, (index) {
-            final item = _faqItems[index];
+          ...List.generate(faqItems.length, (index) {
+            final item = faqItems[index];
             final isExpanded = _expandedItems.contains(index);
 
             return Container(
@@ -183,7 +186,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
           // Contact Section
           Text(
-            'Bize Ulaşın',
+            l10n.helpSupportContactTitle,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -195,7 +198,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           _buildContactItem(
             context,
             icon: PhosphorIconsRegular.envelope,
-            title: 'E-posta Desteği',
+            title: l10n.helpSupportEmailTitle,
             subtitle: 'support@somineapp.com',
             onTap: () async {
               final uri = Uri.parse('mailto:support@somineapp.com?subject=So Mine Destek');
@@ -210,7 +213,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           _buildContactItem(
             context,
             icon: PhosphorIconsRegular.globe,
-            title: 'Web Sitesi',
+            title: l10n.helpSupportWebsiteTitle,
             subtitle: 'www.somineapp.com',
             onTap: () async {
               final uri = Uri.parse('https://www.somineapp.com');
@@ -235,7 +238,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Uygulama Versiyonu',
+                      l10n.helpSupportAppVersion,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         color: context.colors.body,
@@ -257,7 +260,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     Expanded(
                       child: _buildLinkButton(
                         context,
-                        'Gizlilik Politikası',
+                        l10n.legalPrivacyPolicy,
                         () async {
                           final uri = Uri.parse('https://www.somineapp.com/privacy');
                           if (await canLaunchUrl(uri)) {
@@ -270,7 +273,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     Expanded(
                       child: _buildLinkButton(
                         context,
-                        'Kullanım Koşulları',
+                        l10n.legalTermsOfService,
                         () async {
                           final uri = Uri.parse('https://www.somineapp.com/terms');
                           if (await canLaunchUrl(uri)) {

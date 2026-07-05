@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -83,6 +84,7 @@ class _SharedCollectionViewScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
       appBar: AppBar(
@@ -103,7 +105,7 @@ class _SharedCollectionViewScreenState
               ),
             ),
             Text(
-              '${widget.share.fromUserName} tarafından',
+              l10n.sharedCollectionByUser(widget.share.fromUserName),
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: context.colors.hint,
@@ -117,7 +119,7 @@ class _SharedCollectionViewScreenState
             TextButton(
               onPressed: _selectAll,
               child: Text(
-                _selectedItemIds.length == _items.length ? 'Hiçbiri' : 'Tümü',
+                _selectedItemIds.length == _items.length ? l10n.sharedCollectionNone : l10n.commonAll,
                 style: GoogleFonts.poppins(
                   color: context.colors.primary,
                   fontWeight: FontWeight.w600,
@@ -137,6 +139,7 @@ class _SharedCollectionViewScreenState
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -148,7 +151,7 @@ class _SharedCollectionViewScreenState
           ),
           const SizedBox(height: 16),
           Text(
-            'Koleksiyon Boş',
+            l10n.sharedCollectionEmptyTitle,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -157,7 +160,7 @@ class _SharedCollectionViewScreenState
           ),
           const SizedBox(height: 8),
           Text(
-            'Bu koleksiyonda henüz içerik yok.',
+            l10n.sharedCollectionEmptySubtitle,
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: context.colors.body.withValues(alpha: 0.7),
@@ -298,6 +301,7 @@ class _SharedCollectionViewScreenState
   }
 
   Widget _buildCopyBar() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -318,7 +322,7 @@ class _SharedCollectionViewScreenState
       child: Row(
         children: [
           Text(
-            '${_selectedItemIds.length} seçili',
+            l10n.sharedCollectionSelectedCount(_selectedItemIds.length),
             style: GoogleFonts.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -330,7 +334,7 @@ class _SharedCollectionViewScreenState
             onPressed: _showCopyDialog,
             icon: const Icon(PhosphorIconsRegular.copy, size: 20),
             label: Text(
-              'Koleksiyonuma Kopyala',
+              l10n.sharedCollectionCopyToMine,
               style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
             ),
             style: ElevatedButton.styleFrom(
@@ -349,6 +353,7 @@ class _SharedCollectionViewScreenState
   }
 
   void _showCopyDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final categoriesAsync = ref.read(categoriesProvider);
     final categories = categoriesAsync.valueOrNull ?? [];
 
@@ -382,7 +387,7 @@ class _SharedCollectionViewScreenState
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    'Koleksiyon Seçin',
+                    l10n.sharedCollectionSelectCollection,
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -413,7 +418,7 @@ class _SharedCollectionViewScreenState
                             ),
                           ),
                           title: Text(
-                            'Aynı isimle yeni koleksiyon oluştur',
+                            l10n.sharedCollectionCreateNew,
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w600,
                               color: context.colors.headline,
@@ -474,6 +479,7 @@ class _SharedCollectionViewScreenState
   }
 
   Future<void> _copyToCollection(String categoryId) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final user = ref.read(authStateProvider).valueOrNull;
       if (user == null) return;
@@ -495,20 +501,21 @@ class _SharedCollectionViewScreenState
       if (mounted) {
         SuccessNotificationSheet.show(
           context,
-          title: 'Kopyalandı',
-          message: '$copiedCount içerik koleksiyonunuza eklendi.',
+          title: l10n.sharedCollectionCopiedTitle,
+          message: l10n.sharedCollectionCopiedMessage(copiedCount),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ).showSnackBar(SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))));
       }
     }
   }
 
   Future<void> _createNewCollectionAndCopy() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final user = ref.read(authStateProvider).valueOrNull;
       if (user == null) return;
@@ -544,16 +551,18 @@ class _SharedCollectionViewScreenState
       if (mounted) {
         SuccessNotificationSheet.show(
           context,
-          title: 'Kopyalandı',
-          message:
-              '"${widget.share.categoryName}" koleksiyonu oluşturuldu ve $copiedCount içerik eklendi.',
+          title: l10n.sharedCollectionCopiedTitle,
+          message: l10n.sharedCollectionCreatedMessage(
+            widget.share.categoryName,
+            copiedCount,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ).showSnackBar(SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))));
       }
     }
   }

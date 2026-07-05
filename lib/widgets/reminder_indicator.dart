@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
@@ -25,20 +26,21 @@ class ReminderIndicator extends StatelessWidget {
     );
     final isThisYear = nextOccurrence.year == DateTime.now().year;
 
+    // Tekrarlama durumu ekleyin
+    final l10n = AppLocalizations.of(context)!;
+
     String timeLabel;
     if (isToday) {
-      timeLabel = 'Bugün, ${_formatTime(reminder.reminderTime)}';
+      timeLabel = l10n.reminderIndicatorToday(_formatTime(reminder.reminderTime));
     } else if (isTomorrow) {
-      timeLabel = 'Yarın, ${_formatTime(reminder.reminderTime)}';
+      timeLabel = l10n.reminderIndicatorTomorrow(_formatTime(reminder.reminderTime));
     } else {
       timeLabel =
           '${_formatDate(nextOccurrence, isThisYear)}, ${_formatTime(reminder.reminderTime)}';
     }
-
-    // Tekrarlama durumu ekleyin
     String repeatLabel = '';
     if (reminder.repeat != RepeatFrequency.none) {
-      repeatLabel = _getRepeatLabel(reminder);
+      repeatLabel = _getRepeatLabel(reminder, l10n);
     }
 
     return GestureDetector(
@@ -80,32 +82,34 @@ class ReminderIndicator extends StatelessWidget {
     );
   }
 
-  String _getRepeatLabel(ReminderModel reminder) {
+  String _getRepeatLabel(ReminderModel reminder, AppLocalizations l10n) {
     switch (reminder.repeat) {
       case RepeatFrequency.daily:
-        return 'Günlük';
+        return l10n.addContentRepeatDaily;
       case RepeatFrequency.weekly:
-        return 'Haftalık';
+        return l10n.addContentRepeatWeekly;
       case RepeatFrequency.monthly:
-        return 'Aylık';
+        return l10n.addContentRepeatMonthly;
       case RepeatFrequency.yearly:
-        return 'Yıllık';
+        return l10n.addContentRepeatYearly;
       case RepeatFrequency.weekdays:
-        return 'Hafta içi';
+        return l10n.addContentRepeatWeekdays;
       case RepeatFrequency.weekends:
-        return 'Hafta sonu';
+        return l10n.addContentRepeatWeekends;
       case RepeatFrequency.customMinutes:
         if (reminder.customRepeatMinutes != null) {
           if (reminder.customRepeatMinutes! < 60) {
-            return '${reminder.customRepeatMinutes}dk';
+            return l10n.reminderIndicatorMinutesShort(
+              reminder.customRepeatMinutes!,
+            );
           } else {
             final hours = reminder.customRepeatMinutes! ~/ 60;
-            return '$hours saat';
+            return l10n.reminderIndicatorHoursShort(hours);
           }
         }
-        return 'Tekrar';
+        return l10n.reminderIndicatorRepeatGeneric;
       case RepeatFrequency.customDays:
-        return 'Gün bazlı';
+        return l10n.addContentRepeatCustomDays;
       case RepeatFrequency.none:
         return '';
     }

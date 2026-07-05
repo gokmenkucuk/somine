@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/widgets/somine_loading_widget.dart';
 
@@ -16,16 +17,9 @@ class SoMineLoadingScreen extends StatefulWidget {
 }
 
 class _SoMineLoadingScreenState extends State<SoMineLoadingScreen> {
-  String _message = '';
-
   @override
   void initState() {
     super.initState();
-    
-    if (widget.isNewUser) {
-      _message = 'Koleksiyonlarınızı hazırlıyoruz...';
-    }
-    
     _navigateToHome();
   }
 
@@ -53,8 +47,9 @@ class _SoMineLoadingScreenState extends State<SoMineLoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SoMineLoadingWidget(
-      message: _message.isNotEmpty ? _message : null,
+      message: widget.isNewUser ? l10n.somineLoadingPreparingCollections : null,
     );
   }
 }

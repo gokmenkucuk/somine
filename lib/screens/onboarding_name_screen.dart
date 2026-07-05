@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/design/app_colors.dart';
@@ -72,54 +73,56 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
 
   Future<void> _checkUsernameAvailability(String username) async {
     if (!mounted) return;
-    
+
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isCheckingUsername = true);
 
     final normalized = username.toLowerCase().trim();
-    
+
     // Format kontrolü
     final regex = RegExp(r'^[a-z0-9_]{3,20}$');
     if (!regex.hasMatch(normalized)) {
       setState(() {
         _isCheckingUsername = false;
         _isUsernameAvailable = false;
-        _usernameError = '3-20 karakter, sadece harf, rakam ve alt çizgi';
+        _usernameError = l10n.usernameErrorFormat;
       });
       return;
     }
 
     final isAvailable = await _userRepository.isUsernameAvailable(normalized);
-    
+
     if (mounted) {
       setState(() {
         _isCheckingUsername = false;
         _isUsernameAvailable = isAvailable;
-        _usernameError = isAvailable ? null : 'Bu kullanıcı adı alınmış';
+        _usernameError = isAvailable ? null : l10n.usernameErrorTaken;
       });
     }
   }
 
   void _continue() async {
+    final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final username = _usernameController.text.trim().toLowerCase();
-    
+
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen adınızı girin')),
+        SnackBar(content: Text(l10n.onboardingNameEnterName)),
       );
       return;
     }
 
     if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen kullanıcı adı girin')),
+        SnackBar(content: Text(l10n.onboardingNameEnterUsername)),
       );
       return;
     }
 
     if (_isUsernameAvailable != true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen geçerli bir kullanıcı adı seçin')),
+        SnackBar(content: Text(l10n.onboardingNameSelectValidUsername)),
       );
       return;
     }
@@ -132,7 +135,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
         );
         setState(() => _isLoading = false);
       }
@@ -153,6 +156,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -173,7 +177,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                     end: Alignment.bottomRight,
                   ).createShader(bounds),
                   child: Text(
-                    'Hazırsan\nBaşlayalım',
+                    l10n.onboardingNameTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -186,7 +190,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                 
                 // Subtitle
                 Text(
-                  'Sana nasıl hitap etmemizi istersin?',
+                  l10n.onboardingNameSubtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
@@ -199,7 +203,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                 // Name Input
                 // Name Input
                 Text(
-                  'Adınız', // UPDATED
+                  l10n.onboardingNameNameLabel,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -218,7 +222,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                   ),
                   cursorColor: AppColors.primary,
                   decoration: InputDecoration(
-                    hintText: 'Adı ve Soyadı', // UPDATED
+                    hintText: l10n.onboardingNameNameHint,
                     hintStyle: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
@@ -247,7 +251,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                 
                 // Username Input
                 Text(
-                  'Kullanıcı Adınız', // UPDATED
+                  l10n.onboardingNameUsernameLabel,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -286,7 +290,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                       fontWeight: FontWeight.w500,
                       color: AppColors.primary,
                     ),
-                    hintText: 'kullanici_adi',
+                    hintText: l10n.onboardingNameUsernameHint,
                     hintStyle: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
@@ -368,7 +372,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Öneri: ',
+                                l10n.onboardingNameSuggestionLabel,
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   color: DesignTokens.textSecondary,
@@ -392,7 +396,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8, left: 4),
                     child: Text(
-                      _usernameError ?? 'Kullanıcı adı müsait ✓',
+                      _usernameError ?? l10n.onboardingNameUsernameAvailable,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: _isUsernameAvailable == true ? Colors.green : Colors.red,
@@ -438,7 +442,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                             ),
                           )
                         : Text(
-                            'Devam Et',
+                            l10n.onboardingNameContinue,
                             style: GoogleFonts.poppins(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,

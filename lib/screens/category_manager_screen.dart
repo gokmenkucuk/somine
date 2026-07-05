@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/category_model.dart';
@@ -21,6 +22,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
     final allItems = ref.watch(itemsProvider).valueOrNull ?? [];
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundTop,
@@ -35,7 +37,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Kategoriler',
+                      l10n.categoryManagerTitle,
                       style: GoogleFonts.outfit(
                           fontSize: 24, fontWeight: FontWeight.bold, color: context.colors.headline),
                     ),
@@ -100,6 +102,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(SoMineTokens.spacingXXL),
@@ -121,13 +124,13 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             ),
             const SizedBox(height: SoMineTokens.spacingXXL),
             Text(
-              'Henüz kategori yok',
+              l10n.categoryManagerEmptyTitle,
               style: GoogleFonts.outfit(
                   fontSize: 20, fontWeight: FontWeight.bold, color: context.colors.headline),
             ),
             const SizedBox(height: SoMineTokens.spacingS),
             Text(
-              'İçeriklerini düzenlemek için\nkategoriler oluştur',
+              l10n.categoryManagerEmptySubtitle,
               style: GoogleFonts.poppins(color: context.colors.body, fontSize: 14),
               textAlign: TextAlign.center,
             ),
@@ -135,7 +138,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             ElevatedButton.icon(
               onPressed: () => _showAddCategorySheet(context),
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Kategori Oluştur'),
+              label: Text(l10n.categoryManagerCreate),
             ),
           ],
         ),
@@ -174,7 +177,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       (c) => c.name.trim().toLowerCase() == name.trim().toLowerCase(),
     );
     if (isDuplicate) {
-      _showErrorSnackbar('"$name" adında bir kategori zaten var');
+      _showErrorSnackbar(AppLocalizations.of(context)!.categoryManagerDuplicateName(name));
       return;
     }
 
@@ -194,10 +197,11 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       );
       if (mounted) {
         Navigator.pop(context);
-        _showSuccessSnackbar('Kategori oluşturuldu');
+        _showSuccessSnackbar(AppLocalizations.of(context)!.categoryManagerCreated);
       }
     } catch (e) {
-      _showErrorSnackbar('Kategori oluşturulamadı');
+      if (!mounted) return;
+      _showErrorSnackbar(AppLocalizations.of(context)!.categoryManagerCreateFailed);
     }
   }
 
@@ -213,7 +217,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
           c.name.trim().toLowerCase() == name.trim().toLowerCase(),
     );
     if (isDuplicate) {
-      _showErrorSnackbar('"$name" adında bir kategori zaten var');
+      _showErrorSnackbar(AppLocalizations.of(context)!.categoryManagerDuplicateName(name));
       return;
     }
 
@@ -224,10 +228,11 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       );
       if (mounted) {
         Navigator.pop(context);
-        _showSuccessSnackbar('Kategori güncellendi');
+        _showSuccessSnackbar(AppLocalizations.of(context)!.categoryManagerUpdated);
       }
     } catch (e) {
-      _showErrorSnackbar('Kategori güncellenemedi');
+      if (!mounted) return;
+      _showErrorSnackbar(AppLocalizations.of(context)!.categoryManagerUpdateFailed);
     }
   }
 
@@ -255,23 +260,24 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
   }
 
   void _showStandardDeleteDialog(BuildContext context, CategoryModel category) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Kategoriyi Sil'),
-        content: Text('"${category.name}" kategorisini silmek istediğine emin misin?'),
+        title: Text(l10n.categoryManagerDeleteTitle),
+        content: Text(l10n.categoryManagerDeleteConfirm(category.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+            child: Text(l10n.commonCancel, style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteCategory(category, deleteItems: false); // Empty anyway
             },
-            child: const Text('Sil', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text(l10n.commonDelete, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -279,6 +285,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
   }
 
   void _showAdvancedDeleteDialog(BuildContext context, CategoryModel category, int count) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -297,12 +304,12 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
               decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
             ),
             Text(
-              'Kategoriyi Sil',
+              l10n.categoryManagerDeleteTitle,
               style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: context.colors.headline),
             ),
             const SizedBox(height: 12),
             Text(
-              '"${category.name}" içinde $count adet içerik var. Bu içerikleri ne yapmak istersin?',
+              l10n.categoryManagerHasItemsMessage(category.name, count),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
             ),
@@ -312,7 +319,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             _buildActionButton(
               context,
               icon: PhosphorIconsRegular.folderSimplePlus,
-              text: 'İçerikleri Başka Koleksiyona Taşı',
+              text: l10n.categoryManagerMoveItems,
               color: context.colors.primary,
               onTap: () {
                 Navigator.pop(context);
@@ -325,7 +332,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             _buildActionButton(
               context,
               icon: PhosphorIconsLight.trash,
-              text: 'Kategori ve İçerikleri Sil',
+              text: l10n.categoryManagerDeleteWithItems,
               color: Colors.red,
               isDestructive: true,
               onTap: () {
@@ -338,7 +345,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             // Cancel
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Vazgeç', style: GoogleFonts.poppins(color: context.colors.hint, fontWeight: FontWeight.w600)),
+              child: Text(l10n.commonDiscard, style: GoogleFonts.poppins(color: context.colors.hint, fontWeight: FontWeight.w600)),
             ),
             const SizedBox(height: 16),
           ],
@@ -393,7 +400,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Text('Hedef Koleksiyon Seç', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.categoryManagerSelectTarget, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             Expanded(
               child: ListView.builder(
@@ -428,10 +435,12 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       
       // 2. Delete category
       await catRepo.deleteCategory(source.id);
-      
-      _showSuccessSnackbar('İçerikler taşındı ve kategori silindi');
+
+      if (!mounted) return;
+      _showSuccessSnackbar(AppLocalizations.of(context)!.categoryManagerMovedAndDeleted);
     } catch (e) {
-      _showErrorSnackbar('İşlem başarısız oldu');
+      if (!mounted) return;
+      _showErrorSnackbar(AppLocalizations.of(context)!.categoryManagerOperationFailed);
     }
   }
 
@@ -447,10 +456,16 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       
       // 2. Delete category
       await categoryRepo.deleteCategory(category.id);
-      
-      _showSuccessSnackbar('Kategori ${deleteItems ? "ve içerikler" : ""} silindi');
+
+      if (!mounted) return;
+      _showSuccessSnackbar(
+        deleteItems
+            ? AppLocalizations.of(context)!.categoryManagerDeletedWithItems
+            : AppLocalizations.of(context)!.categoryManagerDeleted,
+      );
     } catch (e) {
-      _showErrorSnackbar('Kategori silinemedi');
+      if (!mounted) return;
+      _showErrorSnackbar(AppLocalizations.of(context)!.categoryManagerDeleteFailed);
     }
   }
 
@@ -521,7 +536,7 @@ class _AddCategoryButton extends StatelessWidget {
             ),
             const SizedBox(width: SoMineTokens.spacingXS),
             Text(
-              'Yeni',
+              AppLocalizations.of(context)!.categoryManagerNew,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -601,7 +616,7 @@ class _CategoryTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '$itemCount içerik',
+                    AppLocalizations.of(context)!.categoryManagerItemCount(itemCount),
                     style: GoogleFonts.poppins(fontSize: 12, color: context.colors.hint),
                   ),
                 ],
@@ -752,7 +767,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
 
             // Başlık
             Text(
-              widget.isEditing ? 'Kategoriyi Düzenle' : 'Yeni Kategori',
+              widget.isEditing ? AppLocalizations.of(context)!.categoryManagerEditTitle : AppLocalizations.of(context)!.categoryManagerNewCategory,
               style: GoogleFonts.outfit(
                   fontSize: 20, fontWeight: FontWeight.bold, color: context.colors.headline),
             ),
@@ -761,7 +776,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
 
             // Emoji seçici
             Text(
-              'İkon Seç',
+              AppLocalizations.of(context)!.categoryManagerChooseIcon,
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: context.colors.headline),
             ),
             const SizedBox(height: SoMineTokens.spacingM),
@@ -811,7 +826,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
 
             // İsim input
             Text(
-              'Kategori Adı',
+              AppLocalizations.of(context)!.categoryManagerNameLabel,
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: context.colors.headline),
             ),
             const SizedBox(height: SoMineTokens.spacingS),
@@ -825,7 +840,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                 autofocus: true,
                 style: GoogleFonts.poppins(color: context.colors.headline),
                 decoration: InputDecoration(
-                  hintText: 'Örn: Tatil Fikirleri',
+                  hintText: AppLocalizations.of(context)!.categoryManagerNameHint,
                   hintStyle: GoogleFonts.poppins(color: context.colors.hint),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
@@ -861,7 +876,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       ),
                       child: Center(
                         child: Text(
-                          'Vazgeç',
+                          AppLocalizations.of(context)!.commonDiscard,
                           style: TextStyle(
                             color: context.colors.body,
                             fontSize: 16,
@@ -899,7 +914,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       ),
                       child: Center(
                         child: Text(
-                          widget.isEditing ? 'Güncelle' : 'Oluştur',
+                          widget.isEditing ? AppLocalizations.of(context)!.commonUpdate : AppLocalizations.of(context)!.commonCreate,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,

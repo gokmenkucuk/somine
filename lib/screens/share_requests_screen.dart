@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -17,6 +18,7 @@ class ShareRequestsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingRequestsAsync = ref.watch(pendingShareRequestsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
@@ -28,7 +30,7 @@ class ShareRequestsScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Paylaşım İstekleri',
+          l10n.shareRequestsTitle,
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
             color: context.colors.headline,
@@ -51,7 +53,7 @@ class ShareRequestsScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
-          message: 'Paylaşım istekleri yüklenemedi. Lütfen tekrar deneyin.',
+          message: l10n.shareRequestsLoadError,
           onRetry: () => ref.invalidate(pendingShareRequestsProvider),
         ),
       ),
@@ -59,6 +61,7 @@ class ShareRequestsScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -70,7 +73,7 @@ class ShareRequestsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Bekleyen istek yok',
+            l10n.shareRequestsEmptyTitle,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -81,7 +84,7 @@ class ShareRequestsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Yeni paylaşım istekleri burada görünecek.',
+              l10n.shareRequestsEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -102,6 +105,7 @@ class _ShareRequestCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -215,7 +219,7 @@ class _ShareRequestCard extends ConsumerWidget {
                     ),
                   ),
                   child: Text(
-                    'Reddet',
+                    l10n.shareRequestsReject,
                     style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -234,7 +238,7 @@ class _ShareRequestCard extends ConsumerWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Kabul Et',
+                    l10n.shareRequestsAccept,
                     style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -249,12 +253,13 @@ class _ShareRequestCard extends ConsumerWidget {
   Future<void> _acceptShare(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(shareRepositoryProvider).acceptShare(share.id!);
-      
+
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context)!;
         SuccessNotificationSheet.show(
           context,
-          title: 'Kabul Edildi',
-          message: '"${share.categoryName}" koleksiyonu artık görüntülenebilir.',
+          title: l10n.shareRequestsAcceptedTitle,
+          message: l10n.shareRequestsAcceptedMessage(share.categoryName),
         );
 
         // Update share status for immediate view
@@ -273,8 +278,9 @@ class _ShareRequestCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
         );
       }
     }
@@ -284,16 +290,18 @@ class _ShareRequestCard extends ConsumerWidget {
     try {
       await ref.read(shareRepositoryProvider).rejectShare(share.id!);
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context)!;
         SuccessNotificationSheet.show(
           context,
-          title: 'Reddedildi',
-          message: 'Paylaşım isteği reddedildi.',
+          title: l10n.shareRequestsRejectedTitle,
+          message: l10n.shareRequestsRejectedMessage,
         );
       }
     } catch (e) {
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
         );
       }
     }

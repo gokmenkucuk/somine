@@ -1168,5 +1168,1023 @@
         "type": "String"
       }
     }
+  },
+
+  "iconPickerTitle": "Uygulama İkonu",
+  "@iconPickerTitle": {
+    "description": "Title of the app icon picker screen."
+  },
+  "iconPickerApplied": "{name} uygulandı!",
+  "@iconPickerApplied": {
+    "description": "Snackbar shown after successfully applying an app icon.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "iconPickerError": "Hata oluştu: {error}",
+  "@iconPickerError": {
+    "description": "Snackbar shown when applying an app icon fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "iconPickerPremiumBadge": "Premium",
+  "@iconPickerPremiumBadge": {
+    "description": "Badge label shown on locked premium app icons."
+  },
+
+  "errorStateTitle": "Bir şeyler ters gitti",
+  "@errorStateTitle": {
+    "description": "Generic title shown above an error message in the reusable error state widget."
+  },
+  "errorStateRetry": "Tekrar Dene",
+  "@errorStateRetry": {
+    "description": "Retry button label in the reusable error state widget."
+  },
+
+  "somineLoadingPreparingCollections": "Koleksiyonlarınızı hazırlıyoruz...",
+  "@somineLoadingPreparingCollections": {
+    "description": "Message shown on the branded loading screen for newly registered users."
+  },
+
+  "mapPreviewFallbackTitle": "Harita Önizlemesi",
+  "@mapPreviewFallbackTitle": {
+    "description": "Title shown on the non-iOS fallback map preview card."
+  },
+
+  "reminderIndicatorMinutesShort": "{minutes}dk",
+  "@reminderIndicatorMinutesShort": {
+    "description": "Short custom repeat interval label in minutes on the reminder indicator chip.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderIndicatorHoursShort": "{hours} saat",
+  "@reminderIndicatorHoursShort": {
+    "description": "Short custom repeat interval label in hours on the reminder indicator chip.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderIndicatorRepeatGeneric": "Tekrar",
+  "@reminderIndicatorRepeatGeneric": {
+    "description": "Generic fallback repeat label on the reminder indicator chip when no custom interval is set."
+  },
+  "reminderIndicatorToday": "Bugün, {time}",
+  "@reminderIndicatorToday": {
+    "description": "Time label on the reminder indicator chip when the reminder falls today.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderIndicatorTomorrow": "Yarın, {time}",
+  "@reminderIndicatorTomorrow": {
+    "description": "Time label on the reminder indicator chip when the reminder falls tomorrow.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+
+  "appearanceTitle": "Görünüm",
+  "@appearanceTitle": {
+    "description": "Title of the appearance settings screen."
+  },
+  "appearanceThemeSectionHeader": "TEMA SEÇENEKLERİ",
+  "@appearanceThemeSectionHeader": {
+    "description": "Section header for theme options on the appearance screen."
+  },
+  "appearanceThemeAirSubtitle": "Varsayılan, aydınlık ve ferah görünüm.",
+  "@appearanceThemeAirSubtitle": {
+    "description": "Subtitle describing the Air theme option."
+  },
+  "appearanceThemeMidnightSubtitle": "Karanlık mod ve neon vurgular.",
+  "@appearanceThemeMidnightSubtitle": {
+    "description": "Subtitle describing the Midnight theme option."
+  },
+  "appearanceThemeVibeSubtitle": "Koyu zemin, kırmızı ışıltı.",
+  "@appearanceThemeVibeSubtitle": {
+    "description": "Subtitle describing the Vibe theme option."
+  },
+  "appearanceIconSectionHeader": "UYGULAMA İKONU",
+  "@appearanceIconSectionHeader": {
+    "description": "Section header for the app icon option on the appearance screen."
+  },
+  "appearanceChangeIconTitle": "İkonu Değiştir",
+  "@appearanceChangeIconTitle": {
+    "description": "Title of the row that navigates to the app icon picker."
+  },
+  "appearanceChangeIconSubtitle": "Ana ekran ikonunu özelleştir.",
+  "@appearanceChangeIconSubtitle": {
+    "description": "Subtitle of the row that navigates to the app icon picker."
+  },
+
+  "notificationSettingsTitle": "Bildirim Ayarları",
+  "@notificationSettingsTitle": {
+    "description": "Title of the notification settings screen."
+  },
+  "notificationsLabel": "Bildirimler",
+  "@notificationsLabel": {
+    "description": "Shared label for the word \"Notifications\", used as a screen title and header text."
+  },
+  "notificationSettingsHeaderSubtitle": "Güncellemelerden haberdar ol",
+  "@notificationSettingsHeaderSubtitle": {
+    "description": "Subtitle of the header card on the notification settings screen."
+  },
+  "notificationSettingsPushSection": "Anlık Bildirimler",
+  "@notificationSettingsPushSection": {
+    "description": "Section title grouping push notification toggles."
+  },
+  "notificationSettingsPushTitle": "Push Bildirimleri",
+  "@notificationSettingsPushTitle": {
+    "description": "Title of the push notifications toggle."
+  },
+  "notificationSettingsPushSubtitle": "Yeni içerik ve güncellemeler",
+  "@notificationSettingsPushSubtitle": {
+    "description": "Subtitle of the push notifications toggle."
+  },
+  "notificationSettingsRemindersTitle": "Hatırlatıcılar",
+  "@notificationSettingsRemindersTitle": {
+    "description": "Title of the reminders notifications toggle."
+  },
+  "notificationSettingsRemindersSubtitle": "Kaydettiğin içerikleri hatırlat",
+  "@notificationSettingsRemindersSubtitle": {
+    "description": "Subtitle of the reminders notifications toggle."
+  },
+  "notificationSettingsEmailSection": "E-posta Bildirimleri",
+  "@notificationSettingsEmailSection": {
+    "description": "Section title grouping email notification toggles, also used as the email toggle title."
+  },
+  "notificationSettingsEmailSubtitle": "Önemli güncellemeler e-posta ile",
+  "@notificationSettingsEmailSubtitle": {
+    "description": "Subtitle of the email notifications toggle."
+  },
+  "notificationSettingsWeeklyDigestTitle": "Haftalık Özet",
+  "@notificationSettingsWeeklyDigestTitle": {
+    "description": "Title of the weekly digest notifications toggle."
+  },
+  "notificationSettingsWeeklyDigestSubtitle": "Her hafta özet e-postası al",
+  "@notificationSettingsWeeklyDigestSubtitle": {
+    "description": "Subtitle of the weekly digest notifications toggle."
+  },
+
+  "notificationsMarkAllRead": "Tümünü Oku",
+  "@notificationsMarkAllRead": {
+    "description": "Button label to mark all notifications as read."
+  },
+  "notificationsLoadError": "Bildirimler yüklenemedi. Lütfen tekrar deneyin.",
+  "@notificationsLoadError": {
+    "description": "Error message shown when notifications fail to load."
+  },
+  "notificationsEmptyTitle": "Bildirim yok",
+  "@notificationsEmptyTitle": {
+    "description": "Title shown when there are no notifications."
+  },
+  "notificationsEmptySubtitle": "Yeni bildirimler geldiğinde burada görünecek.",
+  "@notificationsEmptySubtitle": {
+    "description": "Subtitle shown when there are no notifications."
+  },
+  "notificationsDeleteFailed": "Silinemedi: {error}",
+  "@notificationsDeleteFailed": {
+    "description": "Snackbar shown when deleting a notification fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "inviteFriendTitle": "Arkadaşını Davet Et",
+  "@inviteFriendTitle": {
+    "description": "Title of the invite friend screen."
+  },
+  "inviteFriendShareHeadline": "Arkadaşlarınla Paylaş!",
+  "@inviteFriendShareHeadline": {
+    "description": "Headline on the invite friend screen."
+  },
+  "inviteFriendShareSubtitle": "So Mine'ı sevdiğin kişilerle paylaş.\nOnlar da içeriklerini kolayca organize etsin!",
+  "@inviteFriendShareSubtitle": {
+    "description": "Subtitle on the invite friend screen."
+  },
+  "inviteFriendLinkCopied": "Link kopyalandı!",
+  "@inviteFriendLinkCopied": {
+    "description": "Snackbar shown after copying the invite link."
+  },
+  "inviteFriendCopy": "Kopyala",
+  "@inviteFriendCopy": {
+    "description": "Button label to copy the invite link."
+  },
+  "inviteFriendShareButton": "Paylaş",
+  "@inviteFriendShareButton": {
+    "description": "Button label to share the invite message."
+  },
+  "inviteFriendShareMessage": "So Mine'ı dene! Tüm kaydettiğin içerikleri tek yerde topla. 📌✨ {link}",
+  "@inviteFriendShareMessage": {
+    "description": "Message shared with friends when inviting them to the app.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+
+  "sharedWithMeTitle": "Benimle Paylaşılanlar",
+  "@sharedWithMeTitle": {
+    "description": "Title of the shared-with-me screen."
+  },
+  "sharedWithMeLoadError": "Paylaşımlar yüklenemedi. Lütfen tekrar deneyin.",
+  "@sharedWithMeLoadError": {
+    "description": "Error message shown when shared collections fail to load."
+  },
+  "sharedWithMeEmptyTitle": "Paylaşılan koleksiyon yok",
+  "@sharedWithMeEmptyTitle": {
+    "description": "Title shown when no collections have been shared with the user."
+  },
+  "sharedWithMeEmptySubtitle": "Kabul ettiğin paylaşımlar burada görünecek.",
+  "@sharedWithMeEmptySubtitle": {
+    "description": "Subtitle shown when no collections have been shared with the user."
+  },
+  "sharedWithMeFromUser": "{name} tarafından",
+  "@sharedWithMeFromUser": {
+    "description": "Label showing who shared a collection with the current user.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "shareRequestsTitle": "Paylaşım İstekleri",
+  "@shareRequestsTitle": {
+    "description": "Title of the share requests screen."
+  },
+  "shareRequestsLoadError": "Paylaşım istekleri yüklenemedi. Lütfen tekrar deneyin.",
+  "@shareRequestsLoadError": {
+    "description": "Error message shown when pending share requests fail to load."
+  },
+  "shareRequestsEmptyTitle": "Bekleyen istek yok",
+  "@shareRequestsEmptyTitle": {
+    "description": "Title shown when there are no pending share requests."
+  },
+  "shareRequestsEmptySubtitle": "Yeni paylaşım istekleri burada görünecek.",
+  "@shareRequestsEmptySubtitle": {
+    "description": "Subtitle shown when there are no pending share requests."
+  },
+  "shareRequestsReject": "Reddet",
+  "@shareRequestsReject": {
+    "description": "Button label to reject a share request."
+  },
+  "shareRequestsAccept": "Kabul Et",
+  "@shareRequestsAccept": {
+    "description": "Button label to accept a share request."
+  },
+  "shareRequestsAcceptedTitle": "Kabul Edildi",
+  "@shareRequestsAcceptedTitle": {
+    "description": "Title of the confirmation sheet shown after accepting a share request."
+  },
+  "shareRequestsAcceptedMessage": "\"{categoryName}\" koleksiyonu artık görüntülenebilir.",
+  "@shareRequestsAcceptedMessage": {
+    "description": "Message of the confirmation sheet shown after accepting a share request.",
+    "placeholders": {
+      "categoryName": {
+        "type": "String"
+      }
+    }
+  },
+  "shareRequestsRejectedTitle": "Reddedildi",
+  "@shareRequestsRejectedTitle": {
+    "description": "Title of the confirmation sheet shown after rejecting a share request."
+  },
+  "shareRequestsRejectedMessage": "Paylaşım isteği reddedildi.",
+  "@shareRequestsRejectedMessage": {
+    "description": "Message of the confirmation sheet shown after rejecting a share request."
+  },
+
+  "mySharesTitle": "Paylaştıklarım",
+  "@mySharesTitle": {
+    "description": "Title of the my-shares screen."
+  },
+  "mySharesEmptyTitle": "Henüz paylaşım yok",
+  "@mySharesEmptyTitle": {
+    "description": "Title shown when the user has not shared any collections yet."
+  },
+  "mySharesEmptySubtitle": "Paylaştığın koleksiyonlar burada görünecek.",
+  "@mySharesEmptySubtitle": {
+    "description": "Subtitle shown when the user has not shared any collections yet."
+  },
+  "mySharesStatusPending": "Bekliyor",
+  "@mySharesStatusPending": {
+    "description": "Status badge label for a pending share."
+  },
+  "mySharesRevoke": "Geri Çek",
+  "@mySharesRevoke": {
+    "description": "Button label to revoke a share."
+  },
+  "mySharesRevokeDialogTitle": "Paylaşımı Geri Çek",
+  "@mySharesRevokeDialogTitle": {
+    "description": "Title of the confirmation dialog for revoking a share."
+  },
+  "mySharesRevokeDialogMessage": "Bu paylaşımı geri çekmek istediğinize emin misiniz?",
+  "@mySharesRevokeDialogMessage": {
+    "description": "Message of the confirmation dialog for revoking a share."
+  },
+  "mySharesRevokedTitle": "Geri Çekildi",
+  "@mySharesRevokedTitle": {
+    "description": "Title of the confirmation sheet shown after revoking a share."
+  },
+  "mySharesRevokedMessage": "Paylaşım başarıyla geri çekildi.",
+  "@mySharesRevokedMessage": {
+    "description": "Message of the confirmation sheet shown after revoking a share."
+  },
+
+  "shareRequestActionSheetDefaultCategory": "Koleksiyon",
+  "@shareRequestActionSheetDefaultCategory": {
+    "description": "Fallback collection name shown when a share request notification has no category name."
+  },
+  "shareRequestActionSheetDefaultUser": "Bir kullanıcı",
+  "@shareRequestActionSheetDefaultUser": {
+    "description": "Fallback sender name shown when a share request notification has no sender name."
+  },
+  "shareRequestActionSheetDefaultInitial": "U",
+  "@shareRequestActionSheetDefaultInitial": {
+    "description": "Fallback single-letter avatar initial shown when the sender name is unavailable."
+  },
+  "shareRequestActionSheetTitle": "Yeni paylaşım isteği",
+  "@shareRequestActionSheetTitle": {
+    "description": "Title of the share request action bottom sheet."
+  },
+  "shareRequestActionSheetSubtitle": "{name} sizinle bir koleksiyon paylaşmak istiyor.",
+  "@shareRequestActionSheetSubtitle": {
+    "description": "Subtitle of the share request action bottom sheet, naming who sent the request.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareRequestActionSheetSharedCollection": "Paylaşılan koleksiyon",
+  "@shareRequestActionSheetSharedCollection": {
+    "description": "Label above the shared collection name on the action sheet."
+  },
+  "shareRequestActionSheetLater": "Daha sonra bak",
+  "@shareRequestActionSheetLater": {
+    "description": "Button label to dismiss the share request action sheet without acting."
+  },
+  "shareRequestActionSheetMissingInfo": "İstek bilgisi eksik olduğu için bu bildirim hızlı aksiyon sunamıyor.",
+  "@shareRequestActionSheetMissingInfo": {
+    "description": "Warning shown when a share request notification is missing data needed for quick actions."
+  },
+  "shareRequestActionSheetAcceptedMessage": "\"{categoryName}\" koleksiyonu artık hesabınızda kullanılabilir.",
+  "@shareRequestActionSheetAcceptedMessage": {
+    "description": "Message of the confirmation sheet shown after accepting a share request from the action sheet.",
+    "placeholders": {
+      "categoryName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "commonError": "Hata",
+  "@commonError": {
+    "description": "Generic short error title used in notification sheets."
+  },
+
+  "usernameErrorFormat": "3-20 karakter, sadece harf, rakam ve alt çizgi",
+  "@usernameErrorFormat": {
+    "description": "Validation error shown when the chosen username does not match the format rules."
+  },
+  "usernameErrorTaken": "Bu kullanıcı adı alınmış",
+  "@usernameErrorTaken": {
+    "description": "Validation error shown when the chosen username is already in use."
+  },
+
+  "onboardingNameTitle": "Hazırsan\nBaşlayalım",
+  "@onboardingNameTitle": {
+    "description": "Large gradient headline on the onboarding name screen."
+  },
+  "onboardingNameSubtitle": "Sana nasıl hitap etmemizi istersin?",
+  "@onboardingNameSubtitle": {
+    "description": "Subtitle under the headline on the onboarding name screen."
+  },
+  "onboardingNameNameLabel": "Adınız",
+  "@onboardingNameNameLabel": {
+    "description": "Label above the name input on the onboarding name screen."
+  },
+  "onboardingNameNameHint": "Adı ve Soyadı",
+  "@onboardingNameNameHint": {
+    "description": "Hint text inside the name input on the onboarding name screen."
+  },
+  "onboardingNameUsernameLabel": "Kullanıcı Adınız",
+  "@onboardingNameUsernameLabel": {
+    "description": "Label above the username input on the onboarding name screen."
+  },
+  "onboardingNameUsernameHint": "kullanici_adi",
+  "@onboardingNameUsernameHint": {
+    "description": "Hint text inside the username input on the onboarding name screen."
+  },
+  "onboardingNameSuggestionLabel": "Öneri: ",
+  "@onboardingNameSuggestionLabel": {
+    "description": "Prefix label shown before a suggested username."
+  },
+  "onboardingNameUsernameAvailable": "Kullanıcı adı müsait ✓",
+  "@onboardingNameUsernameAvailable": {
+    "description": "Helper text shown under the username input when it is available."
+  },
+  "onboardingNameContinue": "Devam Et",
+  "@onboardingNameContinue": {
+    "description": "Continue button label on the onboarding name screen."
+  },
+  "onboardingNameEnterName": "Lütfen adınızı girin",
+  "@onboardingNameEnterName": {
+    "description": "Snackbar error shown when the user tries to continue without entering a name."
+  },
+  "onboardingNameEnterUsername": "Lütfen kullanıcı adı girin",
+  "@onboardingNameEnterUsername": {
+    "description": "Snackbar error shown when the user tries to continue without entering a username."
+  },
+  "onboardingNameSelectValidUsername": "Lütfen geçerli bir kullanıcı adı seçin",
+  "@onboardingNameSelectValidUsername": {
+    "description": "Snackbar error shown when the user tries to continue with an unavailable username."
+  },
+
+  "onboardingPrepTitle": "Koleksiyonlar Hazırlanıyor",
+  "@onboardingPrepTitle": {
+    "description": "Gradient headline on the onboarding preparation screen."
+  },
+  "onboardingPrepDescription": "Sizin için seveceğinizi düşündüğümüz örnek içerikler hazırlıyoruz.",
+  "@onboardingPrepDescription": {
+    "description": "Description text under the headline on the onboarding preparation screen."
+  },
+  "onboardingPrepComplete": "Tamamlandı",
+  "@onboardingPrepComplete": {
+    "description": "Status label shown when the onboarding preparation finishes."
+  },
+  "onboardingPrepPreparing": "Hazırlanıyor...",
+  "@onboardingPrepPreparing": {
+    "description": "Status label shown while the onboarding preparation is in progress."
+  },
+  "onboardingPrepStartExploring": "Keşfetmeye Başla",
+  "@onboardingPrepStartExploring": {
+    "description": "Primary button label that finishes onboarding and opens the app."
+  },
+
+  "recentlyDeletedTitle": "Son Silinenler",
+  "@recentlyDeletedTitle": {
+    "description": "Title of the recently deleted items screen."
+  },
+  "recentlyDeletedDeleteAll": "Tümünü Sil",
+  "@recentlyDeletedDeleteAll": {
+    "description": "Action in the app bar to delete all recently deleted items."
+  },
+  "recentlyDeletedDeleteAllConfirm": "{count} öğe kalıcı olarak silinecek. Bu işlem geri alınamaz.",
+  "@recentlyDeletedDeleteAllConfirm": {
+    "description": "Confirmation message in the delete-all dialog, naming how many items will be deleted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recentlyDeletedAllDeletedTitle": "Tümü Silindi",
+  "@recentlyDeletedAllDeletedTitle": {
+    "description": "Success notification title after all recently deleted items are removed."
+  },
+  "recentlyDeletedAllDeletedMessage": "{count} öğe kalıcı olarak silindi.",
+  "@recentlyDeletedAllDeletedMessage": {
+    "description": "Success notification message after all recently deleted items are removed.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recentlyDeletedDeleteError": "Silme işlemi sırasında bir hata oluştu.",
+  "@recentlyDeletedDeleteError": {
+    "description": "Error notification message when deleting all items fails."
+  },
+  "recentlyDeletedEmptyTitle": "Henüz silinen öğe yok",
+  "@recentlyDeletedEmptyTitle": {
+    "description": "Title of the empty state on the recently deleted screen."
+  },
+  "recentlyDeletedEmptySubtitle": "Silinen öğeler burada 30 gün saklanır, sonra otomatik olarak silinir.",
+  "@recentlyDeletedEmptySubtitle": {
+    "description": "Subtitle of the empty state on the recently deleted screen."
+  },
+  "recentlyDeletedInfoBanner": "Buradaki öğeler 30 gün sonra otomatik olarak silinecektir.",
+  "@recentlyDeletedInfoBanner": {
+    "description": "Info banner explaining auto-cleanup on the recently deleted screen."
+  },
+  "recentlyDeletedDaysRemaining": "{days} gün içinde silinecek",
+  "@recentlyDeletedDaysRemaining": {
+    "description": "Per-item label showing how many days remain until permanent deletion.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "recentlyDeletedRestore": "Geri Yükle",
+  "@recentlyDeletedRestore": {
+    "description": "Tooltip on the restore action of a recently deleted item."
+  },
+  "recentlyDeletedPermanentDelete": "Kalıcı Sil",
+  "@recentlyDeletedPermanentDelete": {
+    "description": "Tooltip on the permanent delete action of a recently deleted item."
+  },
+  "recentlyDeletedRestoredTitle": "Geri Yüklendi",
+  "@recentlyDeletedRestoredTitle": {
+    "description": "Success notification title after restoring an item."
+  },
+  "recentlyDeletedRestoredMessage": "Öğe başarıyla geri yüklendi.",
+  "@recentlyDeletedRestoredMessage": {
+    "description": "Success notification message after restoring an item."
+  },
+  "recentlyDeletedGenericError": "Bir hata oluştu.",
+  "@recentlyDeletedGenericError": {
+    "description": "Generic error notification message on the recently deleted screen."
+  },
+  "recentlyDeletedPermanentlyDeletedTitle": "Kalıcı Olarak Silindi",
+  "@recentlyDeletedPermanentlyDeletedTitle": {
+    "description": "Success notification title after permanently deleting an item."
+  },
+  "recentlyDeletedPermanentlyDeletedMessage": "Öğe kalıcı olarak silindi.",
+  "@recentlyDeletedPermanentlyDeletedMessage": {
+    "description": "Success notification message after permanently deleting an item."
+  },
+
+  "sharedCollectionByUser": "{name} tarafından",
+  "@sharedCollectionByUser": {
+    "description": "Attribution line under the shared collection title naming who shared it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedCollectionNone": "Hiçbiri",
+  "@sharedCollectionNone": {
+    "description": "Toggle label to clear the selection of all items in a shared collection."
+  },
+  "sharedCollectionEmptyTitle": "Koleksiyon Boş",
+  "@sharedCollectionEmptyTitle": {
+    "description": "Title of the empty state on the shared collection view screen."
+  },
+  "sharedCollectionEmptySubtitle": "Bu koleksiyonda henüz içerik yok.",
+  "@sharedCollectionEmptySubtitle": {
+    "description": "Subtitle of the empty state on the shared collection view screen."
+  },
+  "sharedCollectionSelectedCount": "{count} seçili",
+  "@sharedCollectionSelectedCount": {
+    "description": "Counter in the copy bar showing how many items are selected.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharedCollectionCopyToMine": "Koleksiyonuma Kopyala",
+  "@sharedCollectionCopyToMine": {
+    "description": "Button label to copy selected items into one of the user's collections."
+  },
+  "sharedCollectionSelectCollection": "Koleksiyon Seçin",
+  "@sharedCollectionSelectCollection": {
+    "description": "Title of the dialog to pick a target collection for copying."
+  },
+  "sharedCollectionCreateNew": "Aynı isimle yeni koleksiyon oluştur",
+  "@sharedCollectionCreateNew": {
+    "description": "List tile label to create a new collection with the shared name."
+  },
+  "sharedCollectionCopiedTitle": "Kopyalandı",
+  "@sharedCollectionCopiedTitle": {
+    "description": "Success notification title after copying shared items into a collection."
+  },
+  "sharedCollectionCopiedMessage": "{count} içerik koleksiyonunuza eklendi.",
+  "@sharedCollectionCopiedMessage": {
+    "description": "Success notification message after copying shared items into an existing collection.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharedCollectionCreatedMessage": "\"{categoryName}\" koleksiyonu oluşturuldu ve {count} içerik eklendi.",
+  "@sharedCollectionCreatedMessage": {
+    "description": "Success notification message after creating a new collection and copying shared items.",
+    "placeholders": {
+      "categoryName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "helpSupportTitle": "Yardım ve Destek",
+  "@helpSupportTitle": {
+    "description": "Title of the help & support screen."
+  },
+  "helpSupportHeaderTitle": "Nasıl yardımcı olabiliriz?",
+  "@helpSupportHeaderTitle": {
+    "description": "Headline on the gradient header card of the help & support screen."
+  },
+  "helpSupportHeaderSubtitle": "Aşağıdaki SSS bölümünü inceleyin veya bize ulaşın",
+  "@helpSupportHeaderSubtitle": {
+    "description": "Subtitle on the gradient header card of the help & support screen."
+  },
+  "helpSupportFaqTitle": "Sık Sorulan Sorular",
+  "@helpSupportFaqTitle": {
+    "description": "Section heading above the FAQ list on the help & support screen."
+  },
+  "helpSupportContactTitle": "Bize Ulaşın",
+  "@helpSupportContactTitle": {
+    "description": "Section heading above the contact options on the help & support screen."
+  },
+  "helpSupportEmailTitle": "E-posta Desteği",
+  "@helpSupportEmailTitle": {
+    "description": "Title of the email support contact row."
+  },
+  "helpSupportWebsiteTitle": "Web Sitesi",
+  "@helpSupportWebsiteTitle": {
+    "description": "Title of the website contact row."
+  },
+  "helpSupportAppVersion": "Uygulama Versiyonu",
+  "@helpSupportAppVersion": {
+    "description": "Label for the app version row in the help & support screen."
+  },
+  "helpSupportFaqQ1": "So Mine nasıl çalışır?",
+  "@helpSupportFaqQ1": {
+    "description": "First FAQ question on the help & support screen."
+  },
+  "helpSupportFaqA1": "So Mine, Instagram, YouTube, Twitter ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
+  "@helpSupportFaqA1": {
+    "description": "First FAQ answer on the help & support screen."
+  },
+  "helpSupportFaqQ2": "Koleksiyonlar nasıl oluşturulur?",
+  "@helpSupportFaqQ2": {
+    "description": "Second FAQ question on the help & support screen."
+  },
+  "helpSupportFaqA2": "Koleksiyonlar sekmesinde sağ üstteki + butonuna basarak yeni koleksiyon oluşturabilirsiniz. Koleksiyonlarınıza isim ve emoji atayabilirsiniz.",
+  "@helpSupportFaqA2": {
+    "description": "Second FAQ answer on the help & support screen."
+  },
+  "helpSupportFaqQ3": "Premium özellikleri nelerdir?",
+  "@helpSupportFaqQ3": {
+    "description": "Third FAQ question on the help & support screen."
+  },
+  "helpSupportFaqA3": "Premium ile sınırsız koleksiyon, özel app ikonları, widget desteği ve daha fazla özelliğe erişebilirsiniz.",
+  "@helpSupportFaqA3": {
+    "description": "Third FAQ answer on the help & support screen."
+  },
+  "helpSupportFaqQ4": "Verilerim güvende mi?",
+  "@helpSupportFaqQ4": {
+    "description": "Fourth FAQ question on the help & support screen."
+  },
+  "helpSupportFaqA4": "Evet! Tüm verileriniz Firebase güvenlik altyapısıyla şifrelenerek saklanır. Gizli Kasa özelliği ile hassas içeriklerinizi Face ID/Touch ID ile koruyabilirsiniz.",
+  "@helpSupportFaqA4": {
+    "description": "Fourth FAQ answer on the help & support screen."
+  },
+  "helpSupportFaqQ5": "İçeriklerimi nasıl silebilirim?",
+  "@helpSupportFaqQ5": {
+    "description": "Fifth FAQ question on the help & support screen."
+  },
+  "helpSupportFaqA5": "İçerik kartına uzun basarak silme seçeneğine ulaşabilirsiniz. Silinen içerikler 30 gün boyunca \"Son Silinenler\" bölümünde saklanır.",
+  "@helpSupportFaqA5": {
+    "description": "Fifth FAQ answer on the help & support screen."
+  },
+
+  "commonUpdate": "Güncelle",
+  "@commonUpdate": {
+    "description": "Generic Update action button label."
+  },
+
+  "accountInfoTitle": "Hesap Bilgileri",
+  "@accountInfoTitle": {
+    "description": "Title of the account info screen."
+  },
+  "accountInfoCropPhoto": "Fotoğrafı Kırp",
+  "@accountInfoCropPhoto": {
+    "description": "Toolbar title of the image cropper when picking a profile photo."
+  },
+  "accountInfoPhotoUpdatedTitle": "Fotoğraf Güncellendi",
+  "@accountInfoPhotoUpdatedTitle": {
+    "description": "Success notification title after updating the profile photo."
+  },
+  "accountInfoPhotoUpdatedMessage": "Profil fotoğrafınız başarıyla değiştirildi.",
+  "@accountInfoPhotoUpdatedMessage": {
+    "description": "Success notification message after updating the profile photo."
+  },
+  "accountInfoPhotoRemovedTitle": "Fotoğraf Kaldırıldı",
+  "@accountInfoPhotoRemovedTitle": {
+    "description": "Success notification title after removing the profile photo."
+  },
+  "accountInfoPhotoRemovedMessage": "Profil fotoğrafınız varsayılan haline döndürüldü.",
+  "@accountInfoPhotoRemovedMessage": {
+    "description": "Success notification message after removing the profile photo."
+  },
+  "accountInfoSelectPhoto": "Fotoğraf Seç",
+  "@accountInfoSelectPhoto": {
+    "description": "Action sheet option to pick a profile photo."
+  },
+  "accountInfoRemovePhoto": "Fotoğrafı Kaldır",
+  "@accountInfoRemovePhoto": {
+    "description": "Action sheet option to remove the profile photo."
+  },
+  "accountInfoFullNameLabel": "Ad Soyad",
+  "@accountInfoFullNameLabel": {
+    "description": "Label and hint for the full name field on the account info screen."
+  },
+  "accountInfoNotSet": "Ayarlanmamış",
+  "@accountInfoNotSet": {
+    "description": "Placeholder shown when a profile field has no value."
+  },
+  "accountInfoUsernameLabel": "Kullanıcı Adı",
+  "@accountInfoUsernameLabel": {
+    "description": "Label for the username row on the account info screen."
+  },
+  "accountInfoEmailHiddenApple": "E-posta Gizli (Apple)",
+  "@accountInfoEmailHiddenApple": {
+    "description": "Value shown when the email is hidden by Apple's private relay."
+  },
+  "accountInfoUnknown": "Bilinmiyor",
+  "@accountInfoUnknown": {
+    "description": "Value shown when a profile field (e.g. creation date) is unknown."
+  },
+  "accountInfoEmailLabel": "E-posta",
+  "@accountInfoEmailLabel": {
+    "description": "Label for the email row on the account info screen."
+  },
+  "accountInfoCreationLabel": "Hesap Oluşturma",
+  "@accountInfoCreationLabel": {
+    "description": "Label for the account creation date row."
+  },
+  "accountInfoVerifiedApple": "Apple ile Doğrulandı",
+  "@accountInfoVerifiedApple": {
+    "description": "Verification status when signed in with Apple."
+  },
+  "accountInfoVerifiedGoogle": "Google ile Doğrulandı",
+  "@accountInfoVerifiedGoogle": {
+    "description": "Verification status when signed in with Google."
+  },
+  "accountInfoVerified": "Doğrulandı",
+  "@accountInfoVerified": {
+    "description": "Verification status when the email is verified."
+  },
+  "accountInfoNotVerified": "Doğrulanmadı",
+  "@accountInfoNotVerified": {
+    "description": "Verification status when the email is not verified."
+  },
+  "accountInfoVerificationLabel": "Hesap Doğrulama",
+  "@accountInfoVerificationLabel": {
+    "description": "Label for the account verification row."
+  },
+  "accountInfoDeleteAccount": "Hesabı Sil",
+  "@accountInfoDeleteAccount": {
+    "description": "Destructive action and dialog title to delete the account."
+  },
+  "accountInfoEditNameTitle": "Adı Güncelle",
+  "@accountInfoEditNameTitle": {
+    "description": "Title of the bottom sheet to edit the display name."
+  },
+  "accountInfoEditNameSubtitle": "Bu isim profilinizde görünecektir.",
+  "@accountInfoEditNameSubtitle": {
+    "description": "Subtitle of the display name edit sheet."
+  },
+  "accountInfoNameUpdatedTitle": "Ad Güncellendi",
+  "@accountInfoNameUpdatedTitle": {
+    "description": "Success notification title after updating the display name."
+  },
+  "accountInfoNameUpdatedMessage": "Görünen adınız başarıyla değiştirildi.",
+  "@accountInfoNameUpdatedMessage": {
+    "description": "Success notification message after updating the display name."
+  },
+  "accountInfoChangeUsernameTitle": "Kullanıcı Adını Değiştir",
+  "@accountInfoChangeUsernameTitle": {
+    "description": "Title of the bottom sheet to change the username."
+  },
+  "accountInfoChangeUsernameSubtitle": "Kullanıcı adın paylaşımlarda seni bulmak için kullanılır.",
+  "@accountInfoChangeUsernameSubtitle": {
+    "description": "Subtitle of the username change sheet."
+  },
+  "accountInfoUsernameUpdatedTitle": "Kullanıcı Adı Güncellendi",
+  "@accountInfoUsernameUpdatedTitle": {
+    "description": "Success notification title after updating the username."
+  },
+  "accountInfoUsernameUpdatedMessage": "Yeni kullanıcı adın: @{username}",
+  "@accountInfoUsernameUpdatedMessage": {
+    "description": "Success notification message after updating the username.",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "accountInfoChangePasswordTitle": "Şifre Değiştir",
+  "@accountInfoChangePasswordTitle": {
+    "description": "Dialog title to change the password."
+  },
+  "accountInfoChangePasswordMessage": "E-posta adresinize şifre sıfırlama bağlantısı gönderilecek.",
+  "@accountInfoChangePasswordMessage": {
+    "description": "Body text of the change password dialog."
+  },
+  "accountInfoPasswordResetSent": "Şifre sıfırlama e-postası gönderildi",
+  "@accountInfoPasswordResetSent": {
+    "description": "Snackbar confirmation after sending the password reset email."
+  },
+  "accountInfoSend": "Gönder",
+  "@accountInfoSend": {
+    "description": "Send button label in the change password dialog."
+  },
+  "accountInfoDeleteAccountMessage": "Bu işlem geri alınamaz. Tüm verileriniz silinecektir.",
+  "@accountInfoDeleteAccountMessage": {
+    "description": "Body text of the delete account dialog."
+  },
+  "accountInfoReloginRequired": "Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor",
+  "@accountInfoReloginRequired": {
+    "description": "Snackbar message shown after requesting account deletion."
+  },
+
+  "categoryManagerTitle": "Kategoriler",
+  "@categoryManagerTitle": {
+    "description": "Header title of the category manager screen."
+  },
+  "categoryManagerEmptyTitle": "Henüz kategori yok",
+  "@categoryManagerEmptyTitle": {
+    "description": "Title of the empty state on the category manager screen."
+  },
+  "categoryManagerEmptySubtitle": "İçeriklerini düzenlemek için\nkategoriler oluştur",
+  "@categoryManagerEmptySubtitle": {
+    "description": "Subtitle of the empty state on the category manager screen."
+  },
+  "categoryManagerCreate": "Kategori Oluştur",
+  "@categoryManagerCreate": {
+    "description": "Button label to create a new category."
+  },
+  "categoryManagerNew": "Yeni",
+  "@categoryManagerNew": {
+    "description": "Label on the add-category button in the header."
+  },
+  "categoryManagerDuplicateName": "\"{name}\" adında bir kategori zaten var",
+  "@categoryManagerDuplicateName": {
+    "description": "Error snackbar shown when a category name already exists.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryManagerCreated": "Kategori oluşturuldu",
+  "@categoryManagerCreated": {
+    "description": "Success snackbar after creating a category."
+  },
+  "categoryManagerCreateFailed": "Kategori oluşturulamadı",
+  "@categoryManagerCreateFailed": {
+    "description": "Error snackbar when creating a category fails."
+  },
+  "categoryManagerUpdated": "Kategori güncellendi",
+  "@categoryManagerUpdated": {
+    "description": "Success snackbar after updating a category."
+  },
+  "categoryManagerUpdateFailed": "Kategori güncellenemedi",
+  "@categoryManagerUpdateFailed": {
+    "description": "Error snackbar when updating a category fails."
+  },
+  "categoryManagerDeleteTitle": "Kategoriyi Sil",
+  "@categoryManagerDeleteTitle": {
+    "description": "Title of the delete category dialog and bottom sheet."
+  },
+  "categoryManagerDeleteConfirm": "\"{name}\" kategorisini silmek istediğine emin misin?",
+  "@categoryManagerDeleteConfirm": {
+    "description": "Confirmation message when deleting an empty category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryManagerHasItemsMessage": "\"{name}\" içinde {count} adet içerik var. Bu içerikleri ne yapmak istersin?",
+  "@categoryManagerHasItemsMessage": {
+    "description": "Message in the advanced delete sheet naming the category and item count.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryManagerMoveItems": "İçerikleri Başka Koleksiyona Taşı",
+  "@categoryManagerMoveItems": {
+    "description": "Action to move items to another collection before deleting."
+  },
+  "categoryManagerDeleteWithItems": "Kategori ve İçerikleri Sil",
+  "@categoryManagerDeleteWithItems": {
+    "description": "Destructive action to delete the category together with its items."
+  },
+  "categoryManagerSelectTarget": "Hedef Koleksiyon Seç",
+  "@categoryManagerSelectTarget": {
+    "description": "Title of the target collection picker when moving items."
+  },
+  "categoryManagerMovedAndDeleted": "İçerikler taşındı ve kategori silindi",
+  "@categoryManagerMovedAndDeleted": {
+    "description": "Success snackbar after moving items and deleting the source category."
+  },
+  "categoryManagerOperationFailed": "İşlem başarısız oldu",
+  "@categoryManagerOperationFailed": {
+    "description": "Error snackbar when the move-and-delete operation fails."
+  },
+  "categoryManagerDeleted": "Kategori silindi",
+  "@categoryManagerDeleted": {
+    "description": "Success snackbar after deleting a category without its items."
+  },
+  "categoryManagerDeletedWithItems": "Kategori ve içerikler silindi",
+  "@categoryManagerDeletedWithItems": {
+    "description": "Success snackbar after deleting a category together with its items."
+  },
+  "categoryManagerDeleteFailed": "Kategori silinemedi",
+  "@categoryManagerDeleteFailed": {
+    "description": "Error snackbar when deleting a category fails."
+  },
+  "categoryManagerItemCount": "{count} içerik",
+  "@categoryManagerItemCount": {
+    "description": "Per-category tile subtitle showing how many items it holds.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryManagerEditTitle": "Kategoriyi Düzenle",
+  "@categoryManagerEditTitle": {
+    "description": "Title of the edit category form sheet."
+  },
+  "categoryManagerNewCategory": "Yeni Kategori",
+  "@categoryManagerNewCategory": {
+    "description": "Title of the create category form sheet."
+  },
+  "categoryManagerChooseIcon": "İkon Seç",
+  "@categoryManagerChooseIcon": {
+    "description": "Label above the emoji picker in the category form sheet."
+  },
+  "categoryManagerNameLabel": "Kategori Adı",
+  "@categoryManagerNameLabel": {
+    "description": "Label above the category name input."
+  },
+  "categoryManagerNameHint": "Örn: Tatil Fikirleri",
+  "@categoryManagerNameHint": {
+    "description": "Hint text inside the category name input."
+  },
+
+  "editContentScanning": "Bağlantı taranıyor...",
+  "@editContentScanning": {
+    "description": "Hero status shown while fetching link metadata on the edit screen."
+  },
+  "editContentEditTitle": "İçeriği düzenle",
+  "@editContentEditTitle": {
+    "description": "Hero status shown when the edit screen is ready."
+  },
+  "editContentTitleHint": "Başlık",
+  "@editContentTitleHint": {
+    "description": "Hint text for the title input on the edit screen."
+  },
+  "editContentNoteHint": "Notun",
+  "@editContentNoteHint": {
+    "description": "Hint text for the note input on the edit screen."
+  },
+  "editContentChangeCollection": "Koleksiyon Değiştir",
+  "@editContentChangeCollection": {
+    "description": "Section heading above the collection chips on the edit screen."
+  },
+  "editContentLinkHint": "Bağlantı",
+  "@editContentLinkHint": {
+    "description": "Hint text for the link input on the edit screen."
+  },
+  "editContentSaveChanges": "Değişiklikleri Kaydet",
+  "@editContentSaveChanges": {
+    "description": "Primary save button label on the edit screen."
+  },
+  "editContentSelectCollection": "Lütfen bir koleksiyon seçin",
+  "@editContentSelectCollection": {
+    "description": "Error snackbar shown when saving without a selected collection."
+  },
+  "editContentUpdateFailed": "Güncelleme hatası",
+  "@editContentUpdateFailed": {
+    "description": "Error snackbar shown when updating an item fails."
+  },
+  "editContentDeleteFailed": "Silme işlemi başarısız",
+  "@editContentDeleteFailed": {
+    "description": "Error snackbar shown when deleting an item fails."
   }
 }

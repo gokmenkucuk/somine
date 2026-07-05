@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -335,13 +336,14 @@ class _EditContentScreenState extends State<EditContentScreen>
   }
 
   void _showDeleteConfirmation() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Center(
             child: Text(
-              "Silme Onayı",
+              l10n.deleteConfirmTitle,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -353,7 +355,7 @@ class _EditContentScreenState extends State<EditContentScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Bu içeriği silmek istediğinize emin misiniz?",
+                l10n.deleteItemConfirm,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   color: context.colors.body,
@@ -385,7 +387,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                       ),
                       child: Center(
                         child: Text(
-                          "Vazgeç",
+                          l10n.commonDiscard,
                           style: GoogleFonts.poppins(
                             color: Colors.grey.shade800,
                             fontWeight: FontWeight.w600,
@@ -423,7 +425,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                       ),
                       child: Center(
                         child: Text(
-                          "Sil",
+                          l10n.commonDelete,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -454,7 +456,7 @@ class _EditContentScreenState extends State<EditContentScreen>
       }
     } catch (e) {
       debugPrint("Delete error: $e");
-      if (mounted) _showError("Silme işlemi başarısız");
+      if (mounted) _showError(AppLocalizations.of(context)!.editContentDeleteFailed);
     }
   }
 
@@ -465,7 +467,7 @@ class _EditContentScreenState extends State<EditContentScreen>
       return;
     }
     if (_selectedCategoryIds.isEmpty) {
-      _showError("Lütfen bir koleksiyon seçin");
+      _showError(AppLocalizations.of(context)!.editContentSelectCollection);
       return;
     }
 
@@ -537,7 +539,7 @@ class _EditContentScreenState extends State<EditContentScreen>
       }
     } catch (e) {
       debugPrint("Update error: $e");
-      if (mounted) _showError("Güncelleme hatası");
+      if (mounted) _showError(AppLocalizations.of(context)!.editContentUpdateFailed);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -736,7 +738,9 @@ class _EditContentScreenState extends State<EditContentScreen>
                     ),
                 const SizedBox(height: 12),
                 Text(
-                  animate ? "Bağlantı taranıyor..." : "İçeriği düzenle",
+                  animate
+                      ? AppLocalizations.of(context)!.editContentScanning
+                      : AppLocalizations.of(context)!.editContentEditTitle,
                   style: GoogleFonts.poppins(
                     color: context.colors.surfaceWhite.withValues(alpha: 0.9),
                     fontSize: 14,
@@ -819,7 +823,7 @@ class _EditContentScreenState extends State<EditContentScreen>
           _buildInputField(
             controller: _titleController,
             icon: PhosphorIconsThin.pencilSimple,
-            hint: "Başlık",
+            hint: AppLocalizations.of(context)!.editContentTitleHint,
             isTitle: true,
           ),
 
@@ -829,7 +833,7 @@ class _EditContentScreenState extends State<EditContentScreen>
           _buildInputField(
             controller: _noteController,
             icon: PhosphorIconsThin.notePencil,
-            hint: "Notun",
+            hint: AppLocalizations.of(context)!.editContentNoteHint,
             maxLines: 3,
           ),
 
@@ -837,7 +841,7 @@ class _EditContentScreenState extends State<EditContentScreen>
 
           // Category
           Text(
-            "Koleksiyon Değiştir", // Changed title
+            AppLocalizations.of(context)!.editContentChangeCollection, // Changed title
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -968,7 +972,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                 color: context.colors.headline,
               ),
               decoration: InputDecoration(
-                hintText: "Bağlantı",
+                hintText: AppLocalizations.of(context)!.editContentLinkHint,
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -1117,7 +1121,7 @@ class _EditContentScreenState extends State<EditContentScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "Değişiklikleri Kaydet", // Updated Text
+                        AppLocalizations.of(context)!.editContentSaveChanges, // Updated Text
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,

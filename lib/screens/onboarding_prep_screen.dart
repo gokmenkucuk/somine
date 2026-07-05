@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
@@ -190,6 +191,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -224,7 +226,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
                       ).createShader(bounds);
                     },
                     child: Text(
-                      'Koleksiyonlar Hazırlanıyor',
+                      l10n.onboardingPrepTitle,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         fontSize: 24,
@@ -239,7 +241,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
               
               // Description
               Text(
-                'Sizin için seveceğinizi düşündüğümüz örnek içerikler hazırlıyoruz.',
+                l10n.onboardingPrepDescription,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 15,
@@ -284,7 +286,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  _isComplete ? 'Tamamlandı' : 'Hazırlanıyor...',
+                  _isComplete ? l10n.onboardingPrepComplete : l10n.onboardingPrepPreparing,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -327,7 +329,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: Text(
-                        'Keşfetmeye Başla',
+                        l10n.onboardingPrepStartExploring,
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

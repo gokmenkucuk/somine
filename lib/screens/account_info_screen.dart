@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,6 +63,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
     if (pickedFile == null) return;
 
+    if (!mounted) return;
+    final cropPhotoLabel = AppLocalizations.of(context)!.accountInfoCropPhoto;
+
     // Crop the selected image
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: pickedFile.path,
@@ -71,7 +75,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
       maxHeight: 300,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Fotoğrafı Kırp',
+          toolbarTitle: cropPhotoLabel,
           toolbarColor: Colors.black,
           toolbarWidgetColor: Colors.white,
           activeControlsWidgetColor: Colors.green,
@@ -80,7 +84,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           hideBottomControls: false,
         ),
         IOSUiSettings(
-          title: 'Fotoğrafı Kırp',
+          title: cropPhotoLabel,
           aspectRatioLockEnabled: true,
           resetAspectRatioEnabled: false,
           aspectRatioPickerButtonHidden: true,
@@ -115,15 +119,15 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         setState(() {});
         SuccessNotificationSheet.show(
           context,
-          title: 'Fotoğraf Güncellendi',
-          message: 'Profil fotoğrafınız başarıyla değiştirildi.',
+          title: AppLocalizations.of(context)!.accountInfoPhotoUpdatedTitle,
+          message: AppLocalizations.of(context)!.accountInfoPhotoUpdatedMessage,
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.commonErrorWithDetail(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _isUploadingColor = false);
@@ -150,15 +154,15 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         setState(() {});
         SuccessNotificationSheet.show(
           context,
-          title: 'Fotoğraf Kaldırıldı',
-          message: 'Profil fotoğrafınız varsayılan haline döndürüldü.',
+          title: AppLocalizations.of(context)!.accountInfoPhotoRemovedTitle,
+          message: AppLocalizations.of(context)!.accountInfoPhotoRemovedMessage,
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.commonErrorWithDetail(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _isUploadingColor = false);
@@ -166,6 +170,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   void _showProfilePhotoOptions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showCupertinoModalPopup(
       context: context,
       builder:
@@ -176,7 +181,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   Navigator.pop(context);
                   _pickAndUploadImage();
                 },
-                child: const Text('Fotoğraf Seç'),
+                child: Text(l10n.accountInfoSelectPhoto),
               ),
               // Check if we have a custom photo (Base64 from Firestore)
               // We ignore FirebaseAuth.currentUser.photoURL because we disabled auto-import
@@ -187,12 +192,12 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                     Navigator.pop(context);
                     _removeProfilePhoto();
                   },
-                  child: const Text('Fotoğrafı Kaldır'),
+                  child: Text(l10n.accountInfoRemovePhoto),
                 ),
             ],
             cancelButton: CupertinoActionSheetAction(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Vazgeç'),
+              child: Text(l10n.commonDiscard),
             ),
           ),
     );
@@ -202,6 +207,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final creationTime = user?.metadata.creationTime;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
@@ -213,7 +219,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Hesap Bilgileri',
+          l10n.accountInfoTitle,
           style: GoogleFonts.poppins(
             color: context.colors.headline,
             fontWeight: FontWeight.w600,
@@ -264,8 +270,8 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           _buildEditableInfoCard(
             context,
             icon: PhosphorIconsRegular.user,
-            label: 'Ad Soyad',
-            value: _currentDisplayName ?? 'Ayarlanmamış',
+            label: l10n.accountInfoFullNameLabel,
+            value: _currentDisplayName ?? l10n.accountInfoNotSet,
             onEdit: () => _showDisplayNameEditDialog(context),
           ),
 
@@ -275,13 +281,13 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           _buildEditableInfoCard(
             context,
             icon: PhosphorIconsRegular.at,
-            label: 'Kullanıcı Adı',
+            label: l10n.accountInfoUsernameLabel,
             value:
                 _isLoading
                     ? '...'
                     : (_currentUsername != null
                         ? '@$_currentUsername'
-                        : 'Ayarlanmamış'),
+                        : l10n.accountInfoNotSet),
             onEdit: () => _showUsernameEditDialog(context),
           ),
 
@@ -296,18 +302,18 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
               String emailDisplay;
               if (email != null && email.isNotEmpty) {
                 if (email.contains('privaterelay.appleid.com')) {
-                  emailDisplay = 'E-posta Gizli (Apple)';
+                  emailDisplay = l10n.accountInfoEmailHiddenApple;
                 } else {
                   emailDisplay = email;
                 }
               } else {
-                emailDisplay = isApple ? 'E-posta Gizli (Apple)' : 'Bilinmiyor';
+                emailDisplay = isApple ? l10n.accountInfoEmailHiddenApple : l10n.accountInfoUnknown;
               }
               
               return _buildInfoCard(
                 context,
                 icon: CupertinoIcons.mail,
-                label: 'E-posta',
+                label: l10n.accountInfoEmailLabel,
                 value: emailDisplay,
               );
             },
@@ -319,11 +325,11 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           _buildInfoCard(
             context,
             icon: CupertinoIcons.calendar,
-            label: 'Hesap Oluşturma',
+            label: l10n.accountInfoCreationLabel,
             value:
                 creationTime != null
                     ? DateFormat('d MMMM yyyy', 'tr').format(creationTime)
-                    : 'Bilinmiyor',
+                    : l10n.accountInfoUnknown,
           ),
 
           const SizedBox(height: 12),
@@ -338,23 +344,23 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
               Color verificationColor;
               
               if (isApple) {
-                verificationText = 'Apple ile Doğrulandı';
+                verificationText = l10n.accountInfoVerifiedApple;
                 verificationColor = Colors.green;
               } else if (isGoogle) {
-                verificationText = 'Google ile Doğrulandı';
+                verificationText = l10n.accountInfoVerifiedGoogle;
                 verificationColor = Colors.green;
               } else if (user?.emailVerified == true) {
-                verificationText = 'Doğrulandı';
+                verificationText = l10n.accountInfoVerified;
                 verificationColor = Colors.green;
               } else {
-                verificationText = 'Doğrulanmadı';
+                verificationText = l10n.accountInfoNotVerified;
                 verificationColor = Colors.orange;
               }
               
               return _buildInfoCard(
                 context,
                 icon: CupertinoIcons.checkmark_shield,
-                label: 'Hesap Doğrulama',
+                label: l10n.accountInfoVerificationLabel,
                 value: verificationText,
                 valueColor: verificationColor,
               );
@@ -366,7 +372,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           _buildActionButton(
             context,
             icon: PhosphorIconsRegular.trash,
-            label: 'Hesabı Sil',
+            label: l10n.accountInfoDeleteAccount,
             isDestructive: true,
             onTap: () => _showDeleteAccountDialog(context),
           ),
@@ -536,6 +542,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   void _showDisplayNameEditDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: _currentDisplayName ?? '');
 
     showModalBottomSheet(
@@ -573,7 +580,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   const SizedBox(height: 24),
 
                   Text(
-                    'Adı Güncelle',
+                    l10n.accountInfoEditNameTitle,
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -582,7 +589,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Bu isim profilinizde görünecektir.',
+                    l10n.accountInfoEditNameSubtitle,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: context.colors.body,
@@ -605,7 +612,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      hintText: 'Ad Soyad',
+                      hintText: l10n.accountInfoFullNameLabel,
                     ),
                   ),
 
@@ -632,9 +639,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               if (ctx.mounted) Navigator.pop(ctx);
                               SuccessNotificationSheet.show(
                                 this.context, // ignore: use_build_context_synchronously
-                                title: 'Ad Güncellendi',
+                                title: AppLocalizations.of(this.context)!.accountInfoNameUpdatedTitle,
                                 message:
-                                    'Görünen adınız başarıyla değiştirildi.',
+                                    AppLocalizations.of(this.context)!.accountInfoNameUpdatedMessage,
                               );
                             }
                           }
@@ -643,7 +650,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             if (ctx.mounted) Navigator.pop(ctx);
                             ScaffoldMessenger.of(
                               this.context, // ignore: use_build_context_synchronously
-                            ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+                            ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(this.context)!.commonErrorWithDetail(e.toString()))));
                           }
                         }
                       },
@@ -657,7 +664,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Kaydet',
+                        l10n.commonSave,
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -675,6 +682,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   void _showUsernameEditDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: _currentUsername ?? '');
     bool isChecking = false;
     bool? isAvailable;
@@ -717,7 +725,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         const SizedBox(height: 24),
 
                         Text(
-                          'Kullanıcı Adını Değiştir',
+                          l10n.accountInfoChangeUsernameTitle,
                           style: GoogleFonts.outfit(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -726,7 +734,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Kullanıcı adın paylaşımlarda seni bulmak için kullanılır.',
+                          l10n.accountInfoChangeUsernameSubtitle,
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             color: context.colors.body,
@@ -813,7 +821,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 isChecking = false;
                                 isAvailable = false;
                                 errorMessage =
-                                    '3-20 karakter, sadece harf, rakam ve alt çizgi';
+                                    l10n.usernameErrorFormat;
                               });
                               return;
                             }
@@ -833,7 +841,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               isChecking = false;
                               isAvailable = available;
                               errorMessage =
-                                  available ? null : 'Bu kullanıcı adı alınmış';
+                                  available ? null : l10n.usernameErrorTaken;
                             });
                           },
                         ),
@@ -875,9 +883,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         if (mounted) {
                                           SuccessNotificationSheet.show(
                                             this.context, // ignore: use_build_context_synchronously
-                                            title: 'Kullanıcı Adı Güncellendi',
+                                            title: AppLocalizations.of(this.context)!.accountInfoUsernameUpdatedTitle,
                                             message:
-                                                'Yeni kullanıcı adın: @${controller.text.toLowerCase().trim()}',
+                                                AppLocalizations.of(this.context)!.accountInfoUsernameUpdatedMessage(controller.text.toLowerCase().trim()),
                                           );
                                         }
                                       } catch (e) {
@@ -885,7 +893,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                           ScaffoldMessenger.of(
                                             this.context, // ignore: use_build_context_synchronously
                                           ).showSnackBar(
-                                            SnackBar(content: Text('Hata: $e')),
+                                            SnackBar(content: Text(AppLocalizations.of(this.context)!.commonErrorWithDetail(e.toString()))),
                                           );
                                         }
                                       }
@@ -901,7 +909,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               elevation: 0,
                             ),
                             child: Text(
-                              'Kaydet',
+                              l10n.commonSave,
                               style: GoogleFonts.outfit(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -920,20 +928,21 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   void _showPasswordChangeDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showCupertinoDialog(
       context: context,
       builder:
           (context) => CupertinoAlertDialog(
-            title: const Text('Şifre Değiştir'),
-            content: const Padding(
+            title: Text(l10n.accountInfoChangePasswordTitle),
+            content: Padding(
               padding: EdgeInsets.only(top: 12),
               child: Text(
-                'E-posta adresinize şifre sıfırlama bağlantısı gönderilecek.',
+                l10n.accountInfoChangePasswordMessage,
               ),
             ),
             actions: [
               CupertinoDialogAction(
-                child: const Text('İptal'),
+                child: Text(l10n.commonCancel),
                 onPressed: () => Navigator.pop(context),
               ),
               CupertinoDialogAction(
@@ -947,14 +956,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Şifre sıfırlama e-postası gönderildi'),
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!.accountInfoPasswordResetSent),
                         ),
                       );
                     }
                   }
                 },
-                child: const Text('Gönder'),
+                child: Text(l10n.accountInfoSend),
               ),
             ],
           ),
@@ -962,20 +971,21 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showCupertinoDialog(
       context: context,
       builder:
           (context) => CupertinoAlertDialog(
-            title: const Text('Hesabı Sil'),
-            content: const Padding(
+            title: Text(l10n.accountInfoDeleteAccount),
+            content: Padding(
               padding: EdgeInsets.only(top: 12),
               child: Text(
-                'Bu işlem geri alınamaz. Tüm verileriniz silinecektir.',
+                l10n.accountInfoDeleteAccountMessage,
               ),
             ),
             actions: [
               CupertinoDialogAction(
-                child: const Text('İptal'),
+                child: Text(l10n.commonCancel),
                 onPressed: () => Navigator.pop(context),
               ),
               CupertinoDialogAction(
@@ -983,14 +993,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                 onPressed: () async {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
-                        'Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor',
+                        AppLocalizations.of(context)!.accountInfoReloginRequired,
                       ),
                     ),
                   );
                 },
-                child: const Text('Sil'),
+                child: Text(l10n.commonDelete),
               ),
             ],
           ),

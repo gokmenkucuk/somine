@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_theme.dart';
@@ -12,6 +13,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.getTheme(AppThemeEnum.air),
+        locale: const Locale('tr'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ErrorStateWidget(
             message: 'Bir hata oluştu',
@@ -37,6 +41,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.getTheme(AppThemeEnum.air),
+        locale: const Locale('tr'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const Scaffold(body: ErrorStateWidget(message: 'Salt mesaj')),
       ),
     );
@@ -49,6 +56,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.getTheme(AppThemeEnum.air),
+        locale: const Locale('tr'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const Scaffold(
           body: ErrorStateWidget(
             message: 'İkon testi',

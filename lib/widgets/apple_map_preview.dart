@@ -1,6 +1,7 @@
 import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../core/design/app_colors_extension.dart';
 import '../core/models/map_coordinate.dart';
@@ -97,6 +98,7 @@ class _AppleMapPreviewState extends State<AppleMapPreview> {
 
   Widget _buildFallback() {
     // Fallback for non-iOS platforms
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       height: widget.height,
       decoration: BoxDecoration(
@@ -116,7 +118,7 @@ class _AppleMapPreviewState extends State<AppleMapPreview> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Harita Önizlemesi',
+                  l10n.mapPreviewFallbackTitle,
                   style: TextStyle(
                     color: context.colors.surfaceWhite.withValues(alpha: 0.9),
                     fontSize: 14,

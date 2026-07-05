@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -18,13 +19,14 @@ class AppearanceScreen extends ConsumerWidget {
     final currentTheme = ref.watch(themeProvider);
     final isVibe = currentTheme == AppThemeEnum.vibe;
     final isPremium = ref.watch(isPremiumProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     Widget content = Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text("Görünüm"),
+        title: Text(l10n.appearanceTitle),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -33,7 +35,7 @@ class AppearanceScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "TEMA SEÇENEKLERİ",
+              l10n.appearanceThemeSectionHeader,
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -50,7 +52,7 @@ class AppearanceScreen extends ConsumerWidget {
               theme: AppThemeEnum.air,
               currentTheme: currentTheme,
               title: "Air",
-              subtitle: "Varsayılan, aydınlık ve ferah görünüm.",
+              subtitle: l10n.appearanceThemeAirSubtitle,
               icon: PhosphorIconsRegular.sun,
               gradient: const LinearGradient(
                 colors: [Color(0xFFE8F1EF), Colors.white],
@@ -68,7 +70,7 @@ class AppearanceScreen extends ConsumerWidget {
               theme: AppThemeEnum.midnight,
               currentTheme: currentTheme,
               title: "Midnight",
-              subtitle: "Karanlık mod ve neon vurgular.",
+              subtitle: l10n.appearanceThemeMidnightSubtitle,
               icon: PhosphorIconsRegular.moonStars,
               gradient: const LinearGradient(
                 colors: [Color(0xFF1F1F1F), Color(0xFF121212)],
@@ -89,7 +91,7 @@ class AppearanceScreen extends ConsumerWidget {
               theme: AppThemeEnum.vibe,
               currentTheme: currentTheme,
               title: "Vibe",
-              subtitle: "Koyu zemin, kırmızı ışıltı.",
+              subtitle: l10n.appearanceThemeVibeSubtitle,
               icon: PhosphorIconsRegular.sparkle,
               gradient: const LinearGradient(
                 colors: [Color(0xFF0A0A12), Color(0xFFC41E3A)], // Dark with red glow
@@ -104,7 +106,7 @@ class AppearanceScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             
             Text(
-              "UYGULAMA İKONU",
+              l10n.appearanceIconSectionHeader,
               style: GoogleFonts.outfit(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -152,7 +154,7 @@ class AppearanceScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "İkonu Değiştir",
+                            l10n.appearanceChangeIconTitle,
                             style: GoogleFonts.outfit(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -161,7 +163,7 @@ class AppearanceScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            "Ana ekran ikonunu özelleştir.",
+                            l10n.appearanceChangeIconSubtitle,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: Colors.grey,

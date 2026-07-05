@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -16,6 +17,7 @@ class MySharesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mySharesAsync = ref.watch(mySharesProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundBottom,
@@ -27,7 +29,7 @@ class MySharesScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Paylaştıklarım',
+          l10n.mySharesTitle,
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
             color: context.colors.headline,
@@ -50,7 +52,7 @@ class MySharesScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ErrorStateWidget(
-          message: 'Paylaşımlar yüklenemedi. Lütfen tekrar deneyin.',
+          message: l10n.sharedWithMeLoadError,
           onRetry: () => ref.invalidate(mySharesProvider),
         ),
       ),
@@ -58,6 +60,7 @@ class MySharesScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -69,7 +72,7 @@ class MySharesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Henüz paylaşım yok',
+            l10n.mySharesEmptyTitle,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -80,7 +83,7 @@ class MySharesScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Paylaştığın koleksiyonlar burada görünecek.',
+              l10n.mySharesEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -101,6 +104,7 @@ class _MyShareCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     Color statusColor;
     String statusText;
     IconData statusIcon;
@@ -108,17 +112,17 @@ class _MyShareCard extends ConsumerWidget {
     switch (share.status) {
       case ShareStatus.pending:
         statusColor = Colors.orange;
-        statusText = 'Bekliyor';
+        statusText = l10n.mySharesStatusPending;
         statusIcon = PhosphorIconsRegular.clock;
         break;
       case ShareStatus.accepted:
         statusColor = Colors.green;
-        statusText = 'Kabul Edildi';
+        statusText = l10n.shareRequestsAcceptedTitle;
         statusIcon = PhosphorIconsRegular.checkCircle;
         break;
       case ShareStatus.rejected:
         statusColor = Colors.red;
-        statusText = 'Reddedildi';
+        statusText = l10n.shareRequestsRejectedTitle;
         statusIcon = PhosphorIconsRegular.xCircle;
         break;
     }
@@ -236,7 +240,7 @@ class _MyShareCard extends ConsumerWidget {
                   color: Colors.red.shade400,
                 ),
                 label: Text(
-                  'Geri Çek',
+                  l10n.mySharesRevoke,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -255,12 +259,13 @@ class _MyShareCard extends ConsumerWidget {
   }
 
   Future<void> _revokeShare(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Center(
           child: Text(
-            'Paylaşımı Geri Çek',
+            l10n.mySharesRevokeDialogTitle,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               fontSize: 20,
@@ -269,7 +274,7 @@ class _MyShareCard extends ConsumerWidget {
           ),
         ),
         content: Text(
-          'Bu paylaşımı geri çekmek istediğinize emin misiniz?',
+          l10n.mySharesRevokeDialogMessage,
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             color: context.colors.body,
@@ -285,7 +290,7 @@ class _MyShareCard extends ConsumerWidget {
                 child: TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
-                    'İptal',
+                    l10n.commonCancel,
                     style: GoogleFonts.poppins(color: context.colors.hint),
                   ),
                 ),
@@ -300,7 +305,7 @@ class _MyShareCard extends ConsumerWidget {
                     ),
                   ),
                   child: Text(
-                    'Geri Çek',
+                    l10n.mySharesRevoke,
                     style: GoogleFonts.poppins(color: Colors.white),
                   ),
                 ),
@@ -317,14 +322,14 @@ class _MyShareCard extends ConsumerWidget {
         if (context.mounted) {
           SuccessNotificationSheet.show(
             context,
-            title: 'Geri Çekildi',
-            message: 'Paylaşım başarıyla geri çekildi.',
+            title: l10n.mySharesRevokedTitle,
+            message: l10n.mySharesRevokedMessage,
           );
         }
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Hata: $e')),
+            SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
           );
         }
       }
