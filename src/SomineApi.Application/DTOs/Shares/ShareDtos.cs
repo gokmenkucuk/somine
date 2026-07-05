@@ -18,5 +18,7 @@ public record ShareDto(
     string Status,
     DateTime CreatedAt,
     DateTime? AcceptedAt,
-    DateTime? RejectedAt
+    DateTime? RejectedAt,
+    // Yalnızca paylaşımın sahibine (outgoing) gönderilir; alıcıya null gider
+    string? PublicLinkToken = null
 );

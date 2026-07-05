@@ -155,7 +155,8 @@ public class SharesController : ControllerBase
             .OrderByDescending(s => s.CreatedAt)
             .Select(s => new ShareDto(s.Id, s.FromUserId, s.ToUserId, s.CategoryId,
                 s.FromUserName, s.FromUserEmail, s.ToUserEmail, s.CategoryName,
-                s.Status.ToString(), s.CreatedAt, s.AcceptedAt, s.RejectedAt))
+                s.Status.ToString(), s.CreatedAt, s.AcceptedAt, s.RejectedAt,
+                s.PublicLinkToken))
             .ToListAsync();
 
         return Ok(shares);
