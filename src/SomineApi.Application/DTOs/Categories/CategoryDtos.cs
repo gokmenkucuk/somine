@@ -31,5 +31,8 @@ public record CategoryDto(
     int SortOrder,
     bool IsVault,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    // Yalnızca koleksiyonun SAHİBİNE gönderilir; paylaşılan/başkasına ait
+    // kategori görünümlerinde null kalmalı (bkz. ShareDto.PublicLinkToken kuralı).
+    string? PublicLinkToken = null
 );

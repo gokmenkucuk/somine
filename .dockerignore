@@ -3,6 +3,7 @@
 .DS_Store
 **/bin
 **/obj
+**/node_modules
 **/.vs
 **/.idea
 **/uploads

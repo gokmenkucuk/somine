@@ -10,7 +10,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using SomineApi.Application.Interfaces;
 using SomineApi.Infrastructure.Data;
+using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Logging;
+using SomineApi.WebApi.Reminders;
 
 namespace SomineApi.Tests.Testing;
 
@@ -22,6 +24,12 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
         .BuildServiceProvider();
 
     public FakeSubscriptionTierService SubscriptionTierService { get; } = new();
+
+    public FakeFirebaseAuthService FirebaseAuthService { get; } = new();
+
+    public FakeEmbeddingService EmbeddingService { get; } = new();
+
+    public SaveChangesHookInterceptor SaveChangesHook { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -51,10 +59,14 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
             services.RemoveAll<DbConnection>();
             services.RemoveAll<ISubscriptionTierService>();
             services.RemoveAll<ILogPersistenceQueue>();
+            services.RemoveAll<IFirebaseAuthService>();
+            services.RemoveAll<IEmbeddingService>();
 
             var hostedServices = services
                 .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
-                    && descriptor.ImplementationType == typeof(LogPersistenceBackgroundService))
+                    && (descriptor.ImplementationType == typeof(LogPersistenceBackgroundService)
+                        || descriptor.ImplementationType == typeof(EmbeddingBackgroundService)
+                        || descriptor.ImplementationType == typeof(ReminderNotificationBackgroundService)))
                 .ToList();
             foreach (var descriptor in hostedServices)
             {
@@ -71,10 +83,13 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
             services.AddDbContext<SomineDbContext>((sp, options) =>
                 options
                     .UseSqlite(sp.GetRequiredService<DbConnection>())
-                    .UseInternalServiceProvider(SqliteEfServiceProvider));
+                    .UseInternalServiceProvider(SqliteEfServiceProvider)
+                    .AddInterceptors(SaveChangesHook));
 
             services.AddSingleton<ISubscriptionTierService>(SubscriptionTierService);
             services.AddSingleton<ILogPersistenceQueue, NoOpLogPersistenceQueue>();
+            services.AddSingleton<IFirebaseAuthService>(FirebaseAuthService);
+            services.AddSingleton<IEmbeddingService>(EmbeddingService);
         });
     }
 

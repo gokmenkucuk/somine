@@ -1,0 +1,18 @@
+{
+  "name": "somine-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SomineWeb landing + public share pages (Razor). Tailwind CSS build only; output committed to wwwroot.",
+  "scripts": {
+    "build:css": "tailwindcss -i ./Styles/landing.input.css -o ./wwwroot/css/landing.css --minify",
+    "watch:css": "tailwindcss -i ./Styles/landing.input.css -o ./wwwroot/css/landing.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.11",
+    "tailwindcss": "^4.1.11",
+    "tw-animate-css": "^1.3.6"
+  },
+  "dependencies": {
+    "swiper": "^11.2.10"
+  }
+}

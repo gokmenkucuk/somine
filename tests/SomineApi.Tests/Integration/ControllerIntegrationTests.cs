@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SomineApi.Application;
+using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Domain.Enums;
 using SomineApi.Infrastructure.Data;
@@ -170,6 +171,197 @@ public class ControllerIntegrationTests
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         await AssertErrorAsync(response, "limit_reached");
+    }
+
+    [Fact]
+    public async Task LoginWithGoogle_SameUidTwiceSequentiallyReturnsOkAndCreatesSingleUser()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        const string firebaseUid = "firebase-sequential-login";
+        factory.FirebaseAuthService.UserInfo = new FirebaseUserInfo(
+            firebaseUid, "sequential-login@somine.test", "Sequential Login", null);
+
+        using var client = CreateLoginClient(factory);
+
+        var firstResponse = await client.PostAsJsonAsync("/api/auth/google", new { idToken = "token-1" });
+        var secondResponse = await client.PostAsJsonAsync("/api/auth/google", new { idToken = "token-2" });
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        var firstUserId = await ReadUserIdAsync(firstResponse);
+        var secondUserId = await ReadUserIdAsync(secondResponse);
+        Assert.Equal(firstUserId, secondUserId);
+
+        await AssertUserCountAsync(factory, firebaseUid, 1);
+    }
+
+    [Fact]
+    public async Task LoginWithGoogle_ParallelRequestsWithSameUidBothSucceedWithSingleUser()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        const string firebaseUid = "firebase-parallel-login";
+        factory.FirebaseAuthService.UserInfo = new FirebaseUserInfo(
+            firebaseUid, "parallel-login@somine.test", "Parallel Login", null);
+
+        using var client = CreateLoginClient(factory);
+
+        var responses = await Task.WhenAll(
+            client.PostAsJsonAsync("/api/auth/google", new { idToken = "parallel-token-1" }),
+            client.PostAsJsonAsync("/api/auth/google", new { idToken = "parallel-token-2" }));
+
+        Assert.All(responses, response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+
+        var userIds = await Task.WhenAll(responses.Select(ReadUserIdAsync));
+        Assert.Equal(userIds[0], userIds[1]);
+
+        await AssertUserCountAsync(factory, firebaseUid, 1);
+    }
+
+    [Fact]
+    public async Task LoginWithGoogle_WhenConcurrentRequestWinsInsertRaceReusesExistingUser()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        var winner = TestUser("race-winner");
+        factory.FirebaseAuthService.UserInfo = new FirebaseUserInfo(
+            winner.FirebaseUid, winner.Email, winner.DisplayName, null);
+
+        // Yarışı kaybeden isteği deterministik simüle et: istek kullanıcıyı bulamayıp
+        // INSERT'e giderken, SaveChanges'ten hemen önce kazanan istek aynı
+        // firebase_uid'li satırı yazar → unique ihlali → recovery yolu.
+        factory.SaveChangesHook.OnSavingNewUserAsync = () =>
+            SeedAsync(factory, db => db.Users.Add(winner));
+
+        using var client = CreateLoginClient(factory);
+
+        var response = await client.PostAsJsonAsync("/api/auth/google", new { idToken = "race-token" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(winner.Id, await ReadUserIdAsync(response));
+        await AssertUserCountAsync(factory, winner.FirebaseUid, 1);
+    }
+
+    [Fact]
+    public async Task MarkItemOpened_ReturnsNoContentAndUpdatesTrackingFields()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        var user = TestUser("opened-owner");
+        var item = TestItem(user.Id, "opened-item");
+        await SeedAsync(factory, db =>
+        {
+            db.Users.Add(user);
+            db.Items.Add(item);
+        });
+
+        using var client = factory.CreateAuthenticatedClient(user.Id, user.Email!, user.FirebaseUid);
+
+        var response = await client.PostAsync($"/api/items/{item.Id}/opened", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SomineDbContext>();
+        var updated = await dbContext.Items.SingleAsync(i => i.Id == item.Id);
+        Assert.NotNull(updated.LastOpenedAt);
+        Assert.Equal(1, updated.OpenCount);
+    }
+
+    [Fact]
+    public async Task MarkItemOpened_ReturnsNotFoundForOtherUsersItemAndSoftDeletedItem()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        var owner = TestUser("opened-victim");
+        var otherUser = TestUser("opened-intruder");
+        var item = TestItem(owner.Id, "victim-item");
+        var deletedItem = TestItem(owner.Id, "deleted-item");
+        deletedItem.IsDeleted = true;
+        deletedItem.DeletedAt = DateTime.UtcNow;
+
+        await SeedAsync(factory, db =>
+        {
+            db.Users.AddRange(owner, otherUser);
+            db.Items.AddRange(item, deletedItem);
+        });
+
+        using var intruderClient = factory.CreateAuthenticatedClient(otherUser.Id, otherUser.Email!, otherUser.FirebaseUid);
+        using var ownerClient = factory.CreateAuthenticatedClient(owner.Id, owner.Email!, owner.FirebaseUid);
+
+        var intruderResponse = await intruderClient.PostAsync($"/api/items/{item.Id}/opened", null);
+        var deletedResponse = await ownerClient.PostAsync($"/api/items/{deletedItem.Id}/opened", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, intruderResponse.StatusCode);
+        await AssertErrorAsync(intruderResponse, "Item not found");
+        Assert.Equal(HttpStatusCode.NotFound, deletedResponse.StatusCode);
+        await AssertErrorAsync(deletedResponse, "Item not found");
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SomineDbContext>();
+        var untouched = await dbContext.Items.SingleAsync(i => i.Id == item.Id);
+        Assert.Null(untouched.LastOpenedAt);
+        Assert.Equal(0, untouched.OpenCount);
+    }
+
+    [Fact]
+    public async Task MarkItemOpened_CalledTwiceIncrementsOpenCountToTwo()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        var user = TestUser("opened-twice");
+        var item = TestItem(user.Id, "opened-twice-item");
+        await SeedAsync(factory, db =>
+        {
+            db.Users.Add(user);
+            db.Items.Add(item);
+        });
+
+        using var client = factory.CreateAuthenticatedClient(user.Id, user.Email!, user.FirebaseUid);
+
+        var firstResponse = await client.PostAsync($"/api/items/{item.Id}/opened", null);
+        var secondResponse = await client.PostAsync($"/api/items/{item.Id}/opened", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, secondResponse.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SomineDbContext>();
+        var updated = await dbContext.Items.SingleAsync(i => i.Id == item.Id);
+        Assert.Equal(2, updated.OpenCount);
+        Assert.NotNull(updated.LastOpenedAt);
+    }
+
+    private static HttpClient CreateLoginClient(SomineApiWebApplicationFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-SoMine-Api-Key", SomineApiWebApplicationFactory.ApiKey);
+        return client;
+    }
+
+    private static async Task<Guid> ReadUserIdAsync(HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("user").GetProperty("id").GetGuid();
+    }
+
+    private static async Task AssertUserCountAsync(
+        SomineApiWebApplicationFactory factory,
+        string firebaseUid,
+        int expectedCount)
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SomineDbContext>();
+        var count = await dbContext.Users.CountAsync(user => user.FirebaseUid == firebaseUid);
+        Assert.Equal(expectedCount, count);
     }
 
     private static async Task SeedAsync(SomineApiWebApplicationFactory factory, Action<SomineDbContext> seed)

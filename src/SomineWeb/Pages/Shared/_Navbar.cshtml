@@ -1,0 +1,74 @@
+@model bool
+@{
+    var transparent = Model;
+    // transparent=true → hero üstünde şeffaf başlar, scroll'da beyaza döner (JS).
+    // transparent=false → her zaman açık (alt sayfalar).
+    var navInitial = transparent
+        ? "bg-transparent border-b border-transparent"
+        : "bg-white/80 backdrop-blur-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-b border-black/[0.04]";
+    var linkInitial = transparent ? "text-white/80 hover:text-white hover:bg-white/[0.08]" : "text-gray-600 hover:text-gray-900 hover:bg-black/[0.04]";
+    var logoStyle = transparent ? "filter:brightness(0) invert(1)" : "";
+}
+<nav id="siteNav" data-transparent="@transparent.ToString().ToLower()"
+     class="fixed top-0 left-0 right-0 z-50 transition-[background-color,backdrop-filter] duration-500 ease-out @navInitial">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+        <div class="flex items-center justify-between h-14">
+            <a href="/" class="relative z-50">
+                <img id="navLogo" src="/images/logo.png" alt="Somine" width="90" height="28" class="object-contain transition-all duration-500" style="@logoStyle" />
+            </a>
+
+            <div class="hidden md:flex items-center gap-1">
+                <a href="/#ozellikler" class="nav-link px-4 py-2 text-[13px] font-medium transition-all duration-300 rounded-full @linkInitial">Özellikler</a>
+                <a href="/#ekranlar" class="nav-link px-4 py-2 text-[13px] font-medium transition-all duration-300 rounded-full @linkInitial">Ekranlar</a>
+                <a href="/#temalar" class="nav-link px-4 py-2 text-[13px] font-medium transition-all duration-300 rounded-full @linkInitial">Temalar</a>
+                <a href="/#premium" class="nav-link px-4 py-2 text-[13px] font-medium transition-all duration-300 rounded-full @linkInitial">Premium</a>
+            </div>
+
+            <div class="hidden md:flex items-center gap-3">
+                <a href="/support" class="nav-ghost text-[13px] font-medium rounded-full px-4 py-2 transition-all duration-300 @linkInitial">Destek</a>
+                <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer"
+                   class="nav-cta inline-flex items-center gap-1.5 text-[13px] font-medium px-4 py-2 rounded-full transition-all duration-300 @(transparent ? "bg-white/15 text-white border border-white/20 hover:bg-white/25 backdrop-blur-sm" : "bg-black text-white hover:bg-gray-800")">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                    </svg>
+                    İndir
+                </a>
+            </div>
+
+            <div class="md:hidden relative z-50">
+                <button id="menuToggle" aria-label="Menü" class="nav-ghost inline-flex items-center justify-center w-9 h-9 rounded-md transition-colors duration-300 @(transparent ? "text-white" : "text-gray-900")">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobil menü paneli -->
+<div id="mobileMenu" class="fixed inset-0 z-[60] hidden md:hidden">
+    <div id="menuBackdrop" class="absolute inset-0 bg-black/40"></div>
+    <div id="menuPanel" class="absolute top-0 right-0 h-full w-80 max-w-[85%] bg-white/95 backdrop-blur-2xl border-l border-black/[0.04] flex flex-col translate-x-full transition-transform duration-300 ease-out">
+        <div class="p-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+            <img src="/images/logo.png" alt="Somine" width="80" height="24" class="object-contain" />
+            <button id="menuClose" aria-label="Kapat" class="text-gray-500 hover:text-gray-900 p-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-1 p-4">
+            <a href="/#ozellikler" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Özellikler</a>
+            <a href="/#ekranlar" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Ekranlar</a>
+            <a href="/#temalar" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Temalar</a>
+            <a href="/#premium" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Premium</a>
+            <div class="h-px bg-gray-100 my-2"></div>
+            <a href="/privacy" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Gizlilik Politikası</a>
+            <a href="/terms" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Kullanım Şartları</a>
+            <a href="/support" class="menu-link flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Destek</a>
+        </div>
+        <div class="p-4 mt-auto">
+            <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 justify-center w-full text-sm font-medium bg-black text-white rounded-full px-6 py-3 hover:bg-gray-800 transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
+                App Store'dan İndir
+            </a>
+        </div>
+    </div>
+</div>

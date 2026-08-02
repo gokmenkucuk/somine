@@ -13,7 +13,7 @@ public class DesignTimeSomineDbContextFactory : IDesignTimeDbContextFactory<Somi
         var connectionString = ResolveConnectionString(webApiPath);
 
         var optionsBuilder = new DbContextOptionsBuilder<SomineDbContext>();
-        optionsBuilder.UseNpgsql(connectionString);
+        optionsBuilder.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector());
 
         return new SomineDbContext(optionsBuilder.Options);
     }

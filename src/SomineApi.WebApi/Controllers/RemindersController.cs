@@ -6,6 +6,7 @@ using SomineApi.Application.DTOs.Reminders;
 using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Domain.Enums;
+using SomineApi.Domain.Reminders;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
 
@@ -39,13 +40,12 @@ public class RemindersController : ControllerBase
         }
 
         var reminders = await query
+            .AsNoTracking()
             .OrderBy(r => r.CreatedAt)
-            .Select(r => new ReminderDto(r.Id, r.ItemId, r.ReminderDate,
-                r.ReminderHour, r.ReminderMinute, r.RepeatType,
-                r.IsActive, r.CustomRepeatDays, r.CustomRepeatMinutes, r.CreatedAt))
             .ToListAsync();
 
-        return Ok(reminders);
+        var timeZone = await GetUserTimeZoneAsync(userId);
+        return Ok(reminders.Select(r => MapToDto(r, timeZone)).ToList());
     }
 
     [HttpGet("{id}")]
@@ -54,15 +54,12 @@ public class RemindersController : ControllerBase
         var userId = HttpContext.GetUserId();
 
         var reminder = await _dbContext.Reminders
-            .Where(r => r.Id == id && r.Item.UserId == userId)
-            .Select(r => new ReminderDto(r.Id, r.ItemId, r.ReminderDate,
-                r.ReminderHour, r.ReminderMinute, r.RepeatType,
-                r.IsActive, r.CustomRepeatDays, r.CustomRepeatMinutes, r.CreatedAt))
-            .FirstOrDefaultAsync();
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id && r.Item.UserId == userId);
 
         if (reminder == null) return NotFound(new { error = "Reminder not found" });
 
-        return Ok(reminder);
+        return Ok(MapToDto(reminder, await GetUserTimeZoneAsync(userId)));
     }
 
     [HttpPost]
@@ -118,9 +115,7 @@ public class RemindersController : ControllerBase
 
         await _dbContext.SaveChangesAsync();
 
-        return Ok(new ReminderDto(reminder.Id, reminder.ItemId, reminder.ReminderDate,
-            reminder.ReminderHour, reminder.ReminderMinute, reminder.RepeatType,
-            reminder.IsActive, reminder.CustomRepeatDays, reminder.CustomRepeatMinutes, reminder.CreatedAt));
+        return Ok(MapToDto(reminder, await GetUserTimeZoneAsync(userId)));
     }
 
     [HttpPut("{id}")]
@@ -164,9 +159,7 @@ public class RemindersController : ControllerBase
 
         await _dbContext.SaveChangesAsync();
 
-        return Ok(new ReminderDto(reminder.Id, reminder.ItemId, reminder.ReminderDate,
-            reminder.ReminderHour, reminder.ReminderMinute, reminder.RepeatType,
-            reminder.IsActive, reminder.CustomRepeatDays, reminder.CustomRepeatMinutes, reminder.CreatedAt));
+        return Ok(MapToDto(reminder, await GetUserTimeZoneAsync(userId)));
     }
 
     [HttpDelete("{id}")]
@@ -188,5 +181,44 @@ public class RemindersController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private async Task<TimeZoneInfo> GetUserTimeZoneAsync(Guid userId)
+    {
+        var timeZoneId = await _dbContext.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.TimeZoneId)
+            .FirstOrDefaultAsync();
+
+        return ReminderTimeZones.Resolve(timeZoneId);
+    }
+
+    /// <summary>
+    /// <c>NextTriggerAtUtc</c> sunucu tarafında hesaplanır (yalnız okunur); istemciden kabul edilmez.
+    /// </summary>
+    private static ReminderDto MapToDto(Reminder reminder, TimeZoneInfo timeZone)
+    {
+        var schedule = new ReminderSchedule(
+            reminder.ReminderDate,
+            reminder.ReminderHour,
+            reminder.ReminderMinute,
+            reminder.RepeatType,
+            reminder.CustomRepeatDays,
+            reminder.CustomRepeatMinutes);
+
+        var next = reminder.IsActive
+            ? ReminderScheduleCalculator.GetNextOccurrenceUtc(schedule, DateTimeOffset.UtcNow, timeZone)?.UtcDateTime
+            : null;
+
+        // Ham RepeatType değil EffectiveRepeatType dönülüyor: enum sırası
+        // uyumsuzluğu döneminde yazılmış kayıtlar DB'de yanlış tiple duruyor
+        // olabilir (bkz. prod_v16_fix_repeat_frequency.sql). Böylece imaj ile
+        // veri düzeltmesi arasındaki pencerede mobil doğru tipi görür ve
+        // kullanıcı kaydı düzenlediğinde doğru değer geri yazılır.
+        return new ReminderDto(
+            reminder.Id, reminder.ItemId, reminder.ReminderDate,
+            reminder.ReminderHour, reminder.ReminderMinute, schedule.EffectiveRepeatType,
+            reminder.IsActive, reminder.CustomRepeatDays, reminder.CustomRepeatMinutes,
+            reminder.CreatedAt, reminder.LastTriggered, next);
     }
 }

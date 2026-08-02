@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using SomineApi.Application.Interfaces;
 using SomineApi.Infrastructure.Data;
+using SomineApi.Infrastructure.Options;
 using SomineApi.Infrastructure.Repositories;
 using SomineApi.Infrastructure.Services;
+using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Hubs;
 using SomineApi.WebApi.Logging;
 using SomineApi.WebApi.Middleware;
 using SomineApi.WebApi.Options;
+using SomineApi.WebApi.Reminders;
 using SomineApi.WebApi.Security;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
@@ -22,7 +26,9 @@ builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, relo
 
 // PostgreSQL
 builder.Services.AddDbContext<SomineDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQL")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("PostgreSQL"),
+        npgsqlOptions => npgsqlOptions.UseVector()));
 
 // Repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -40,6 +46,11 @@ builder.Services.AddScoped<IClientProofValidationService, ClientProofValidationS
 builder.Services.AddSingleton<IUserRealtimeEventPublisher, UserRealtimeEventPublisher>();
 builder.Services.AddSingleton<ILogPersistenceQueue, ChannelLogPersistenceQueue>();
 builder.Services.AddHostedService<LogPersistenceBackgroundService>();
+builder.Services.AddSingleton<IEmbeddingService, OpenAiEmbeddingService>();
+builder.Services.AddSingleton<IEmbeddingQueue, ChannelEmbeddingQueue>();
+builder.Services.AddHostedService<EmbeddingBackgroundService>();
+builder.Services.TryAddSingleton(TimeProvider.System);
+builder.Services.AddHostedService<ReminderNotificationBackgroundService>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.Configure<ClientRequestSecurityOptions>(
@@ -48,6 +59,12 @@ builder.Services.Configure<ApiKeyOptions>(
     builder.Configuration.GetSection(ApiKeyOptions.SectionName));
 builder.Services.Configure<PublicWebOptions>(
     builder.Configuration.GetSection(PublicWebOptions.SectionName));
+builder.Services.Configure<EmbeddingOptions>(
+    builder.Configuration.GetSection(EmbeddingOptions.SectionName));
+builder.Services.Configure<SearchOptions>(
+    builder.Configuration.GetSection(SearchOptions.SectionName));
+builder.Services.Configure<ReminderNotificationOptions>(
+    builder.Configuration.GetSection(ReminderNotificationOptions.SectionName));
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -151,6 +168,20 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
+    // Export ucu — kullanıcı başına 5 istek/saat (maliyetli tam veri dökümü)
+    options.AddPolicy("export", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? httpContext.User.FindFirst("sub")?.Value
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromHours(1),
+                QueueLimit = 0
+            }));
+
     // Herkese açık paylaşım uçları — IP başına 30 istek/dk
     options.AddPolicy("public", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
@@ -158,6 +189,25 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Arama ucu — kullanıcı başına 30 istek/dk. Global 300/dk limitine ek olarak,
+    // keyword aramada bile DB trigram taraması yükü olduğu için daha dar koruma.
+    options.AddPolicy("search", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? httpContext.User.FindFirst("sub")?.Value
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                // 60/dk: sonsuz kaydırmada her sayfa bir arama isteği olduğu için
+                // 30 meşru "power user"ı 429'a düşürebiliyordu. Semantik arama
+                // (OpenAI maliyeti) kapalı; kalan yük indeksli trigram sorgusu
+                // (~0.5ms), yani asıl amaç kötüye kullanımı sınırlamak.
+                PermitLimit = 60,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -191,6 +241,23 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+else
+{
+    // HSTS yalnızca prod'da; tarayıcıya HTTPS'i zorunlu kıl.
+    app.UseHsts();
+}
+
+// Güvenlik yanıt başlıkları — tüm yanıtlara uygulanır. API yalnız JSON döndüğü
+// için CSP 'default-src none' güvenlidir (aktif içerik yüklenmez).
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    headers["Content-Security-Policy"] = "default-src 'none'";
+    await next();
+});
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();

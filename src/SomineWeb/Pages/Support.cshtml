@@ -1,0 +1,124 @@
+@page "/support"
+@model SupportModel
+@{
+    Layout = "_LandingLayout";
+    ViewData["Title"] = "Destek";
+    ViewData["Description"] = "Somine uygulaması hakkında sık sorulan sorular ve destek talebi için bizimle iletişime geçin.";
+
+    var faqItems = new[]
+    {
+        new { Question = "Somine nasıl çalışır?", Answer = "Somine, Instagram, YouTube, Pinterest ve diğer platformlardaki beğendiğin içerikleri tek bir yerde toplamanı sağlar. Herhangi bir uygulamada paylaş butonuna basıp Somine'yi seçmen yeterli — içerik orijinal haliyle platforma bağlı kalır, kopyalanmaz." },
+        new { Question = "Koleksiyonlar nasıl oluşturulur?", Answer = "Koleksiyonlar sekmesinde sağ üstteki + butonuna basarak yeni koleksiyon oluşturabilirsiniz. Koleksiyonlarınıza isim ve ikon atayabilirsiniz." },
+        new { Question = "Ücretsiz sürümde neler var?", Answer = "Ücretsiz sürümde 10 koleksiyon ve koleksiyon başına 5 içerik ekleyebilirsin. Gizli Kasa (Face ID/Touch ID), bulut senkronizasyonu, koleksiyon paylaşımı ve Air teması tamamen ücretsizdir." },
+        new { Question = "Premium ile ne değişiyor?", Answer = "Premium ile koleksiyon ve içerik sınırı kalkar, sınırsız ekleyebilirsin. Ayrıca 5 özel ana ekran uygulama ikonu, Midnight ve Vibe temaları Premium'a özeldir." },
+        new { Question = "Gizli Kasa nasıl çalışır?", Answer = "Gizli Kasa tamamen ücretsizdir. Sadece senin görmeni istediğin içerikler için Face ID veya Touch ID ile korunan özel bir alan oluşturur." },
+        new { Question = "Koleksiyonumu arkadaşımla nasıl paylaşırım?", Answer = "Koleksiyon detay sayfasında paylaş butonuna basarak arkadaşının kullanıcı adı veya e-postasını girebilirsin. Arkadaşın kabul ettiği anda koleksiyon direkt onun kütüphanesine eklenir." },
+    };
+}
+
+<main class="min-h-screen flex flex-col bg-white">
+
+    <section class="pt-32 pb-16 bg-[#E8F1EF]">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8">
+            <a href="/" class="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
+                ← Ana Sayfaya Dön
+            </a>
+            <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-3">Destek</p>
+            <h1 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-3">
+                Nasıl yardımcı olabiliriz?
+            </h1>
+            <p class="text-gray-500 text-lg">
+                Somine hakkında aklına takılan her şeyi sor.
+            </p>
+        </div>
+    </section>
+
+    <section class="flex-1 bg-white">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 py-16">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
+                <div class="flex items-center gap-4 bg-[#F4F9F8] rounded-2xl p-5 border border-[#E8F1EF]">
+                    <div class="w-11 h-11 rounded-xl bg-[#688E8B]/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#688E8B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800 text-sm mb-0.5">E-posta</p>
+                        <a href="mailto:support@somineapp.com" class="text-[#688E8B] text-sm hover:underline">
+                            support@somineapp.com
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 bg-[#F4F9F8] rounded-2xl p-5 border border-[#E8F1EF]">
+                    <div class="w-11 h-11 rounded-xl bg-[#688E8B]/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#688E8B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800 text-sm mb-0.5">Yanıt Süresi</p>
+                        <p class="text-gray-500 text-sm">Genellikle 24 saat içinde</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-20">
+                <h2 class="text-2xl font-semibold text-gray-900 tracking-tight mb-8">
+                    Sıkça Sorulan Sorular
+                </h2>
+                <div class="space-y-3">
+                    @foreach (var item in faqItems)
+                    {
+                        <details class="group bg-white rounded-2xl border border-gray-100 px-6 open:border-[#688E8B]/20 open:shadow-sm transition-all">
+                            <summary class="flex items-center justify-between gap-4 cursor-pointer list-none text-left text-gray-800 font-medium hover:text-[#688E8B] py-5">
+                                <span>@item.Question</span>
+                                <svg class="w-4 h-4 shrink-0 transition-transform duration-300 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
+                            </summary>
+                            <div class="text-gray-500 leading-relaxed pb-5">@item.Answer</div>
+                        </details>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
+                    Bize Ulaşın
+                </h2>
+                <p class="text-gray-500 mb-8">Formu doldur, mail uygulamanla gönder.</p>
+
+                <form action="mailto:support@somineapp.com" method="post" enctype="text/plain" class="space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="space-y-2">
+                            <label for="name" class="text-sm font-medium text-gray-700">Adınız</label>
+                            <input id="name" name="name" placeholder="Adınızı giriniz" required
+                                   class="w-full rounded-xl border border-gray-200 focus:border-[#688E8B] focus:ring-2 focus:ring-[#688E8B]/20 focus:outline-none h-11 px-3" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="email" class="text-sm font-medium text-gray-700">E-posta</label>
+                            <input id="email" name="email" type="email" placeholder="ornek@email.com" required
+                                   class="w-full rounded-xl border border-gray-200 focus:border-[#688E8B] focus:ring-2 focus:ring-[#688E8B]/20 focus:outline-none h-11 px-3" />
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="message" class="text-sm font-medium text-gray-700">Mesajınız</label>
+                        <textarea id="message" name="message" placeholder="Mesajınızı buraya yazabilirsiniz..." required rows="6"
+                                  class="w-full rounded-xl border border-gray-200 focus:border-[#688E8B] focus:ring-2 focus:ring-[#688E8B]/20 focus:outline-none resize-none px-3 py-2"></textarea>
+                    </div>
+                    <button type="submit" class="inline-flex items-center gap-2 bg-[#688E8B] hover:bg-[#5a7e7b] text-white text-sm font-medium px-7 py-3 rounded-full transition-colors duration-300">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+                            <path d="m21.854 2.147-10.94 10.939" />
+                        </svg>
+                        Mesaj Gönder
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </section>
+
+</main>

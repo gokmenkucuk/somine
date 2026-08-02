@@ -19,7 +19,8 @@ public record UserDto(
     string? DisplayName,
     string? Username,
     string? PhotoUrl,
-    string? PhotoBase64 = null
+    string? PhotoBase64 = null,
+    string? TimeZoneId = null
 );
 
 public record AuthSessionDto(

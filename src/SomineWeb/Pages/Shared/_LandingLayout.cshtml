@@ -1,0 +1,67 @@
+@{
+    var title = ViewData["Title"] as string;
+    var fullTitle = string.IsNullOrEmpty(title) ? "Somine — Beğendiklerini Tek Bir Yerde Topla" : title + " | Somine";
+    var description = ViewData["Description"] as string
+        ?? "Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.";
+    var transparentNav = ViewData["TransparentNav"] as bool? ?? false;
+    // Sayfa kendi OG/Twitter etiketlerini @section Head icinde veriyorsa true yapar.
+    // Aksi halde asagidaki genel etiketler once render edilir ve scraper'lar ilk gordugunu kullanir.
+    var suppressDefaultOg = ViewData["SuppressDefaultOg"] as bool? ?? false;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@fullTitle</title>
+    <meta name="description" content="@description" />
+    <link rel="canonical" href="https://somineapp.com@(Context.Request.Path)" />
+    @if (!suppressDefaultOg)
+    {
+        <meta property="og:title" content="@fullTitle" />
+        <meta property="og:description" content="@description" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/images/logo-gradient.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+    }
+    <link rel="icon" href="/images/logo.png" />
+    <link rel="apple-touch-icon" href="/images/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="~/lib/swiper/swiper-bundle.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+
+    @RenderSection("Head", required: false)
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-46BXTGD78L"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-46BXTGD78L');
+    </script>
+</head>
+<body class="antialiased bg-[#688E8B] text-foreground min-h-screen">
+    <partial name="_Navbar" model="transparentNav" />
+
+    @RenderBody()
+
+    <partial name="_Footer" />
+
+    <button id="scrollToTop" aria-label="Yukarı çık"
+            class="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-[#3d5c59] text-white shadow-lg hover:bg-[#2e4542] hover:scale-105 transition-all duration-300 flex items-center justify-center opacity-0 pointer-events-none translate-y-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 15l-6-6-6 6" />
+        </svg>
+    </button>
+
+    <script src="~/lib/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
+    <script src="~/js/landing.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

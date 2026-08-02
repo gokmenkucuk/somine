@@ -36,5 +36,10 @@ public class ExceptionLogConfiguration : IEntityTypeConfiguration<ExceptionLog>
         builder.HasIndex(x => x.TraceId);
         builder.HasIndex(x => x.ExceptionType);
         builder.HasIndex(x => x.RequestLogId);
+
+        builder.HasOne(x => x.RequestLog)
+            .WithMany(r => r.ExceptionLogs)
+            .HasForeignKey(x => x.RequestLogId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

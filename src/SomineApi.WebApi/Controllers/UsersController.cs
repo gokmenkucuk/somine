@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SomineApi.Application.DTOs.Auth;
 using SomineApi.Application.DTOs.Users;
 using SomineApi.Application.Interfaces;
+using SomineApi.Domain.Reminders;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
 using System.Text.Json;
@@ -34,7 +35,7 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound(new { error = "User not found" });
 
-        return Ok(new UserDto(user.Id, user.Email, user.DisplayName, user.Username, user.PhotoUrl, user.PhotoBase64));
+        return Ok(new UserDto(user.Id, user.Email, user.DisplayName, user.Username, user.PhotoUrl, user.PhotoBase64, user.TimeZoneId));
     }
 
     [HttpGet("me/search-history")]
@@ -85,6 +86,13 @@ public class UsersController : ControllerBase
             if (exists) return Conflict(new { error = "Username already taken" });
             user.Username = request.Username;
         }
+        if (request.TimeZoneId != null)
+        {
+            var timeZoneId = request.TimeZoneId.Trim();
+            if (timeZoneId.Length > ReminderTimeZones.MaxTimeZoneIdLength)
+                return BadRequest(new { error = "Invalid time zone" });
+            user.TimeZoneId = timeZoneId.Length == 0 ? null : timeZoneId;
+        }
         if (request.PhotoUrl != null) user.PhotoUrl = request.PhotoUrl;
         if (request.PhotoBase64 != null) user.PhotoBase64 = request.PhotoBase64;
         if (request.ClearPhoto == true)
@@ -96,7 +104,7 @@ public class UsersController : ControllerBase
         user.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
 
-        return Ok(new UserDto(user.Id, user.Email, user.DisplayName, user.Username, user.PhotoUrl, user.PhotoBase64));
+        return Ok(new UserDto(user.Id, user.Email, user.DisplayName, user.Username, user.PhotoUrl, user.PhotoBase64, user.TimeZoneId));
     }
 
     [HttpDelete("me")]

@@ -25,12 +25,16 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
         builder.Property(i => i.OgImageUrl).HasColumnName("og_image_url");
         builder.Property(i => i.OgSiteName).HasColumnName("og_site_name").HasMaxLength(128);
         builder.Property(i => i.OgFaviconUrl).HasColumnName("og_favicon_url");
+        builder.Property(i => i.OgImageWidth).HasColumnName("og_image_width");
+        builder.Property(i => i.OgImageHeight).HasColumnName("og_image_height");
         builder.Property(i => i.IsFavorite).HasColumnName("is_favorite").HasDefaultValue(false);
         builder.Property(i => i.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
         builder.Property(i => i.DeletedAt).HasColumnName("deleted_at");
         builder.Property(i => i.SortOrder).HasColumnName("sort_order").HasDefaultValue(0);
         builder.Property(i => i.HasReminder).HasColumnName("has_reminder").HasDefaultValue(false);
         builder.Property(i => i.ReminderId).HasColumnName("reminder_id");
+        builder.Property(i => i.LastOpenedAt).HasColumnName("last_opened_at");
+        builder.Property(i => i.OpenCount).HasColumnName("open_count").HasDefaultValue(0);
         builder.Property(i => i.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
         builder.Property(i => i.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
 

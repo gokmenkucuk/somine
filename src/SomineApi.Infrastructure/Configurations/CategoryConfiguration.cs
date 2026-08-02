@@ -21,8 +21,11 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.IsVault).HasColumnName("is_vault").HasDefaultValue(false);
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
+        builder.Property(c => c.PublicLinkToken).HasColumnName("public_link_token").HasMaxLength(64);
+        builder.Property(c => c.PublicLinkCreatedAtUtc).HasColumnName("public_link_created_at_utc");
 
         builder.HasIndex(c => c.UserId);
+        builder.HasIndex(c => c.PublicLinkToken).IsUnique();
 
         builder.HasOne(c => c.User)
             .WithMany(u => u.Categories)

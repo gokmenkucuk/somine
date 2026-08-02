@@ -20,6 +20,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PhotoUrl).HasColumnName("photo_url");
         builder.Property(u => u.PhotoBase64).HasColumnName("photo_base64");
         builder.Property(u => u.SearchHistoryJson).HasColumnName("search_history_json");
+        builder.Property(u => u.TimeZoneId).HasColumnName("time_zone_id").HasMaxLength(64);
         builder.Property(u => u.PremiumExpiresAtUtc).HasColumnName("premium_expires_at_utc");
         builder.Property(u => u.PremiumCheckedAtUtc).HasColumnName("premium_checked_at_utc");
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");

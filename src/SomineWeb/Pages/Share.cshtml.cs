@@ -23,6 +23,43 @@ public class ShareModel : PageModel
     public PublicShare? Share { get; private set; }
     public string Token { get; private set; } = string.Empty;
     public string AppStoreUrl => _configuration["AppStoreUrl"] ?? "https://apps.apple.com/app/somine";
+    public string AppStoreId => _configuration["AppStoreId"] ?? string.Empty;
+
+    private const string FallbackOgImage = "https://somineapp.com/images/logo-gradient.png";
+
+    // 404 (Found=false) durumunda koleksiyon bilgisi sızdırmayan nötr metinler döner.
+    public string OgTitle => Found && Share != null
+        ? $"{Share.CategoryName} — Somine"
+        : "Somine";
+
+    public string OgDescription => Found && Share != null
+        ? (Share.Items.Count > 0
+            ? $"{Share.Items.Count} içerik içeren bir Somine koleksiyonu."
+            : "Somine'de paylaşılan bir koleksiyon.")
+        : "Beğendiğin içerikleri Somine ile tek bir yerde topla.";
+
+    // İlk görseli olan item'ın OG görseli (mutlak http/https URL); yoksa landing OG görseli.
+    public string OgImage
+    {
+        get
+        {
+            if (Found && Share != null)
+            {
+                foreach (var item in Share.Items)
+                {
+                    var candidate = ResolveImageUrl(item.OgImageUrl) ?? ResolveImageUrl(item.ImageUrl);
+                    if (!string.IsNullOrWhiteSpace(candidate)
+                        && Uri.TryCreate(candidate, UriKind.Absolute, out var uri)
+                        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                    {
+                        return candidate;
+                    }
+                }
+            }
+
+            return FallbackOgImage;
+        }
+    }
 
     private string ApiBaseUrl => (_configuration["Api:BaseUrl"] ?? "http://localhost:5181").TrimEnd('/');
 

@@ -18,3 +18,4 @@ postgres/
 
 # İmaj arşivleri
 *.tar
+src/SomineWeb/node_modules/

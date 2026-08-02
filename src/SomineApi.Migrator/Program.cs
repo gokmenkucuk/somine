@@ -29,7 +29,7 @@ builder.Services.AddDbContext<SomineDbContext>(dbOptions =>
     var connectionString = builder.Configuration.GetConnectionString("PostgreSQL")
         ?? throw new InvalidOperationException("ConnectionStrings:PostgreSQL missing.");
 
-    dbOptions.UseNpgsql(connectionString);
+    dbOptions.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector());
 });
 
 builder.Services.AddSingleton(sp =>

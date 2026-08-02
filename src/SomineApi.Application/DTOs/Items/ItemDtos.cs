@@ -12,7 +12,9 @@ public record CreateItemRequest(
     string? OgDescription,
     string? OgImageUrl,
     string? OgSiteName,
-    string? OgFaviconUrl
+    string? OgFaviconUrl,
+    int? OgImageWidth = null,
+    int? OgImageHeight = null
 );
 
 public record UpdateItemRequest(
@@ -26,7 +28,9 @@ public record UpdateItemRequest(
     string? OgImageUrl,
     string? OgSiteName,
     string? OgFaviconUrl,
-    bool? IsFavorite
+    bool? IsFavorite,
+    int? OgImageWidth = null,
+    int? OgImageHeight = null
 );
 
 public record BatchMoveRequest(
@@ -64,11 +68,14 @@ public record ItemDto(
     string? OgImageUrl,
     string? OgSiteName,
     string? OgFaviconUrl,
+    int? OgImageWidth,
+    int? OgImageHeight,
     bool IsFavorite,
     bool HasReminder,
     int SortOrder,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    DateTime? LastOpenedAt
 );
 
 public record PagedResult<T>(

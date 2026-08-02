@@ -12,6 +12,15 @@ public class User : IAuditableEntity
     public string? PhotoUrl { get; set; }
     public string? PhotoBase64 { get; set; }
     public string? SearchHistoryJson { get; set; }
+
+    /// <summary>
+    /// Kullanıcının IANA zaman dilimi kimliği (örn. <c>Europe/Istanbul</c>). Boşsa
+    /// <see cref="Domain.Reminders.ReminderTimeZones.DefaultTimeZoneId"/> varsayılır.
+    /// Hatırlatıcılar yerel duvar saati olarak saklandığı için sunucunun tetikleme anını
+    /// hesaplayabilmesi buna bağlıdır.
+    /// </summary>
+    public string? TimeZoneId { get; set; }
+
     public DateTime? PremiumExpiresAtUtc { get; set; }
     public DateTime? PremiumCheckedAtUtc { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

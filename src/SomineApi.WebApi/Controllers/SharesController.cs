@@ -8,6 +8,7 @@ using SomineApi.Application.DTOs.Shares;
 using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
 using SomineApi.Domain.Enums;
+using SomineApi.Domain.Notifications;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
 using SomineApi.WebApi.Hubs;
@@ -112,7 +113,7 @@ public class SharesController : ControllerBase
         {
             Id = Guid.NewGuid(),
             UserId = toUser.Id,
-            Type = "shareRequest",
+            Type = NotificationTypes.ShareRequest,
             Title = "Yeni Paylaşım İsteği",
             Message = $"{fromUser.DisplayName ?? fromUser.Email} \"{category.Name}\" koleksiyonunu sizinle paylaşmak istiyor.",
             Data = System.Text.Json.JsonDocument.Parse($"{{\"shareId\": \"{share.Id}\", \"categoryId\": \"{category.Id}\"}}"),
@@ -181,7 +182,8 @@ public class SharesController : ControllerBase
             .Select(i => new ItemDto(
                 i.Id, i.CategoryId, i.Type, i.Url, i.Note, i.ImageUrl,
                 i.OgTitle, i.OgDescription, i.OgImageUrl, i.OgSiteName, i.OgFaviconUrl,
-                i.IsFavorite, i.HasReminder, i.SortOrder, i.CreatedAt, i.UpdatedAt))
+                i.OgImageWidth, i.OgImageHeight,
+                i.IsFavorite, i.HasReminder, i.SortOrder, i.CreatedAt, i.UpdatedAt, i.LastOpenedAt))
             .ToListAsync();
 
         return Ok(items);
@@ -203,7 +205,7 @@ public class SharesController : ControllerBase
         {
             Id = Guid.NewGuid(),
             UserId = share.FromUserId,
-            Type = "shareAccepted",
+            Type = NotificationTypes.ShareAccepted,
             Title = "Paylaşım Kabul Edildi",
             Message = $"Paylaşım isteğiniz kabul edildi: {share.CategoryName}",
             IsRead = false,
@@ -232,7 +234,7 @@ public class SharesController : ControllerBase
         {
             Id = Guid.NewGuid(),
             UserId = share.FromUserId,
-            Type = "shareRejected",
+            Type = NotificationTypes.ShareRejected,
             Title = "Paylaşım Reddedildi",
             Message = $"Paylaşım isteğiniz reddedildi: {share.CategoryName}",
             IsRead = false,

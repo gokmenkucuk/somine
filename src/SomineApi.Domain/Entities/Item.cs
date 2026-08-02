@@ -20,12 +20,19 @@ public class Item : IAuditableEntity
     public string? OgSiteName { get; set; }
     public string? OgFaviconUrl { get; set; }
 
+    // OG görselinin piksel boyutları — istemci ölçer ve gönderir, sunucu ASLA indirmez/probe etmez.
+    // İlk render'da en-boy oranı bilindiği için masonry düzeninde zıplama olmaz.
+    public int? OgImageWidth { get; set; }
+    public int? OgImageHeight { get; set; }
+
     public bool IsFavorite { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
     public int SortOrder { get; set; }
     public bool HasReminder { get; set; }
     public Guid? ReminderId { get; set; }
+    public DateTime? LastOpenedAt { get; set; }
+    public int OpenCount { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

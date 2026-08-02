@@ -5,7 +5,9 @@ public record UpdateUserRequest(
     string? Username,
     string? PhotoUrl,
     string? PhotoBase64,
-    bool? ClearPhoto = null
+    bool? ClearPhoto = null,
+    // IANA zaman dilimi kimliği (örn. "Europe/Istanbul"). Sunucu hatırlatıcı tetikleme anını buna göre hesaplar.
+    string? TimeZoneId = null
 );
 
 public record UserSearchResult(

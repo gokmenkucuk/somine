@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SomineApi.Domain.Entities;
+using SomineApi.Infrastructure.Configurations;
+using SomineApi.Infrastructure.Entities;
 using System.Text.Json;
 
 namespace SomineApi.Infrastructure.Data;
@@ -25,8 +27,35 @@ public class SomineDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Apply all configurations from assembly
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SomineDbContext).Assembly);
+        // Apply all configurations from assembly.
+        // ItemEmbeddingConfiguration hariç: vector(512) kolonu yalnızca Npgsql'de
+        // map'lenir; SQLite (test) modelinde entity tamamen dışarıda bırakılır.
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(SomineDbContext).Assembly,
+            type => type != typeof(ItemEmbeddingConfiguration));
+
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.HasPostgresExtension("vector");
+
+            // Trigram araması: pg_trgm benzerlik/index desteği, unaccent Türkçe
+            // diyakritiklerinin (ü/ö/ç/ş/ğ/ı) normalize edilmesi için.
+            modelBuilder.HasPostgresExtension("pg_trgm");
+            modelBuilder.HasPostgresExtension("unaccent");
+
+            // AddTrigramSearch migration'ında oluşturulan IMMUTABLE sarmalayıcı.
+            // GIN trigram index ifadeleriyle sorgu ifadelerinin birebir eşleşmesini sağlar.
+            modelBuilder
+                .HasDbFunction(typeof(SomineDbFunctions).GetMethod(nameof(SomineDbFunctions.SearchNormalize))!)
+                .HasName(SomineDbFunctions.SearchNormalizeFunctionName)
+                .HasSchema("public");
+
+            modelBuilder.ApplyConfiguration(new ItemEmbeddingConfiguration());
+        }
+        else
+        {
+            modelBuilder.Ignore<ItemEmbedding>();
+        }
 
         if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
         {

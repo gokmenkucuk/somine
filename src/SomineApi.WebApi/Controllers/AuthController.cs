@@ -38,23 +38,7 @@ public class AuthController : ControllerBase
     {
         var firebaseUser = await firebaseAuth.VerifyGoogleTokenAsync(request.IdToken);
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUser.Uid);
-
-        if (user == null)
-        {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FirebaseUid = firebaseUser.Uid,
-                Email = firebaseUser.Email,
-                DisplayName = firebaseUser.DisplayName,
-                PhotoUrl = firebaseUser.PhotoUrl,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
-        }
+        var user = await GetOrCreateUserAsync(firebaseUser);
 
         var (accessToken, refreshToken) = await CreateSessionTokensAsync(user);
 
@@ -71,23 +55,7 @@ public class AuthController : ControllerBase
     {
         var firebaseUser = await firebaseAuth.VerifyAppleTokenAsync(request.IdToken);
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUser.Uid);
-
-        if (user == null)
-        {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FirebaseUid = firebaseUser.Uid,
-                Email = firebaseUser.Email,
-                DisplayName = firebaseUser.DisplayName,
-                PhotoUrl = firebaseUser.PhotoUrl,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
-        }
+        var user = await GetOrCreateUserAsync(firebaseUser);
 
         var (accessToken, refreshToken) = await CreateSessionTokensAsync(user);
 
@@ -239,6 +207,53 @@ public class AuthController : ControllerBase
     // Hesap silme: DELETE /api/users/me (UsersController) — tüm veriyi temizler.
     // Eski DeleteAccount kaldırıldı: yalnızca user satırını siliyordu ve
     // collection_shares Restrict FK'sı nedeniyle paylaşımı olan kullanıcıda patlıyordu.
+
+    private async Task<User> GetOrCreateUserAsync(FirebaseUserInfo firebaseUser)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUser.Uid);
+
+        if (user != null)
+            return user;
+
+        user = new User
+        {
+            Id = Guid.NewGuid(),
+            FirebaseUid = firebaseUser.Uid,
+            Email = firebaseUser.Email,
+            DisplayName = firebaseUser.DisplayName,
+            PhotoUrl = firebaseUser.PhotoUrl,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _dbContext.Users.Add(user);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+            return user;
+        }
+        catch (DbUpdateException ex)
+        {
+            // Eşzamanlı login yarışı: başka bir istek aynı firebase_uid ile satırı
+            // önce ekledi (IX_users_firebase_uid unique ihlali). Yarışı kaybeden
+            // istek kazananın satırını kullanır.
+            _dbContext.Entry(user).State = EntityState.Detached;
+
+            var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUser.Uid);
+            if (existingUser == null)
+                throw;
+
+            var sqlState = (ex.InnerException as Npgsql.PostgresException)?.SqlState;
+            _logger.LogWarning(
+                ex,
+                "Concurrent login race for firebase uid {FirebaseUid}; reusing existing user {UserId}. SqlState={SqlState}",
+                firebaseUser.Uid,
+                existingUser.Id,
+                sqlState);
+
+            return existingUser;
+        }
+    }
 
     private static void RevokeSession(AuthSession session)
     {

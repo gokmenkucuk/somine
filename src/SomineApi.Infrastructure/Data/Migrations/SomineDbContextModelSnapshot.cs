@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Pgvector;
 using SomineApi.Infrastructure.Data;
 
 #nullable disable
@@ -21,6 +22,9 @@ namespace SomineApi.Infrastructure.Data.Migrations
                 .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "unaccent");
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "vector");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("SomineApi.Domain.Entities.AuthSession", b =>
@@ -140,6 +144,15 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("name");
 
+                    b.Property<DateTime?>("PublicLinkCreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("public_link_created_at_utc");
+
+                    b.Property<string>("PublicLinkToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("public_link_token");
+
                     b.Property<int>("SortOrder")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -157,6 +170,9 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PublicLinkToken")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -388,6 +404,10 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_favorite");
 
+                    b.Property<DateTime?>("LastOpenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_opened_at");
+
                     b.Property<string>("Note")
                         .HasColumnType("text")
                         .HasColumnName("note");
@@ -400,9 +420,17 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("og_favicon_url");
 
+                    b.Property<int?>("OgImageHeight")
+                        .HasColumnType("integer")
+                        .HasColumnName("og_image_height");
+
                     b.Property<string>("OgImageUrl")
                         .HasColumnType("text")
                         .HasColumnName("og_image_url");
+
+                    b.Property<int?>("OgImageWidth")
+                        .HasColumnType("integer")
+                        .HasColumnName("og_image_width");
 
                     b.Property<string>("OgSiteName")
                         .HasMaxLength(128)
@@ -412,6 +440,12 @@ namespace SomineApi.Infrastructure.Data.Migrations
                     b.Property<string>("OgTitle")
                         .HasColumnType("text")
                         .HasColumnName("og_title");
+
+                    b.Property<int>("OpenCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("open_count");
 
                     b.Property<Guid?>("ReminderId")
                         .HasColumnType("uuid")
@@ -562,6 +596,9 @@ namespace SomineApi.Infrastructure.Data.Migrations
 
                     b.HasIndex("ItemId")
                         .IsUnique();
+
+                    b.HasIndex("IsActive", "ReminderDate")
+                        .HasDatabaseName("IX_reminders_is_active_reminder_date");
 
                     b.ToTable("reminders", (string)null);
                 });
@@ -794,6 +831,11 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("search_history_json");
 
+                    b.Property<string>("TimeZoneId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone_id");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -814,6 +856,38 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("SomineApi.Infrastructure.Entities.ItemEmbedding", b =>
+                {
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_id");
+
+                    b.Property<Vector>("Embedding")
+                        .IsRequired()
+                        .HasColumnType("vector(512)")
+                        .HasColumnName("embedding");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("model");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("ItemId");
+
+                    b.HasIndex("Embedding")
+                        .HasDatabaseName("ix_item_embeddings_embedding_hnsw_cosine");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Embedding"), "hnsw");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Embedding"), new[] { "vector_cosine_ops" });
+
+                    b.ToTable("item_embeddings", (string)null);
                 });
 
             modelBuilder.Entity("SomineApi.Domain.Entities.AuthSession", b =>
@@ -931,6 +1005,15 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SomineApi.Infrastructure.Entities.ItemEmbedding", b =>
+                {
+                    b.HasOne("SomineApi.Domain.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SomineApi.Domain.Entities.Category", b =>

@@ -32,5 +32,10 @@ public record ReminderDto(
     bool IsActive,
     int? CustomRepeatDays,
     int? CustomRepeatMinutes,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    // Sunucunun bu hatırlatıcı için en son bildirim ürettiği an (UTC). Hiç tetiklenmediyse null.
+    DateTime? LastTriggered = null,
+    // Sunucunun hesapladığı SIRADAKİ tetikleme anı (UTC). Yalnız okunur — istemci gönderemez;
+    // kullanıcının zaman diliminden (users.time_zone_id) türetilir. Tekrarsız ve vakti geçmişse null.
+    DateTime? NextTriggerAtUtc = null
 );

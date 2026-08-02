@@ -27,6 +27,10 @@ public class ReminderConfiguration : IEntityTypeConfiguration<Reminder>
 
         builder.HasIndex(r => r.ItemId);
 
+        // Arka plan tarayıcısı her dakika "aktif + tarihi gelmiş" hatırlatıcıları sorguluyor.
+        builder.HasIndex(r => new { r.IsActive, r.ReminderDate })
+            .HasDatabaseName("IX_reminders_is_active_reminder_date");
+
         builder.HasOne(r => r.Item)
             .WithOne(i => i.Reminder)
             .HasForeignKey<Reminder>(r => r.ItemId)

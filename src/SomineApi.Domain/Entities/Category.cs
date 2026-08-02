@@ -14,6 +14,11 @@ public class Category : IAuditableEntity
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // Alıcısız ("link ile paylaş") public link. base64url, 128-bit; null = link kapalı.
+    // Koleksiyon başına tek link olduğu için token doğrudan burada tutulur.
+    public string? PublicLinkToken { get; set; }
+    public DateTime? PublicLinkCreatedAtUtc { get; set; }
+
     // Navigation properties
     public User User { get; set; } = null!;
     public ICollection<Item> Items { get; set; } = [];
