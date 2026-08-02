@@ -6,6 +6,7 @@ import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/screens/onboarding_prep_screen.dart';
 import 'dart:async';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 /// Onboarding screen to get user's name and username
 class OnboardingNameScreen extends StatefulWidget {
@@ -232,11 +233,11 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: context.colors.divider),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: context.colors.divider),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -300,7 +301,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: context.colors.divider),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -308,8 +309,8 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                         color: _isUsernameAvailable == true 
                             ? AppColors.secondary // Müsaitse yeşil
                             : _isUsernameAvailable == false 
-                                ? Colors.red // Müsait değilse kırmızı
-                                : Colors.grey[300]!, // Normalde gri
+                                ? context.colors.danger // Müsait değilse kırmızı
+                                : context.colors.divider, // Normalde gri
                         width: _isUsernameAvailable != null ? 1.5 : 1,
                       ),
                     ),
@@ -319,7 +320,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                         color: _isUsernameAvailable == true 
                             ? AppColors.primary // Focus olunca primary (koyu yeşil)
                             : _isUsernameAvailable == false 
-                                ? Colors.red 
+                                ? context.colors.danger 
                                 : Colors.grey[400]!,
                         width: 2,
                       ),
@@ -337,7 +338,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                         : _isUsernameAvailable == true
                             ? const Icon(Icons.check_circle, color: AppColors.secondary)
                             : _isUsernameAvailable == false
-                                ? const Icon(Icons.error, color: Colors.red)
+                                ? Icon(Icons.error, color: context.colors.danger)
                                 : null,
                   ),
                   onChanged: _onUsernameChanged,

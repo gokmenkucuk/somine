@@ -388,6 +388,32 @@ class _BannerAppearance {
           dismissBackgroundColor: dismissBg,
           dismissIconColor: dismissIcon,
         );
+      case NotificationType.reminder:
+        return _BannerAppearance(
+          icon: PhosphorIconsRegular.alarm,
+          accentColor: colors.primary,
+          secondaryAccentColor: colors.secondary,
+          backgroundColor: baseSurface,
+          borderColor: colors.primary.withValues(alpha: 0.18),
+          shadowColor: colors.primary.withValues(alpha: 0.16),
+          titleColor: titleColor,
+          bodyColor: bodyColor,
+          dismissBackgroundColor: dismissBg,
+          dismissIconColor: dismissIcon,
+        );
+      case NotificationType.unknown:
+        return _BannerAppearance(
+          icon: PhosphorIconsRegular.bell,
+          accentColor: colors.iconInactive,
+          secondaryAccentColor: colors.secondary,
+          backgroundColor: baseSurface,
+          borderColor: colors.iconInactive.withValues(alpha: 0.18),
+          shadowColor: colors.iconInactive.withValues(alpha: 0.14),
+          titleColor: titleColor,
+          bodyColor: bodyColor,
+          dismissBackgroundColor: dismissBg,
+          dismissIconColor: dismissIcon,
+        );
     }
   }
 }

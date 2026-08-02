@@ -84,10 +84,14 @@ final selectedCategoryProvider = Provider<CategoryModel?>((ref) {
 // ==================== Item Providers ====================
 
 /// Items for current user (optionally filtered by category)
+///
+/// Vault item'ları sunucudan yalnızca kasa kilidi AÇIKKEN istenir
+/// (`includeVault`). Kilitliyken vault verisi cihaza hiç inmez.
 final itemsProvider = StreamProvider<List<ItemModel>>((ref) {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
   final selectedCategoryId = ref.watch(selectedCategoryIdProvider);
+  final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
 
   return authState.when(
     data: (user) {
@@ -95,6 +99,7 @@ final itemsProvider = StreamProvider<List<ItemModel>>((ref) {
         return itemRepository.streamItems(
           user.uid,
           categoryId: selectedCategoryId,
+          includeVault: isVaultUnlocked,
         );
       }
       return Stream.value([]);
@@ -108,13 +113,18 @@ final itemsProvider = StreamProvider<List<ItemModel>>((ref) {
 final catalogItemsProvider = StreamProvider<List<ItemModel>>((ref) {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
+  final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
 
   // Explicitly NOT watching selectedCategoryIdProvider
 
   return authState.when(
     data: (user) {
       if (user != null) {
-        return itemRepository.streamItems(user.uid); // No categoryId filter
+        // No categoryId filter; vault yalnızca kilit açıkken istenir.
+        return itemRepository.streamItems(
+          user.uid,
+          includeVault: isVaultUnlocked,
+        );
       }
       return Stream.value([]);
     },
@@ -129,11 +139,15 @@ final favoriteItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((
 ) async {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
+  final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
 
   return authState.when(
     data: (user) async {
       if (user != null) {
-        return itemRepository.getFavoriteItems(user.uid);
+        return itemRepository.getFavoriteItems(
+          user.uid,
+          includeVault: isVaultUnlocked,
+        );
       }
       return [];
     },
@@ -148,11 +162,15 @@ final deletedItemsProvider = FutureProvider.autoDispose<List<ItemModel>>((
 ) async {
   final authState = ref.watch(authStateProvider);
   final itemRepository = ref.watch(itemRepositoryProvider);
+  final isVaultUnlocked = ref.watch(isVaultUnlockedProvider);
 
   return authState.when(
     data: (user) async {
       if (user != null) {
-        return itemRepository.getDeletedItems(user.uid);
+        return itemRepository.getDeletedItems(
+          user.uid,
+          includeVault: isVaultUnlocked,
+        );
       }
       return [];
     },
@@ -188,52 +206,6 @@ final isVaultSearchProvider = StateProvider<bool>((ref) => false);
 
 /// Global Vault Unlock State (App-wide unlock for session)
 final isVaultUnlockedProvider = StateProvider<bool>((ref) => false);
-
-/// Search results
-final searchResultsProvider = FutureProvider<List<ItemModel>>((ref) async {
-  final query = ref.watch(searchQueryProvider);
-  final isVaultSearch = ref.watch(isVaultSearchProvider);
-  final authState = ref.watch(authStateProvider);
-  final itemRepository = ref.watch(itemRepositoryProvider);
-
-  // Need categories to identify Vaults
-  final categoriesAsync = ref.watch(categoriesProvider);
-  final categories = categoriesAsync.value ?? [];
-
-  if (query.isEmpty) return [];
-
-  return authState.when(
-    data: (user) async {
-      if (user != null) {
-        var items = await itemRepository.searchItems(user.uid, query);
-
-        // Identify Vault Categories
-        final vaultIds =
-            categories.where((c) => c.isVault).map((c) => c.id).toSet();
-
-        if (isVaultSearch) {
-          // SHOW ONLY VAULT ITEMS
-          if (vaultIds.isNotEmpty) {
-            items =
-                items.where((i) => vaultIds.contains(i.categoryId)).toList();
-          } else {
-            items = []; // No vault categories -> No vault items
-          }
-        } else {
-          // HIDE VAULT ITEMS (Standard Mode)
-          if (vaultIds.isNotEmpty) {
-            items =
-                items.where((i) => !vaultIds.contains(i.categoryId)).toList();
-          }
-        }
-        return items;
-      }
-      return [];
-    },
-    loading: () async => [],
-    error: (_, __) async => [],
-  );
-});
 
 // ==================== Pagination Provider ====================
 
@@ -411,6 +383,14 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
             ? _categories.where((c) => c.isVault).map((c) => c.id).toSet()
             : const <String?>{};
 
+    // Sunucudan vault item'ı YALNIZCA kullanıcı doğrudan bir vault koleksiyonunu
+    // seçmişken istenir; feed'de bu seçim ancak biyometrik doğrulamadan sonra
+    // yapılabiliyor (item_feed_screen chip akışı). "Tümü" görünümü vault'u zaten
+    // hiçbir zaman göstermiyordu — orada artık cihaza da hiç inmiyor.
+    final includeVault =
+        _categoryId != null &&
+        _categories.any((c) => c.id == _categoryId && c.isVault);
+
     while (items.length < visibleBatchSize &&
         sourceHasMore &&
         emptyBatchCount < maxEmptyBatches) {
@@ -419,6 +399,7 @@ class PaginatedItemsNotifier extends StateNotifier<PaginatedItemsState> {
         categoryId: _categoryId,
         limit: visibleBatchSize,
         page: currentPage,
+        includeVault: includeVault,
       );
 
       var batchItems = result.items;

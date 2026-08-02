@@ -24,7 +24,13 @@ class AppColors {
   // 5. GÖLGE (SHADOW)
   static Color premiumShadow = const Color(0xFF6E8E91).withValues(alpha: 0.15);
 
-  // 6. SOSYAL MEDYA (MUTED)
+  // 6. SEMANTİK (AYRAÇ & TEHLİKE)
+  /// İnce ayraç/kenarlık: hint gümüşünün soluk hali (~grey300 görünümü).
+  static Color divider = hint.withValues(alpha: 0.4);
+  /// Yıkıcı aksiyon rengi - ColorScheme.error ile aynı.
+  static const Color danger = Color(0xFFF44336);
+
+  // 7. SOSYAL MEDYA (MUTED)
   static const Color youtube = Color(0xFFFF6B6B);
   static const Color instagram = Color(0xFFC13584);
 }

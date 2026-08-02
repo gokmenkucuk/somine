@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 import 'package:somine_app/screens/onboarding_name_screen.dart';
 
 import 'package:somine_app/screens/home_screen.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final bool forceLogin;
@@ -34,6 +36,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted && result.userCredential?.user != null) {
         final user = result.userCredential!.user!;
+        final analytics = ref.read(analyticsServiceProvider);
+        if (result.isNewUser) {
+          analytics.logSignUp('google');
+        } else {
+          analytics.logLogin('google');
+        }
         final userModel = await UserRepository().getUser(user.uid);
         if (!mounted) return;
         final hasUsername =
@@ -75,6 +83,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted && result.userCredential?.user != null) {
         final user = result.userCredential!.user!;
+        final analytics = ref.read(analyticsServiceProvider);
+        if (result.isNewUser) {
+          analytics.logSignUp('apple');
+        } else {
+          analytics.logLogin('apple');
+        }
         final userModel = await UserRepository().getUser(user.uid);
         if (!mounted) return;
         final hasUsername =
@@ -366,7 +380,7 @@ class _SocialButton extends StatelessWidget {
         // Eğer beyaz zemin üstünde beyaz buton ise, çok hafif gri bir sınır çizgisi ekle
         border:
             useBorderOnWhite
-                ? Border.all(color: Colors.grey.shade200)
+                ? Border.all(color: context.colors.divider)
                 : Border.all(color: Colors.transparent),
       ),
       child: Material(

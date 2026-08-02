@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
@@ -154,7 +155,7 @@ class SettingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(SoMineTokens.spacingXXL),
                     child: Center(
                       child: Text(
-                        'So Mine v1.0.0',
+                        'Somine v1.0.0',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -197,7 +198,7 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(authRepositoryProvider).signOut();
             },
             style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+              foregroundColor: context.colors.danger,
             ),
             child: Text(l10n.settingsLogout),
           ),
@@ -337,7 +338,7 @@ class _SettingsSection extends StatelessWidget {
                   height: 1,
                   indent: 56 + SoMineTokens.spacingL,
                   endIndent: SoMineTokens.spacingL,
-                  color: SoMineTokens.background,
+                  color: context.colors.divider,
                 ),
             ],
           );
@@ -445,14 +446,14 @@ class _LogoutButton extends StatelessWidget {
           children: [
             Icon(
               Icons.logout_rounded,
-              color: Colors.red.shade400,
+              color: context.colors.danger,
               size: 20,
             ),
             const SizedBox(width: SoMineTokens.spacingS),
             Text(
               label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Colors.red.shade400,
+                color: context.colors.danger,
               ),
             ),
           ],

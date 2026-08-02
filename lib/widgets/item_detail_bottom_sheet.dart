@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,10 +10,13 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 // YoutubeFullscreenScreen import removed - feature disabled due to iOS issues
 import '../core/models/item_model.dart';
 import '../core/models/category_model.dart';
+import '../core/repositories/item_repository.dart';
+import '../core/services/analytics_service.dart';
 import '../core/design/app_colors_extension.dart';
 import '../core/utils/auth_image_provider.dart';
 import '../screens/add_content_screen.dart';
 import '../widgets/custom_note_icon.dart';
+import 'circle_icon_button.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 
 class ItemDetailBottomSheet extends StatefulWidget {
@@ -37,6 +40,8 @@ class ItemDetailBottomSheet extends StatefulWidget {
     List<CategoryModel> categories, {
     VoidCallback? onSave,
   }) {
+    // Bottom-sheet'ler FirebaseAnalyticsObserver'da görünmez; manuel logla.
+    AnalyticsService.instance.logScreenView('item_detail_sheet');
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -67,6 +72,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   @override
   void initState() {
     super.initState();
+    // Açılma takibi (fire-and-forget). initState'te tek noktadan çağrılır;
+    // hem ItemDetailBottomSheet.show() hem de doğrudan kurulan sheet'ler
+    // (catalog/item_feed) buradan geçer — çift sayım olmaz.
+    unawaited(ItemRepository().markOpened(widget.item.id));
     _resolveImageSize();
     _checkYoutube();
   }
@@ -243,15 +252,25 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final url = widget.item.url;
     if (url != null && url.isNotEmpty) {
       SharePlus.instance.share(ShareParams(text: url));
+      AnalyticsService.instance.logShareAction(widget.item.type.name);
     }
   }
 
   void _openEditScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddContentScreen(editItem: widget.item),
-      ),
+    // AddContentScreen'in kökü Scaffold değil, saydam bir
+    // DraggableScrollableSheet'tir; yalnızca modal sheet olarak sunulmak üzere
+    // yazılmıştır. Opak bir MaterialPageRoute içine konduğunda aşağı sürükleme
+    // sayfanın arkasını boş bıraktığı için "uygulama komple iniyor" gibi
+    // görünüyor ve sheet hiç kapanmıyordu. Ekleme akışıyla (home_screen)
+    // birebir aynı sunum kullanılır ki iki akış da aynı davransın.
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: false,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      enableDrag: true,
+      builder: (context) => AddContentScreen(editItem: widget.item),
     ).then((result) {
       if (result != null && mounted) {
         Navigator.pop(context, result); // ignore: use_build_context_synchronously
@@ -681,46 +700,16 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                 ],
               ),
 
-              // --- 3. STICKY ICONS (Top Layer) - Premium Glassmorphism Style ---
+              // --- 3. STICKY ICONS (Top Layer) ---
+              // Uygulama standardı: ekle/düzenle ekranlarıyla birebir aynı
+              // yüzen daire buton dili (CircleIconButton).
               // Close Button (Top Left)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 56,
                 left: 16,
-                child: GestureDetector(
+                child: CircleIconButton(
+                  icon: PhosphorIconsLight.x,
                   onTap: () => Navigator.pop(context),
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: context.colors.surfaceWhite.withValues(alpha: 0.85),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: context.colors.primary.withValues(alpha: 0.15),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.colors.primary.withValues(alpha: 0.12),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          PhosphorIconsBold.x,
-                          size: 20,
-                          color: context.colors.headline,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
 
@@ -728,83 +717,19 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
               Positioned(
                 top: MediaQuery.of(context).padding.top + 56,
                 right: 16,
-                child: GestureDetector(
+                child: CircleIconButton(
+                  icon: PhosphorIconsLight.paperPlaneTilt,
                   onTap: _shareLink,
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: context.colors.surfaceWhite.withValues(alpha: 0.85),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: context.colors.primary.withValues(alpha: 0.15),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.colors.primary.withValues(alpha: 0.12),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          PhosphorIconsBold.paperPlaneTilt,
-                          size: 20,
-                          color: context.colors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
 
               // Edit Button (Left of Share)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 56,
-                right: 16 + 48 + 12,
-                child: GestureDetector(
+                right: 16 + 44 + 12,
+                child: CircleIconButton(
+                  icon: PhosphorIconsLight.pencilSimple,
                   onTap: _openEditScreen,
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: context.colors.surfaceWhite.withValues(alpha: 0.85),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: context.colors.primary.withValues(alpha: 0.15),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.colors.primary.withValues(alpha: 0.12),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          PhosphorIconsBold.pencilSimple,
-                          size: 20,
-                          color: context.colors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ],

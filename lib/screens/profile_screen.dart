@@ -1,10 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
 import 'package:somine_app/widgets/user_avatar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:somine_app/screens/my_reminders_screen.dart';
 import 'package:somine_app/screens/recently_deleted_screen.dart';
 import 'package:somine_app/screens/appearance_screen.dart';
 import 'package:somine_app/screens/login_screen.dart';
@@ -254,6 +260,21 @@ class ProfileScreen extends ConsumerWidget {
                             children: [
                               _buildMenuItem(
                                 context,
+                                icon: PhosphorIconsRegular.alarm,
+                                title: l10n.profileMenuMyReminders,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const MyRemindersScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildDivider(context),
+                              _buildMenuItem(
+                                context,
                                 icon: CupertinoIcons.trash,
                                 title: l10n.profileMenuRecentlyDeleted,
                                 onTap: () {
@@ -278,6 +299,13 @@ class ProfileScreen extends ConsumerWidget {
                                     ),
                                   );
                                 },
+                              ),
+                              _buildDivider(context),
+                              _buildMenuItem(
+                                context,
+                                icon: CupertinoIcons.square_arrow_up,
+                                title: l10n.profileMenuExportData,
+                                onTap: () => _exportData(context, ref, l10n),
                               ),
                             ],
                           ),
@@ -387,9 +415,9 @@ class ProfileScreen extends ConsumerWidget {
                                           color: const Color(0xFFFEE2E2), // Soft Red Bg
                                           borderRadius: BorderRadius.circular(10),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.logout,
-                                          color: Colors.red,
+                                          color: context.colors.danger,
                                           size: 20,
                                         ),
                                       ),
@@ -399,7 +427,7 @@ class ProfileScreen extends ConsumerWidget {
                                         style: GoogleFonts.outfit(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.red,
+                                          color: context.colors.danger,
                                         ),
                                       ),
                                     ],
@@ -506,9 +534,9 @@ class ProfileScreen extends ConsumerWidget {
                                           color: const Color(0xFFFEE2E2),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.delete_forever,
-                                          color: Colors.red,
+                                          color: context.colors.danger,
                                           size: 20,
                                         ),
                                       ),
@@ -518,7 +546,7 @@ class ProfileScreen extends ConsumerWidget {
                                         style: GoogleFonts.outfit(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.red,
+                                          color: context.colors.danger,
                                         ),
                                       ),
                                     ],
@@ -551,6 +579,73 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Veri dışa aktarma akışı: format seç (JSON/CSV) → indir →
+  /// geçici dosyaya yaz → paylaşım sayfası.
+  Future<void> _exportData(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final format = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (sheetContext) => CupertinoActionSheet(
+        title: Text(l10n.exportFormatTitle),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(sheetContext, 'json'),
+            child: Text(l10n.exportFormatJson),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(sheetContext, 'csv'),
+            child: Text(l10n.exportFormatCsv),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(sheetContext),
+          child: Text(l10n.profileCancel),
+        ),
+      ),
+    );
+
+    if (format == null || !context.mounted) return;
+
+    // Capture navigator before async gaps (delete-account kalıbı).
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CupertinoActivityIndicator(radius: 14),
+      ),
+    );
+
+    try {
+      final data = await ref.read(userRepositoryProvider).exportData(format);
+
+      final dir = await getTemporaryDirectory();
+      final stamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${dir.path}/somine_export_$stamp.$format');
+      await file.writeAsString(data, flush: true);
+
+      // Close loading
+      navigator.pop();
+
+      AnalyticsService.instance.logExport(format);
+
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    } catch (e) {
+      // Close loading
+      navigator.pop();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.exportFailed)),
+        );
+      }
+    }
   }
 
   // --- Helpers ---
@@ -593,7 +688,9 @@ class ProfileScreen extends ConsumerWidget {
             // Navigate to Paywall
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PaywallScreen()),
+              MaterialPageRoute(
+                builder: (_) => const PaywallScreen(source: 'profile'),
+              ),
             );
           },
           borderRadius: BorderRadius.circular(20),
@@ -751,7 +848,7 @@ class ProfileScreen extends ConsumerWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      color: context.colors.hint.withValues(alpha: 0.1),
+      color: context.colors.divider,
       indent: 60, // Align with text start
     );
   }

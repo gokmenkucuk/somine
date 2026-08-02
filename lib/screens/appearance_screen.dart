@@ -227,7 +227,7 @@ class AppearanceScreen extends ConsumerWidget {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (context) => const PaywallScreen(),
+            builder: (context) => const PaywallScreen(source: 'appearance'),
           );
           return;
         }

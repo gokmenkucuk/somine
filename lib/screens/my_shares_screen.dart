@@ -6,11 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
 import 'package:somine_app/core/utils/failure_mapper.dart';
+import 'package:somine_app/core/utils/public_link_url.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -280,14 +281,14 @@ class _MyShareCard extends ConsumerWidget {
                   icon: Icon(
                     PhosphorIconsRegular.trash,
                     size: 16,
-                    color: Colors.red.shade400,
+                    color: context.colors.danger,
                   ),
                   label: Text(
                     l10n.mySharesRevoke,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.red.shade400,
+                      color: context.colors.danger,
                     ),
                   ),
                   style: TextButton.styleFrom(
@@ -313,6 +314,7 @@ class _MyShareCard extends ConsumerWidget {
       ref.invalidate(mySharesProvider);
       if (url.isEmpty) return;
       await SharePlus.instance.share(ShareParams(text: url));
+      AnalyticsService.instance.logShareAction('public_link');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -331,7 +333,7 @@ class _MyShareCard extends ConsumerWidget {
     if (token == null || token.isEmpty) return;
 
     final l10n = AppLocalizations.of(context)!;
-    await Clipboard.setData(ClipboardData(text: _publicLinkUrl(token)));
+    await Clipboard.setData(ClipboardData(text: publicLinkUrlFromToken(token)));
     if (context.mounted) {
       ScaffoldMessenger.of(
         context,
@@ -358,6 +360,7 @@ class _MyShareCard extends ConsumerWidget {
       ref.invalidate(mySharesProvider);
       if (url.isEmpty) return;
       await SharePlus.instance.share(ShareParams(text: url));
+      AnalyticsService.instance.logShareAction('public_link');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -404,7 +407,7 @@ class _MyShareCard extends ConsumerWidget {
     required bool destructive,
   }) {
     final l10n = AppLocalizations.of(context)!;
-    final confirmColor = destructive ? Colors.red : context.colors.primary;
+    final confirmColor = destructive ? context.colors.danger : context.colors.primary;
 
     return showDialog<bool>(
       context: context,
@@ -466,10 +469,6 @@ class _MyShareCard extends ConsumerWidget {
     );
   }
 
-  String _publicLinkUrl(String token) {
-    return '${ApiConfig.publicWebBaseUrl.replaceFirst(RegExp(r'/$'), '')}/s/$token';
-  }
-
   Future<void> _revokeShare(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -514,7 +513,7 @@ class _MyShareCard extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: context.colors.danger,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -635,7 +634,7 @@ class _PublicLinkMenu extends StatelessWidget {
               value: _PublicLinkAction.revoke,
               child: Text(
                 l10n.mySharesPublicLinkRevoke,
-                style: TextStyle(color: Colors.red.shade400),
+                style: TextStyle(color: context.colors.danger),
               ),
             ),
           ],

@@ -112,7 +112,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.3),
+                          color: context.colors.danger.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -193,7 +193,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
                     child: Text(
                       l10n.recentlyDeletedDeleteAll,
                       style: GoogleFonts.poppins(
-                        color: Colors.redAccent,
+                        color: context.colors.danger,
                         fontWeight: FontWeight.w500,
                         fontSize: 14,
                       ),
@@ -384,7 +384,7 @@ class _DeletedItemCard extends ConsumerWidget {
                 onPressed: () async {
                    await _confirmPermanentDelete(context, ref, item.id);
                 },
-                icon: Icon(PhosphorIconsRegular.trash, color: Colors.redAccent),
+                icon: Icon(PhosphorIconsRegular.trash, color: context.colors.danger),
                 tooltip: l10n.recentlyDeletedPermanentDelete,
               ),
             ],
@@ -518,7 +518,7 @@ class _DeletedItemCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.3),
+                          color: context.colors.danger.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),

@@ -100,6 +100,7 @@ class _AppleMapPreviewState extends State<AppleMapPreview> {
     // Fallback for non-iOS platforms
     final l10n = AppLocalizations.of(context)!;
     return Container(
+      clipBehavior: Clip.antiAlias,
       height: widget.height,
       decoration: BoxDecoration(
         gradient: _getGradient(),

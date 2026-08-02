@@ -131,7 +131,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       if (mounted) setState(() => _isOpeningModal = false);
 
-      if (result == true) {
+      if (result is AddContentResult) {
         // Refresh feed content
         ref.invalidate(paginatedFeedProvider);
         ref.invalidate(itemCountProvider);
@@ -142,6 +142,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             context,
             title: l10n.commonSuccessBang,
             message: l10n.homeAddSuccessMessage,
+            // Yalnız YENİ kayıtta hızlı hatırlatıcı aksiyonları göster.
+            quickReminderItemId:
+                result.isNewItem ? result.createdItemId : null,
+            quickReminderItemTitle:
+                result.isNewItem ? result.createdItemTitle : null,
           );
         }
       }

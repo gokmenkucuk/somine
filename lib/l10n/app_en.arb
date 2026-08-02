@@ -1,9 +1,7 @@
 {
   "@@locale": "en",
-
   "legalTermsOfService": "Terms of Service",
   "legalPrivacyPolicy": "Privacy Policy",
-
   "loginErrorMessage": "Sign-in error: {error}",
   "loginAppleContinue": "Continue with Apple",
   "loginGoogleContinue": "Continue with Google",
@@ -13,7 +11,6 @@
   "loginLegalPrefix": "By continuing, you agree to our ",
   "loginLegalAnd": " and ",
   "loginLegalSuffix": ".",
-
   "settingsHeaderProfile": "Profile",
   "settingsSectionSettings": "Settings",
   "settingsNotificationsTitle": "Notifications",
@@ -31,7 +28,6 @@
   "settingsCancel": "Cancel",
   "settingsDefaultUserName": "User",
   "settingsDefaultGuestLabel": "Guest",
-
   "profileDefaultName": "unnamed",
   "profileBioTagline": "This is my digital world!",
   "profileStatContent": "Items",
@@ -43,6 +39,11 @@
   "profileMenuNotifications": "Notifications",
   "profileMenuRecentlyDeleted": "Recently Deleted",
   "profileMenuNotificationSettings": "Notification Settings",
+  "profileMenuExportData": "Export your data",
+  "exportFormatTitle": "Export format",
+  "exportFormatJson": "JSON",
+  "exportFormatCsv": "CSV",
+  "exportFailed": "Export failed. Please try again.",
   "profileMenuInviteFriend": "Invite a Friend",
   "profileMenuHelpSupport": "Help & Support",
   "profileLogout": "Log Out",
@@ -53,7 +54,6 @@
   "profileDeleteAccountFailed": "Could not delete account: {error}",
   "profileMembershipTitle": "Membership Plan",
   "profileMembershipBadgeStandard": "STANDARD",
-
   "paywallSubtitle": "Premium Membership",
   "paywallFeatureUnlimited": "Unlimited Collections & Items",
   "paywallFeatureVault": "Private Vault (FaceID/TouchID)",
@@ -68,7 +68,6 @@
   "paywallMostPopularBadge": "MOST POPULAR",
   "paywallLifetimeBadge": "LIFETIME",
   "paywallComingSoon": "Purchases will be available soon!",
-
   "limitCollectionTitle": "You've Reached the Collection Limit",
   "limitItemTitle": "You've Reached the Item Limit",
   "limitCollectionDescription": "On the free plan you can create up to {limit} collections.",
@@ -76,14 +75,12 @@
   "limitCountStatus": "{current} / {limit}",
   "limitUpgradeCta": "Upgrade to PREMIUM",
   "limitNotNow": "Not Now",
-
   "failureTimeout": "Connection timed out. Please try again.",
   "failureNetwork": "Please check your internet connection.",
   "failureUnauthorized": "Your session has expired. Please sign in again.",
   "failureServer": "A server error occurred. Please try again shortly.",
   "failureConflict": "This action has already been completed.",
   "failureUnknown": "An unexpected error occurred. Please try again.",
-
   "commonAll": "All",
   "commonGuest": "Guest",
   "commonDefaultUserName": "User",
@@ -102,31 +99,25 @@
   "vaultName": "Private Vault",
   "vaultCategoryAuthReason": "Authenticate to access the {name} collection",
   "commonEmptyItemsSubtitle": "Your saved links, notes and images will appear here.",
-
   "limitItemReachedDescription": "On the free plan you can save up to {limit} items. Switch to Premium for unlimited items!",
   "limitItemWarning": "You're running low on items: {count}/500 — Go unlimited with Premium",
   "limitReminderTitle": "You've Reached the Reminder Limit",
   "limitReminderDescription": "On the free plan you can set up to 3 active reminders. Switch to Premium for more!",
-
   "reminderAddTitle": "Add Reminder",
   "reminderSetHint": "Set a reminder for this item",
   "reminderSetActive": "Reminder set",
-
   "deleteConfirmTitle": "Delete Confirmation",
   "deleteItemConfirm": "Are you sure you want to delete this item?",
-
   "homeItemWord": "Item",
   "homeAddSuccessMessage": "Item added to collection",
   "homeItemDeletedMessage": "{name} deleted",
   "homeBatchDeletedMessage": "{count} items deleted",
-
   "feedGreeting": "Hello,",
   "feedSloganTitle": "Save Your Digital Content\nInto Collections",
   "feedSloganSubtitle": "Keep it with care, share it with joy!",
   "feedUnknownError": "Unknown error",
   "feedEmptyTitle": "No items yet",
   "feedVaultAuthFailed": "Authentication failed",
-
   "catalogTitle": "My Collections",
   "catalogNewButton": "New +",
   "catalogVaultUnlockReason": "Authenticate to view hidden collections",
@@ -136,6 +127,11 @@
   "catalogEditOrder": "Edit Order",
   "catalogEditName": "Rename Collection",
   "catalogShareCollection": "Share Collection",
+  "catalogShareWithPeople": "Share with people",
+  "catalogShareViaLink": "Share via link",
+  "catalogShareViaLinkDescription": "Anyone with the link can view",
+  "catalogShareLinkReshare": "Share Again",
+  "catalogShareLinkUnavailable": "Sharing via link is not available right now. Please try again later.",
   "catalogVaultNoShare": "Private vaults cannot be shared",
   "premiumFeature": "Premium Feature",
   "catalogSharePremiumMessage": "Sharing collections is a premium-only feature. Upgrade to manage shared collections with friends!",
@@ -191,7 +187,6 @@
   "catalogSortUpdated": "Order updated.",
   "catalogNoItemsToSort": "No items to sort.",
   "catalogGenericError": "An error occurred. Please try again.",
-
   "shareSearchHint": "@username or email",
   "shareInfoBanner": "The person you share with can view the items and copy them to their own collection.",
   "shareUserNotFound": "User Not Found",
@@ -205,7 +200,6 @@
   "shareErrorNoSession": "Not signed in",
   "shareErrorNoCollectionId": "Collection ID not found",
   "shareErrorMissingUser": "Missing user info (ID or email not found)",
-
   "addContentImagePickerTitle": "Add Image",
   "addContentGallery": "Gallery",
   "addContentCamera": "Camera",
@@ -247,10 +241,10 @@
   "addContentRepeatWeekends": "Weekends",
   "addContentRepeatCustomMinutes": "Every few minutes",
   "addContentRepeatCustomDays": "Custom days",
-
   "searchBrowseSources": "Browse by Source",
   "searchVaultChip": "Hidden",
   "searchVaultAuthReason": "Authenticate to search hidden items",
+  "searchSemanticChip": "Smart",
   "searchTitleAra": "Search ",
   "searchTitleDiscover": "& Discover",
   "searchSubtitle": "Search across your collections...",
@@ -264,30 +258,23 @@
   "searchFilterByPlatformDesc": "Quickly separate Instagram, YouTube or web content using platform icons.",
   "searchInSavedTitle": "Search your saves",
   "searchInSavedDesc": "List results by title, note or link content.",
-
   "itemDetailAddNoteHint": "Add a note...",
   "itemDetailLinkOpenFailed": "Could not open link: {url}",
   "itemDetailOpenInBrowser": "Open in Browser",
   "itemDetailOpenInPlatform": "Open in {platform}",
-
   "iconPickerTitle": "App Icon",
   "iconPickerApplied": "{name} applied!",
   "iconPickerError": "An error occurred: {error}",
   "iconPickerPremiumBadge": "Premium",
-
   "errorStateTitle": "Something went wrong",
   "errorStateRetry": "Try Again",
-
   "somineLoadingPreparingCollections": "Preparing your collections...",
-
   "mapPreviewFallbackTitle": "Map Preview",
-
   "reminderIndicatorMinutesShort": "{minutes}min",
   "reminderIndicatorHoursShort": "{hours}h",
   "reminderIndicatorRepeatGeneric": "Repeat",
   "reminderIndicatorToday": "Today, {time}",
   "reminderIndicatorTomorrow": "Tomorrow, {time}",
-
   "appearanceTitle": "Appearance",
   "appearanceThemeSectionHeader": "THEME OPTIONS",
   "appearanceThemeAirSubtitle": "Default, bright and airy look.",
@@ -296,7 +283,6 @@
   "appearanceIconSectionHeader": "APP ICON",
   "appearanceChangeIconTitle": "Change Icon",
   "appearanceChangeIconSubtitle": "Customize your home screen icon.",
-
   "notificationSettingsTitle": "Notification Settings",
   "notificationsLabel": "Notifications",
   "notificationSettingsHeaderSubtitle": "Stay up to date with updates",
@@ -309,27 +295,23 @@
   "notificationSettingsEmailSubtitle": "Important updates via email",
   "notificationSettingsWeeklyDigestTitle": "Weekly Digest",
   "notificationSettingsWeeklyDigestSubtitle": "Get a weekly summary email",
-
   "notificationsMarkAllRead": "Mark All Read",
   "notificationsLoadError": "Couldn't load notifications. Please try again.",
   "notificationsEmptyTitle": "No notifications",
   "notificationsEmptySubtitle": "New notifications will appear here.",
   "notificationsDeleteFailed": "Couldn't delete: {error}",
-
   "inviteFriendTitle": "Invite a Friend",
   "inviteFriendShareHeadline": "Share with Your Friends!",
-  "inviteFriendShareSubtitle": "Share So Mine with people you love.\nLet them organize their content easily too!",
+  "inviteFriendShareSubtitle": "Share Somine with people you love.\nLet them organize their content easily too!",
   "inviteFriendLinkCopied": "Link copied!",
   "inviteFriendCopy": "Copy",
   "inviteFriendShareButton": "Share",
-  "inviteFriendShareMessage": "Try So Mine! Collect everything you save in one place. 📌✨ {link}",
-
+  "inviteFriendShareMessage": "Try Somine! Collect everything you save in one place. 📌✨ {link}",
   "sharedWithMeTitle": "Shared With Me",
   "sharedWithMeLoadError": "Couldn't load shares. Please try again.",
   "sharedWithMeEmptyTitle": "No shared collections",
   "sharedWithMeEmptySubtitle": "Shares you accept will appear here.",
   "sharedWithMeFromUser": "From {name}",
-
   "shareRequestsTitle": "Share Requests",
   "shareRequestsLoadError": "Couldn't load share requests. Please try again.",
   "shareRequestsEmptyTitle": "No pending requests",
@@ -340,7 +322,20 @@
   "shareRequestsAcceptedMessage": "The \"{categoryName}\" collection is now viewable.",
   "shareRequestsRejectedTitle": "Rejected",
   "shareRequestsRejectedMessage": "The share request was rejected.",
-
+  "myRemindersTitle": "My Reminders",
+  "myRemindersLoadError": "Reminders could not be loaded. Please try again.",
+  "myRemindersEmptyTitle": "No reminders yet",
+  "myRemindersEmptySubtitle": "Set a reminder on a saved item and it will show up here.",
+  "myRemindersEmptyUpcoming": "No upcoming reminders",
+  "myRemindersEmptyPast": "No past reminders",
+  "myRemindersFilterUpcoming": "Upcoming",
+  "myRemindersFilterPast": "Past",
+  "myRemindersFilterAll": "All",
+  "myRemindersItemMissing": "Item not found",
+  "myRemindersEdit": "Edit Reminder",
+  "myRemindersDelete": "Delete Reminder",
+  "myRemindersDeleted": "Reminder deleted.",
+  "profileMenuMyReminders": "My Reminders",
   "mySharesTitle": "My Shares",
   "mySharesEmptyTitle": "No shares yet",
   "mySharesEmptySubtitle": "Collections you share will appear here.",
@@ -394,7 +389,6 @@
   "@mySharesPublicLinkRevoked": {
     "description": "SnackBar message shown after revoking a public link."
   },
-
   "shareRequestActionSheetDefaultCategory": "Collection",
   "shareRequestActionSheetDefaultUser": "A user",
   "shareRequestActionSheetDefaultInitial": "U",
@@ -404,12 +398,9 @@
   "shareRequestActionSheetLater": "Check later",
   "shareRequestActionSheetMissingInfo": "This notification is missing request info, so quick actions aren't available.",
   "shareRequestActionSheetAcceptedMessage": "The \"{categoryName}\" collection is now available in your account.",
-
   "commonError": "Error",
-
   "usernameErrorFormat": "3-20 characters, letters, numbers and underscores only",
   "usernameErrorTaken": "This username is taken",
-
   "onboardingNameTitle": "Let's\nGet Started",
   "onboardingNameSubtitle": "What should we call you?",
   "onboardingNameNameLabel": "Your Name",
@@ -422,13 +413,11 @@
   "onboardingNameEnterName": "Please enter your name",
   "onboardingNameEnterUsername": "Please enter a username",
   "onboardingNameSelectValidUsername": "Please choose a valid username",
-
   "onboardingPrepTitle": "Preparing Your Collections",
   "onboardingPrepDescription": "We're preparing sample content we think you'll love.",
   "onboardingPrepComplete": "Done",
   "onboardingPrepPreparing": "Preparing...",
   "onboardingPrepStartExploring": "Start Exploring",
-
   "recentlyDeletedTitle": "Recently Deleted",
   "recentlyDeletedDeleteAll": "Delete All",
   "recentlyDeletedDeleteAllConfirm": "{count} items will be permanently deleted. This cannot be undone.",
@@ -446,7 +435,6 @@
   "recentlyDeletedGenericError": "An error occurred.",
   "recentlyDeletedPermanentlyDeletedTitle": "Permanently Deleted",
   "recentlyDeletedPermanentlyDeletedMessage": "Item permanently deleted.",
-
   "sharedCollectionByUser": "By {name}",
   "sharedCollectionNone": "None",
   "sharedCollectionEmptyTitle": "Collection Empty",
@@ -458,7 +446,6 @@
   "sharedCollectionCopiedTitle": "Copied",
   "sharedCollectionCopiedMessage": "{count} items were added to your collection.",
   "sharedCollectionCreatedMessage": "The \"{categoryName}\" collection was created and {count} items were added.",
-
   "helpSupportTitle": "Help & Support",
   "helpSupportHeaderTitle": "How can we help?",
   "helpSupportHeaderSubtitle": "Check the FAQ below or reach out to us",
@@ -467,8 +454,8 @@
   "helpSupportEmailTitle": "Email Support",
   "helpSupportWebsiteTitle": "Website",
   "helpSupportAppVersion": "App Version",
-  "helpSupportFaqQ1": "How does So Mine work?",
-  "helpSupportFaqA1": "So Mine lets you collect links from Instagram, YouTube, Twitter and other platforms in one place. Add content by tapping share or manually.",
+  "helpSupportFaqQ1": "How does Somine work?",
+  "helpSupportFaqA1": "Somine lets you collect links from Instagram, YouTube, Twitter and other platforms in one place. Add content by tapping share or manually.",
   "helpSupportFaqQ2": "How do I create collections?",
   "helpSupportFaqA2": "Tap the + button in the top right of the Collections tab to create a new collection. You can assign a name and an emoji to your collections.",
   "helpSupportFaqQ3": "What are the Premium features?",
@@ -477,9 +464,7 @@
   "helpSupportFaqA4": "Yes! All your data is stored encrypted with Firebase security infrastructure. You can protect sensitive content with Face ID/Touch ID using the Private Vault.",
   "helpSupportFaqQ5": "How do I delete my content?",
   "helpSupportFaqA5": "Long press on a content card to access the delete option. Deleted items are kept in Recently Deleted for 30 days.",
-
   "commonUpdate": "Update",
-
   "accountInfoTitle": "Account Info",
   "accountInfoCropPhoto": "Crop Photo",
   "accountInfoPhotoUpdatedTitle": "Photo Updated",
@@ -515,7 +500,6 @@
   "accountInfoSend": "Send",
   "accountInfoDeleteAccountMessage": "This action cannot be undone. All your data will be deleted.",
   "accountInfoReloginRequired": "For security, you need to sign in again",
-
   "categoryManagerTitle": "Categories",
   "categoryManagerEmptyTitle": "No categories yet",
   "categoryManagerEmptySubtitle": "Create categories\nto organize your content",
@@ -543,7 +527,6 @@
   "categoryManagerChooseIcon": "Choose Icon",
   "categoryManagerNameLabel": "Category Name",
   "categoryManagerNameHint": "e.g., Vacation Ideas",
-
   "editContentScanning": "Scanning link...",
   "editContentEditTitle": "Edit content",
   "editContentTitleHint": "Title",
@@ -553,5 +536,52 @@
   "editContentSaveChanges": "Save Changes",
   "editContentSelectCollection": "Please select a collection",
   "editContentUpdateFailed": "Update failed",
-  "editContentDeleteFailed": "Delete failed"
+  "editContentDeleteFailed": "Delete failed",
+  "successSheetQuickReminderTomorrow": "Tomorrow",
+  "successSheetQuickReminderWeekend": "Weekend",
+  "successSheetReminderSetTitle": "Reminder Set!",
+  "successSheetReminderSetTomorrow": "We'll remind you tomorrow",
+  "successSheetReminderSetWeekend": "We'll remind you on Saturday",
+  "successSheetReminderFailed": "Couldn't set the reminder. Please try again later.",
+  "weeklyDigestNotificationTitle": "It came back to you",
+  "weeklyDigestNotificationBody": "\"{title}\" is still waiting for you. How about taking a look?",
+  "weeklyDigestNotificationBodyMore": "\"{title}\" and {count} more are waiting for you.",
+  "commonOk": "OK",
+  "reminderPickerEditTitle": "Edit Reminder",
+  "reminderPickerFieldDate": "Date",
+  "reminderPickerFieldRepeat": "Repeat",
+  "reminderPickerFieldDayOfMonth": "Day (monthly)",
+  "reminderPickerFieldDateYearly": "Date (yearly)",
+  "reminderPickerDayOfMonthValue": "Day {day} of every month",
+  "@reminderPickerDayOfMonthValue": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPickerMonthDaySheetTitle": "Select Month and Day",
+  "reminderPickerRepeatSheetTitle": "Select Repeat",
+  "reminderPickerTimeLabel": "Time",
+  "reminderPickerTimeLabelDaily": "Time (daily)",
+  "reminderPickerTimeLabelWeekly": "Time (weekly)",
+  "reminderPickerTimeLabelWeekdays": "Time (weekdays)",
+  "reminderPickerTimeLabelWeekends": "Time (weekends)",
+  "reminderPickerRepeatEveryNMinutes": "Every {minutes} minutes",
+  "@reminderPickerRepeatEveryNMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPickerRepeatEveryNHours": "Every {hours} hours",
+  "@reminderPickerRepeatEveryNHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPickerDeleteTooltip": "Delete reminder"
 }

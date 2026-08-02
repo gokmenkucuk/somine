@@ -2,6 +2,11 @@ enum NotificationType {
   shareRequest, // Paylaşım isteği geldi
   shareAccepted, // Paylaşımım kabul edildi
   shareRejected, // Paylaşımım reddedildi
+  reminder, // Hatırlatıcının vakti geldi (sunucu üretir)
+  /// Sunucunun ileride ekleyeceği, bu sürümün tanımadığı tipler.
+  /// Bilinmeyen tipi shareRequest'e düşürmek, bildirimi paylaşım isteği gibi
+  /// gösterip yanlış ekrana yönlendiriyordu; nötr davranış daha doğru.
+  unknown,
 }
 
 class NotificationModel {
@@ -37,7 +42,7 @@ class NotificationModel {
         (t) =>
             t.name.toLowerCase() ==
             (json['type'] as String? ?? '').toLowerCase(),
-        orElse: () => NotificationType.shareRequest,
+        orElse: () => NotificationType.unknown,
       ),
       title: json['title'] as String? ?? '',
       message: json['message'] as String? ?? '',

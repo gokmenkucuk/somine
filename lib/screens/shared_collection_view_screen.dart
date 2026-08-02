@@ -363,6 +363,7 @@ class _SharedCollectionViewScreenState
       isScrollControlled: true,
       builder:
           (ctx) => Container(
+            clipBehavior: Clip.antiAlias,
             height: MediaQuery.of(context).size.height * 0.6,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
@@ -378,7 +379,7 @@ class _SharedCollectionViewScreenState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

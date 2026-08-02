@@ -6,13 +6,28 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class PaywallScreen extends ConsumerWidget {
-  const PaywallScreen({super.key});
+class PaywallScreen extends ConsumerStatefulWidget {
+  /// Paywall'ı açan yüzey (analitik `paywall_view` source parametresi).
+  final String source;
+
+  const PaywallScreen({super.key, this.source = 'unknown'});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends ConsumerState<PaywallScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(analyticsServiceProvider).logPaywallView(widget.source);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final subscriptionState = ref.watch(subscriptionProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -86,8 +101,10 @@ class PaywallScreen extends ConsumerWidget {
                     _buildFeatureItem(context, PhosphorIconsRegular.vault, l10n.paywallFeatureVault),
                     _buildFeatureItem(context, PhosphorIconsRegular.palette, l10n.paywallFeatureThemes),
                     _buildFeatureItem(context, PhosphorIconsRegular.appStoreLogo, l10n.paywallFeatureAppIcons),
-                    _buildFeatureItem(context, PhosphorIconsRegular.magnifyingGlass, l10n.paywallFeatureSmartSearch),
-                    _buildFeatureItem(context, PhosphorIconsRegular.lightning, l10n.paywallFeatureQuickWidget),
+                    // NOT: "Akıllı Arama" ve "Hızlı Widget Ekleme" listeden çıkarıldı —
+                    // ikisi de premium'a kilitli DEĞİL (arama herkeste iyileştirildi,
+                    // widget herkese açık). Ödenen şeyle verilen şey eşleşmeli.
+                    // Gerçekten premium'a kilitlenirlerse geri eklenebilir.
 
                     const SizedBox(height: 40),
 
@@ -270,6 +287,9 @@ class PaywallScreen extends ConsumerWidget {
       onTap: () async {
         final success = await ref.read(subscriptionProvider.notifier).purchase(package);
         if (context.mounted && success) {
+          ref
+              .read(analyticsServiceProvider)
+              .logPaywallConvert(package.storeProduct.identifier);
           Navigator.pop(context, true);
         }
       },

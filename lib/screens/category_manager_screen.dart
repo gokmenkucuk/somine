@@ -277,7 +277,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
               Navigator.pop(context);
               _deleteCategory(category, deleteItems: false); // Empty anyway
             },
-            child: Text(l10n.commonDelete, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text(l10n.commonDelete, style: TextStyle(color: context.colors.danger, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -289,7 +289,9 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -301,7 +303,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
             Container(
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: context.colors.divider, borderRadius: BorderRadius.circular(2)),
             ),
             Text(
               l10n.categoryManagerDeleteTitle,
@@ -333,7 +335,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
               context,
               icon: PhosphorIconsLight.trash,
               text: l10n.categoryManagerDeleteWithItems,
-              color: Colors.red,
+              color: context.colors.danger,
               isDestructive: true,
               onTap: () {
                 Navigator.pop(context);
@@ -361,18 +363,18 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isDestructive ? Colors.red.withValues(alpha: 0.08) : context.colors.backgroundTop,
+          color: isDestructive ? context.colors.danger.withValues(alpha: 0.08) : context.colors.backgroundTop,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDestructive ? Colors.red.withValues(alpha: 0.2) : Colors.transparent),
+          border: Border.all(color: isDestructive ? context.colors.danger.withValues(alpha: 0.2) : Colors.transparent),
         ),
         child: Row(
           children: [
             Icon(icon, color: color, size: 22),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(text, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: isDestructive ? Colors.red : context.colors.headline)),
+              child: Text(text, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: isDestructive ? context.colors.danger : context.colors.headline)),
             ),
-            Icon(PhosphorIconsLight.caretRight, size: 16, color: isDestructive ? Colors.red.withValues(alpha: 0.5) : context.colors.hint),
+            Icon(PhosphorIconsLight.caretRight, size: 16, color: isDestructive ? context.colors.danger.withValues(alpha: 0.5) : context.colors.hint),
           ],
         ),
       ),
@@ -389,6 +391,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
+        clipBehavior: Clip.antiAlias,
         height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
@@ -397,7 +400,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: context.colors.divider, borderRadius: BorderRadius.circular(2))),
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(AppLocalizations.of(context)!.categoryManagerSelectTarget, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -491,7 +494,7 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.red,
+        backgroundColor: context.colors.danger,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
         ),
@@ -635,7 +638,7 @@ class _CategoryTile extends StatelessWidget {
                 _IconButton(
                   icon: Icons.delete_outline_rounded,
                   onTap: onDelete,
-                  color: Colors.red.shade400,
+                  color: context.colors.danger,
                 ),
               ],
             ),

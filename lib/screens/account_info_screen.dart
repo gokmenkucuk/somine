@@ -505,7 +505,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? Colors.red : context.colors.headline;
+    final color = isDestructive ? context.colors.danger : context.colors.headline;
 
     return Material(
       color: context.colors.surfaceWhite,
@@ -555,6 +555,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: Container(
+              clipBehavior: Clip.antiAlias,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: context.colors.surfaceWhite,
@@ -572,7 +573,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: context.colors.divider,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -700,6 +701,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                     bottom: MediaQuery.of(context).viewInsets.bottom,
                   ),
                   child: Container(
+                    clipBehavior: Clip.antiAlias,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: context.colors.surfaceWhite,
@@ -717,7 +719,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: Colors.grey[300],
+                              color: context.colors.divider,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -766,8 +768,8 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                     isAvailable == true
                                         ? Colors.green
                                         : isAvailable == false
-                                        ? Colors.red
-                                        : Colors.grey[300]!,
+                                        ? context.colors.danger
+                                        : context.colors.divider,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
@@ -777,8 +779,8 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                     isAvailable == true
                                         ? Colors.green
                                         : isAvailable == false
-                                        ? Colors.red
-                                        : Colors.grey[300]!,
+                                        ? context.colors.danger
+                                        : context.colors.divider,
                                 width: isAvailable != null ? 2 : 1,
                               ),
                             ),
@@ -800,7 +802,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                       color: Colors.green,
                                     )
                                     : isAvailable == false
-                                    ? const Icon(Icons.error, color: Colors.red)
+                                    ? Icon(Icons.error, color: context.colors.danger)
                                     : null,
                           ),
                           onChanged: (value) async {
@@ -853,7 +855,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               errorMessage!,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: Colors.red,
+                                color: context.colors.danger,
                               ),
                             ),
                           ),

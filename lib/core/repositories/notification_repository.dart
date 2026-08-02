@@ -256,7 +256,8 @@ class NotificationRepository {
     }
 
     debugPrint(
-      'API Error [$action]: ${response.statusCode} - ${response.body}',
+      'API Error [$action]: ${response.statusCode}'
+      '${kDebugMode ? ' - ${response.body}' : ''}',
     );
 
     throw switch (response.statusCode) {

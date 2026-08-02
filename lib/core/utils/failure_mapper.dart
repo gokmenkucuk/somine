@@ -23,6 +23,9 @@ class FailureMapper {
       ServerException() =>
         l10n?.failureServer ??
             'Sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin.',
+      FeatureUnavailableException() =>
+        l10n?.catalogShareLinkUnavailable ??
+            'Bu özellik şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.',
       ValidationException e => e.userMessage,
       ConflictException() => l10n?.failureConflict ?? 'Bu işlem zaten yapıldı.',
       _ => l10n?.failureUnknown ??

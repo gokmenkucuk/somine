@@ -9,6 +9,7 @@ import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/backend_realtime_service.dart';
+import 'package:somine_app/core/utils/public_link_url.dart';
 
 class CategoryRepository {
   final BackendAuthService _backendAuthService = BackendAuthService();
@@ -84,6 +85,27 @@ class CategoryRepository {
       await _deleteCategoryViaApi(categoryId);
     } catch (e) {
       debugPrint('❌ [CategoryRepository] Error deleting category: $e');
+      rethrow;
+    }
+  }
+
+  /// Creates (or returns the existing) read-only public web link for a
+  /// collection and returns its absolute URL.
+  Future<String> createPublicLink(String categoryId) async {
+    try {
+      return await _createPublicLinkViaApi(categoryId);
+    } catch (e) {
+      debugPrint('❌ [CategoryRepository] Error creating public link: $e');
+      rethrow;
+    }
+  }
+
+  /// Revokes the public web link of a collection.
+  Future<void> revokePublicLink(String categoryId) async {
+    try {
+      await _revokePublicLinkViaApi(categoryId);
+    } catch (e) {
+      debugPrint('❌ [CategoryRepository] Error revoking public link: $e');
       rethrow;
     }
   }
@@ -224,6 +246,56 @@ class CategoryRepository {
     _throwIfNotSuccessful(response, action: 'reorder categories');
   }
 
+  Future<String> _createPublicLinkViaApi(String categoryId) async {
+    final accessToken = await _requireAccessToken();
+    final response = await _withTimeout(
+      _httpClient.post(
+        _buildUri('/api/categories/$categoryId/public-link'),
+        headers: _jsonHeaders(accessToken),
+      ),
+      'create collection public link',
+    );
+
+    _throwIfEndpointMissing(response);
+    _throwIfNotSuccessful(response, action: 'create collection public link');
+
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    final url = payload['url'] as String?;
+    if (url != null && url.isNotEmpty) return url;
+
+    final token = payload['publicLinkToken'] as String? ??
+        payload['token'] as String?;
+    if (token != null && token.isNotEmpty) return publicLinkUrlFromToken(token);
+
+    return '';
+  }
+
+  Future<void> _revokePublicLinkViaApi(String categoryId) async {
+    final accessToken = await _requireAccessToken();
+    final response = await _withTimeout(
+      _httpClient.delete(
+        _buildUri('/api/categories/$categoryId/public-link'),
+        headers: _jsonHeaders(accessToken),
+      ),
+      'revoke collection public link',
+    );
+
+    _throwIfEndpointMissing(response);
+    _throwIfNotSuccessful(response, action: 'revoke collection public link');
+  }
+
+  /// The public link endpoints may not be deployed yet; surface a meaningful
+  /// message instead of the generic "invalid request" validation error.
+  void _throwIfEndpointMissing(http.Response response) {
+    if (response.statusCode != 404) return;
+
+    throw const FeatureUnavailableException(
+      'collection public link endpoint unavailable',
+      userMessage:
+          'Link ile paylaşım şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.',
+    );
+  }
+
   Future<String> _requireAccessToken() async {
     final accessToken = await _backendAuthService.getValidAccessToken(
       firebaseUser: FirebaseAuth.instance.currentUser,
@@ -277,7 +349,8 @@ class CategoryRepository {
 
     // Log for debugging (not shown to user)
     debugPrint(
-      'API Error [$action]: ${response.statusCode} - ${response.body}',
+      'API Error [$action]: ${response.statusCode}'
+      '${kDebugMode ? ' - ${response.body}' : ''}',
     );
 
     // Throw typed exception
@@ -320,7 +393,7 @@ class CategoryRepository {
     return categories
         .map(
           (category) =>
-              '${category.id}|${category.name}|${category.icon}|${category.color}|${category.order}|${category.isVault}|${category.updatedAt.toUtc().millisecondsSinceEpoch}',
+              '${category.id}|${category.name}|${category.icon}|${category.color}|${category.order}|${category.isVault}|${category.publicLinkToken}|${category.updatedAt.toUtc().millisecondsSinceEpoch}',
         )
         .join('||');
   }

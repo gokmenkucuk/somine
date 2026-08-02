@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/notification_model.dart';
 import 'package:somine_app/core/providers/notification_providers.dart';
+import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/screens/share_requests_screen.dart';
 import 'package:somine_app/screens/my_shares_screen.dart';
@@ -70,7 +71,7 @@ class NotificationsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(right: 20),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: context.colors.danger,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(PhosphorIconsRegular.trash, color: Colors.white),
@@ -175,7 +176,15 @@ class _NotificationCard extends ConsumerWidget {
         break;
       case NotificationType.shareRejected:
         icon = PhosphorIconsRegular.xCircle;
-        iconColor = Colors.red;
+        iconColor = context.colors.danger;
+        break;
+      case NotificationType.reminder:
+        icon = PhosphorIconsRegular.alarm;
+        iconColor = context.colors.primary;
+        break;
+      case NotificationType.unknown:
+        icon = PhosphorIconsRegular.bell;
+        iconColor = context.colors.iconInactive;
         break;
     }
 
@@ -294,7 +303,13 @@ class _NotificationCard extends ConsumerWidget {
           context,
           MaterialPageRoute(builder: (_) => const MySharesScreen()),
         );
+      } else if (notification.type == NotificationType.reminder) {
+        final itemId = notification.data['itemId'] as String?;
+        if (itemId != null && itemId.isNotEmpty) {
+          await NotificationService().openItemDetail(itemId);
+        }
       }
+      // unknown: bu sürümün tanımadığı tip — yönlendirme yapmıyoruz.
     }
   }
 }

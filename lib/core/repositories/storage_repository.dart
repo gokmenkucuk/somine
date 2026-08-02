@@ -157,7 +157,8 @@ class StorageRepository {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       debugPrint(
-        'API Error [upload file]: ${response.statusCode} - ${response.body}',
+        'API Error [upload file]: ${response.statusCode}'
+        '${kDebugMode ? ' - ${response.body}' : ''}',
       );
       throw switch (response.statusCode) {
         401 => const UnauthorizedException(

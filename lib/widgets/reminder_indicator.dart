@@ -49,12 +49,12 @@ class ReminderIndicator extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isOverdue
-              ? Colors.red.withValues(alpha: 0.1)
+              ? context.colors.danger.withValues(alpha: 0.1)
               : context.colors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isOverdue
-                ? Colors.red.withValues(alpha: 0.3)
+                ? context.colors.danger.withValues(alpha: 0.3)
                 : context.colors.primary.withValues(alpha: 0.3),
             width: 1,
           ),
@@ -65,7 +65,7 @@ class ReminderIndicator extends StatelessWidget {
             Icon(
               _getRepeatIcon(reminder.repeat),
               size: 12,
-              color: isOverdue ? Colors.red : context.colors.primary,
+              color: isOverdue ? context.colors.danger : context.colors.primary,
             ),
             const SizedBox(width: 4),
             Text(
@@ -73,7 +73,7 @@ class ReminderIndicator extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: isOverdue ? Colors.red : context.colors.primary,
+                color: isOverdue ? context.colors.danger : context.colors.primary,
               ),
             ),
           ],

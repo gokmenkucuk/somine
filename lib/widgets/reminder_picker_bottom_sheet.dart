@@ -1,9 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
 
 class ReminderPickerBottomSheet extends StatefulWidget {
   final ReminderModel? existingReminder;
@@ -21,8 +24,10 @@ class ReminderPickerBottomSheet extends StatefulWidget {
     BuildContext context, {
     ReminderModel? existingReminder,
     Function()? onDelete,
-  }) {
-    return showModalBottomSheet<ReminderModel>(
+  }) async {
+    // Bottom-sheet'ler FirebaseAnalyticsObserver'da görünmez; manuel logla.
+    AnalyticsService.instance.logScreenView('reminder_picker_sheet');
+    final reminder = await showModalBottomSheet<ReminderModel>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -32,6 +37,13 @@ class ReminderPickerBottomSheet extends StatefulWidget {
         onDelete: onDelete,
       ),
     );
+    if (reminder != null) {
+      AnalyticsService.instance.logReminderSet(
+        source: 'picker',
+        frequency: reminder.repeat.name,
+      );
+    }
+    return reminder;
   }
 
   @override
@@ -82,6 +94,9 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
+      // Çocuk içeriğin (scroll view, divider, InkWell ripple) yuvarlatılmış
+      // üst köşelerin dışına boyanmasını engeller. Tüm bottom sheet'lerde ortak.
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -114,49 +129,57 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
   }
 
   Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         const SizedBox(height: 12),
+        // Drag handle - 40x4, tüm sheet'lerde ortak
         Container(
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: Colors.grey[300],
+            color: context.colors.divider,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.fromLTRB(20, 0, 8, 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                widget.existingReminder != null
-                    ? 'Hatırlatıcıyı Düzenle'
-                    : 'Hatırlatıcı Ekle',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: context.colors.headline,
+              Expanded(
+                child: Text(
+                  widget.existingReminder != null
+                      ? l10n.reminderPickerEditTitle
+                      : l10n.reminderAddTitle,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: context.colors.headline,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
               if (widget.existingReminder != null && widget.onDelete != null)
                 IconButton(
+                  tooltip: l10n.reminderPickerDeleteTooltip,
                   onPressed: () {
                     widget.onDelete!();
                     Navigator.pop(context);
                   },
                   icon: Icon(
                     PhosphorIconsBold.trash,
-                    color: Colors.red,
+                    color: context.colors.danger,
                   ),
-                ),
+                )
+              else
+                const SizedBox(width: 12),
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        const Divider(height: 1),
+        const SizedBox(height: 16),
+        Divider(height: 1, thickness: 1, color: context.colors.divider),
       ],
     );
   }
@@ -187,7 +210,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Tarih',
+              AppLocalizations.of(context)!.reminderPickerFieldDate,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -202,7 +225,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: context.colors.divider),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -241,7 +264,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Gün (ayda bir)',
+              AppLocalizations.of(context)!.reminderPickerFieldDayOfMonth,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -256,14 +279,15 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: context.colors.divider),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Her ayın $_selectedDayOfMonth. günü',
+                  AppLocalizations.of(context)!
+                      .reminderPickerDayOfMonthValue(_selectedDayOfMonth),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     color: context.colors.headline,
@@ -295,7 +319,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Tarih (yılda bir)',
+              AppLocalizations.of(context)!.reminderPickerFieldDateYearly,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -310,7 +334,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: context.colors.divider),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -364,7 +388,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: context.colors.divider),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -403,7 +427,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Tekrarlama',
+              AppLocalizations.of(context)!.reminderPickerFieldRepeat,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -418,7 +442,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: context.colors.divider),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -459,7 +483,9 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           elevation: 0,
         ),
         child: Text(
-          widget.existingReminder != null ? 'Güncelle' : 'Kaydet',
+          widget.existingReminder != null
+              ? AppLocalizations.of(context)!.commonUpdate
+              : AppLocalizations.of(context)!.commonSave,
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -490,7 +516,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
               ),
             ),
             CupertinoButton(
-              child: const Text('Tamam'),
+              child: Text(AppLocalizations.of(context)!.commonOk),
               onPressed: () => Navigator.pop(context, _selectedDate),
             ),
           ],
@@ -530,7 +556,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
               ),
             ),
             CupertinoButton(
-              child: const Text('Tamam'),
+              child: Text(AppLocalizations.of(context)!.commonOk),
               onPressed: () => Navigator.pop(context, _selectedTime),
             ),
           ],
@@ -573,7 +599,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
               ),
             ),
             CupertinoButton(
-              child: const Text('Tamam'),
+              child: Text(AppLocalizations.of(context)!.commonOk),
               onPressed: () => Navigator.pop(context, _selectedDayOfMonth),
             ),
           ],
@@ -587,16 +613,15 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
   }
 
   Future<void> _pickMonthDay() async {
-    final months = [
-      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-    ];
+    final months = _monthNames();
 
     final picked = await showModalBottomSheet<DateTime>(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         height: 320,
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: context.colors.surfaceWhite,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -608,17 +633,18 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.colors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
-              'Ay ve Gün Seç',
+              AppLocalizations.of(context)!.reminderPickerMonthDaySheetTitle,
               style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
                 color: context.colors.headline,
+                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 16),
@@ -690,7 +716,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Tamam',
+                    AppLocalizations.of(context)!.commonOk,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -717,18 +743,21 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
     final picked = await showModalBottomSheet<RepeatFrequency>(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (builderContext) {
+        final l10n = AppLocalizations.of(builderContext)!;
         final options = [
-          (RepeatFrequency.none, 'Tek seferlik'),
-          (RepeatFrequency.daily, 'Günlük'),
-          (RepeatFrequency.weekly, 'Haftalık'),
-          (RepeatFrequency.weekdays, 'Hafta içi'),
-          (RepeatFrequency.weekends, 'Hafta sonu'),
-          (RepeatFrequency.monthly, 'Aylık'),
-          (RepeatFrequency.yearly, 'Yıllık'),
+          (RepeatFrequency.none, l10n.addContentRepeatOnce),
+          (RepeatFrequency.daily, l10n.addContentRepeatDaily),
+          (RepeatFrequency.weekly, l10n.addContentRepeatWeekly),
+          (RepeatFrequency.weekdays, l10n.addContentRepeatWeekdays),
+          (RepeatFrequency.weekends, l10n.addContentRepeatWeekends),
+          (RepeatFrequency.monthly, l10n.addContentRepeatMonthly),
+          (RepeatFrequency.yearly, l10n.addContentRepeatYearly),
         ];
 
         return Container(
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: context.colors.surfaceWhite,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -742,20 +771,21 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: context.colors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               // Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'Tekrarlama Seç',
+                  l10n.reminderPickerRepeatSheetTitle,
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
                     color: context.colors.headline,
+                    letterSpacing: -0.5,
                   ),
                 ),
               ),
@@ -782,7 +812,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? context.colors.primary.withValues(alpha: 0.1)
-                                : Colors.grey[50],
+                                : context.colors.hint.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
@@ -815,7 +845,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
                               else
                                 Icon(
                                   PhosphorIconsBold.circle,
-                                  color: Colors.grey[300],
+                                  color: context.colors.iconInactive,
                                   size: 22,
                                 ),
                             ],
@@ -896,22 +926,21 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
     widget.onSave(reminder);
   }
 
+  /// Tarih biçimlendirmesi için aktif dil kodu.
+  /// `main.dart` yalnızca 'tr' verisini yüklüyor; 'en' intl'de gömülü olduğu
+  /// için diğer tüm diller güvenli şekilde 'en'e düşer.
+  String get _dateLocale {
+    final code = Localizations.localeOf(context).languageCode;
+    return code == 'tr' ? 'tr' : 'en';
+  }
+
+  List<String> _monthNames() {
+    final format = DateFormat.MMMM(_dateLocale);
+    return List.generate(12, (i) => format.format(DateTime(2024, i + 1)));
+  }
+
   String _formatDate(DateTime date) {
-    const months = [
-      'Oca',
-      'Şub',
-      'Mar',
-      'Nis',
-      'May',
-      'Haz',
-      'Tem',
-      'Ağu',
-      'Eyl',
-      'Eki',
-      'Kas',
-      'Ara'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+    return DateFormat('d MMM y', _dateLocale).format(date);
   }
 
   String _formatTime(TimeOfDay time) {
@@ -921,51 +950,36 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
   }
 
   String _formatMonthDay(int month, int day) {
-    const months = [
-      'Ocak',
-      'Şubat',
-      'Mart',
-      'Nisan',
-      'Mayıs',
-      'Haziran',
-      'Temmuz',
-      'Ağustos',
-      'Eylül',
-      'Ekim',
-      'Kasım',
-      'Aralık'
-    ];
-    return '$day ${months[month - 1]}';
+    return DateFormat('d MMMM', _dateLocale).format(DateTime(2024, month, day));
   }
 
   String _getRepeatLabel(RepeatFrequency frequency) {
+    final l10n = AppLocalizations.of(context)!;
     switch (frequency) {
       case RepeatFrequency.none:
-        return 'Tek seferlik';
+        return l10n.addContentRepeatOnce;
       case RepeatFrequency.daily:
-        return 'Günlük';
+        return l10n.addContentRepeatDaily;
       case RepeatFrequency.weekly:
-        return 'Haftalık';
+        return l10n.addContentRepeatWeekly;
       case RepeatFrequency.monthly:
-        return 'Aylık';
+        return l10n.addContentRepeatMonthly;
       case RepeatFrequency.yearly:
-        return 'Yıllık';
+        return l10n.addContentRepeatYearly;
       case RepeatFrequency.weekdays:
-        return 'Hafta içi';
+        return l10n.addContentRepeatWeekdays;
       case RepeatFrequency.weekends:
-        return 'Hafta sonu';
+        return l10n.addContentRepeatWeekends;
       case RepeatFrequency.customMinutes:
         if (_customMinutes != null) {
           if (_customMinutes! < 60) {
-            return '$_customMinutes dakikada bir';
-          } else {
-            final hours = _customMinutes! ~/ 60;
-            return '$hours saatte bir';
+            return l10n.reminderPickerRepeatEveryNMinutes(_customMinutes!);
           }
+          return l10n.reminderPickerRepeatEveryNHours(_customMinutes! ~/ 60);
         }
-        return 'Dakikada bir';
+        return l10n.addContentRepeatCustomMinutes;
       case RepeatFrequency.customDays:
-        return 'Gün bazlı';
+        return l10n.addContentRepeatCustomDays;
     }
   }
 

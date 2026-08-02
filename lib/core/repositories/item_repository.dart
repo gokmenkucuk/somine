@@ -31,9 +31,24 @@ class ItemRepository {
   final http.Client _httpClient = http.Client();
   static const Duration _requestTimeout = Duration(seconds: 15);
 
-  Future<List<ItemModel>> getItems(String userId, {String? categoryId}) async {
+  /// [includeVault] — Gizli Kasa (vault) kategorisindeki item'lar sunucuda
+  /// VARSAYILAN OLARAK filtrelenir; almak için açıkça `true` geçilmelidir.
+  ///
+  /// Bu bir güvenlik sınırı DEĞİL, savunma katmanıdır: kullanıcı zaten
+  /// authenticated olduğu için parametre yalnızca bir "niyet beyanı"dır.
+  /// Amaç, kilitliyken vault verisinin cihaza hiç inmemesi. İstemcideki
+  /// vault filtreleri de defense-in-depth olarak yerinde bırakılmıştır.
+  Future<List<ItemModel>> getItems(
+    String userId, {
+    String? categoryId,
+    bool includeVault = false,
+  }) async {
     try {
-      return await _fetchAllItemsFromApi(userId, categoryId: categoryId);
+      return await _fetchAllItemsFromApi(
+        userId,
+        categoryId: categoryId,
+        includeVault: includeVault,
+      );
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting items: $e');
       rethrow;
@@ -45,6 +60,7 @@ class ItemRepository {
     String? categoryId,
     int limit = 5,
     int page = 1,
+    bool includeVault = false,
   }) async {
     try {
       final accessToken = await _requireAccessToken();
@@ -56,6 +72,7 @@ class ItemRepository {
               'page': '$page',
               'limit': '$limit',
               if (categoryId != null) 'categoryId': categoryId,
+              if (includeVault) 'includeVault': 'true',
             },
           ),
           headers: _jsonHeaders(accessToken),
@@ -89,11 +106,20 @@ class ItemRepository {
     }
   }
 
+  /// Sayfalı arama. [mode] 'keyword' (varsayılan, query param gönderilmez)
+  /// veya 'semantic' (sunucu sıralaması esastır). [categoryId],
+  /// [excludeCategoryIds] ve [platform] sunucu tarafı filtrelerdir;
+  /// `excludeCategoryIds` tekrarlı query key olarak gönderilir.
   Future<PaginatedItemsResult> searchItemsPaginated(
     String userId,
     String queryStr, {
     int limit = 20,
     int page = 1,
+    String mode = 'keyword',
+    String? categoryId,
+    List<String>? excludeCategoryIds,
+    String? platform,
+    bool includeVault = false,
   }) async {
     try {
       final accessToken = await _requireAccessToken();
@@ -101,7 +127,17 @@ class ItemRepository {
         _httpClient.get(
           _buildUri(
             '/api/items/search',
-            queryParameters: {'q': queryStr, 'page': '$page', 'limit': '$limit'},
+            queryParameters: {
+              'q': queryStr,
+              'page': '$page',
+              'limit': '$limit',
+              if (mode == 'semantic') 'mode': mode,
+              if (categoryId != null) 'categoryId': categoryId,
+              if (excludeCategoryIds != null && excludeCategoryIds.isNotEmpty)
+                'excludeCategoryIds': excludeCategoryIds,
+              if (platform != null) 'platform': platform,
+              if (includeVault) 'includeVault': 'true',
+            },
           ),
           headers: _jsonHeaders(accessToken),
         ),
@@ -168,6 +204,30 @@ class ItemRepository {
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error toggling favorite: $e');
       rethrow;
+    }
+  }
+
+  /// Item açılma takibi (fire-and-forget): hata yutulur, retry yok.
+  /// Çağıran await etmek zorunda değildir; başarısızlık akışı asla bozmaz.
+  Future<void> markOpened(String itemId) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _withTimeout(
+        _httpClient.post(
+          _buildUri('/api/items/$itemId/opened'),
+          headers: _jsonHeaders(accessToken),
+        ),
+        'mark item opened',
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint(
+          '⚠️ [ItemRepository] markOpened failed (ignored): '
+          '${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ [ItemRepository] markOpened error (ignored): $e');
     }
   }
 
@@ -327,12 +387,18 @@ class ItemRepository {
     }
   }
 
-  Future<List<ItemModel>> getFavoriteItems(String userId) async {
+  Future<List<ItemModel>> getFavoriteItems(
+    String userId, {
+    bool includeVault = false,
+  }) async {
     try {
       final accessToken = await _requireAccessToken();
       final response = await _withTimeout(
         _httpClient.get(
-          _buildUri('/api/items/favorites'),
+          _buildUri(
+            '/api/items/favorites',
+            queryParameters: {if (includeVault) 'includeVault': 'true'},
+          ),
           headers: _jsonHeaders(accessToken),
         ),
         'fetch favorite items',
@@ -353,15 +419,24 @@ class ItemRepository {
   Stream<List<ItemModel>> streamItems(
     String userId, {
     String? categoryId,
+    bool includeVault = false,
   }) async* {
     while (true) {
       try {
-        var items = await _fetchAllItemsFromApi(userId, categoryId: categoryId);
+        var items = await _fetchAllItemsFromApi(
+          userId,
+          categoryId: categoryId,
+          includeVault: includeVault,
+        );
         var lastSignature = _itemsSignature(items);
         yield items;
 
         await for (final _ in _backendRealtimeService.itemsChanges) {
-          items = await _fetchAllItemsFromApi(userId, categoryId: categoryId);
+          items = await _fetchAllItemsFromApi(
+            userId,
+            categoryId: categoryId,
+            includeVault: includeVault,
+          );
           final signature = _itemsSignature(items);
 
           if (signature == lastSignature) {
@@ -379,10 +454,27 @@ class ItemRepository {
     }
   }
 
+  /// Toplam (silinmemiş) içerik sayısı — kota göstergesi için.
+  ///
+  /// Vault item'ları DAHİLDİR: sunucudaki 500'lük ücretsiz plan kontrolü de
+  /// vault'u saydığı için sayaç onunla birebir tutarlı olmak zorunda. Bu yüzden
+  /// listeyi çekip saymak yerine ayrı `/api/items/count` ucu kullanılır —
+  /// böylece doğru sayı alınırken vault item'larının kendisi cihaza inmez.
   Future<int> getItemCount(String userId) async {
     try {
-      final items = await _fetchAllItemsFromApi(userId, includeDeleted: false);
-      return items.length;
+      final accessToken = await _requireAccessToken();
+      final response = await _withTimeout(
+        _httpClient.get(
+          _buildUri('/api/items/count'),
+          headers: _jsonHeaders(accessToken),
+        ),
+        'fetch item count',
+      );
+
+      _throwIfNotSuccessful(response, action: 'fetch item count');
+
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      return payload['total'] as int? ?? 0;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting item count: $e');
       return 0;
@@ -406,12 +498,20 @@ class ItemRepository {
     }
   }
 
+  /// Kategori silme akışında "içinde kaç item var" sorusunun cevabı.
+  /// Vault kategorileri için de doğru sayıyı vermesi gerektiğinden
+  /// `includeVault: true` ile çağrılır — aksi halde vault koleksiyonları
+  /// her zaman "boş" görünür ve yanlış silme diyaloğu açılırdı.
   Future<int> getActiveItemCountInCategory(
     String userId,
     String categoryId,
   ) async {
     try {
-      final items = await getItems(userId, categoryId: categoryId);
+      final items = await getItems(
+        userId,
+        categoryId: categoryId,
+        includeVault: true,
+      );
       return items.length;
     } catch (e) {
       debugPrint('❌ [ItemRepository] Error getting category item count: $e');
@@ -527,12 +627,18 @@ class ItemRepository {
     }
   }
 
-  Future<List<ItemModel>> getDeletedItems(String userId) async {
+  Future<List<ItemModel>> getDeletedItems(
+    String userId, {
+    bool includeVault = false,
+  }) async {
     try {
       final accessToken = await _requireAccessToken();
       final response = await _withTimeout(
         _httpClient.get(
-          _buildUri('/api/items/deleted'),
+          _buildUri(
+            '/api/items/deleted',
+            queryParameters: {if (includeVault) 'includeVault': 'true'},
+          ),
           headers: _jsonHeaders(accessToken),
         ),
         'fetch deleted items',
@@ -652,14 +758,23 @@ class ItemRepository {
     }
   }
 
-  Future<List<ItemModel>> getItemsByCategory(String userId, String categoryId) {
-    return getItems(userId, categoryId: categoryId);
+  Future<List<ItemModel>> getItemsByCategory(
+    String userId,
+    String categoryId, {
+    bool includeVault = false,
+  }) {
+    return getItems(
+      userId,
+      categoryId: categoryId,
+      includeVault: includeVault,
+    );
   }
 
   Future<List<ItemModel>> _fetchAllItemsFromApi(
     String userId, {
     String? categoryId,
     bool includeDeleted = false,
+    bool includeVault = false,
   }) async {
     final accessToken = await _requireAccessToken();
     final items = <ItemModel>[];
@@ -677,6 +792,7 @@ class ItemRepository {
               'limit': '$limit',
               if (categoryId != null) 'categoryId': categoryId,
               if (includeDeleted) 'includeDeleted': 'true',
+              if (includeVault) 'includeVault': 'true',
             },
           ),
           headers: _jsonHeaders(accessToken),
@@ -785,7 +901,9 @@ class ItemRepository {
     return accessToken;
   }
 
-  Uri _buildUri(String path, {Map<String, String>? queryParameters}) {
+  /// [queryParameters] değerleri `String` veya `Iterable<String>` olabilir
+  /// (tekrarlı query key desteği — ör. `excludeCategoryIds`).
+  Uri _buildUri(String path, {Map<String, dynamic>? queryParameters}) {
     final baseUrl = ApiConfig.baseUrl;
     final normalizedBase =
         baseUrl.endsWith('/')
@@ -826,7 +944,8 @@ class ItemRepository {
 
     // Log for debugging (not shown to user)
     debugPrint(
-      'API Error [$action]: ${response.statusCode} - ${response.body}',
+      'API Error [$action]: ${response.statusCode}'
+      '${kDebugMode ? ' - ${response.body}' : ''}',
     );
 
     // Throw typed exception

@@ -31,7 +31,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       _pushEnabled = prefs.getBool('notification_push') ?? true;
       _emailEnabled = prefs.getBool('notification_email') ?? false;
       _reminderEnabled = prefs.getBool('notification_reminder') ?? true;
-      _weeklyDigest = prefs.getBool('notification_weekly') ?? false;
+      _weeklyDigest = prefs.getBool('notification_weekly') ?? true;
     });
   }
 

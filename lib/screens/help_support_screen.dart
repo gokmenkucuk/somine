@@ -201,7 +201,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             title: l10n.helpSupportEmailTitle,
             subtitle: 'support@somineapp.com',
             onTap: () async {
-              final uri = Uri.parse('mailto:support@somineapp.com?subject=So Mine Destek');
+              final uri = Uri.parse('mailto:support@somineapp.com?subject=Somine Destek');
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);
               }

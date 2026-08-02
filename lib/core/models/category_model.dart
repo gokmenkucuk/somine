@@ -6,6 +6,7 @@ class CategoryModel {
   final String? color; // hex color
   final int order;
   final bool isVault; // Locked with FaceID/TouchID
+  final String? publicLinkToken; // Read-only web link token (null = no link)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -17,6 +18,7 @@ class CategoryModel {
     this.color,
     this.order = 0,
     this.isVault = false,
+    this.publicLinkToken,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -33,6 +35,7 @@ class CategoryModel {
       color: json['color'] as String?,
       order: json['sortOrder'] as int? ?? json['order'] as int? ?? 0,
       isVault: json['isVault'] as bool? ?? false,
+      publicLinkToken: json['publicLinkToken'] as String?,
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
@@ -59,6 +62,8 @@ class CategoryModel {
     String? color,
     int? order,
     bool? isVault,
+    String? publicLinkToken,
+    bool clearPublicLinkToken = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -70,6 +75,8 @@ class CategoryModel {
       color: color ?? this.color,
       order: order ?? this.order,
       isVault: isVault ?? this.isVault,
+      publicLinkToken:
+          clearPublicLinkToken ? null : (publicLinkToken ?? this.publicLinkToken),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

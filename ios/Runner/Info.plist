@@ -182,6 +182,16 @@
 				<string>ShareMedia-com.somine.app</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.somine.app.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>somine</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
@@ -189,8 +199,8 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Gizli kasayı açmak için Face ID kullanılır.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Bazı özellikler için yerel ağ erişimi kullanılabilir.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Kaydettiğiniz konum bağlantılarını harita önizlemesinde göstermek için kullanılır.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Paylaşmak istediğiniz fotoğraf ve videoları seçmek için galeri erişimi gereklidir.</string>
 	<key>NSCameraUsageDescription</key>
@@ -214,7 +224,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Yer bazlı özellikler ve harita kullanımı için konumunuza erişim gereklidir.</string>
 </dict>
 </plist>

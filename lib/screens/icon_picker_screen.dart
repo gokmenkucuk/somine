@@ -45,7 +45,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => const PaywallScreen(),
+        builder: (context) => const PaywallScreen(source: 'icon_picker'),
       );
       return;
     }

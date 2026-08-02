@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens for So Mine app
+/// Design tokens for Somine app
 /// Soft, white, creative design language
 class DesignTokens {
   // Colors

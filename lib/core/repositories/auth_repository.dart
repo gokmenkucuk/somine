@@ -152,13 +152,22 @@ class AuthRepository {
       debugPrint('🔵 [AuthRepository] Signing in to Firebase...');
       final userCredential = await _auth.signInWithCredential(credential);
       debugPrint('✅ [AuthRepository] Firebase sign-in successful!');
-      debugPrint('   - User ID: ${userCredential.user?.uid}');
-      debugPrint('   - Email: ${userCredential.user?.email}');
+      if (kDebugMode) {
+        debugPrint('   - User ID: ${userCredential.user?.uid}');
+        debugPrint('   - Email: ${userCredential.user?.email}');
+      }
 
       // Create/update user document in Firestore
       bool isNewUser = false;
       if (userCredential.user != null) {
-        isNewUser = await _handleUserLogin(userCredential.user!);
+        // _handleUserLogin hata verirse sonraki adımlar ATLANMAMALI:
+        // geçici bir sunucu hatası, aboneliğin RevenueCat'e hiç
+        // tanıtılmamasına yol açıyordu (bkz. 2026-08-02 premium sorunu).
+        try {
+          isNewUser = await _handleUserLogin(userCredential.user!);
+        } catch (e) {
+          debugPrint('⚠️ [AuthRepository] handleUserLogin failed: $e');
+        }
         await _syncSubscriptionAfterLogin(userCredential.user!);
         await _syncBackendSessionAfterLogin(
           userCredential.user!,
@@ -195,7 +204,12 @@ class AuthRepository {
       // Create/update user document in Firestore
       bool isNewUser = false;
       if (userCredential.user != null) {
-        isNewUser = await _handleUserLogin(userCredential.user!);
+        // Google akışıyla aynı gerekçe: bir adımın hatası sonrakileri kesmesin.
+        try {
+          isNewUser = await _handleUserLogin(userCredential.user!);
+        } catch (e) {
+          debugPrint('⚠️ [AuthRepository] handleUserLogin failed: $e');
+        }
         await _syncSubscriptionAfterLogin(userCredential.user!);
         await _syncBackendSessionAfterLogin(
           userCredential.user!,

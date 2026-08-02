@@ -16,6 +16,8 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/core/utils/failure_mapper.dart';
+import 'package:somine_app/widgets/masonry_image.dart';
+import 'package:somine_app/widgets/collection_share_options_sheet.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/custom_note_icon.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
@@ -1161,7 +1163,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       ? Colors.white
                       : context.colors.surfaceWhite,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade200, width: 1.5),
+              border: Border.all(color: context.colors.divider, width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.02),
@@ -1326,6 +1328,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       backgroundColor: Colors.transparent,
       builder:
           (ctx) => Container(
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
               borderRadius: const BorderRadius.vertical(
@@ -1341,7 +1344,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: context.colors.divider,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1354,7 +1357,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       ref.read(isReorderingProvider.notifier).state = true;
                     },
                   ),
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.pencilSimple,
                     title: l10n.catalogEditName,
@@ -1363,7 +1366,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       _showRenameDialog(category.id, category.name);
                     },
                   ),
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
                   // Share Collection - Disabled for Vaults (moved above Vault toggle)
                   Opacity(
                     opacity: category.isVault ? 0.4 : 1.0,
@@ -1437,11 +1440,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         }
 
                         Navigator.pop(ctx);
-                        _showShareCollectionDialog(category);
+                        _showCollectionShareOptions(category);
                       },
                     ),
                   ),
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
                   // Vault Toggle - Premium Feature
                   _buildOptionTile(
                     icon:
@@ -1519,11 +1522,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       }
                     },
                   ),
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.trash,
                     title: l10n.catalogDeleteCollection,
-                    color: Colors.red,
+                    color: context.colors.danger,
                     onTap: () {
                       Navigator.pop(ctx);
                       _confirmDelete(context, category.id, category.name);
@@ -1567,6 +1570,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
+  /// Entry point for collection sharing: lets the user choose between
+  /// sharing with a person and sharing a read-only public link.
+  void _showCollectionShareOptions(CategoryModel category) {
+    CollectionShareOptionsSheet.show(
+      context,
+      category: category,
+      onShareWithPeople: () => _showShareCollectionDialog(category),
+    );
+  }
+
   void _showShareCollectionDialog(CategoryModel category) {
     final l10n = AppLocalizations.of(context)!;
     final searchController = TextEditingController();
@@ -1585,6 +1598,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           (ctx) => StatefulBuilder(
             builder:
                 (context, setState) => Container(
+                  clipBehavior: Clip.antiAlias,
                   height: MediaQuery.of(context).size.height * 0.6,
                   decoration: BoxDecoration(
                     color: context.colors.surfaceWhite,
@@ -1600,7 +1614,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: context.colors.divider,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1611,7 +1625,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         child: Column(
                           children: [
                             Text(
-                              l10n.catalogShareCollection,
+                              l10n.catalogShareWithPeople,
                               style: GoogleFonts.outfit(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -1809,7 +1823,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           child: Text(
                             errorMessage!,
                             style: GoogleFonts.poppins(
-                              color: Colors.red,
+                              color: context.colors.danger,
                               fontSize: 12,
                             ),
                             textAlign: TextAlign.center,
@@ -2406,6 +2420,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       backgroundColor: Colors.transparent,
       builder:
           (ctx) => Container(
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
               borderRadius: const BorderRadius.vertical(
@@ -2421,7 +2436,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: context.colors.divider,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -2439,7 +2454,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       };
                     },
                   ),
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
 
                   // Sort Action
                   _buildOptionTile(
@@ -2455,7 +2470,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       _showReorderSheet(context, currentViewId);
                     },
                   ),
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
 
                   // Move Action
                   _buildOptionTile(
@@ -2467,13 +2482,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     },
                   ),
 
-                  Divider(color: Colors.grey[100]),
+                  Divider(color: context.colors.divider),
 
                   // Delete Action
                   _buildOptionTile(
                     icon: PhosphorIconsRegular.trash,
                     title: l10n.catalogDeleteItemAction,
-                    color: Colors.red,
+                    color: context.colors.danger,
                     onTap: () {
                       Navigator.pop(ctx);
                       if (ref.read(isSelectionModeProvider)) {
@@ -2499,6 +2514,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       isScrollControlled: true,
       builder:
           (ctx) => Container(
+            clipBehavior: Clip.antiAlias,
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
@@ -2513,7 +2529,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -2698,7 +2714,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: context.colors.danger,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2776,7 +2792,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: context.colors.danger,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2978,39 +2994,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         url.contains('openstreetmap.org');
 
     if (hasImage && !isMapUrl(source.toLowerCase())) {
+      // Yer tutucu ile görsel aynı AspectRatio kutusunu paylaşır; oran
+      // sunucudan (og:image boyutu) ya da yerel önbellekten bilindiğinde kutu
+      // ilk karede doğru yükseklikte çizilir ve görsel gelince sıçrama olmaz.
+      // Bkz. MasonryImage.
       contentHeader = Stack(
         children: [
-          item.displayImage!.startsWith('http')
-              ? buildAuthImage(
-                imageUrl: item.displayImage!,
-                fit: BoxFit.fitWidth,
-                placeholder:
-                    (context, url) => AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        color: Colors.grey[100],
-                        child: Center(
-                          child: Icon(
-                            PhosphorIconsLight.image,
-                            size: 32,
-                            color: Colors.grey[300],
-                          ),
-                        ),
-                      ),
-                    ),
-                // Show fallback view when image fails to load
-                errorWidget: (context, url, error) => buildFallbackView(),
-              )
-              : item.displayImage!.startsWith('data:')
-              ? Image.memory(
-                const Base64Decoder().convert(
-                  item.displayImage!.split(',').last,
-                ),
-                fit: BoxFit.fitWidth,
-                errorBuilder:
-                    (context, error, stackTrace) => buildFallbackView(),
-              )
-              : Image.asset(item.displayImage!, fit: BoxFit.fitWidth),
+          MasonryImage(
+            imageUrl: item.displayImage!,
+            knownAspectRatio: item.serverImageAspectRatio,
+            errorBuilder: (context) => buildFallbackView(),
+          ),
 
           // Platform Icon (Top Right)
           Positioned(top: 8, right: 8, child: buildPlatformIcon()),
@@ -3232,6 +3226,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             maxChildSize: 0.95,
             builder: (context, scrollController) {
               return Container(
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: context.colors.surfaceWhite,
                   borderRadius: const BorderRadius.vertical(
@@ -3246,6 +3241,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           .read(itemRepositoryProvider)
                           .getItems(
                             ref.read(authStateProvider).value!.uid,
+                            // Sıralama sayfası vault koleksiyonuna ancak kilit
+                            // açıldıktan sonra ulaşılabildiği için vault yalnızca
+                            // o durumda sunucudan istenir.
+                            includeVault: ref.read(isVaultUnlockedProvider),
                             categoryId:
                                 categoryId == 'uncategorized'
                                     ? null
@@ -3400,6 +3399,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               maxChildSize: 0.95,
               builder:
                   (_, scrollController) => Container(
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: context.colors.surfaceWhite,
                       borderRadius: const BorderRadius.vertical(
@@ -3414,7 +3414,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: context.colors.divider,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -4120,8 +4120,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 },
                 child: Text(
                   l10n.commonDelete,
-                  style: const TextStyle(
-                    color: Colors.red,
+                  style: TextStyle(
+                    color: context.colors.danger,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -4142,8 +4142,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder:
           (context) => Container(
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
               borderRadius: const BorderRadius.vertical(
@@ -4159,7 +4161,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -4200,7 +4202,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   context,
                   icon: PhosphorIconsLight.trash,
                   text: l10n.catalogDeleteCategoryAndItems,
-                  color: Colors.red,
+                  color: context.colors.danger,
                   isDestructive: true,
                   onTap: () {
                     Navigator.pop(context);
@@ -4243,13 +4245,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         decoration: BoxDecoration(
           color:
               isDestructive
-                  ? Colors.red.withValues(alpha: 0.08)
+                  ? context.colors.danger.withValues(alpha: 0.08)
                   : context.colors.backgroundTop,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color:
                 isDestructive
-                    ? Colors.red.withValues(alpha: 0.2)
+                    ? context.colors.danger.withValues(alpha: 0.2)
                     : Colors.transparent,
           ),
         ),
@@ -4263,7 +4265,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: isDestructive ? Colors.red : context.colors.headline,
+                  color: isDestructive ? context.colors.danger : context.colors.headline,
                 ),
               ),
             ),
@@ -4272,7 +4274,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               size: 16,
               color:
                   isDestructive
-                      ? Colors.red.withValues(alpha: 0.5)
+                      ? context.colors.danger.withValues(alpha: 0.5)
                       : context.colors.hint,
             ),
           ],
@@ -4293,6 +4295,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       isScrollControlled: true,
       builder:
           (context) => Container(
+            clipBehavior: Clip.antiAlias,
             height: MediaQuery.of(context).size.height * 0.6,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
@@ -4307,7 +4310,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -4386,7 +4389,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         .showSnackBar(
           SnackBar(
             content: Text(l10n.catalogOperationFailed),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.danger,
           ),
         );
       }
@@ -4402,6 +4405,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final confirm = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder:
           (context) => Container(
             margin: const EdgeInsets.all(16),
@@ -4418,13 +4422,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: context.colors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     PhosphorIconsFill.trash,
                     size: 32,
-                    color: Colors.red,
+                    color: context.colors.danger,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -4460,11 +4464,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: context.colors.danger,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.3),
+                          color: context.colors.danger.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -4564,7 +4568,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         .showSnackBar(
           SnackBar(
             content: Text(l10n.catalogDeleteCategoryFailed),
-            backgroundColor: Colors.red,
+            backgroundColor: context.colors.danger,
           ),
         );
       }
@@ -4715,6 +4719,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
       isScrollControlled: true,
       builder:
           (ctx) => Container(
+            clipBehavior: Clip.antiAlias,
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
@@ -4729,7 +4734,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -4940,7 +4945,7 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
             ],
           ),
         ),
-        const Divider(),
+        Divider(color: context.colors.divider),
 
         // Default list info for user
         if (_items.isEmpty)

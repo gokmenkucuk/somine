@@ -14,6 +14,10 @@ class ApiConfig {
   // (bkz. PLAN.md Ek A). Boş bırakılırsa X-SoMine-Api-Key header'ı gönderilmez.
   static const String apiKey = String.fromEnvironment('SOMINE_API_KEY');
 
+  /// Semantik ("Akıllı") arama. Sunucu tarafı embedding sağlayıcısı (ve pgvector)
+  /// hazır olmadığı için kapalı; açıldığında arama ekranındaki mod chip'i görünür.
+  static const bool semanticSearchEnabled = false;
+
   static String get baseUrl => _baseUrlOverride.trim();
 
   static String get publicWebBaseUrl => _publicWebBaseUrlOverride.trim();

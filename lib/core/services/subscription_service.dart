@@ -6,6 +6,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Subscription tiers
 enum SubscriptionTier {
@@ -32,6 +33,7 @@ class SubscriptionService {
   SubscriptionService._internal();
 
   bool _isInitialized = false;
+  Future<void>? _initializing;
   CustomerInfo? _customerInfo;
   final BackendAuthService _backendAuthService = BackendAuthService();
   final ApiClient _apiClient = ApiClient();
@@ -41,30 +43,127 @@ class SubscriptionService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
+    // Eşzamanlı çağrılarda configure'un iki kez koşmasını engelle.
+    final inFlight = _initializing;
+    if (inFlight != null) return inFlight;
+
+    final future = _doInitialize();
+    _initializing = future;
+    try {
+      await future;
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  Future<void> _doInitialize() async {
     try {
       await Purchases.setLogLevel(LogLevel.debug);
 
       PurchasesConfiguration configuration = PurchasesConfiguration(_apiKey);
       await Purchases.configure(configuration);
-
-      _customerInfo = await Purchases.getCustomerInfo();
-      await _refreshBackendStatus();
       _isInitialized = true;
+
+      // Oturum zaten açıksa kullanıcıyı her açılışta RevenueCat'e tanıt.
+      // Giriş akışı (auth_repository) yalnız TAZE oturum açılışında çalışır;
+      // o akış hata alıp atlanırsa kullanıcı RevenueCat'te hiç oluşmuyordu.
+      await _identifyCurrentUserSafely();
+
+      // RevenueCat SDK'sı hata verse bile (ör. sandbox makbuz reddi) backend
+      // sorgusu ÇALIŞMALI: premium gerçeği sunucuda, SDK yalnız ikincil kaynak.
+      await _loadCustomerInfoSafely();
+
+      // Cihazda satın alma var ama bu kimliğe bağlı değilse (yeniden giriş,
+      // yeni cihaz, kesintiye uğramış giriş akışı) kullanıcıyı "Satın alımları
+      // geri yükle"ye zorlamadan bir kez otomatik dene.
+      await _autoRestoreIfNeeded();
 
       debugPrint('RevenueCat initialized successfully');
     } catch (e) {
       debugPrint('RevenueCat initialization error: $e');
+    } finally {
+      await _refreshBackendStatusSafely();
     }
+  }
+
+  Future<void> _identifyCurrentUserSafely() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null || uid.isEmpty) return;
+      await Purchases.logIn(uid);
+      debugPrint('RevenueCat identified as $uid');
+    } catch (e) {
+      debugPrint('RevenueCat identify error: $e');
+    }
+  }
+
+  bool get _hasActiveEntitlement =>
+      _customerInfo?.entitlements.active.isNotEmpty ?? false;
+
+  /// Kimlik başına BİR KEZ otomatik restore. Her açılışta çağırmak Apple
+  /// tarafında gereksiz istek/istem doğurur; bir kez denemek yeterli çünkü
+  /// sonrasında satın alma zaten bu kimliğe bağlı kalır.
+  Future<void> _autoRestoreIfNeeded() async {
+    try {
+      if (_hasActiveEntitlement) return;
+
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null || uid.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'rc_auto_restore_$uid';
+      if (prefs.getBool(key) == true) return;
+      await prefs.setBool(key, true);
+
+      _customerInfo = await Purchases.restorePurchases();
+      debugPrint(
+        'RevenueCat auto-restore tamamlandı: '
+        '${_customerInfo?.entitlements.active.keys.toList()}',
+      );
+    } catch (e) {
+      debugPrint('RevenueCat auto-restore error: $e');
+    }
+  }
+
+  Future<void> _loadCustomerInfoSafely() async {
+    try {
+      _customerInfo = await Purchases.getCustomerInfo();
+    } catch (e) {
+      debugPrint('RevenueCat getCustomerInfo error: $e');
+    }
+  }
+
+  Future<void> _refreshBackendStatusSafely({String? platform}) async {
+    try {
+      await _refreshBackendStatus(platform: platform);
+    } catch (e) {
+      debugPrint('Backend subscription status error: $e');
+    }
+  }
+
+  /// Configure tamamlanmadan Purchases.* çağrısı native fatalError'a
+  /// düşürür (Dart catch yakalayamaz); tüm dış çağrılar önce bundan geçmeli.
+  Future<bool> _ensureConfigured() async {
+    if (!_isInitialized) await initialize();
+    return _isInitialized;
   }
 
   /// Set user ID for RevenueCat (call after login)
   Future<void> setUserId(String userId) async {
+    if (!await _ensureConfigured()) {
+      debugPrint('RevenueCat setUserId skipped: not configured');
+      return;
+    }
     try {
       await Purchases.logIn(userId);
-      _customerInfo = await Purchases.getCustomerInfo();
-      await _refreshBackendStatus(platform: _platformName);
+      await _loadCustomerInfoSafely();
+      // Yeni cihazda ilk giriş: satın alma cihazda var ama kimliğe bağlı değil.
+      await _autoRestoreIfNeeded();
     } catch (e) {
       debugPrint('RevenueCat setUserId error: $e');
+    } finally {
+      // SDK tarafı patlasa da premium durumu sunucudan okunmalı.
+      await _refreshBackendStatusSafely(platform: _platformName);
     }
   }
 
@@ -109,6 +208,7 @@ class SubscriptionService {
 
   /// Get available packages
   Future<List<Package>> getOfferings() async {
+    if (!await _ensureConfigured()) return [];
     try {
       debugPrint('📦 Fetching RevenueCat offerings...');
       final offerings = await Purchases.getOfferings();
@@ -134,6 +234,7 @@ class SubscriptionService {
 
   /// Purchase a package
   Future<bool> purchasePackage(Package package) async {
+    if (!await _ensureConfigured()) return false;
     try {
       final result = await Purchases.purchasePackage(package);
       _customerInfo = result;
@@ -147,6 +248,7 @@ class SubscriptionService {
 
   /// Restore purchases
   Future<bool> restorePurchases() async {
+    if (!await _ensureConfigured()) return false;
     try {
       _customerInfo = await Purchases.restorePurchases();
       debugPrint('--- REVENUECAT CUSTOMER INFO ---');
@@ -216,7 +318,7 @@ class SubscriptionService {
 
   Future<void> logout() async {
     try {
-      await Purchases.logOut();
+      if (_isInitialized) await Purchases.logOut();
     } catch (e) {
       debugPrint('RevenueCat logout error: $e');
     } finally {
@@ -231,6 +333,7 @@ class SubscriptionService {
       return;
     }
 
+    if (!await _ensureConfigured()) return;
     try {
       _customerInfo = await Purchases.getCustomerInfo();
     } catch (e) {

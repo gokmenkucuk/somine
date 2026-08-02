@@ -10,6 +10,7 @@ import 'package:somine_app/core/repositories/item_repository.dart';
 // Remove ItemCard
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 
 import 'package:somine_app/core/models/category_model.dart';
@@ -47,6 +48,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   String? _selectedPlatform;
   bool _isVaultSearch = false;
+  bool _isSemanticSearch = false;
 
   final PreferencesService _prefsService = PreferencesService();
 
@@ -55,6 +57,66 @@ class _SearchScreenState extends State<SearchScreen> {
       _searchController.text.isNotEmpty ||
       _selectedPlatform != null ||
       _isVaultSearch;
+
+  /// "Akıllı" (semantic) arama modu chip'i — vault chip kalıbıyla aynı stil.
+  Widget _buildSemanticFilterChip() {
+    final l10n = AppLocalizations.of(context)!;
+    final isSelected = _isSemanticSearch;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isSemanticSearch = !_isSemanticSearch;
+        });
+        // Mod değişince aktif sorguyu yeniden çalıştır.
+        _scheduleSearch();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? context.colors.primary : context.colors.surfaceWhite,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                isSelected
+                    ? context.colors.primary
+                    : context.colors.primary.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: context.colors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                  : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              PhosphorIconsBold.sparkle,
+              size: 16,
+              color: isSelected ? Colors.white : context.colors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              l10n.searchSemanticChip,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? Colors.white : context.colors.headline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildVaultFilterChip() {
     final l10n = AppLocalizations.of(context)!;
@@ -257,6 +319,21 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
 
+      if (_isSemanticSearch) {
+        // Semantic mod: tek sayfa, sunucu sıralaması korunur;
+        // vault/platform filtreleri sunucuya query param olarak geçilir.
+        final result = await _fetchSemanticPage(user.uid, query, 1, vaultIds);
+        if (mounted) {
+          setState(() {
+            _filteredItems = result.items;
+            _isLoading = false;
+            _hasMore = result.hasMore;
+            _currentPage = result.nextPage ?? 2;
+          });
+        }
+        return;
+      }
+
       List<ItemModel> filtered = [];
       bool hasMore = true;
       int page = _currentPage;
@@ -269,10 +346,14 @@ class _SearchScreenState extends State<SearchScreen> {
           query,
           page: page,
           limit: 20,
+          // Vault item'ları sunucudan yalnızca kasa aramasında (biyometrik
+          // doğrulama sonrası) istenir; normal aramada cihaza hiç inmez.
+          includeVault: _isVaultSearch,
         );
 
         final currentFiltered =
             result.items.where((item) {
+              // Sunucu zaten filtreliyor; aşağısı defense-in-depth olarak korunuyor.
               if (_isVaultSearch) {
                 if (!vaultIds.contains(item.categoryId)) return false;
               } else if (vaultIds.contains(item.categoryId)) {
@@ -329,6 +410,26 @@ class _SearchScreenState extends State<SearchScreen> {
       final vaultIds =
           _categories.where((c) => c.isVault).map((c) => c.id).toSet();
 
+      if (_isSemanticSearch) {
+        // Semantic mod: sonsuz kaydırmada da tek sayfa iste,
+        // sunucu sıralamasını koru.
+        final result = await _fetchSemanticPage(
+          user.uid,
+          query,
+          _currentPage,
+          vaultIds,
+        );
+        if (mounted) {
+          setState(() {
+            _filteredItems.addAll(result.items);
+            _hasMore = result.hasMore;
+            _currentPage = result.nextPage ?? _currentPage + 1;
+            _isFetchingMore = false;
+          });
+        }
+        return;
+      }
+
       List<ItemModel> newFiltered = [];
       bool hasMore = _hasMore;
       int page = _currentPage;
@@ -341,10 +442,13 @@ class _SearchScreenState extends State<SearchScreen> {
           query,
           page: page,
           limit: 20,
+          // Bkz. _performSearch: vault yalnızca kasa aramasında istenir.
+          includeVault: _isVaultSearch,
         );
 
         final currentFiltered =
             result.items.where((item) {
+              // Sunucu zaten filtreliyor; aşağısı defense-in-depth olarak korunuyor.
               if (_isVaultSearch) {
                 if (!vaultIds.contains(item.categoryId)) return false;
               } else if (vaultIds.contains(item.categoryId)) {
@@ -374,6 +478,44 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (error) {
       if (mounted) setState(() => _isFetchingMore = false);
     }
+  }
+
+  /// Semantic modda tek sayfa çeker. Vault/platform filtreleri sunucuya
+  /// geçilir; client tarafında yeniden sıralama YAPILMAZ. Vault aramasında
+  /// sunucu yalnız kategori hariç tutmayı desteklediği için kategorisiz
+  /// item'lar sıralama bozulmadan düşürülür.
+  Future<PaginatedItemsResult> _fetchSemanticPage(
+    String uid,
+    String query,
+    int page,
+    Set<String> vaultIds,
+  ) async {
+    final result = await _itemRepository.searchItemsPaginated(
+      uid,
+      query,
+      page: page,
+      limit: 20,
+      mode: 'semantic',
+      excludeCategoryIds:
+          _isVaultSearch
+              ? _categories.where((c) => !c.isVault).map((c) => c.id).toList()
+              : vaultIds.toList(),
+      platform: _selectedPlatform,
+      // Vault yalnızca kasa aramasında (biyometrik doğrulama sonrası) istenir.
+      // Normal modda sunucu zaten filtreliyor; excludeCategoryIds savunma katmanı olarak kalır.
+      includeVault: _isVaultSearch,
+    );
+
+    if (!_isVaultSearch) return result;
+
+    return PaginatedItemsResult(
+      items:
+          result.items
+              .where((item) => vaultIds.contains(item.categoryId))
+              .toList(),
+      hasMore: result.hasMore,
+      nextPage: result.nextPage,
+    );
   }
 
   @override
@@ -455,6 +597,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ),
                                 physics: const BouncingScrollPhysics(),
                                 children: [
+                                  if (ApiConfig.semanticSearchEnabled) ...[
+                                    _buildSemanticFilterChip(),
+                                    const SizedBox(width: 8),
+                                  ],
                                   _buildVaultFilterChip(),
                                   const SizedBox(width: 8),
                                   _buildPlatformFilterChip(
@@ -787,7 +933,7 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 12),
             Divider(
               height: 1,
-              color: context.colors.hint.withValues(alpha: 0.2),
+              color: context.colors.divider,
             ),
             Flexible(
               child: ListView.separated(
@@ -798,7 +944,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 separatorBuilder:
                     (c, i) => Divider(
                       height: 1,
-                      color: context.colors.hint.withValues(alpha: 0.2),
+                      color: context.colors.divider,
                     ),
                 itemBuilder: (context, index) {
                   return FadeInUp(

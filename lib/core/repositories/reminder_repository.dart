@@ -9,6 +9,7 @@ import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:somine_app/core/utils/exponential_backoff.dart';
 
 class ReminderRepository {
   final BackendAuthService _backendAuthService = BackendAuthService();
@@ -166,9 +167,17 @@ class ReminderRepository {
   }
 
   Stream<List<ReminderModel>> streamUserReminders(String userId) async* {
+    const pollInterval = Duration(seconds: 10);
+    final backoff = ExponentialBackoff(baseDelay: pollInterval);
     while (true) {
-      yield await getUserReminders(userId);
-      await Future<void>.delayed(const Duration(seconds: 2));
+      try {
+        yield await getUserReminders(userId);
+        backoff.reset();
+        await Future<void>.delayed(pollInterval);
+      } catch (error) {
+        debugPrint('❌ [ReminderRepository] streamUserReminders failed: $error');
+        await Future<void>.delayed(backoff.nextDelay());
+      }
     }
   }
 

@@ -97,7 +97,17 @@ class ReminderSchedulerService {
     final pending = await _notificationService.getPendingNotifications();
 
     for (final notification in pending) {
-      if (notification.payload == itemId) {
+      // Payload JSON ({"type":...,"itemId":...}) veya eski düz-string itemId
+      // olabilir. Yalnız reminder tipli bildirimler iptal edilir — aynı
+      // item'a bağlı weekly_digest bildirimi korunur.
+      final payloadType = NotificationService.typeFromPayload(
+        notification.payload,
+      );
+      final payloadItemId = NotificationService.itemIdFromPayload(
+        notification.payload,
+      );
+      if (payloadType == NotificationService.payloadTypeReminder &&
+          payloadItemId == itemId) {
         await _notificationService.cancelReminder(notification.id);
       }
     }

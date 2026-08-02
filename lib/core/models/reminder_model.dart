@@ -21,6 +21,10 @@ class ReminderModel {
   final bool isActive;
   final DateTime createdAt;
   final DateTime? lastTriggered;
+
+  /// Sunucunun hesapladığı bir sonraki tetikleme anı (UTC). Yalnız okunur;
+  /// istemci göndermez. Pasif ve vakti geçmiş tekrarsız hatırlatıcılarda null.
+  final DateTime? nextTriggerAtUtc;
   final int? customRepeatDays;
   final int? customRepeatMinutes; // Dakika bazlı tekrar için
 
@@ -33,6 +37,7 @@ class ReminderModel {
     this.isActive = true,
     required this.createdAt,
     this.lastTriggered,
+    this.nextTriggerAtUtc,
     this.customRepeatDays,
     this.customRepeatMinutes,
   });
@@ -55,6 +60,13 @@ class ReminderModel {
           DateTime.now(),
       customRepeatDays: json['customRepeatDays'] as int?,
       customRepeatMinutes: json['customRepeatMinutes'] as int?,
+      // Sunucunun en son bildirim ürettiği an (Faz 2). Eski sürüm yanıtlarında
+      // bulunmaz; null kalır.
+      lastTriggered: DateTime.tryParse(json['lastTriggered'] as String? ?? ''),
+      // Sunucu hesaplar, yalnız okunur — create/update'te gönderilmez.
+      nextTriggerAtUtc: DateTime.tryParse(
+        json['nextTriggerAtUtc'] as String? ?? '',
+      ),
     );
   }
 

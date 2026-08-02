@@ -16,6 +16,9 @@ import 'package:somine_app/core/providers/navigation_providers.dart'; // Added f
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
+import 'package:somine_app/core/utils/image_aspect_ratio_cache.dart';
+import 'package:somine_app/widgets/image_shimmer_placeholder.dart';
+import 'package:somine_app/widgets/masonry_image.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:somine_app/core/services/vault_service.dart';
@@ -136,6 +139,11 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         categories.where((cat) {
           // Hide "Hızlı" category from chips
           if (cat.name == 'Hızlı') return false;
+          // Kasa koleksiyonlarının item'ları kilitliyken sunucudan hiç gelmediği
+          // için "boş" görünürler; boş diye gizlersek kasa feed'den erişilemez
+          // hale gelirdi. Ayrıca chip'in varlığı kasanın dolu olup olmadığını
+          // ele vermemiş olur.
+          if (cat.isVault) return true;
           return allItems.any((item) => item.categoryId == cat.id);
         }).toList();
 
@@ -268,8 +276,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                                       child: Container(
                                         width: 10,
                                         height: 10,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.red,
+                                        decoration: BoxDecoration(
+                                          color: context.colors.danger,
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -401,7 +409,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         border:
                             Theme.of(context).brightness == Brightness.light
                                 ? Border.all(
-                                  color: Colors.grey.shade300,
+                                  color: context.colors.divider,
                                   width: 0.5,
                                 )
                                 : null,
@@ -533,10 +541,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     required ViewMode mode,
   }) {
     final bool isSelected = _viewMode == mode;
+    // Zemin ANLIK değişir: animasyonlu olsaydı seçim değişiminde eski buton
+    // zeminini söndürürken yenisi yakar ve o aralıkta iki zemin birden görünürdü.
+    // Yalnızca ikon rengi yumuşak geçiş yapar.
     return GestureDetector(
       onTap: () => setState(() => _viewMode = mode),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isSelected ? context.colors.backgroundTop : Colors.transparent,
@@ -554,10 +564,17 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                   ]
                   : null,
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: isSelected ? context.colors.primary : context.colors.hint,
+        child: TweenAnimationBuilder<Color?>(
+          duration: const Duration(milliseconds: 200),
+          tween: ColorTween(
+            end: isSelected ? context.colors.primary : context.colors.hint,
+          ),
+          builder:
+              (context, color, _) => Icon(
+                icon,
+                size: 20,
+                color: color ?? context.colors.hint,
+              ),
         ),
       ),
     );
@@ -792,14 +809,14 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childCount: 6,
-            itemBuilder: (context, index) => _buildSkeletonCard(index),
+            itemBuilder: (context, index) => _buildSkeletonCard(index, bounded: false),
           );
         case ViewMode.feed:
           return SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) => Padding(
                 padding: const EdgeInsets.only(bottom: 24),
-                child: _buildSkeletonCard(index),
+                child: _buildSkeletonCard(index, bounded: false),
               ),
               childCount: 4, // Less for feed mode
             ),
@@ -1325,7 +1342,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     fit: BoxFit.cover,
                     width: double.infinity,
                     alignment: Alignment.center,
-                    placeholder: (context, url) => _ImageShimmerPlaceholder(),
+                    placeholder:
+                        (context, url) => const ImageShimmerPlaceholder(),
                     errorWidget: (context, url, error) => buildFallbackView(),
                   )
                   : item.displayImage!.startsWith('data:')
@@ -1350,38 +1368,17 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           ),
         );
       } else {
-        // MASONRY MODE: Use natural image height but force full width
+        // MASONRY MODE: Yer tutucu ile görsel aynı AspectRatio kutusunu
+        // paylaşır. Oran sunucudan (item ile birlikte saklanan og:image
+        // boyutu) ya da yerel önbellekten bilindiğinde kutu ilk karede doğru
+        // yükseklikte çizilir, görsel gelince sıçrama olmaz.
         contentHeader = Stack(
           children: [
-            item.displayImage!.startsWith('http')
-                ? buildAuthImage(
-                  imageUrl: item.displayImage!,
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                  placeholder:
-                      (context, url) => AspectRatio(
-                        aspectRatio: 1.0,
-                        child: _ImageShimmerPlaceholder(),
-                      ),
-                  errorWidget: (context, url, error) => buildFallbackView(),
-                )
-                : item.displayImage!.startsWith('data:')
-                ? Image.memory(
-                  const Base64Decoder().convert(
-                    item.displayImage!.split(',').last,
-                  ),
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                  errorBuilder: (context, url, error) => buildFallbackView(),
-                )
-                : Image.asset(
-                  item.displayImage!,
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                ),
+            MasonryImage(
+              imageUrl: item.displayImage!,
+              knownAspectRatio: item.serverImageAspectRatio,
+              errorBuilder: (context) => buildFallbackView(),
+            ),
 
             Positioned(top: 8, right: 8, child: buildPlatformIcon(item)),
           ],
@@ -1511,7 +1508,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         ),
                   );
 
-                  if (result == true) {
+                  if (result != null) {
                     ref.invalidate(paginatedFeedProvider);
                     ref.invalidate(itemCountProvider);
                   }
@@ -1667,7 +1664,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                         ),
                   );
 
-                  if (result == true) {
+                  if (result != null) {
                     ref.invalidate(paginatedFeedProvider);
                     ref.invalidate(itemCountProvider);
                   }
@@ -1888,7 +1885,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     );
   }
 
-  Widget _buildSkeletonCard(int index) {
+  /// [bounded] yalnızca kare ızgarada true'dur: orada hücrenin yüksekliği
+  /// `childAspectRatio` ile sabittir ve görsel alanı [Expanded] ile kalanı
+  /// doldurabilir. Masonry ve feed modlarında yükseklik sınırsız olduğundan
+  /// [Expanded] "unbounded height" hatası verir; oralarda görsel alanı
+  /// yer tutucu oranıyla ölçülür.
+  Widget _buildSkeletonCard(int index, {bool bounded = true}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -1904,17 +1906,29 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Column(
+          mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Image Placeholder - expands to fill available space
-            Expanded(
-              child: ClipRRect(
+            if (bounded)
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: _ShimmerBox(height: double.infinity),
+                ),
+              )
+            else
+              ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
-                child: _ShimmerBox(height: double.infinity),
+                child: AspectRatio(
+                  aspectRatio: ImageAspectRatioCache.defaultAspectRatio,
+                  child: _ShimmerBox(height: double.infinity),
+                ),
               ),
-            ),
 
             // Text Placeholder - fixed size
             Padding(
@@ -1961,14 +1975,14 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childCount: 4,
-          itemBuilder: (context, index) => _buildSkeletonCard(index),
+          itemBuilder: (context, index) => _buildSkeletonCard(index, bounded: false),
         );
       case ViewMode.feed:
         return SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) => Padding(
               padding: const EdgeInsets.only(bottom: 24),
-              child: _buildSkeletonCard(index),
+              child: _buildSkeletonCard(index, bounded: false),
             ),
             childCount: 2,
           ),
@@ -2000,7 +2014,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           itemCount: 6,
-          itemBuilder: (context, index) => _buildSkeletonCard(index),
+          itemBuilder: (context, index) => _buildSkeletonCard(index, bounded: false),
         );
       case ViewMode.feed:
         return ListView.builder(
@@ -2010,7 +2024,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           itemBuilder:
               (context, index) => Padding(
                 padding: const EdgeInsets.only(bottom: 24),
-                child: _buildSkeletonCard(index),
+                child: _buildSkeletonCard(index, bounded: false),
               ),
         );
     }
@@ -2075,62 +2089,6 @@ class _ShimmerBoxState extends State<_ShimmerBox>
                 context.colors.hint.withValues(alpha: 0.1),
                 context.colors.hint.withValues(alpha: 0.05),
                 context.colors.hint.withValues(alpha: 0.1),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// Shimmer placeholder for images
-class _ImageShimmerPlaceholder extends StatefulWidget {
-  const _ImageShimmerPlaceholder();
-
-  @override
-  State<_ImageShimmerPlaceholder> createState() =>
-      _ImageShimmerPlaceholderState();
-}
-
-class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat();
-    _animation = Tween<double>(
-      begin: -2.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment((_animation.value - 1), 0),
-              end: Alignment(_animation.value, 0),
-              colors: [
-                Colors.grey.shade200,
-                Colors.grey.shade100,
-                Colors.grey.shade200,
               ],
             ),
           ),

@@ -152,7 +152,9 @@ class LimitReachedDialog extends StatelessWidget {
               Navigator.pop(context);
               final result = await Navigator.push<bool>(
                 context,
-                MaterialPageRoute(builder: (_) => const PaywallScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const PaywallScreen(source: 'limit_dialog'),
+                ),
               );
               if (result == true && context.mounted) {
                 // User upgraded, can proceed

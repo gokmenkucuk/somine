@@ -78,6 +78,17 @@ class ItemModel {
   final String? note;
   final String? imageUrl;
   final OGMetadata? ogMetadata;
+
+  /// Sunucuda saklanan og:image piksel boyutu (varsa).
+  ///
+  /// Masonry kutusunun oranını ilk karede bilmek için gerekir. Yerel önbellek
+  /// (`ImageAspectRatioCache`) yalnız ölçümü yapan cihazda geçerlidir; yeni bir
+  /// telefonda veya yeniden kurulumda ilk görüntülemede kutu sıçrar. Boyut
+  /// kaydetme anında istemcide ölçülüp item ile birlikte gönderildiği için her
+  /// cihaz oranı ilk saniyeden bilir. Eski kayıtlarda `null`'dır.
+  final int? ogImageWidth;
+  final int? ogImageHeight;
+
   final bool isFavorite;
   final int order;
   final DateTime createdAt;
@@ -86,6 +97,7 @@ class ItemModel {
   final DateTime? deletedAt;
   final String? reminderId;
   final bool hasReminder;
+  final DateTime? lastOpenedAt;
 
   const ItemModel({
     required this.id,
@@ -96,6 +108,8 @@ class ItemModel {
     this.note,
     this.imageUrl,
     this.ogMetadata,
+    this.ogImageWidth,
+    this.ogImageHeight,
     this.isFavorite = false,
     this.order = 0,
     required this.createdAt,
@@ -104,6 +118,7 @@ class ItemModel {
     this.deletedAt,
     this.reminderId,
     this.hasReminder = false,
+    this.lastOpenedAt,
   });
 
   factory ItemModel.fromApi(
@@ -126,6 +141,8 @@ class ItemModel {
         siteName: json['ogSiteName'] as String?,
         faviconUrl: json['ogFaviconUrl'] as String?,
       ),
+      ogImageWidth: _positiveIntOrNull(json['ogImageWidth']),
+      ogImageHeight: _positiveIntOrNull(json['ogImageHeight']),
       isFavorite: json['isFavorite'] as bool? ?? false,
       order: json['sortOrder'] as int? ?? json['order'] as int? ?? 0,
       createdAt:
@@ -141,6 +158,7 @@ class ItemModel {
               : null,
       reminderId: null,
       hasReminder: json['hasReminder'] as bool? ?? false,
+      lastOpenedAt: DateTime.tryParse(json['lastOpenedAt'] as String? ?? ''),
     );
   }
 
@@ -156,6 +174,8 @@ class ItemModel {
       'ogImageUrl': _normalizedOptionalString(ogMetadata?.imageUrl),
       'ogSiteName': _normalizedOptionalString(ogMetadata?.siteName),
       'ogFaviconUrl': _normalizedOptionalString(ogMetadata?.faviconUrl),
+      'ogImageWidth': ogImageWidth,
+      'ogImageHeight': ogImageHeight,
     };
   }
 
@@ -172,6 +192,8 @@ class ItemModel {
       'ogImageUrl': _normalizedOptionalString(ogMetadata?.imageUrl),
       'ogSiteName': _normalizedOptionalString(ogMetadata?.siteName),
       'ogFaviconUrl': _normalizedOptionalString(ogMetadata?.faviconUrl),
+      'ogImageWidth': ogImageWidth,
+      'ogImageHeight': ogImageHeight,
       'isFavorite': isFavorite,
     };
   }
@@ -186,6 +208,8 @@ class ItemModel {
     String? note,
     String? imageUrl,
     OGMetadata? ogMetadata,
+    int? ogImageWidth,
+    int? ogImageHeight,
     bool? isFavorite,
     int? order,
     DateTime? createdAt,
@@ -194,6 +218,7 @@ class ItemModel {
     DateTime? deletedAt,
     String? reminderId,
     bool? hasReminder,
+    DateTime? lastOpenedAt,
   }) {
     return ItemModel(
       id: id ?? this.id,
@@ -204,6 +229,8 @@ class ItemModel {
       note: note ?? this.note,
       imageUrl: imageUrl ?? this.imageUrl,
       ogMetadata: ogMetadata ?? this.ogMetadata,
+      ogImageWidth: ogImageWidth ?? this.ogImageWidth,
+      ogImageHeight: ogImageHeight ?? this.ogImageHeight,
       isFavorite: isFavorite ?? this.isFavorite,
       order: order ?? this.order,
       createdAt: createdAt ?? this.createdAt,
@@ -212,6 +239,7 @@ class ItemModel {
       deletedAt: deletedAt ?? this.deletedAt,
       reminderId: reminderId ?? this.reminderId,
       hasReminder: hasReminder ?? this.hasReminder,
+      lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
     );
   }
 
@@ -262,6 +290,30 @@ class ItemModel {
     return null;
   }
 
+  /// [displayImage] için sunucudan gelen en-boy oranı (genişlik / yükseklik).
+  ///
+  /// Masonry kutusu bu oranı ilk karede bilirse hiç sıçramaz — yerel ölçüm veya
+  /// önbellek beklemeye gerek kalmaz. `null` dönerse çağıran yerel önbelleğe,
+  /// o da boşsa varsayılan orana düşer.
+  ///
+  /// Boyut yalnızca og:image'a aittir. [displayImage] og:image yerine öğenin
+  /// kendi [imageUrl]'ine düştüğünde (ör. harita bağlantıları, SVG) oran
+  /// kullanılmaz; aksi halde başka bir görselin oranı uygulanırdı.
+  double? get serverImageAspectRatio {
+    final width = ogImageWidth;
+    final height = ogImageHeight;
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return null;
+    }
+    if (!ContentPreviewPolicy.canUsePreviewImage(
+      url: url,
+      imageUrl: ogMetadata?.imageUrl,
+    )) {
+      return null;
+    }
+    return width / height;
+  }
+
   /// Get platform name based on URL
   String get platform {
     if (url == null) return 'Web';
@@ -306,6 +358,21 @@ class ItemModel {
     }
 
     return ItemType.link;
+  }
+
+  /// API'den gelen boyut alanlarını okur.
+  ///
+  /// Eski kayıtlarda alan hiç yoktur, bozuk kayıtlarda 0/negatif olabilir;
+  /// her iki durumda da `null` döner ve çağıran yerel önbelleğe düşer.
+  static int? _positiveIntOrNull(dynamic value) {
+    final parsed =
+        value is int
+            ? value
+            : value is num
+            ? value.toInt()
+            : null;
+    if (parsed == null || parsed <= 0) return null;
+    return parsed;
   }
 
   static String? _normalizedOptionalString(String? value) {

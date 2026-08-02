@@ -1,8 +1,13 @@
 # Uncomment this line to define a global platform for your project
-platform :ios, '13.0'
+# NOT: home_widget (Faz E, widget) minimum iOS 14.0 ister; post_install zaten
+# tüm pod'ları 14.0'a sabitliyordu — platform satırı onunla eşitlendi.
+platform :ios, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+# Firebase Analytics: IDFA/AdSupport OLMADAN kur (ATT prompt istemiyoruz)
+$FirebaseAnalyticsWithoutAdIdSupport = true
 
 project 'Runner', {
   'Debug' => :debug,

@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 @immutable
 class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   // 1. ZEMİN & GRADIENTS
@@ -25,6 +27,13 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   // 5. ÖZEL
   final Color premiumShadow;
 
+  // 6. SEMANTİK
+  /// İnce ayraç / kenarlık / drag-handle rengi (Material varsayılanı yerine).
+  final Color divider;
+
+  /// Yıkıcı aksiyon (silme vb.) rengi.
+  final Color danger;
+
   const AppColorsExtension({
     required this.backgroundTop,
     required this.backgroundBottom,
@@ -38,6 +47,8 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     required this.iconInactive,
     required this.surfaceWhite,
     required this.premiumShadow,
+    required this.divider,
+    required this.danger,
   });
 
   @override
@@ -54,6 +65,8 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     Color? iconInactive,
     Color? surfaceWhite,
     Color? premiumShadow,
+    Color? divider,
+    Color? danger,
   }) {
     return AppColorsExtension(
       backgroundTop: backgroundTop ?? this.backgroundTop,
@@ -68,6 +81,8 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       iconInactive: iconInactive ?? this.iconInactive,
       surfaceWhite: surfaceWhite ?? this.surfaceWhite,
       premiumShadow: premiumShadow ?? this.premiumShadow,
+      divider: divider ?? this.divider,
+      danger: danger ?? this.danger,
     );
   }
 
@@ -89,11 +104,36 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       iconInactive: Color.lerp(iconInactive, other.iconInactive, t)!,
       surfaceWhite: Color.lerp(surfaceWhite, other.surfaceWhite, t)!,
       premiumShadow: Color.lerp(premiumShadow, other.premiumShadow, t)!,
+      divider: Color.lerp(divider, other.divider, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
     );
   }
+
+  /// Tema uzantısı bulunamadığında kullanılan varsayılan palet (air teması).
+  /// Uygulamanın üç teması da uzantıyı sağlar; bu yedek yalnızca uzantısız
+  /// çıplak bir [Theme] altında (ör. widget testleri) devreye girer ve
+  /// widget'ların çökmesini önler.
+  static final AppColorsExtension fallback = AppColorsExtension(
+    backgroundTop: AppColors.backgroundTop,
+    backgroundBottom: AppColors.backgroundBottom,
+    primary: AppColors.primary,
+    secondary: AppColors.secondary,
+    accentDark: AppColors.accentDark,
+    headline: AppColors.headline,
+    body: AppColors.body,
+    hint: AppColors.hint,
+    iconActive: AppColors.iconActive,
+    iconInactive: AppColors.iconInactive,
+    surfaceWhite: AppColors.surfaceWhite,
+    premiumShadow: AppColors.premiumShadow,
+    divider: AppColors.divider,
+    danger: AppColors.danger,
+  );
 }
 
 // Kolay erişim için extension
 extension AppThemeContextExtension on BuildContext {
-  AppColorsExtension get colors => Theme.of(this).extension<AppColorsExtension>()!;
+  AppColorsExtension get colors =>
+      Theme.of(this).extension<AppColorsExtension>() ??
+      AppColorsExtension.fallback;
 }

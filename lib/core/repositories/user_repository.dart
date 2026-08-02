@@ -3,12 +3,16 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/exceptions/network_exceptions.dart';
 import 'package:somine_app/core/models/user_model.dart';
 import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
+import 'package:somine_app/core/utils/exponential_backoff.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 
 class UserRepository {
   final BackendAuthService _backendAuthService = BackendAuthService();
@@ -115,6 +119,24 @@ class UserRepository {
     }
   }
 
+  /// Kullanıcı verisini dışa aktarır (`GET /api/export?format=json|csv`).
+  /// Yanıt gövdesini olduğu gibi (JSON veya CSV metni) String döndürür.
+  Future<String> exportData(String format) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.get(
+        _buildUri('/api/export?format=$format'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfNotSuccessful(response, action: 'export data');
+      return utf8.decode(response.bodyBytes);
+    } catch (e) {
+      debugPrint('❌ [UserRepository] Error exporting data: $e');
+      rethrow;
+    }
+  }
+
   /// Delete user account and all backend data
   Future<void> deleteUser(String uid) async {
     try {
@@ -136,17 +158,25 @@ class UserRepository {
 
   /// Stream user changes (refetches on profile updates)
   Stream<UserModel?> streamUser(String uid) async* {
+    final backoff = ExponentialBackoff();
     while (true) {
       try {
         yield await _getCurrentUserFromApi();
+        backoff.reset();
 
         await for (final _ in _profileChangedController.stream) {
           yield await _getCurrentUserFromApi();
+          backoff.reset();
         }
       } catch (error, stackTrace) {
         debugPrint('❌ [UserRepository] streamUser failed: $error');
         yield* Stream<UserModel?>.error(error, stackTrace);
-        await Future<void>.delayed(const Duration(seconds: 5));
+        // Non-retryable failures (e.g. expired session) wait the full cap
+        // instead of hammering the API.
+        final delay = FailureMapper.isRetryable(error)
+            ? backoff.nextDelay()
+            : backoff.maxDelay;
+        await Future<void>.delayed(delay);
       }
     }
   }
@@ -320,6 +350,41 @@ class UserRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
+  }
+
+  /// Cihazın IANA saat dilimini sunucuya bildirir.
+  ///
+  /// Sunucu hatırlatıcıları bu bilgiyle doğru anda tetikliyor; gönderilmezse
+  /// `Europe/Istanbul` varsayıyor (TR kullanıcıları için doğru, yurt dışındaki
+  /// kullanıcı yanlış saatte bildirim alır). Değer değişmediyse istek atılmaz.
+  Future<void> syncTimeZone() async {
+    try {
+      final tzName = await FlutterNativeTimezone.getLocalTimezone();
+      if (tzName.isEmpty) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      const key = 'synced_time_zone_id';
+      if (prefs.getString(key) == tzName) return;
+
+      final accessToken = await _backendAuthService.getValidAccessToken(
+        firebaseUser: FirebaseAuth.instance.currentUser,
+      );
+      if (accessToken == null || accessToken.isEmpty) return;
+
+      final response = await _apiClient.put(
+        _buildUri('/api/users/me'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode({'timeZoneId': tzName}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        await prefs.setString(key, tzName);
+        debugPrint('✅ [UserRepository] Time zone synced: $tzName');
+      }
+    } catch (e) {
+      // Kritik değil: başarısızsa sunucu varsayılanı kullanılır.
+      debugPrint('⚠️ [UserRepository] Time zone sync failed: $e');
+    }
   }
 
   Future<void> _updateCurrentUserViaApi({

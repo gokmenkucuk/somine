@@ -1,6 +1,5 @@
 {
   "@@locale": "tr",
-
   "legalTermsOfService": "Kullanım Koşulları",
   "@legalTermsOfService": {
     "description": "Link label for Terms of Service, used in login and paywall legal text."
@@ -9,7 +8,6 @@
   "@legalPrivacyPolicy": {
     "description": "Link label for Privacy Policy, used in login and paywall legal text."
   },
-
   "loginErrorMessage": "Giriş hatası: {error}",
   "@loginErrorMessage": {
     "description": "Snackbar message shown when Google/Apple sign-in fails.",
@@ -51,7 +49,6 @@
   "@loginLegalSuffix": {
     "description": "Text following the Privacy Policy link in the login legal notice."
   },
-
   "settingsHeaderProfile": "Profil",
   "@settingsHeaderProfile": {
     "description": "Header title on the settings screen."
@@ -120,7 +117,6 @@
   "@settingsDefaultGuestLabel": {
     "description": "Fallback label shown instead of an email for guest users."
   },
-
   "profileDefaultName": "isimsiz",
   "@profileDefaultName": {
     "description": "Fallback name shown on the profile screen when the user has no display name."
@@ -164,6 +160,26 @@
   "profileMenuNotificationSettings": "Bildirim Ayarları",
   "@profileMenuNotificationSettings": {
     "description": "Profile menu item for notification settings."
+  },
+  "profileMenuExportData": "Verilerini dışa aktar",
+  "@profileMenuExportData": {
+    "description": "Profile menu item for exporting user data."
+  },
+  "exportFormatTitle": "Dışa aktarma formatı",
+  "@exportFormatTitle": {
+    "description": "Title of the export format selection sheet."
+  },
+  "exportFormatJson": "JSON",
+  "@exportFormatJson": {
+    "description": "JSON option in the export format selection sheet."
+  },
+  "exportFormatCsv": "CSV",
+  "@exportFormatCsv": {
+    "description": "CSV option in the export format selection sheet."
+  },
+  "exportFailed": "Dışa aktarma başarısız oldu. Lütfen tekrar deneyin.",
+  "@exportFailed": {
+    "description": "Error message shown when data export fails."
   },
   "profileMenuInviteFriend": "Arkadaşını Davet Et",
   "@profileMenuInviteFriend": {
@@ -210,7 +226,6 @@
   "@profileMembershipBadgeStandard": {
     "description": "Badge text shown for non-premium users on the membership plan card."
   },
-
   "paywallSubtitle": "Premium Üyelik",
   "@paywallSubtitle": {
     "description": "Subtitle shown under the PREMIUM title on the paywall screen."
@@ -267,7 +282,6 @@
   "@paywallComingSoon": {
     "description": "Snackbar message shown when tapping a placeholder package before purchases are configured."
   },
-
   "limitCollectionTitle": "Koleksiyon Sınırına Ulaştın",
   "@limitCollectionTitle": {
     "description": "Title of the limit reached dialog for collections."
@@ -314,7 +328,6 @@
   "@limitNotNow": {
     "description": "Dismiss button label on the limit reached dialog."
   },
-
   "failureTimeout": "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.",
   "@failureTimeout": {
     "description": "User-facing message for a connection timeout error."
@@ -339,7 +352,6 @@
   "@failureUnknown": {
     "description": "User-facing message for an unexpected/unknown error."
   },
-
   "commonAll": "Tümü",
   "@commonAll": {
     "description": "Common label for 'All', used in feed and catalog category filters."
@@ -422,7 +434,6 @@
   "@commonEmptyItemsSubtitle": {
     "description": "Empty state subtitle shown when a collection or feed has no items."
   },
-
   "limitItemReachedDescription": "Ücretsiz planda en fazla {limit} içerik kaydedebilirsin. Sınırsız içerik için Premium'a geçin!",
   "@limitItemReachedDescription": {
     "description": "Description shown when the total item limit is reached on the free plan.",
@@ -449,7 +460,6 @@
   "@limitReminderDescription": {
     "description": "Description of the reminder limit reached dialog."
   },
-
   "reminderAddTitle": "Hatırlatıcı Ekle",
   "@reminderAddTitle": {
     "description": "Title/label for the add reminder action."
@@ -462,7 +472,6 @@
   "@reminderSetActive": {
     "description": "Title shown when a reminder is already set."
   },
-
   "deleteConfirmTitle": "Silme Onayı",
   "@deleteConfirmTitle": {
     "description": "Title of the delete confirmation dialog."
@@ -471,7 +480,6 @@
   "@deleteItemConfirm": {
     "description": "Confirmation message before deleting an item."
   },
-
   "homeItemWord": "İçerik",
   "@homeItemWord": {
     "description": "Generic 'Item/Content' word used as a fallback title."
@@ -498,7 +506,6 @@
       }
     }
   },
-
   "feedGreeting": "Merhaba,",
   "@feedGreeting": {
     "description": "Greeting label shown at the top of the feed."
@@ -523,7 +530,6 @@
   "@feedVaultAuthFailed": {
     "description": "Snackbar message shown when vault biometric authentication fails."
   },
-
   "catalogTitle": "Koleksiyonlarım",
   "@catalogTitle": {
     "description": "Header title of the catalog screen."
@@ -559,6 +565,26 @@
   "catalogShareCollection": "Koleksiyonu Paylaş",
   "@catalogShareCollection": {
     "description": "Option/title to share a collection."
+  },
+  "catalogShareWithPeople": "Kişiyle paylaş",
+  "@catalogShareWithPeople": {
+    "description": "Option to share a collection with another user via a share request."
+  },
+  "catalogShareViaLink": "Link ile paylaş",
+  "@catalogShareViaLink": {
+    "description": "Option to share a collection with a read-only public web link."
+  },
+  "catalogShareViaLinkDescription": "Linki olan herkes bu koleksiyonu görüntüleyebilir",
+  "@catalogShareViaLinkDescription": {
+    "description": "Helper text under the public link sharing option."
+  },
+  "catalogShareLinkReshare": "Yeniden Paylaş",
+  "@catalogShareLinkReshare": {
+    "description": "Option to share the existing public link again."
+  },
+  "catalogShareLinkUnavailable": "Link ile paylaşım şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
+  "@catalogShareLinkUnavailable": {
+    "description": "Error shown when the public link endpoint is not available."
   },
   "catalogVaultNoShare": "Gizli kasalar paylaşılamaz",
   "@catalogVaultNoShare": {
@@ -846,7 +872,6 @@
   "@catalogGenericError": {
     "description": "Generic error fallback message."
   },
-
   "shareSearchHint": "@kullaniciadi veya e-posta",
   "@shareSearchHint": {
     "description": "Hint text in the share collection search field."
@@ -904,7 +929,6 @@
   "@shareErrorMissingUser": {
     "description": "Error shown when the target user info is missing during sharing."
   },
-
   "addContentImagePickerTitle": "Görsel Ekle",
   "@addContentImagePickerTitle": {
     "description": "Title of the image picker sheet."
@@ -1077,7 +1101,6 @@
   "@addContentRepeatCustomDays": {
     "description": "Repeat frequency label: custom days."
   },
-
   "searchBrowseSources": "Kaynaklara Göz At",
   "@searchBrowseSources": {
     "description": "Section header above the platform filter chips."
@@ -1089,6 +1112,10 @@
   "searchVaultAuthReason": "Gizli arama yapmak için doğrulama yapın",
   "@searchVaultAuthReason": {
     "description": "Biometric auth reason shown when enabling vault search."
+  },
+  "searchSemanticChip": "Akıllı",
+  "@searchSemanticChip": {
+    "description": "Label for the semantic (smart) search mode chip."
   },
   "searchTitleAra": "Ara ",
   "@searchTitleAra": {
@@ -1142,7 +1169,6 @@
   "@searchInSavedDesc": {
     "description": "Info card description for searching saved items."
   },
-
   "itemDetailAddNoteHint": "Bir not ekle...",
   "@itemDetailAddNoteHint": {
     "description": "Hint shown when an item has no note."
@@ -1169,7 +1195,6 @@
       }
     }
   },
-
   "iconPickerTitle": "Uygulama İkonu",
   "@iconPickerTitle": {
     "description": "Title of the app icon picker screen."
@@ -1196,7 +1221,6 @@
   "@iconPickerPremiumBadge": {
     "description": "Badge label shown on locked premium app icons."
   },
-
   "errorStateTitle": "Bir şeyler ters gitti",
   "@errorStateTitle": {
     "description": "Generic title shown above an error message in the reusable error state widget."
@@ -1205,17 +1229,14 @@
   "@errorStateRetry": {
     "description": "Retry button label in the reusable error state widget."
   },
-
   "somineLoadingPreparingCollections": "Koleksiyonlarınızı hazırlıyoruz...",
   "@somineLoadingPreparingCollections": {
     "description": "Message shown on the branded loading screen for newly registered users."
   },
-
   "mapPreviewFallbackTitle": "Harita Önizlemesi",
   "@mapPreviewFallbackTitle": {
     "description": "Title shown on the non-iOS fallback map preview card."
   },
-
   "reminderIndicatorMinutesShort": "{minutes}dk",
   "@reminderIndicatorMinutesShort": {
     "description": "Short custom repeat interval label in minutes on the reminder indicator chip.",
@@ -1256,7 +1277,6 @@
       }
     }
   },
-
   "appearanceTitle": "Görünüm",
   "@appearanceTitle": {
     "description": "Title of the appearance settings screen."
@@ -1289,7 +1309,6 @@
   "@appearanceChangeIconSubtitle": {
     "description": "Subtitle of the row that navigates to the app icon picker."
   },
-
   "notificationSettingsTitle": "Bildirim Ayarları",
   "@notificationSettingsTitle": {
     "description": "Title of the notification settings screen."
@@ -1338,7 +1357,6 @@
   "@notificationSettingsWeeklyDigestSubtitle": {
     "description": "Subtitle of the weekly digest notifications toggle."
   },
-
   "notificationsMarkAllRead": "Tümünü Oku",
   "@notificationsMarkAllRead": {
     "description": "Button label to mark all notifications as read."
@@ -1364,7 +1382,6 @@
       }
     }
   },
-
   "inviteFriendTitle": "Arkadaşını Davet Et",
   "@inviteFriendTitle": {
     "description": "Title of the invite friend screen."
@@ -1373,7 +1390,7 @@
   "@inviteFriendShareHeadline": {
     "description": "Headline on the invite friend screen."
   },
-  "inviteFriendShareSubtitle": "So Mine'ı sevdiğin kişilerle paylaş.\nOnlar da içeriklerini kolayca organize etsin!",
+  "inviteFriendShareSubtitle": "Somine'ı sevdiğin kişilerle paylaş.\nOnlar da içeriklerini kolayca organize etsin!",
   "@inviteFriendShareSubtitle": {
     "description": "Subtitle on the invite friend screen."
   },
@@ -1389,7 +1406,7 @@
   "@inviteFriendShareButton": {
     "description": "Button label to share the invite message."
   },
-  "inviteFriendShareMessage": "So Mine'ı dene! Tüm kaydettiğin içerikleri tek yerde topla. 📌✨ {link}",
+  "inviteFriendShareMessage": "Somine'ı dene! Tüm kaydettiğin içerikleri tek yerde topla. 📌✨ {link}",
   "@inviteFriendShareMessage": {
     "description": "Message shared with friends when inviting them to the app.",
     "placeholders": {
@@ -1398,7 +1415,6 @@
       }
     }
   },
-
   "sharedWithMeTitle": "Benimle Paylaşılanlar",
   "@sharedWithMeTitle": {
     "description": "Title of the shared-with-me screen."
@@ -1424,7 +1440,6 @@
       }
     }
   },
-
   "shareRequestsTitle": "Paylaşım İstekleri",
   "@shareRequestsTitle": {
     "description": "Title of the share requests screen."
@@ -1470,7 +1485,62 @@
   "@shareRequestsRejectedMessage": {
     "description": "Message of the confirmation sheet shown after rejecting a share request."
   },
-
+  "myRemindersTitle": "Hatırlatıcılarım",
+  "@myRemindersTitle": {
+    "description": "Title of the my-reminders screen."
+  },
+  "myRemindersLoadError": "Hatırlatıcılar yüklenemedi. Lütfen tekrar deneyin.",
+  "@myRemindersLoadError": {
+    "description": "Error shown when the reminder list fails to load."
+  },
+  "myRemindersEmptyTitle": "Henüz hatırlatıcı yok",
+  "@myRemindersEmptyTitle": {
+    "description": "Empty state title when the user has no reminders at all."
+  },
+  "myRemindersEmptySubtitle": "Bir içeriğe hatırlatıcı kurduğunda burada görünür.",
+  "@myRemindersEmptySubtitle": {
+    "description": "Empty state subtitle for the my-reminders screen."
+  },
+  "myRemindersEmptyUpcoming": "Yaklaşan hatırlatıcı yok",
+  "@myRemindersEmptyUpcoming": {
+    "description": "Empty state title for the upcoming filter."
+  },
+  "myRemindersEmptyPast": "Geçmiş hatırlatıcı yok",
+  "@myRemindersEmptyPast": {
+    "description": "Empty state title for the past filter."
+  },
+  "myRemindersFilterUpcoming": "Yaklaşan",
+  "@myRemindersFilterUpcoming": {
+    "description": "Filter chip: upcoming reminders."
+  },
+  "myRemindersFilterPast": "Geçmiş",
+  "@myRemindersFilterPast": {
+    "description": "Filter chip: past reminders."
+  },
+  "myRemindersFilterAll": "Tümü",
+  "@myRemindersFilterAll": {
+    "description": "Filter chip: all reminders."
+  },
+  "myRemindersItemMissing": "İçerik bulunamadı",
+  "@myRemindersItemMissing": {
+    "description": "Shown when the item a reminder points to no longer exists."
+  },
+  "myRemindersEdit": "Hatırlatıcıyı Düzenle",
+  "@myRemindersEdit": {
+    "description": "Action sheet option to edit a reminder."
+  },
+  "myRemindersDelete": "Hatırlatıcıyı Sil",
+  "@myRemindersDelete": {
+    "description": "Action sheet option to delete a reminder."
+  },
+  "myRemindersDeleted": "Hatırlatıcı silindi.",
+  "@myRemindersDeleted": {
+    "description": "Snackbar confirmation after deleting a reminder."
+  },
+  "profileMenuMyReminders": "Hatırlatıcılarım",
+  "@profileMenuMyReminders": {
+    "description": "Profile menu row opening the my-reminders screen."
+  },
   "mySharesTitle": "Paylaştıklarım",
   "@mySharesTitle": {
     "description": "Title of the my-shares screen."
@@ -1551,7 +1621,6 @@
   "@mySharesPublicLinkRevoked": {
     "description": "SnackBar message shown after revoking a public link."
   },
-
   "shareRequestActionSheetDefaultCategory": "Koleksiyon",
   "@shareRequestActionSheetDefaultCategory": {
     "description": "Fallback collection name shown when a share request notification has no category name."
@@ -1598,12 +1667,10 @@
       }
     }
   },
-
   "commonError": "Hata",
   "@commonError": {
     "description": "Generic short error title used in notification sheets."
   },
-
   "usernameErrorFormat": "3-20 karakter, sadece harf, rakam ve alt çizgi",
   "@usernameErrorFormat": {
     "description": "Validation error shown when the chosen username does not match the format rules."
@@ -1612,7 +1679,6 @@
   "@usernameErrorTaken": {
     "description": "Validation error shown when the chosen username is already in use."
   },
-
   "onboardingNameTitle": "Hazırsan\nBaşlayalım",
   "@onboardingNameTitle": {
     "description": "Large gradient headline on the onboarding name screen."
@@ -1661,7 +1727,6 @@
   "@onboardingNameSelectValidUsername": {
     "description": "Snackbar error shown when the user tries to continue with an unavailable username."
   },
-
   "onboardingPrepTitle": "Koleksiyonlar Hazırlanıyor",
   "@onboardingPrepTitle": {
     "description": "Gradient headline on the onboarding preparation screen."
@@ -1682,7 +1747,6 @@
   "@onboardingPrepStartExploring": {
     "description": "Primary button label that finishes onboarding and opens the app."
   },
-
   "recentlyDeletedTitle": "Son Silinenler",
   "@recentlyDeletedTitle": {
     "description": "Title of the recently deleted items screen."
@@ -1766,7 +1830,6 @@
   "@recentlyDeletedPermanentlyDeletedMessage": {
     "description": "Success notification message after permanently deleting an item."
   },
-
   "sharedCollectionByUser": "{name} tarafından",
   "@sharedCollectionByUser": {
     "description": "Attribution line under the shared collection title naming who shared it.",
@@ -1834,7 +1897,6 @@
       }
     }
   },
-
   "helpSupportTitle": "Yardım ve Destek",
   "@helpSupportTitle": {
     "description": "Title of the help & support screen."
@@ -1867,11 +1929,11 @@
   "@helpSupportAppVersion": {
     "description": "Label for the app version row in the help & support screen."
   },
-  "helpSupportFaqQ1": "So Mine nasıl çalışır?",
+  "helpSupportFaqQ1": "Somine nasıl çalışır?",
   "@helpSupportFaqQ1": {
     "description": "First FAQ question on the help & support screen."
   },
-  "helpSupportFaqA1": "So Mine, Instagram, YouTube, Twitter ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
+  "helpSupportFaqA1": "Somine, Instagram, YouTube, Twitter ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
   "@helpSupportFaqA1": {
     "description": "First FAQ answer on the help & support screen."
   },
@@ -1907,12 +1969,10 @@
   "@helpSupportFaqA5": {
     "description": "Fifth FAQ answer on the help & support screen."
   },
-
   "commonUpdate": "Güncelle",
   "@commonUpdate": {
     "description": "Generic Update action button label."
   },
-
   "accountInfoTitle": "Hesap Bilgileri",
   "@accountInfoTitle": {
     "description": "Title of the account info screen."
@@ -2058,7 +2118,6 @@
   "@accountInfoReloginRequired": {
     "description": "Snackbar message shown after requesting account deletion."
   },
-
   "categoryManagerTitle": "Kategoriler",
   "@categoryManagerTitle": {
     "description": "Header title of the category manager screen."
@@ -2190,7 +2249,6 @@
   "@categoryManagerNameHint": {
     "description": "Hint text inside the category name input."
   },
-
   "editContentScanning": "Bağlantı taranıyor...",
   "@editContentScanning": {
     "description": "Hero status shown while fetching link metadata on the edit screen."
@@ -2230,5 +2288,92 @@
   "editContentDeleteFailed": "Silme işlemi başarısız",
   "@editContentDeleteFailed": {
     "description": "Error snackbar shown when deleting an item fails."
-  }
+  },
+  "successSheetQuickReminderTomorrow": "Yarın",
+  "@successSheetQuickReminderTomorrow": {
+    "description": "Quick reminder action on the success sheet: remind tomorrow."
+  },
+  "successSheetQuickReminderWeekend": "Hafta sonu",
+  "@successSheetQuickReminderWeekend": {
+    "description": "Quick reminder action on the success sheet: remind on the weekend (next Saturday)."
+  },
+  "successSheetReminderSetTitle": "Hatırlatıcı Kuruldu!",
+  "@successSheetReminderSetTitle": {
+    "description": "Success sheet title after a quick reminder is set."
+  },
+  "successSheetReminderSetTomorrow": "Yarın sana hatırlatacağız",
+  "@successSheetReminderSetTomorrow": {
+    "description": "Success sheet confirmation message for the 'tomorrow' quick reminder."
+  },
+  "successSheetReminderSetWeekend": "Cumartesi günü sana hatırlatacağız",
+  "@successSheetReminderSetWeekend": {
+    "description": "Success sheet confirmation message for the 'weekend' quick reminder."
+  },
+  "successSheetReminderFailed": "Hatırlatıcı kurulamadı. Daha sonra tekrar deneyin.",
+  "@successSheetReminderFailed": {
+    "description": "Success sheet message when setting a quick reminder fails."
+  },
+  "weeklyDigestNotificationTitle": "Sana geri geldi",
+  "@weeklyDigestNotificationTitle": {
+    "description": "Title of the weekly resurfacing local notification."
+  },
+  "weeklyDigestNotificationBody": "\"{title}\" hâlâ seni bekliyor. Göz atmaya ne dersin?",
+  "@weeklyDigestNotificationBody": {
+    "description": "Body of the weekly resurfacing notification with a single candidate item.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyDigestNotificationBodyMore": "\"{title}\" ve {count} kayıt daha seni bekliyor.",
+  "@weeklyDigestNotificationBodyMore": {
+    "description": "Body of the weekly resurfacing notification with multiple candidate items.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonOk": "Tamam",
+  "reminderPickerEditTitle": "Hatırlatıcıyı Düzenle",
+  "reminderPickerFieldDate": "Tarih",
+  "reminderPickerFieldRepeat": "Tekrarlama",
+  "reminderPickerFieldDayOfMonth": "Gün (ayda bir)",
+  "reminderPickerFieldDateYearly": "Tarih (yılda bir)",
+  "reminderPickerDayOfMonthValue": "Her ayın {day}. günü",
+  "@reminderPickerDayOfMonthValue": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPickerMonthDaySheetTitle": "Ay ve Gün Seç",
+  "reminderPickerRepeatSheetTitle": "Tekrarlama Seç",
+  "reminderPickerTimeLabel": "Saat",
+  "reminderPickerTimeLabelDaily": "Saat (günde bir)",
+  "reminderPickerTimeLabelWeekly": "Saat (haftada bir)",
+  "reminderPickerTimeLabelWeekdays": "Saat (hafta içi)",
+  "reminderPickerTimeLabelWeekends": "Saat (hafta sonu)",
+  "reminderPickerRepeatEveryNMinutes": "{minutes} dakikada bir",
+  "@reminderPickerRepeatEveryNMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPickerRepeatEveryNHours": "{hours} saatte bir",
+  "@reminderPickerRepeatEveryNHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderPickerDeleteTooltip": "Hatırlatıcıyı sil"
 }

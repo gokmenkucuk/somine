@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,15 +25,31 @@ import 'dart:math' as math;
 import 'package:url_launcher/url_launcher.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/widgets/circle_icon_button.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/core/utils/content_preview_policy.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
+import 'package:somine_app/core/services/widget_data_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/widgets/reminder_picker_bottom_sheet.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
+
+/// AddContentScreen pop sözleşmesi: başarıda `Navigator.pop(context, AddContentResult(...))`
+/// döner (eskiden `true` idi). Çağıranlar `result != null` / `result is AddContentResult`
+/// kontrolü yapar. Yalnız YENİ kayıtta `createdItemId` dolu gelir — edit/silme
+/// akışlarında boş `AddContentResult()` döner (hızlı hatırlatıcı gösterilmez).
+class AddContentResult {
+  const AddContentResult({this.createdItemId, this.createdItemTitle});
+
+  final String? createdItemId;
+  final String? createdItemTitle;
+
+  bool get isNewItem => createdItemId != null && createdItemId!.isNotEmpty;
+}
 
 class AddContentScreen extends ConsumerStatefulWidget {
   final String? initialText;
@@ -87,6 +104,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Dynamic Header Height
   double? _imageAspectRatio;
+
+  // Önizleme görselinin ölçülen piksel boyutu ve ölçümün hangi URL'e ait
+  // olduğu. Kaydederken item ile birlikte sunucuya gönderilir; böylece masonry
+  // kutusu her cihazda ilk karede doğru oranı bilir (bkz. MasonryImage).
+  // Ölçüm URL'i, sonuç geç geldiğinde başka bir görselin boyutunu yanlış
+  // kayda yazmamak için tutulur.
+  String? _measuredImageUrl;
+  int? _measuredImageWidth;
+  int? _measuredImageHeight;
 
   // Map Coordinate (for Google/Yandex maps displayed with Apple Maps)
   MapCoordinate? _mapCoordinate;
@@ -209,7 +235,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
 
     // Reset first
-    setState(() => _imageAspectRatio = null);
+    setState(() {
+      _imageAspectRatio = null;
+      // Ölçüm bu URL'e ait; sonuç geldiğinde hâlâ güncel mi diye bakılır.
+      // Kaynak (düzeltilmemiş) URL saklanır: kaydederken _ogMetadata.imageUrl
+      // ile karşılaştırılacak.
+      _measuredImageUrl = imageUrl;
+      _measuredImageWidth = null;
+      _measuredImageHeight = null;
+    });
 
     final headers = await resolveImageHeaders(correctedUrl);
     if (!mounted) return;
@@ -226,9 +260,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           ImageStreamListener(
             (ImageInfo info, bool synchronousCall) {
               if (!mounted) return;
+              // Ölçüm başlatıldığından beri kullanıcı başka bir link/görsel
+              // seçmiş olabilir; geç gelen sonucu yeni görselin üzerine yazma.
+              if (_measuredImageUrl != imageUrl) return;
               final myImage = info.image;
+              if (myImage.width <= 0 || myImage.height <= 0) return;
               setState(() {
                 _imageAspectRatio = myImage.width / myImage.height;
+                _measuredImageWidth = myImage.width;
+                _measuredImageHeight = myImage.height;
               });
             },
             onError: (exception, stackTrace) {
@@ -795,7 +835,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _titleController.clear();
       _noteController.clear();
       _mapCoordinate = null; // Reset map coordinate
+      _clearMeasuredImageSize();
     });
+  }
+
+  /// Ölçülen görsel boyutunu düşürür. Görsel değiştiğinde çağrılmalı; aksi
+  /// halde bir önceki görselin boyutu yeni içerikle birlikte kaydedilirdi.
+  void _clearMeasuredImageSize() {
+    _measuredImageUrl = null;
+    _measuredImageWidth = null;
+    _measuredImageHeight = null;
   }
 
   void _clearContent() {
@@ -813,6 +862,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _noteImageBytes = null;
       _noteImageUrl = null;
       _mapCoordinate = null; // Reset map coordinate
+      _clearMeasuredImageSize();
     });
   }
 
@@ -823,8 +873,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder:
           (ctx) => Container(
+            clipBehavior: Clip.antiAlias,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: context.colors.surfaceWhite,
@@ -841,7 +893,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: context.colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1067,6 +1119,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         return;
       }
 
+      // Masonry kutusunun oranını sunucuda saklayabilmek için ölçülen boyutu
+      // burada, kalıcı depoya yükleme URL'i değiştirmeden ÖNCE sabitle.
+      // Yükleme yalnız adresi değiştirir, görselin pikselleri aynı kalır.
+      final measuredForImageUrl = _ogMetadata?.imageUrl;
+      final bool hasMeasuredOgImageSize =
+          measuredForImageUrl != null &&
+          _measuredImageUrl == measuredForImageUrl &&
+          _measuredImageWidth != null &&
+          _measuredImageHeight != null;
+
       // Check for remote image and process if needed
       if (_ogMetadata?.imageUrl != null &&
           !_ogMetadata!.imageUrl!.contains('firebasestorage') &&
@@ -1144,6 +1206,20 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         finalMetadata,
       );
 
+      // Boyut yalnızca gerçekten kaydedilen görsele aitse gönderilir. Note
+      // modunda kaydedilen görsel note görselidir; kullanıcı yeni bir görsel
+      // seçtiyse (bytes yüklendiyse) ölçüm ona ait değildir. Emin olunamayan
+      // her durumda null gider ve istemci yerel önbelleğe/varsayılana düşer —
+      // eski davranış, kırılma yok.
+      final bool sendOgImageSize =
+          hasMeasuredOgImageSize &&
+          finalMetadata?.imageUrl != null &&
+          (!_isNoteMode ||
+              (_noteImageBytes == null &&
+                  noteImageUrl == measuredForImageUrl));
+      final int? ogImageWidth = sendOgImageSize ? _measuredImageWidth : null;
+      final int? ogImageHeight = sendOgImageSize ? _measuredImageHeight : null;
+
       // --- EDIT MODE START ---
       if (widget.editItem != null) {
         final originalCatId = widget.editItem!.categoryId;
@@ -1167,6 +1243,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
           note: noteText.isNotEmpty ? noteText : null,
           ogMetadata: finalMetadata,
+          // Ölçüm yapılamadıysa null geçilir; copyWith null'ı "değişmedi"
+          // sayarak mevcut boyutu korur, sunucu da PUT'ta null'ı yok sayar.
+          ogImageWidth: ogImageWidth,
+          ogImageHeight: ogImageHeight,
           updatedAt: DateTime.now(),
         );
 
@@ -1217,7 +1297,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(l10n.addContentAddFailed),
-                  backgroundColor: Colors.red,
+                  backgroundColor: context.colors.danger,
                   duration: const Duration(seconds: 3),
                 ),
               );
@@ -1227,8 +1307,11 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         }
 
         await _maybeShowItemLimitWarning();
+        _logContentAddAnalytics(updatedItem.type);
+        _syncHomeWidgetData();
         if (mounted) {
-          Navigator.pop(context, true); // Return success
+          // Edit modu: yeni kayıt bilgisi taşınmaz (hızlı hatırlatıcı yok).
+          Navigator.pop(context, const AddContentResult());
         }
       }
       // --- CREATE MODE START ---
@@ -1250,6 +1333,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               url: _isNoteMode ? null : (_hasLink ? _detectedLink : null),
               note: noteText.isNotEmpty ? noteText : null,
               ogMetadata: finalMetadata,
+              ogImageWidth: ogImageWidth,
+              ogImageHeight: ogImageHeight,
               createdAt: now,
               updatedAt: now,
             );
@@ -1274,7 +1359,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(l10n.addContentAddFailed),
-                backgroundColor: Colors.red,
+                backgroundColor: context.colors.danger,
                 duration: const Duration(seconds: 3),
               ),
             );
@@ -1303,8 +1388,21 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         }
 
         await _maybeShowItemLimitWarning();
+        _logContentAddAnalytics(
+          firstSuccessfulItem?.type ?? ItemType.note,
+        );
+        _syncHomeWidgetData();
         if (mounted) {
-          Navigator.pop(context, true);
+          Navigator.pop(
+            context,
+            AddContentResult(
+              createdItemId: firstSuccessfulItem?.id,
+              createdItemTitle:
+                  titleText.isNotEmpty
+                      ? titleText
+                      : firstSuccessfulItem?.displayTitle,
+            ),
+          );
         }
       }
     } catch (e) {
@@ -1313,6 +1411,28 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  /// Başarılı kayıt sonrası analitik: content_add + (ilk kayıtta) activation.
+  /// Fire-and-forget; akışı asla bozmaz.
+  void _logContentAddAnalytics(ItemType type) {
+    final source =
+        (widget.initialText != null && widget.initialText!.isNotEmpty)
+            ? 'share_ext'
+            : 'app';
+    // ref yerine singleton: await sonrası dispose edilmiş ref kullanımı
+    // istisna fırlatıp kayıt akışını bozmasın.
+    AnalyticsService.instance
+      ..logContentAdd(type: type.name, source: source)
+      ..logActivation();
+  }
+
+  /// Başarılı kayıt sonrası iOS ana ekran widget'ı verisini tazeler.
+  /// Fire-and-forget; hatalar WidgetDataService içinde yutulur.
+  void _syncHomeWidgetData() {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+    unawaited(WidgetDataService().sync(userId));
   }
 
   /// Starter planında toplam içerik sayısı yumuşak uyarı eşiğine
@@ -1495,10 +1615,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Delete item from Firestore
         await _itemRepository.deleteItem(widget.editItem!.id);
         if (mounted) {
-          Navigator.pop(
-            context,
-            true,
-          ); // Return success (true indicates update/delete)
+          // Silme akışı: çağıranlar için "değişiklik oldu" sinyali yeterli.
+          Navigator.pop(context, const AddContentResult());
         }
       }
     } catch (e) {
@@ -1592,7 +1710,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withValues(alpha: 0.3),
+                            color: context.colors.danger.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -1665,6 +1783,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 HitTestBehavior.opaque, // Ensures taps on empty areas work
             onTap: () => FocusScope.of(context).unfocus(),
             child: Container(
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: context.colors.surfaceWhite,
                 borderRadius: const BorderRadius.vertical(
@@ -1913,6 +2032,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             )!;
 
         return Container(
+          clipBehavior: Clip.antiAlias,
           key: const ValueKey('platform'),
           width: double.infinity,
           decoration: BoxDecoration(
@@ -2093,6 +2213,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       key: const ValueKey('map_placeholder'),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -2282,6 +2403,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     final provider = _mapCoordinate!.provider;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       key: const ValueKey('map_icon_placeholder'),
       height: 200,
       decoration: BoxDecoration(
@@ -2362,6 +2484,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     return GestureDetector(
       onTap: _launchOriginalUrl,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         key: const ValueKey('map_preview'),
         height: 200,
         decoration: BoxDecoration(
@@ -2697,13 +2820,13 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: context.colors.danger.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     PhosphorIconsBold.trash,
                     size: 18,
-                    color: Colors.red,
+                    color: context.colors.danger,
                   ),
                 ),
               ),
@@ -3236,32 +3359,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   // ============== HELPER WIDGETS ==============
 
   Widget _buildBackButton() {
-    return GestureDetector(
+    return CircleIconButton(
+      icon: PhosphorIconsLight.x, // X for modal close
       onTap: () => Navigator.pop(context),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          shape: BoxShape.circle, // Circular
-          border: Border.all(
-            color: context.colors.hint.withValues(alpha: 0.3),
-            width: 1,
-          ), // Grey Border
-          boxShadow: [
-            BoxShadow(
-              color: context.colors.premiumShadow.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          PhosphorIconsLight.x, // Changed to X for modal close
-          size: 20,
-          color: context.colors.headline,
-        ),
-      ),
     );
   }
 
@@ -3269,31 +3369,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          shape: BoxShape.circle, // Updated to Circle
-          border: Border.all(
-            color: context.colors.hint.withValues(alpha: 0.3),
-            width: 1,
-          ), // Updated to grey border
-          boxShadow: [
-            BoxShadow(
-              color: context.colors.premiumShadow.withValues(
-                alpha: 0.1,
-              ), // Updated opacity
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(icon, size: 18, color: context.colors.headline),
-      ),
-    );
+    return CircleIconButton(icon: icon, iconSize: 18, onTap: onTap);
   }
 
   // ============== PLATFORM HELPERS ==============
@@ -3435,6 +3511,7 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -3801,6 +3878,7 @@ class _AlertBottomSheetState extends State<_AlertBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       width: double.infinity,
       decoration: BoxDecoration(
         // Yağ Yeşili Gradient Zemin

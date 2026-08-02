@@ -212,7 +212,7 @@ class _ShareRequestCard extends ConsumerWidget {
                   onPressed: () => _rejectShare(context, ref),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.grey,
-                    side: BorderSide(color: Colors.grey.shade300),
+                    side: BorderSide(color: context.colors.divider),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

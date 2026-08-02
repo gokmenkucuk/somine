@@ -40,6 +40,8 @@ class AppTheme {
           iconInactive: AppColors.iconInactive,
           surfaceWhite: AppColors.surfaceWhite,
           premiumShadow: AppColors.premiumShadow,
+          divider: AppColors.divider,
+          danger: AppColors.danger,
         ),
       ],
       colorScheme: ColorScheme.light(
@@ -77,7 +79,7 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: bgDark,
       extensions: [
-        const AppColorsExtension(
+        AppColorsExtension(
           backgroundTop: bgDark, // Reverted to Dark
           backgroundBottom: bgDark, // Reverted to Dark
           primary: primaryColor,
@@ -90,6 +92,8 @@ class AppTheme {
           iconInactive: iconDim,
           surfaceWhite: surfaceDark,
           premiumShadow: Colors.black54,
+          divider: iconDim.withValues(alpha: 0.35),
+          danger: const Color(0xFFEF4444),
         ),
       ],
       colorScheme: const ColorScheme.dark(
@@ -144,6 +148,8 @@ class AppTheme {
           iconInactive: iconDim,
           surfaceWhite: surfaceVibe,
           premiumShadow: primaryVibe.withValues(alpha: 0.3),
+          divider: iconDim.withValues(alpha: 0.35),
+          danger: Colors.redAccent,
         ),
       ],
       colorScheme: const ColorScheme.dark(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:somine_app/core/design/app_theme.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
@@ -22,6 +24,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
+import 'package:somine_app/core/services/analytics_service.dart';
+import 'package:somine_app/core/services/weekly_digest_service.dart';
+import 'package:somine_app/core/repositories/user_repository.dart';
+import 'package:somine_app/core/services/widget_data_service.dart';
+import 'package:somine_app/core/utils/image_aspect_ratio_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:somine_app/screens/my_shares_screen.dart';
 import 'package:somine_app/widgets/in_app_notification_banner.dart';
@@ -40,6 +47,10 @@ void main() async {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
+
+      // Masonry kartlarının ilk karede doğru yükseklikte çizilebilmesi için
+      // görsel oranları ilk kare öncesinde belleğe alınır.
+      await ImageAspectRatioCache.instance.init();
 
       await initializeDateFormatting('tr', null);
       timeago.setLocaleMessages('tr', timeago.TrMessages());
@@ -80,6 +91,18 @@ void main() async {
             currentUser.uid,
           );
           debugPrint('Reminders rescheduled successfully');
+
+          // Haftalık "Sana geri geldi" bildirimi (toggle'a bağlı, idempotent).
+          // Açılışı bloklamasın diye unawaited; hatalar servis içinde yutulur.
+          unawaited(WeeklyDigestService().syncOnAppStart(currentUser.uid));
+
+          // iOS ana ekran widget'ı ("günün kaydı") verisini güncelle —
+          // aynı kalıp: unawaited, hatalar servis içinde yutulur.
+          unawaited(WidgetDataService().syncOnAppStart(currentUser.uid));
+
+          // Sunucu hatırlatıcıları kullanıcının saat dilimine göre tetikliyor;
+          // değişmediyse istek atılmaz.
+          unawaited(UserRepository().syncTimeZone());
         }
       } catch (e) {
         debugPrint('NotificationService initialization error: $e');
@@ -111,6 +134,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
   StreamSubscription<Map<String, dynamic>>? _itemsRealtimeSubscription;
   StreamSubscription<Map<String, dynamic>>? _categoriesRealtimeSubscription;
   StreamSubscription<Map<String, dynamic>>? _notificationsRealtimeSubscription;
+  StreamSubscription<Uri?>? _widgetClickedSubscription;
 
   @override
   void initState() {
@@ -123,6 +147,11 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
         NotificationService().setCurrentUser(user.uid);
       }
       NotificationService().setNavigatorKey(_navigatorKey);
+
+      // Ana ekran widget tap'i (somine://item/<id>?homeWidget):
+      // soğuk başlangıç + çalışırken tıklama. Navigator hazır olsun diye
+      // post-frame'de kurulur; hatalar akışı bozmaz.
+      unawaited(_initHomeWidgetHandling());
     });
 
     _itemsRealtimeSubscription = _backendRealtimeService.itemsChanges.listen((
@@ -159,12 +188,52 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
     _itemsRealtimeSubscription?.cancel();
     _categoriesRealtimeSubscription?.cancel();
     _notificationsRealtimeSubscription?.cancel();
+    _widgetClickedSubscription?.cancel();
     unawaited(_backendRealtimeService.dispose());
     super.dispose();
   }
 
   void _onSplashComplete() {
     setState(() => _isSplashFinished = true);
+  }
+
+  /// Ana ekran widget'ından açılış/tıklama dinleyicileri (home_widget).
+  Future<void> _initHomeWidgetHandling() async {
+    try {
+      // App widget tap'iyle soğuk başlatıldıysa ilk URI buradan gelir.
+      final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+      if (initialUri != null) {
+        _handleWidgetUri(initialUri);
+      }
+
+      // App açıkken/arka plandayken gelen widget tap'leri.
+      _widgetClickedSubscription = HomeWidget.widgetClicked.listen(
+        (uri) {
+          if (uri != null) _handleWidgetUri(uri);
+        },
+        onError:
+            (Object e) => debugPrint('❌ [HomeWidget] click stream error: $e'),
+      );
+    } catch (e) {
+      debugPrint('❌ [HomeWidget] init error (ignored): $e');
+    }
+  }
+
+  /// `somine://item/<id>?homeWidget` URI'sinden itemId çıkarır ve item
+  /// detayını bildirim-tap kalıbıyla (NotificationService) açar.
+  void _handleWidgetUri(Uri uri) {
+    final itemId = _itemIdFromWidgetUri(uri);
+    if (itemId == null) return;
+
+    AnalyticsService.instance.logWidgetTap();
+    unawaited(NotificationService().openItemDetail(itemId));
+  }
+
+  String? _itemIdFromWidgetUri(Uri uri) {
+    if (uri.scheme != 'somine' || uri.host != 'item') return null;
+    if (uri.pathSegments.isEmpty) return null;
+    final itemId = uri.pathSegments.first;
+    return itemId.isEmpty ? null : itemId;
   }
 
   void _refreshDerivedItemState() {
@@ -249,6 +318,16 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
           MaterialPageRoute(builder: (_) => const MySharesScreen()),
         );
         break;
+      case NotificationType.reminder:
+        final itemId = notification.data['itemId'] as String?;
+        if (itemId != null && itemId.isNotEmpty) {
+          NotificationService().openItemDetail(itemId);
+        }
+        break;
+      case NotificationType.unknown:
+        // Bu sürümün tanımadığı tip: bildirim listede görünür ama
+        // tahmine dayalı bir yönlendirme yapmıyoruz.
+        break;
     }
   }
 
@@ -258,9 +337,12 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'So Mine',
+      title: 'Somine',
       theme: AppTheme.getTheme(currentTheme),
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [
+        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+      ],
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home:

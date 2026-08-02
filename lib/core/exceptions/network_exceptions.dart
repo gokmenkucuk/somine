@@ -38,6 +38,12 @@ class ValidationException extends AppException {
       : super(retryable: false);
 }
 
+/// The backend endpoint for this feature is not available yet (HTTP 404).
+class FeatureUnavailableException extends AppException {
+  const FeatureUnavailableException(super.message, {required super.userMessage})
+      : super(retryable: false);
+}
+
 class ConflictException extends AppException {
   const ConflictException(super.message, {required super.userMessage})
       : super(retryable: false);

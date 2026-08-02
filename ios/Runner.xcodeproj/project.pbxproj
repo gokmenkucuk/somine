@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		39AA01A1301F0001006E08BC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 39AA01A0301F0001006E08BC /* PrivacyInfo.xcprivacy */; };
 		03EDD35EC355DCC96DEC7552 /* icon_retro@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = 6A7554228F1000FF845C5B9A /* icon_retro@2x~ipad.png */; };
 		0EF02416BF1D30DEEE2E899F /* icon_retro~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = A62803F5CCEAA1DC29EB0B28 /* icon_retro~ipad.png */; };
 		12FD0B490741D1A22E331CE4 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 88E70E364464B7806130EBCC /* Pods_Runner.framework */; };
@@ -17,6 +18,9 @@
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		39109B282F2619F200C3CBF0 /* somine.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 39109B1E2F2619F200C3CBF0 /* somine.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		394966412F4A580F00078A59 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 394966402F4A580F00078A59 /* StoreKit.framework */; };
+		39681356301E8428006E08BC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39681355301E8428006E08BC /* WidgetKit.framework */; };
+		39681358301E8428006E08BC /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39681357301E8428006E08BC /* SwiftUI.framework */; };
+		39681369301E8429006E08BC /* SomineWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 39681354301E8428006E08BC /* SomineWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		423A4E5FC52945A6EC31F4A1 /* icon_dark@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = CDC8FBC7079B7F625ECCFF56 /* icon_dark@2x~ipad.png */; };
 		518F013C3C53B230A136792B /* icon_dark@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E418EE7FDB085872372F7FBD /* icon_dark@2x.png */; };
@@ -56,6 +60,13 @@
 			remoteGlobalIDString = 39109B1D2F2619F200C3CBF0;
 			remoteInfo = somine;
 		};
+		39681367301E8429006E08BC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 39681353301E8428006E08BC;
+			remoteInfo = SomineWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -66,6 +77,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				39109B282F2619F200C3CBF0 /* somine.appex in Embed Foundation Extensions */,
+				39681369301E8429006E08BC /* SomineWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -83,6 +95,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		39AA01A0301F0001006E08BC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		079AF56EF25044F6316A8241 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		09828D39C423D25FC26E71AE /* icon_gold.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_gold.png; sourceTree = "<group>"; };
 		0B267D53A80473879EFEA6D7 /* Pods-somine.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-somine.debug.xcconfig"; path = "Target Support Files/Pods-somine/Pods-somine.debug.xcconfig"; sourceTree = "<group>"; };
@@ -98,6 +111,9 @@
 		39109B1E2F2619F200C3CBF0 /* somine.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = somine.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		39109B2E2F261C2700C3CBF0 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		394966402F4A580F00078A59 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		39681354301E8428006E08BC /* SomineWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SomineWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		39681355301E8428006E08BC /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		39681357301E8428006E08BC /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		440A16EB3416623E9AAA99B2 /* Pods_somine.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_somine.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B08E7D6AF7D4BAF98860CB4 /* icon_retro@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_retro@3x.png"; sourceTree = "<group>"; };
@@ -148,6 +164,13 @@
 			);
 			target = 39109B1D2F2619F200C3CBF0 /* somine */;
 		};
+		3968136D301E8429006E08BC /* Exceptions for "SomineWidget" folder in "SomineWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 39681353301E8428006E08BC /* SomineWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -161,6 +184,18 @@
 			explicitFolders = (
 			);
 			path = somine;
+			sourceTree = "<group>";
+		};
+		39681359301E8428006E08BC /* SomineWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3968136D301E8429006E08BC /* Exceptions for "SomineWidget" folder in "SomineWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = SomineWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -179,6 +214,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				B549388809E6A360CA6C7DBF /* Pods_somine.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		39681351301E8428006E08BC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39681358301E8428006E08BC /* SwiftUI.framework in Frameworks */,
+				39681356301E8428006E08BC /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -209,6 +253,8 @@
 				88E70E364464B7806130EBCC /* Pods_Runner.framework */,
 				86ACCF25702C707840E1DC6D /* Pods_RunnerTests.framework */,
 				440A16EB3416623E9AAA99B2 /* Pods_somine.framework */,
+				39681355301E8428006E08BC /* WidgetKit.framework */,
+				39681357301E8428006E08BC /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -230,6 +276,7 @@
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
 				39109B1F2F2619F200C3CBF0 /* somine */,
+				39681359301E8428006E08BC /* SomineWidget */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				E982773D09C320713BA76D4E /* Pods */,
@@ -243,6 +290,7 @@
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				39109B1E2F2619F200C3CBF0 /* somine.appex */,
+				39681354301E8428006E08BC /* SomineWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -250,6 +298,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				39AA01A0301F0001006E08BC /* PrivacyInfo.xcprivacy */,
 				FD7519D7D7AB05E44FF04229 /* icon_dark.png */,
 				E418EE7FDB085872372F7FBD /* icon_dark@2x.png */,
 				D4C4413C87FB182E9EE561E9 /* icon_dark@3x.png */,
@@ -347,6 +396,26 @@
 			productReference = 39109B1E2F2619F200C3CBF0 /* somine.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		39681353301E8428006E08BC /* SomineWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3968136E301E8429006E08BC /* Build configuration list for PBXNativeTarget "SomineWidgetExtension" */;
+			buildPhases = (
+				39681350301E8428006E08BC /* Sources */,
+				39681351301E8428006E08BC /* Frameworks */,
+				39681352301E8428006E08BC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				39681359301E8428006E08BC /* SomineWidget */,
+			);
+			name = SomineWidgetExtension;
+			productName = SomineWidgetExtension;
+			productReference = 39681354301E8428006E08BC /* SomineWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -366,6 +435,7 @@
 			);
 			dependencies = (
 				39109B272F2619F200C3CBF0 /* PBXTargetDependency */,
+				39681368301E8429006E08BC /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -390,6 +460,9 @@
 					39109B1D2F2619F200C3CBF0 = {
 						CreatedOnToolsVersion = 26.2;
 					};
+					39681353301E8428006E08BC = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
@@ -412,6 +485,7 @@
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				39109B1D2F2619F200C3CBF0 /* somine */,
+				39681353301E8428006E08BC /* SomineWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -431,10 +505,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		39681352301E8428006E08BC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EC1CF9000F007C117D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39AA01A1301F0001006E08BC /* PrivacyInfo.xcprivacy in Resources */,
 				518F013C3C53B230A136792B /* icon_dark@2x.png in Resources */,
 				570CF1BCF5306FFF34210B17 /* icon_dark@3x.png in Resources */,
 				FB7D01573636749ACB5782C5 /* icon_dark~ipad.png in Resources */,
@@ -614,6 +696,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		39681350301E8428006E08BC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EA1CF9000F007C117D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -635,6 +724,11 @@
 			isa = PBXTargetDependency;
 			target = 39109B1D2F2619F200C3CBF0 /* somine */;
 			targetProxy = 39109B262F2619F200C3CBF0 /* PBXContainerItemProxy */;
+		};
+		39681368301E8429006E08BC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 39681353301E8428006E08BC /* SomineWidgetExtension */;
+			targetProxy = 39681367301E8429006E08BC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -913,6 +1007,132 @@
 			};
 			name = Profile;
 		};
+		3968136A301E8429006E08BC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = SomineWidget/SomineWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QCV55Z625Q;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SomineWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SomineWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.somine.app.SomineWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3968136B301E8429006E08BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = SomineWidget/SomineWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QCV55Z625Q;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SomineWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SomineWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.somine.app.SomineWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		3968136C301E8429006E08BC /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = SomineWidget/SomineWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QCV55Z625Q;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SomineWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SomineWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.somine.app.SomineWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
+		};
 		97C147031CF9000F007C117D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1098,6 +1318,16 @@
 				39109B2B2F2619F200C3CBF0 /* Debug */,
 				39109B2C2F2619F200C3CBF0 /* Release */,
 				39109B2D2F2619F200C3CBF0 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3968136E301E8429006E08BC /* Build configuration list for PBXNativeTarget "SomineWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3968136A301E8429006E08BC /* Debug */,
+				3968136B301E8429006E08BC /* Release */,
+				3968136C301E8429006E08BC /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
