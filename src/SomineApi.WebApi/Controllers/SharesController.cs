@@ -13,6 +13,7 @@ using SomineApi.Domain.Notifications;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
 using SomineApi.WebApi.Hubs;
+using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Options;
 using System.Security.Cryptography;
 
@@ -27,6 +28,7 @@ public class SharesController : ControllerBase
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
     private readonly ISubscriptionTierService _subscriptionTierService;
     private readonly PublicWebOptions _publicWebOptions;
+    private readonly IReportAlertQueue _reportAlertQueue;
     private readonly ILogger<SharesController> _logger;
 
     public SharesController(
@@ -34,12 +36,14 @@ public class SharesController : ControllerBase
         IUserRealtimeEventPublisher realtimeEventPublisher,
         ISubscriptionTierService subscriptionTierService,
         IOptions<PublicWebOptions> publicWebOptions,
+        IReportAlertQueue reportAlertQueue,
         ILogger<SharesController> logger)
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
         _subscriptionTierService = subscriptionTierService;
         _publicWebOptions = publicWebOptions.Value;
+        _reportAlertQueue = reportAlertQueue;
         _logger = logger;
     }
 
@@ -300,7 +304,7 @@ public class SharesController : ControllerBase
     }
 
     // Alıcı için: paylaşılan koleksiyonu şikâyet eder (App Store 1.2 / UGC).
-    // Kayıt kalıcıdır; ops ekibi Warning log'undan görür. API'de e-posta servisi yok.
+    // Kayıt kalıcıdır; moderatöre arka planda e-posta gider (Moderation ayarları, ReportAlertBackgroundService).
     [HttpPost("{id}/report")]
     public async Task<ActionResult<ContentReportDto>> ReportShare(Guid id, [FromBody] ReportShareRequest request)
     {
@@ -348,6 +352,7 @@ public class SharesController : ControllerBase
         _logger.LogWarning(
             "UGC report {ReportId}: reporter {ReporterId} reported user {ReportedUserId} for share {ShareId} / category {CategoryId}, reason {Reason}",
             report.Id, report.ReporterId, report.ReportedUserId, report.ShareId, report.CategoryId, report.Reason);
+        _reportAlertQueue.Enqueue(report.Id);
 
         return Ok(new ContentReportDto(report.Id, report.Reason.ToString(), report.Status.ToString(), report.CreatedAt));
     }

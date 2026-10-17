@@ -9,6 +9,7 @@ using SomineApi.Infrastructure.Repositories;
 using SomineApi.Infrastructure.Services;
 using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Hubs;
+using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Logging;
 using SomineApi.WebApi.Middleware;
 using SomineApi.WebApi.Options;
@@ -51,6 +52,9 @@ builder.Services.AddSingleton<IEmbeddingQueue, ChannelEmbeddingQueue>();
 builder.Services.AddHostedService<EmbeddingBackgroundService>();
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<ReminderNotificationBackgroundService>();
+builder.Services.AddSingleton<IReportAlertQueue, ChannelReportAlertQueue>();
+builder.Services.AddSingleton<IReportAlertSender, SmtpReportAlertSender>();
+builder.Services.AddHostedService<ReportAlertBackgroundService>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.Configure<ClientRequestSecurityOptions>(
@@ -65,6 +69,8 @@ builder.Services.Configure<SearchOptions>(
     builder.Configuration.GetSection(SearchOptions.SectionName));
 builder.Services.Configure<ReminderNotificationOptions>(
     builder.Configuration.GetSection(ReminderNotificationOptions.SectionName));
+builder.Services.Configure<ModerationOptions>(
+    builder.Configuration.GetSection(ModerationOptions.SectionName));
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");

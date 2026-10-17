@@ -12,6 +12,7 @@ using SomineApi.Application.Interfaces;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Logging;
+using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Reminders;
 
 namespace SomineApi.Tests.Testing;
@@ -28,6 +29,8 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
     public FakeFirebaseAuthService FirebaseAuthService { get; } = new();
 
     public FakeEmbeddingService EmbeddingService { get; } = new();
+
+    public FakeReportAlertSender ReportAlertSender { get; } = new();
 
     public SaveChangesHookInterceptor SaveChangesHook { get; } = new();
 
@@ -48,6 +51,8 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
                 ["Jwt:Issuer"] = "somine-api",
                 ["Jwt:Audience"] = "somine-app",
                 ["Jwt:AccessTokenExpireMinutes"] = "60",
+                ["Moderation:ReportEmail"] = "moderator@example.com",
+                ["Moderation:Smtp:Host"] = "smtp.invalid",
                 ["Storage:LocalPath"] = Path.Combine(Path.GetTempPath(), "somine-api-tests", Guid.NewGuid().ToString("N"))
             });
         });
@@ -61,6 +66,8 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
             services.RemoveAll<ILogPersistenceQueue>();
             services.RemoveAll<IFirebaseAuthService>();
             services.RemoveAll<IEmbeddingService>();
+            services.RemoveAll<IReportAlertSender>();
+            services.AddSingleton<IReportAlertSender>(ReportAlertSender);
 
             var hostedServices = services
                 .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)

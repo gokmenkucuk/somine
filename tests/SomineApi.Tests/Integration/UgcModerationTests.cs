@@ -61,6 +61,53 @@ public class UgcModerationTests
     }
 
     [Fact]
+    public async Task ReportShare_EmailsModeratorWithReasonPeopleAndLinks()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        var sender = TestUser("alert-sender");
+        var recipient = TestUser("alert-recipient");
+        var category = TestCategory(sender.Id, "Alerted");
+        var share = TestShare(sender.Id, recipient.Id, category.Id, ShareStatus.Accepted);
+        await SeedAsync(factory, db =>
+        {
+            db.Users.AddRange(sender, recipient);
+            db.Categories.Add(category);
+            db.CollectionShares.Add(share);
+            db.Items.Add(new Item
+            {
+                Id = Guid.NewGuid(),
+                UserId = sender.Id,
+                CategoryId = category.Id,
+                Url = "https://bad.example.com/page",
+                OgTitle = "Bad page"
+            });
+        });
+
+        using var client = factory.CreateAuthenticatedClient(recipient.Id, recipient.Email!, recipient.FirebaseUid);
+        var response = await client.PostAsJsonAsync($"/api/shares/{share.Id}/report", new { reason = "harassment", note = "rude" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var reportId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+        var email = await factory.ReportAlertSender.WaitForEmailAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal("moderator@example.com", email.To);
+        Assert.StartsWith("[SoMine Şikayet] Taciz", email.Subject);
+        Assert.Contains("rude", email.TextBody);
+        Assert.Contains(sender.Id.ToString(), email.TextBody);
+        Assert.Contains(recipient.Id.ToString(), email.TextBody);
+        Assert.Contains("Alerted", email.TextBody);
+        Assert.Contains("https://bad.example.com/page", email.TextBody);
+        Assert.Contains(reportId.ToString(), email.TextBody);
+        Assert.Contains($"WHERE id = '{share.Id}'", email.TextBody);
+
+        // Aynı paylaşım için tekrar şikâyet yeni e-posta göndermez.
+        await client.PostAsJsonAsync($"/api/shares/{share.Id}/report", new { reason = "spam" });
+        await Task.Delay(300);
+        Assert.Single(factory.ReportAlertSender.Sent);
+    }
+
+    [Fact]
     public async Task ReportShare_RejectsInvalidInputAndNonRecipients()
     {
         using var factory = new SomineApiWebApplicationFactory();

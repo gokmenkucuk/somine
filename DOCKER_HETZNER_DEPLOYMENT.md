@@ -47,6 +47,7 @@ Not:
 
 - Sadece IP ile test edeceksen `Jwt__Issuer` ve `Storage__BaseUrl` IP tabanlı olabilir.
 - Mobil istemci imzalı client proof üretmiyorsa `ClientRequestSecurity__Enabled=false` kalmalı.
+- Şikâyet e-postaları için `Moderation__ReportEmail` ve `Moderation__Smtp__*` doldurulmalı. Boşsa şikâyetler yalnızca `content_reports` tablosuna düşer, kimseye haber gitmez.
 
 ## 4. Firebase admin dosyasını yerleştir
 
