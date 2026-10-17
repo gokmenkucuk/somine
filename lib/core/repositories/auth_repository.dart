@@ -13,6 +13,7 @@ import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/metadata_service.dart';
+import 'package:somine_app/core/services/push_notification_service.dart';
 import 'package:somine_app/core/services/subscription_service.dart';
 
 /// Hata kodları: UI bunları l10n metinlerine çevirir; ham `e.toString()`
@@ -443,6 +444,10 @@ class AuthRepository {
   Future<void> signOut() async {
     debugPrint('🔵 [AuthRepository] Signing out...');
 
+    // Push token'ı backend oturumu kapanmadan sil: çıkış yapılmış cihaza
+    // bildirim gitmesin. Hata yutulur, çıkışı engellemez.
+    await PushNotificationService().unregisterCurrentDevice();
+
     try {
       await _backendAuthService.logout();
     } catch (e) {
@@ -499,6 +504,10 @@ class AuthRepository {
 
       final userId = user.uid;
       debugPrint('🔵 [AuthRepository] Deleting account for user: $userId');
+
+      // 0b. Bu cihazın push token'ını sil (sunucu hesap silmede de siler;
+      // bu, silme yarıda kalırsa bile cihaza bildirim gitmemesini sağlar).
+      await PushNotificationService().unregisterCurrentDevice();
 
       // 1. Delete all user items
       try {

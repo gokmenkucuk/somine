@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:somine_app/core/design/app_theme.dart';
@@ -26,6 +27,7 @@ import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:somine_app/core/services/notification_service.dart';
+import 'package:somine_app/core/services/push_notification_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/core/services/analytics_service.dart';
 import 'package:somine_app/core/services/weekly_digest_service.dart';
@@ -139,6 +141,8 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
   StreamSubscription<Map<String, dynamic>>? _categoriesRealtimeSubscription;
   StreamSubscription<Map<String, dynamic>>? _notificationsRealtimeSubscription;
   StreamSubscription<Uri?>? _widgetClickedSubscription;
+  StreamSubscription<RemoteMessage>? _pushOpenedSubscription;
+  StreamSubscription<RemoteMessage>? _pushForegroundSubscription;
 
   @override
   void initState() {
@@ -156,6 +160,9 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
       // soğuk başlangıç + çalışırken tıklama. Navigator hazır olsun diye
       // post-frame'de kurulur; hatalar akışı bozmaz.
       unawaited(_initHomeWidgetHandling());
+
+      // Uzak bildirim (FCM) dokunuşları: soğuk başlangıç + arka plandan açılış.
+      unawaited(_initPushHandling());
     });
 
     _itemsRealtimeSubscription = _backendRealtimeService.itemsChanges.listen((
@@ -181,6 +188,8 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
         }
 
         unawaited(_backendRealtimeService.connectForCurrentUser());
+        // Push için cihaz token'ını API'ye bildir (hatalar servis içinde yutulur).
+        unawaited(PushNotificationService().registerForCurrentUser());
       },
       fireImmediately: true,
     );
@@ -193,6 +202,8 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
     _categoriesRealtimeSubscription?.cancel();
     _notificationsRealtimeSubscription?.cancel();
     _widgetClickedSubscription?.cancel();
+    _pushOpenedSubscription?.cancel();
+    _pushForegroundSubscription?.cancel();
     unawaited(_backendRealtimeService.dispose());
     super.dispose();
   }
@@ -221,6 +232,97 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
     } catch (e) {
       debugPrint('❌ [HomeWidget] init error (ignored): $e');
     }
+  }
+
+  /// FCM bildirim dokunuşu dinleyicileri.
+  ///
+  /// Ön planda gelen push için sistem bildirimi gösterilmez (iOS varsayılanı);
+  /// uygulama içi banner'ı SignalR olayı gösterir, burada yalnızca liste
+  /// tazelenir. Böylece aynı bildirim iki kez görünmez.
+  Future<void> _initPushHandling() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+
+      _pushOpenedSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
+        (message) => unawaited(_handlePushOpened(message)),
+        onError: (Object e) => debugPrint('❌ [Push] opened stream error: $e'),
+      );
+      _pushForegroundSubscription = FirebaseMessaging.onMessage.listen(
+        (_) {
+          if (ref.read(authStateProvider).valueOrNull == null) return;
+          ref.invalidate(notificationsProvider);
+          ref.invalidate(unreadNotificationCountProvider);
+        },
+        onError: (Object e) => debugPrint('❌ [Push] message stream error: $e'),
+      );
+
+      // Uygulama kapalıyken bildirime dokunularak açıldıysa.
+      final initialMessage = await messaging.getInitialMessage();
+      if (initialMessage != null) {
+        await _handlePushOpened(initialMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ [Push] init error (ignored): $e');
+    }
+  }
+
+  /// Push dokunuşunu uygulama içi banner'la aynı hedefe yönlendirir.
+  Future<void> _handlePushOpened(RemoteMessage message) async {
+    final data = message.data;
+    final type = NotificationType.values.firstWhere(
+      (t) =>
+          t.name.toLowerCase() ==
+          (data['type']?.toString() ?? '').toLowerCase(),
+      orElse: () => NotificationType.unknown,
+    );
+    if (type == NotificationType.unknown) return;
+
+    // Soğuk başlangıçta splash ve oturum çözülene kadar bekle.
+    final user = await _waitForPushTarget();
+    if (user == null) return;
+
+    final notificationId = data['notificationId']?.toString();
+    NotificationModel? notification;
+    if (notificationId != null && notificationId.isNotEmpty) {
+      try {
+        notification = await ref
+            .read(notificationRepositoryProvider)
+            .getNotificationById(user.uid, notificationId);
+      } catch (e) {
+        debugPrint('⚠️ [Push] notification fetch failed: $e');
+      }
+    }
+
+    // Kayıt alınamazsa push yükünden kur (alan adları aynı).
+    notification ??= NotificationModel(
+      id: notificationId,
+      userId: user.uid,
+      type: type,
+      title: message.notification?.title ?? '',
+      message: message.notification?.body ?? '',
+      data: Map<String, dynamic>.from(data),
+      createdAt: DateTime.now(),
+    );
+
+    ref.invalidate(notificationsProvider);
+    ref.invalidate(unreadNotificationCountProvider);
+    _openNotificationDestination(notification);
+  }
+
+  /// Splash bitip oturum açık kullanıcı ve navigator hazır olana kadar
+  /// (en fazla ~15 sn) bekler. Hazır olmazsa null.
+  Future<User?> _waitForPushTarget() async {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      final user = ref.read(authStateProvider).valueOrNull;
+      if (mounted &&
+          _isSplashFinished &&
+          user != null &&
+          _navigatorKey.currentState != null) {
+        return user;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+    return null;
   }
 
   /// `somine://item/<id>?homeWidget` URI'sinden itemId çıkarır ve item
@@ -273,6 +375,13 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
     ref.invalidate(notificationsProvider);
     ref.invalidate(unreadNotificationCountProvider);
+
+    // Uygulama arka plandayken (SignalR bağlantısı henüz kopmamışken) gelen
+    // olay için banner gösterme: kullanıcı aynı bildirimi sistem push'u olarak
+    // görüyor; dokunup döndüğünde ikinci kez banner çıkmasın.
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
 
     final action =
         (payload['action'] ?? payload['Action'])?.toString().toLowerCase();
