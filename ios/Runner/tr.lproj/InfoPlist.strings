@@ -1,0 +1,5 @@
+/* Yerelleştirilmiş izin metinleri (Türkçe). */
+"NSFaceIDUsageDescription" = "Somine, Gizli Kasa'nızı Face ID ile açar; böylece oraya koyduğunuz içerikleri yalnızca siz görürsünüz.";
+"NSLocationWhenInUseUsageDescription" = "Somine konumunuzu takip etmez. Konum yalnızca kaydettiğiniz yerlerin harita önizlemesinde size göre nerede olduklarını göstermek için kullanılır.";
+"NSPhotoLibraryUsageDescription" = "Somine, içerik olarak kaydetmek veya profil fotoğrafı yapmak istediğiniz görseli seçebilmeniz için fotoğraflarınıza erişir.";
+"NSCameraUsageDescription" = "Somine, fotoğraf çekip doğrudan koleksiyonlarınıza kaydedebilmeniz için kamerayı kullanır.";

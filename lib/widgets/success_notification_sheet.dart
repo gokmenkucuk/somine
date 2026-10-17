@@ -15,6 +15,7 @@ import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/core/utils/resurfacing_dates.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
 
 class SuccessNotificationSheet extends ConsumerStatefulWidget {
   final String title;
@@ -35,7 +36,8 @@ class SuccessNotificationSheet extends ConsumerStatefulWidget {
     this.quickReminderItemTitle,
   });
 
-  static Future<void> show(BuildContext context, {
+  static Future<void> show(
+    BuildContext context, {
     required String title,
     required String message,
     VoidCallback? onUndo,
@@ -46,13 +48,14 @@ class SuccessNotificationSheet extends ConsumerStatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => SuccessNotificationSheet(
-        title: title,
-        message: message,
-        onUndo: onUndo,
-        quickReminderItemId: quickReminderItemId,
-        quickReminderItemTitle: quickReminderItemTitle,
-      ),
+      builder:
+          (context) => SuccessNotificationSheet(
+            title: title,
+            message: message,
+            onUndo: onUndo,
+            quickReminderItemId: quickReminderItemId,
+            quickReminderItemTitle: quickReminderItemTitle,
+          ),
     );
   }
 
@@ -74,21 +77,44 @@ class _SuccessNotificationSheetState
       widget.quickReminderItemId != null &&
       widget.quickReminderItemId!.isNotEmpty;
 
+  /// Bildirim izni isteği sürerken otomatik kapanma bekletilir; aksi halde
+  /// sistem diyaloğu açıkken sheet (ve hızlı hatırlatıcı aksiyonları)
+  /// arkada kapanıp kaybolabiliyordu.
+  bool _isPermissionPromptPending = false;
+
+  Duration get _initialDismissDelay =>
+      Duration(seconds: (widget.onUndo != null || _hasQuickReminder) ? 4 : 2);
+
   @override
   void initState() {
     super.initState();
-    // Auto-dismiss: undo veya hızlı aksiyon varsa 4sn, yoksa 2sn.
-    _startDismissTimer(
-      Duration(
-        seconds: (widget.onUndo != null || _hasQuickReminder) ? 4 : 2,
-      ),
-    );
-    // İlk içerik kaydı bildirim iznini istemek için en anlamlı an: hatırlatıcı ve
-    // haftalık özet buna bağlı. Karar verilmişse iOS tekrar sormaz.
-    if (_hasQuickReminder) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => unawaited(NotificationService().requestPermissions()),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // İlk içerik kaydı bildirim iznini istemek için en anlamlı an:
+      // hatırlatıcı ve haftalık özet buna bağlı. Karar verilmişse iOS
+      // tekrar sormaz.
+      if (_hasQuickReminder) {
+        unawaited(_requestNotificationPermission());
+      }
+      // Auto-dismiss: undo veya hızlı aksiyon varsa 4sn, yoksa 2sn.
+      _startDismissTimer(_initialDismissDelay);
+    });
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    _isPermissionPromptPending = true;
+    _dismissTimer?.cancel();
+    try {
+      await NotificationService().requestPermissions();
+    } catch (e) {
+      debugPrint('SuccessSheet permission request error: $e');
+    } finally {
+      _isPermissionPromptPending = false;
+      // Kullanıcı izin diyaloğunu kapattıktan sonra aksiyonları görebilsin
+      // diye süre baştan başlar.
+      if (mounted && !_isSchedulingReminder) {
+        _startDismissTimer(_initialDismissDelay);
+      }
     }
   }
 
@@ -100,6 +126,10 @@ class _SuccessNotificationSheetState
 
   void _startDismissTimer(Duration duration) {
     _dismissTimer?.cancel();
+    // VoiceOver/Switch Control açıkken otomatik kapanma yok: "Geri Al" ve
+    // hızlı aksiyonlara ulaşmak zaman alır; kullanıcı X ile kapatır.
+    if (MediaQuery.accessibleNavigationOf(context)) return;
+    if (_isPermissionPromptPending) return;
     _dismissTimer = Timer(duration, () {
       if (mounted) {
         _safePop();
@@ -215,7 +245,11 @@ class _SuccessNotificationSheetState
                     : () => _onQuickReminderTap(weekend: weekend),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              foregroundColor: context.colors.primary,
+              foregroundColor: BrandGradient.ensureContrast(
+                context.colors.primary,
+                Colors.white,
+                BrandGradient.textContrast,
+              ),
               disabledBackgroundColor: Colors.white.withValues(alpha: 0.6),
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -247,141 +281,152 @@ class _SuccessNotificationSheetState
   Widget build(BuildContext context) {
     final showQuickActions =
         _hasQuickReminder && _overrideTitle == null && _overrideMessage == null;
+    final l10n = AppLocalizations.of(context)!;
+    final foreground = BrandGradient.foreground(context);
+    // Beyaz buton üzerindeki marka rengi yazı için ≥4.5:1.
+    final onWhiteAccent = BrandGradient.ensureContrast(
+      context.colors.primary,
+      Colors.white,
+      BrandGradient.textContrast,
+    );
 
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            context.colors.primary,
-            context.colors.secondary,
-          ],
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          // Beyaz/onPrimary yazı için ≥4.5:1 kontrastlı marka gradyanı.
+          gradient: BrandGradient.linear(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 16, 32, 56),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Drag Handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Icon Circle
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      PhosphorIconsBold.check,
-                      color: Colors.white,
-                      size: 32,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 16, 32, 56),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Drag Handle
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: foreground.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                // Title
-                Text(
-                  _overrideTitle ?? widget.title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Message
-                Text(
-                  _overrideMessage ?? widget.message,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.9),
-                    height: 1.5,
-                  ),
-                ),
-                if (showQuickActions) ...[
-                  const SizedBox(height: 24),
-                  _buildQuickReminderActions(context),
-                ],
-                if (widget.onUndo != null) ...[
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        widget.onUndo!();
-                        _safePop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: context.colors.primary,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        "Geri Al",
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  // Icon Circle
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: foreground.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        PhosphorIconsBold.check,
+                        color: foreground,
+                        size: 32,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  // Title
+                  Text(
+                    _overrideTitle ?? widget.title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: foreground,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Message
+                  Text(
+                    _overrideMessage ?? widget.message,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: foreground,
+                      height: 1.5,
+                    ),
+                  ),
+                  if (showQuickActions) ...[
+                    const SizedBox(height: 24),
+                    _buildQuickReminderActions(context),
+                  ],
+                  if (widget.onUndo != null) ...[
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onUndo!();
+                          _safePop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: onWhiteAccent,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          l10n.commonUndo,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
                 ],
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
-          ),
 
-          // Close Button
-          Positioned(
-            top: 20,
-            right: 20,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
+            // Close Button
+            Positioned(
+              top: 20,
+              right: 20,
+              child: Semantics(
+                button: true,
+                label: l10n.a11yClose,
+                excludeSemantics: true,
                 onTap: _safePop,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    PhosphorIconsLight.x,
-                    size: 20,
-                    color: Colors.white.withValues(alpha: 0.8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _safePop,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        PhosphorIconsLight.x,
+                        size: 20,
+                        color: foreground,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

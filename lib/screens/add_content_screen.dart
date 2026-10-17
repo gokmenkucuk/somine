@@ -20,10 +20,13 @@ import 'package:somine_app/core/services/metadata_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
-import 'dart:math' as math;
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/widgets/circle_icon_button.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
+import 'package:somine_app/widgets/confirm_dialogs.dart';
+import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart' as net;
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
 import 'package:somine_app/core/utils/content_preview_policy.dart';
@@ -37,6 +40,7 @@ import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/core/utils/date_display.dart';
 import 'package:somine_app/core/utils/category_display.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 
 /// AddContentScreen pop sözleşmesi: başarıda `Navigator.pop(context, AddContentResult(...))`
 /// döner (eskiden `true` idi). Çağıranlar `result != null` / `result is AddContentResult`
@@ -76,11 +80,19 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   final CategoryRepository _categoryRepository = CategoryRepository();
   final ItemRepository _itemRepository = ItemRepository();
 
-  // Animation
-  late AnimationController _textAnimationController;
+  // Animation (yalnız metadata yüklenirken platform arka planındaki
+  // shimmer'ı sürer; Reduce Motion açıksa hiç çalışmaz).
   late AnimationController _loadingController;
-  late AnimationController _rotationController;
-  late AnimationController _arrowAnimationController;
+
+  // Sheet boyutu: aşağı kaydırıp min boyuta inince kapatma (maybePop) ve
+  // "Düzenlemeye devam et" sonrası tam boya geri dönme için.
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  bool _isDismissPromptOpen = false;
+  bool _dragDismissRequested = false;
+
+  // Edit modunda başlangıç durumu; kaydedilmemiş değişiklik tespiti için.
+  String? _initialEditSnapshot;
 
   // State
   bool _isSaving = false;
@@ -255,18 +267,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   void initState() {
     super.initState();
 
-    // Text Gradient Animation (Looping)
-    _textAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10), // Slow, smooth flow
-    )..repeat();
-
-    // Arrow shimmer animation for toggle
-    _arrowAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-
     // Listeners for UI updates (Delete icon opacity)
     _titleController.addListener(() => setState(() {}));
     _noteController.addListener(() => setState(() {}));
@@ -284,17 +284,22 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       }
     });
 
-    // Loading Animation (Heartbeat effect)
+    // Loading Animation (Heartbeat effect). Tekrarı didChangeDependencies'te
+    // Reduce Motion ayarına göre başlatılır/durdurulur.
     _loadingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
+    );
+  }
 
-    // Ambient Rotation
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      if (_loadingController.isAnimating) _loadingController.stop();
+    } else if (!_loadingController.isAnimating) {
+      _loadingController.repeat(reverse: true);
+    }
   }
 
   @override
@@ -302,10 +307,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     _titleController.dispose();
     _noteController.dispose();
     _linkController.dispose();
-    _textAnimationController.dispose();
     _loadingController.dispose();
-    _rotationController.dispose();
-    _arrowAnimationController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -366,7 +369,97 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       await _loadReminder(item.id);
     }
 
+    _initialEditSnapshot = _formSnapshot();
     if (mounted) setState(() {});
+  }
+
+  // ============== UNSAVED CHANGES ==============
+
+  /// Formun kullanıcıya ait kısmının özeti (edit modunda karşılaştırma için).
+  String _formSnapshot() {
+    final categories = _selectedCategoryIds.toList()..sort();
+    return [
+      _isNoteMode,
+      _titleController.text.trim(),
+      _noteController.text.trim(),
+      _linkController.text.trim(),
+      categories.join(','),
+      _noteImageBytes?.length ?? 0,
+      _noteImageUrl ?? '',
+      _hasReminder,
+      _currentReminder?.reminderDate.toIso8601String() ?? '',
+      _currentReminder == null
+          ? ''
+          : '${_currentReminder!.reminderTime.hour}:${_currentReminder!.reminderTime.minute}',
+      _currentReminder?.repeat.name ?? '',
+    ].join('|');
+  }
+
+  /// Kapatılırsa kaybolacak bir girdi var mı?
+  bool get _hasUnsavedChanges {
+    if (_isSaving) return false;
+    if (widget.editItem != null) {
+      final initial = _initialEditSnapshot;
+      return initial != null && initial != _formSnapshot();
+    }
+    return _hasLink ||
+        _titleController.text.trim().isNotEmpty ||
+        _noteController.text.trim().isNotEmpty ||
+        _linkController.text.trim().isNotEmpty ||
+        _noteImageBytes != null;
+  }
+
+  /// Kirli formda kapatma isteği (barrier, X, aşağı kaydırma): onay sorar.
+  Future<void> _confirmDiscardAndClose() async {
+    if (_isDismissPromptOpen) return;
+    _isDismissPromptOpen = true;
+    final l10n = AppLocalizations.of(context)!;
+    final discard = await showDiscardChangesSheet(
+      context,
+      title: l10n.addContentUnsavedTitle,
+      discardLabel: l10n.addContentDiscardChanges,
+      keepEditingLabel: l10n.addContentKeepEditing,
+    );
+    _isDismissPromptOpen = false;
+    if (!mounted) return;
+    if (discard) {
+      Navigator.of(context).pop();
+    } else {
+      _restoreSheetSize();
+    }
+  }
+
+  void _restoreSheetSize() {
+    if (!_sheetController.isAttached || _sheetController.size >= 0.99) return;
+    _sheetController.animateTo(
+      1.0,
+      duration:
+          MediaQuery.disableAnimationsOf(context)
+              ? const Duration(milliseconds: 1)
+              : const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  /// Sheet min boyuta sürüklendiğinde kapatmayı dene (kirliyse onay sorulur).
+  bool _onSheetExtentChanged(DraggableScrollableNotification notification) {
+    final atMin = notification.extent <= notification.minExtent + 0.01;
+    if (!atMin) {
+      // Kullanıcı sheet'i yeniden yukarı çekti; bir sonraki iniş yine
+      // kapatmayı tetikleyebilsin.
+      if (notification.extent > notification.minExtent + 0.05) {
+        _dragDismissRequested = false;
+      }
+      return false;
+    }
+    if (_dragDismissRequested || _isDismissPromptOpen) return false;
+    final route = ModalRoute.of(context);
+    if (route != null && route.isCurrent) {
+      // Bildirimler min boyutta art arda gelir; tek bir kapatma isteği yolla.
+      _dragDismissRequested = true;
+      Navigator.of(context).maybePop();
+    }
+    return false;
   }
 
   // ============== BUSINESS LOGIC ==============
@@ -374,7 +467,9 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Future<void> _ensureHizliCategory(List<CategoryModel> categories) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
-    final hasHizli = categories.any((c) => c.name.toLowerCase() == kQuickCategoryKey.toLowerCase());
+    final hasHizli = categories.any(
+      (c) => c.name.toLowerCase() == kQuickCategoryKey.toLowerCase(),
+    );
     if (!hasHizli) {
       final now = DateTime.now();
       await _categoryRepository.createCategory(
@@ -796,6 +891,18 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     _measuredImageHeight = null;
   }
 
+  /// Oluşturma modundaki çöp kutusu: girilen her şeyi silmeden önce onay.
+  Future<void> _confirmClearContent() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: l10n.addContentClearConfirmTitle,
+      confirmLabel: l10n.addContentClearAction,
+      cancelLabel: l10n.commonCancel,
+    );
+    if (confirmed && mounted) _clearContent();
+  }
+
   void _clearContent() {
     setState(() {
       _ogMetadata = null;
@@ -1023,6 +1130,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       }
     }
 
+    // --- DUPLICATE LINK CHECK (create mode) ---
+    if (widget.editItem == null && !_isNoteMode && _hasLink) {
+      final proceed = await _confirmIfDuplicateLink(l10n);
+      if (!proceed || !mounted) return;
+    }
+
     // --- ITEM LIMIT CHECK FOR STARTER TIER ---
     final subState = ref.read(subscriptionProvider);
     final subNotifier = ref.read(subscriptionProvider.notifier);
@@ -1160,8 +1273,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           hasMeasuredOgImageSize &&
           finalMetadata?.imageUrl != null &&
           (!_isNoteMode ||
-              (_noteImageBytes == null &&
-                  noteImageUrl == measuredForImageUrl));
+              (_noteImageBytes == null && noteImageUrl == measuredForImageUrl));
       final int? ogImageWidth = sendOgImageSize ? _measuredImageWidth : null;
       final int? ogImageHeight = sendOgImageSize ? _measuredImageHeight : null;
 
@@ -1203,6 +1315,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Create clones for other selected categories
         if (targetIds.isNotEmpty) {
           final results = <String, bool>{};
+          Object? lastError;
           for (final catId in targetIds) {
             try {
               final clone = updatedItem.copyWith(
@@ -1216,6 +1329,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             } catch (e) {
               debugPrint('Failed to create clone for category $catId: $e');
               results[catId] = false;
+              lastError = e;
             }
           }
 
@@ -1237,15 +1351,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
               );
             }
           } else if (failCount == results.length) {
-            // All failed
+            // All failed — hata sheet'in İÇİNDE gösterilir (Home'un
+            // Scaffold'una düşen SnackBar tam boy sheet'in altında kalıyordu).
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.addContentAddFailed),
-                  backgroundColor: context.colors.danger,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+              _showError(_saveFailureMessage(lastError, l10n));
               return; // Don't close the screen
             }
           }
@@ -1264,6 +1373,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         // Create items for each selected category with error tracking
         final results = <String, bool>{};
         ItemModel? firstSuccessfulItem;
+        Object? lastError;
 
         for (final catId in _selectedCategoryIds) {
           try {
@@ -1291,6 +1401,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           } catch (e) {
             debugPrint('Failed to create item for category $catId: $e');
             results[catId] = false;
+            lastError = e;
           }
         }
 
@@ -1299,16 +1410,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         final failCount = results.values.where((v) => !v).length;
 
         if (failCount == results.length) {
-          // All failed
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.addContentAddFailed),
-                backgroundColor: context.colors.danger,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
+          // All failed — hata sheet'in içinde, link/girdi korunarak gösterilir.
+          if (mounted) _showError(_saveFailureMessage(lastError, l10n));
           return; // Don't close the screen
         }
 
@@ -1333,9 +1436,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         }
 
         await _maybeShowItemLimitWarning();
-        _logContentAddAnalytics(
-          firstSuccessfulItem?.type ?? ItemType.note,
-        );
+        _logContentAddAnalytics(firstSuccessfulItem?.type ?? ItemType.note);
         _syncHomeWidgetData();
         if (mounted) {
           Navigator.pop(
@@ -1352,7 +1453,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       }
     } catch (e) {
       debugPrint("Save error: $e");
-      if (mounted) _showError(l10n.addContentGenericError);
+      if (mounted) _showError(_saveFailureMessage(e, l10n));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -1400,6 +1501,124 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         ),
       );
     }
+  }
+
+  /// Kayıt hatasını kullanıcı mesajına çevirir. Bağlantı/zaman aşımı
+  /// hatalarında girdinin korunduğunu söyleyen özel mesaj gösterilir.
+  String _saveFailureMessage(Object? error, AppLocalizations l10n) {
+    if (error is net.NetworkFailure ||
+        error is net.TimeoutException ||
+        error is TimeoutException ||
+        error is SocketException) {
+      return l10n.addContentOfflineError;
+    }
+    if (error is net.ValidationException ||
+        error is net.ConflictException ||
+        error is net.UnauthorizedException) {
+      return FailureMapper.toUserMessage(error!, l10n);
+    }
+    return l10n.addContentAddFailed;
+  }
+
+  // ============== DUPLICATE LINK ==============
+
+  /// Karşılaştırma için URL'i sadeleştirir: şema/host küçük harf, `www.`,
+  /// fragment, izleme parametreleri (utm_*, fbclid, gclid, igsh, si) ve
+  /// sondaki `/` atılır.
+  static String _normalizeUrl(String raw) {
+    final trimmed = raw.trim();
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.host.isEmpty) {
+      return trimmed.toLowerCase().replaceAll(RegExp(r'/+$'), '');
+    }
+    var host = uri.host.toLowerCase();
+    if (host.startsWith('www.')) host = host.substring(4);
+    if (host == 'm.youtube.com') host = 'youtube.com';
+    const tracking = {'fbclid', 'gclid', 'igsh', 'igshid', 'si', 'ref'};
+    final params =
+        uri.queryParameters.entries
+            .where(
+              (e) =>
+                  !e.key.toLowerCase().startsWith('utm_') &&
+                  !tracking.contains(e.key.toLowerCase()),
+            )
+            .map((e) => '${e.key}=${e.value}')
+            .toList()
+          ..sort();
+    final path = uri.path.replaceAll(RegExp(r'/+$'), '');
+    return '$host$path${params.isEmpty ? '' : '?${params.join('&')}'}';
+  }
+
+  /// Aynı link zaten kayıtlıysa kullanıcıya sorar. Yeni bir API çağrısı
+  /// yapmaz; cihazda zaten yüklü olan liste(ler)e bakar. Kaydetmeye devam
+  /// edilecekse `true` döner.
+  Future<bool> _confirmIfDuplicateLink(AppLocalizations l10n) async {
+    if (_detectedLink.isEmpty) return true;
+    final target = _normalizeUrl(_detectedLink);
+    final loaded = <ItemModel>[
+      ...?ref.read(catalogItemsProvider).valueOrNull,
+      ...ref.read(paginatedFeedProvider).items,
+    ];
+    ItemModel? existing;
+    for (final item in loaded) {
+      final url = item.url;
+      if (url != null && url.isNotEmpty && _normalizeUrl(url) == target) {
+        existing = item;
+        break;
+      }
+    }
+    if (existing == null) return true;
+
+    final categories = ref.read(categoriesProvider).valueOrNull ?? [];
+    CategoryModel? category;
+    for (final c in categories) {
+      if (c.id == existing.categoryId) {
+        category = c;
+        break;
+      }
+    }
+    final collectionName =
+        category == null
+            ? l10n.commonDefaultCategory
+            : categoryDisplayName(context, category.name);
+
+    final choice = await showCupertinoModalPopup<String>(
+      context: context,
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: Text(l10n.addContentDuplicateTitle(collectionName)),
+            actions: [
+              CupertinoActionSheetAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.of(ctx).pop('open'),
+                child: Text(l10n.addContentDuplicateOpen),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () => Navigator.of(ctx).pop('save'),
+                child: Text(l10n.addContentDuplicateSaveAnyway),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.commonCancel),
+            ),
+          ),
+    );
+    if (!mounted) return false;
+    if (choice == 'save') return true;
+    if (choice == 'open') {
+      final existingItem = existing;
+      // Var olan kaydı aç; detay kapanınca ekleme sheet'i de kapanır
+      // (aynı link ikinci kez kaydedilmedi, kaybolan girdi yok).
+      await ItemDetailBottomSheet.show(
+        context,
+        existingItem,
+        collectionName,
+        categories,
+      );
+      if (mounted) Navigator.of(context).pop();
+    }
+    return false;
   }
 
   void _showError(String message) {
@@ -1556,113 +1775,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
   }
 
-  void _showDeleteConfirmation() {
+  Future<void> _showDeleteConfirmation() async {
     final l10n = AppLocalizations.of(context)!;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Center(
-            child: Text(
-              l10n.deleteConfirmTitle,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: context.colors.headline,
-              ),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                l10n.deleteItemConfirm,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: context.colors.body,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          backgroundColor: context.colors.surfaceWhite,
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => Navigator.pop(context),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.grey.shade300, Colors.grey.shade400],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          l10n.commonDiscard,
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey.shade800,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.pop(context); // Close dialog
-                      _deleteItem();
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFFFF5252),
-                            const Color(0xFFD32F2F),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: context.colors.danger.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          l10n.commonDelete,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: l10n.deleteConfirmTitle,
+      message: l10n.deleteItemConfirm,
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
     );
+    if (confirmed && mounted) _deleteItem();
   }
 
   // ============== UI BUILD ==============
@@ -1696,101 +1818,125 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       });
     });
 
-    return DraggableScrollableSheet(
-      initialChildSize: 1.0,
-      minChildSize: 0.6,
-      maxChildSize: 1.0,
-      snap: true,
-      builder: (context, scrollController) {
-        return Material(
-          color:
-              Colors
-                  .transparent, // Material typically needs a color or transparent
-          type: MaterialType.transparency, // Important for overlay
-          child: GestureDetector(
-            behavior:
-                HitTestBehavior.opaque, // Ensures taps on empty areas work
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: context.colors.surfaceWhite,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
+    final l10n = AppLocalizations.of(context)!;
+
+    return PopScope(
+      // Kirli formda barrier dokunuşu / X / aşağı kaydırma doğrudan kapatmaz;
+      // önce "Değişiklikleri at / Düzenlemeye devam et" sorulur.
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _confirmDiscardAndClose();
+      },
+      child: NotificationListener<DraggableScrollableNotification>(
+        onNotification: _onSheetExtentChanged,
+        child: DraggableScrollableSheet(
+          controller: _sheetController,
+          initialChildSize: 1.0,
+          minChildSize: 0.6,
+          maxChildSize: 1.0,
+          snap: true,
+          builder: (context, scrollController) {
+            return Material(
+              color:
+                  Colors
+                      .transparent, // Material typically needs a color or transparent
+              type: MaterialType.transparency, // Important for overlay
+              child: GestureDetector(
+                behavior:
+                    HitTestBehavior.opaque, // Ensures taps on empty areas work
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: context.colors.surfaceWhite,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Main Content
+                      SingleChildScrollView(
+                        controller:
+                            scrollController, // Crucial for drag-to-dismiss
+                        physics:
+                            const AlwaysScrollableScrollPhysics(), // Ensure drag works even if content is short
+                        child: Column(
+                          children: [
+                            // Hide hero stage in Note mode
+                            if (!_isNoteMode) _buildHeroStage(),
+                            if (_hasLink || _isManualEntry || _isNoteMode)
+                              _buildControlCenter(),
+                            const SizedBox(height: 140),
+                          ],
+                        ),
+                      ),
+
+                      // Back Button (re-styled as Drag Handle/Close)
+                      Positioned(
+                        top: 56, // Matched ItemDetailBottomSheet hasImage state
+                        left: 16,
+                        child: _buildBackButton(),
+                      ),
+
+                      // Sticky Trash Button (Moved from HeroStage)
+                      if ((_hasLink || _isManualEntry || _isNoteMode) &&
+                          !_isLoadingMetadata)
+                        Positioned(
+                          top: 56, // Matched Left button
+                          right: 16,
+                          child: Builder(
+                            builder: (context) {
+                              final hasContent =
+                                  _hasLink ||
+                                  _titleController.text.isNotEmpty ||
+                                  _noteController.text.isNotEmpty ||
+                                  _linkController.text.isNotEmpty;
+
+                              // In edit mode, trash button is always enabled (delete item)
+                              final isEditMode = widget.editItem != null;
+                              final isEnabled = isEditMode || hasContent;
+
+                              return Opacity(
+                                opacity: isEnabled ? 1.0 : 0.4,
+                                child: CircleIconButton(
+                                  icon: PhosphorIconsLight.trash,
+                                  iconSize: 18,
+                                  enabled: isEnabled,
+                                  semanticLabel:
+                                      isEditMode
+                                          ? l10n.a11yDelete
+                                          : l10n.a11yClearContent,
+                                  onTap:
+                                      isEditMode
+                                          ? _showDeleteConfirmation
+                                          : (hasContent
+                                              ? _confirmClearContent
+                                              : () {}),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                      // Floating CTA Dock
+                      // Show dock if we have a link OR manual entry mode OR note mode
+                      if (_hasLink || _isManualEntry || _isNoteMode)
+                        Positioned(
+                          bottom: 32 + MediaQuery.viewInsetsOf(context).bottom,
+                          left: 24,
+                          right: 24,
+                          child: _buildFloatingDock(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-              child: Stack(
-                children: [
-                  // Main Content
-                  SingleChildScrollView(
-                    controller: scrollController, // Crucial for drag-to-dismiss
-                    physics:
-                        const AlwaysScrollableScrollPhysics(), // Ensure drag works even if content is short
-                    child: Column(
-                      children: [
-                        // Hide hero stage in Note mode
-                        if (!_isNoteMode) _buildHeroStage(),
-                        if (_hasLink || _isManualEntry || _isNoteMode)
-                          _buildControlCenter(),
-                        const SizedBox(height: 140),
-                      ],
-                    ),
-                  ),
-
-                  // Back Button (re-styled as Drag Handle/Close)
-                  Positioned(
-                    top: 56, // Matched ItemDetailBottomSheet hasImage state
-                    left: 16,
-                    child: _buildBackButton(),
-                  ),
-
-                  // Sticky Trash Button (Moved from HeroStage)
-                  if ((_hasLink || _isManualEntry || _isNoteMode) &&
-                      !_isLoadingMetadata)
-                    Positioned(
-                      top: 56, // Matched Left button
-                      right: 16,
-                      child: Builder(
-                        builder: (context) {
-                          final hasContent =
-                              _hasLink ||
-                              _titleController.text.isNotEmpty ||
-                              _noteController.text.isNotEmpty ||
-                              _linkController.text.isNotEmpty;
-
-                          // In edit mode, trash button is always enabled (delete item)
-                          final isEditMode = widget.editItem != null;
-                          final isEnabled = isEditMode || hasContent;
-
-                          return Opacity(
-                            opacity: isEnabled ? 1.0 : 0.4,
-                            child: _buildCircleButton(
-                              icon: PhosphorIconsLight.trash,
-                              onTap:
-                                  isEditMode
-                                      ? _showDeleteConfirmation
-                                      : (hasContent ? _clearContent : () {}),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                  // Floating CTA Dock
-                  // Show dock if we have a link OR manual entry mode OR note mode
-                  if (_hasLink || _isManualEntry || _isNoteMode)
-                    Positioned(
-                      bottom: 32 + MediaQuery.viewInsetsOf(context).bottom,
-                      left: 24,
-                      right: 24,
-                      child: _buildFloatingDock(),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -2302,21 +2448,27 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade500,
+                  color: context.colors.body,
                 ),
               ),
-              GestureDetector(
+              Semantics(
+                button: true,
+                label: l10n.a11yNewCollection,
+                excludeSemantics: true,
                 onTap: () => _showAddCategoryDialog(context),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: context.colors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    PhosphorIconsBold.plus,
-                    size: 16,
-                    color: context.colors.primary,
+                child: GestureDetector(
+                  onTap: () => _showAddCategoryDialog(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: context.colors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      PhosphorIconsBold.plus,
+                      size: 16,
+                      color: context.colors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -2337,10 +2489,14 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       clipBehavior: Clip.none,
                       // Hide "Hızlı" from UI - it's used silently for uncategorized items
                       itemCount:
-                          categories.where((c) => c.name != kQuickCategoryKey).length,
+                          categories
+                              .where((c) => c.name != kQuickCategoryKey)
+                              .length,
                       itemBuilder: (context, index) {
                         final visibleCategories =
-                            categories.where((c) => c.name != kQuickCategoryKey).toList();
+                            categories
+                                .where((c) => c.name != kQuickCategoryKey)
+                                .toList();
                         final cat = visibleCategories[index];
                         return _buildCategoryChip(cat, categories);
                       },
@@ -2504,35 +2660,47 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               // Change Image
-              GestureDetector(
+              Semantics(
+                button: true,
+                label: AppLocalizations.of(context)!.a11yChangeImage,
+                excludeSemantics: true,
                 onTap: _pickNoteImage,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: context.colors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    PhosphorIconsBold.pencilSimple,
-                    size: 18,
-                    color: context.colors.primary,
+                child: GestureDetector(
+                  onTap: _pickNoteImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: context.colors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      PhosphorIconsBold.pencilSimple,
+                      size: 18,
+                      color: context.colors.primary,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               // Remove Image
-              GestureDetector(
+              Semantics(
+                button: true,
+                label: AppLocalizations.of(context)!.a11yRemoveImage,
+                excludeSemantics: true,
                 onTap: _removeNoteImage,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: context.colors.danger.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    PhosphorIconsBold.trash,
-                    size: 18,
-                    color: context.colors.danger,
+                child: GestureDetector(
+                  onTap: _removeNoteImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: context.colors.danger.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      PhosphorIconsBold.trash,
+                      size: 18,
+                      color: context.colors.danger,
+                    ),
                   ),
                 ),
               ),
@@ -2873,83 +3041,90 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
     return Padding(
       padding: const EdgeInsets.only(right: 10),
-      child: GestureDetector(
-        onTap:
-            () => setState(() {
-              if (isSelected) {
-                _selectedCategoryIds.remove(cat.id);
-              } else {
-                // If selecting a non-Quick category, auto-deselect "Hızlı"
-                if (cat.name != kQuickCategoryKey) {
-                  try {
-                    final quickCat = categories.firstWhere(
-                      (c) => c.name == kQuickCategoryKey,
-                    );
-                    _selectedCategoryIds.remove(quickCat.id);
-                  } catch (_) {}
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        child: GestureDetector(
+          onTap:
+              () => setState(() {
+                if (isSelected) {
+                  _selectedCategoryIds.remove(cat.id);
+                } else {
+                  // If selecting a non-Quick category, auto-deselect "Hızlı"
+                  if (cat.name != kQuickCategoryKey) {
+                    try {
+                      final quickCat = categories.firstWhere(
+                        (c) => c.name == kQuickCategoryKey,
+                      );
+                      _selectedCategoryIds.remove(quickCat.id);
+                    } catch (_) {}
+                  }
+                  _selectedCategoryIds.add(cat.id);
                 }
-                _selectedCategoryIds.add(cat.id);
-              }
-            }),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            gradient:
-                isSelected
-                    ? LinearGradient(
-                      colors: [
-                        context.colors.secondary.withValues(alpha: 0.5),
-                        context.colors.surfaceWhite,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                    : null,
-            color:
-                isSelected
-                    ? null
-                    : context.colors.surfaceWhite, // White/Dark Surface
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: isSelected ? Colors.transparent : context.colors.secondary,
-              width: 1.5,
-            ),
-            boxShadow:
-                isSelected
-                    ? [
-                      BoxShadow(
-                        color: context.colors.secondary.withValues(alpha: 0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                    : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                cat.name,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color:
-                      isSelected
-                          ? context.colors.headline
-                          : context.colors.body,
-                ),
+              }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            decoration: BoxDecoration(
+              gradient:
+                  isSelected
+                      ? LinearGradient(
+                        colors: [
+                          context.colors.secondary.withValues(alpha: 0.5),
+                          context.colors.surfaceWhite,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                      : null,
+              color:
+                  isSelected
+                      ? null
+                      : context.colors.surfaceWhite, // White/Dark Surface
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color:
+                    isSelected ? Colors.transparent : context.colors.secondary,
+                width: 1.5,
               ),
-              if (isSelected) ...[
-                const SizedBox(width: 6),
-                Icon(
-                  PhosphorIconsBold.check,
-                  size: 12,
-                  color: context.colors.headline,
+              boxShadow:
+                  isSelected
+                      ? [
+                        BoxShadow(
+                          color: context.colors.secondary.withValues(
+                            alpha: 0.35,
+                          ),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                      : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  cat.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color:
+                        isSelected
+                            ? context.colors.headline
+                            : context.colors.body,
+                  ),
                 ),
+                if (isSelected) ...[
+                  const SizedBox(width: 6),
+                  Icon(
+                    PhosphorIconsBold.check,
+                    size: 12,
+                    color: context.colors.headline,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -2987,64 +3162,67 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Widget _buildFloatingDock() {
     final l10n = AppLocalizations.of(context)!;
 
-    return GestureDetector(
+    final foreground = BrandGradient.foreground(context);
+    final label =
+        widget.editItem != null ? l10n.commonSave : l10n.addContentAddButton;
+
+    return Semantics(
+      button: true,
+      enabled: !_isSaving,
+      label: label,
+      excludeSemantics: true,
       onTap: _isSaving ? null : _saveContent,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              context.colors.primary,
-              context.colors.secondary,
-            ], // Slogan Gradient
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      child: GestureDetector(
+        onTap: _isSaving ? null : _saveContent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            // Slogan gradyanı; beyaz/onPrimary yazı için ≥4.5:1'e koyulaştırılmış.
+            gradient: BrandGradient.linear(context),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: context.colors.secondary.withValues(
+                  alpha: 0.3,
+                ), // Matching shadow
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: context.colors.secondary.withValues(
-                alpha: 0.3,
-              ), // Matching shadow
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child:
-              _isSaving
-                  ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                  : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        widget.editItem != null
-                            ? PhosphorIconsBold.floppyDisk
-                            : PhosphorIconsBold.plus,
-                        size: 20,
-                        color: Colors.white,
+          child: Center(
+            child:
+                _isSaving
+                    ? SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(foreground),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.editItem != null
-                            ? l10n.commonSave
-                            : l10n.addContentAddButton,
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                    )
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          widget.editItem != null
+                              ? PhosphorIconsBold.floppyDisk
+                              : PhosphorIconsBold.plus,
+                          size: 20,
+                          color: foreground,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 8),
+                        Text(
+                          label,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: foreground,
+                          ),
+                        ),
+                      ],
+                    ),
+          ),
         ),
       ),
     );
@@ -3055,15 +3233,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Widget _buildBackButton() {
     return CircleIconButton(
       icon: PhosphorIconsLight.x, // X for modal close
-      onTap: () => Navigator.pop(context),
+      semanticLabel: AppLocalizations.of(context)!.a11yClose,
+      // maybePop: kaydedilmemiş değişiklik varsa PopScope onay sorar.
+      onTap: () => Navigator.maybePop(context),
     );
-  }
-
-  Widget _buildCircleButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return CircleIconButton(icon: icon, iconSize: 18, onTap: onTap);
   }
 
   // ============== PLATFORM HELPERS ==============
@@ -3254,196 +3427,6 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
 // LIFTOFF PARTICLE SYSTEM
 // ==========================================
 
-class _ParticleBackground extends StatefulWidget {
-  final Color color;
-  const _ParticleBackground({required this.color});
-
-  @override
-  State<_ParticleBackground> createState() => _ParticleBackgroundState();
-}
-
-class _ParticleBackgroundState extends State<_ParticleBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  List<_Particle> _particles = [];
-  Offset? _touchPosition;
-  final int _particleCount = 120;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize Particles
-    _particles = List.generate(
-      _particleCount,
-      (index) => _ArticleFactory.createRandom(),
-    );
-
-    // Animation Loop
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 10))
-          ..addListener(_updateParticles)
-          ..repeat();
-  }
-
-  void _updateParticles() {
-    for (var p in _particles) {
-      // 1. Upward Movement (Liftoff)
-      p.y -= p.speed;
-
-      // 2. Interaction (Magnetic Repulsion)
-      if (_touchPosition != null) {
-        final double dx = p.x - _touchPosition!.dx;
-
-        // Aspect ratio correction for Y to make interaction circular
-        // Otherwise repulsion is oval if screen is non-square.
-        // Assuming roughly 9:16, but simple is fine for now.
-        final double dy = p.y - _touchPosition!.dy;
-
-        final double dist = math.sqrt(dx * dx + dy * dy);
-
-        // Repulsion Radius in normalized space (0.0 to 1.0)
-        // 0.2 = ~20% of screen width
-        const double repulsionRadius = 0.25;
-
-        if (dist < repulsionRadius) {
-          final double force = (repulsionRadius - dist) / repulsionRadius;
-
-          // Gentle Nudge (Velocity-ish)
-          // Previously 5.0 caused teleportation. Now 0.02.
-          final double strength = 0.02 * force;
-
-          p.x += (dx / dist) * strength;
-          p.y += (dy / dist) * strength;
-        }
-      }
-
-      // 3. Reset loop
-      if (p.y < -0.1) {
-        p.y = 1.1; // Reset to bottom
-        p.x = math.Random().nextDouble();
-      }
-
-      // Wrap X
-      if (p.x < 0) p.x += 1.0;
-      if (p.x > 1) p.x -= 1.0;
-
-      // Wrap Y Bottom (if pushed down)
-      if (p.y > 1.1) p.y = -0.1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Sync touch coordinates to 0..1 space or pixel space?
-        // Let's use Pixel space in Painter, normalized in Model?
-        // Model is 0..1 for easier resizing.
-        return MouseRegion(
-          onHover: (event) {
-            final size = context.size;
-            if (size != null) {
-              setState(() {
-                _touchPosition = Offset(
-                  event.localPosition.dx / size.width,
-                  event.localPosition.dy / size.height,
-                );
-              });
-            }
-          },
-          onExit: (_) => setState(() => _touchPosition = null),
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              final size = context.size;
-              if (size != null) {
-                setState(() {
-                  _touchPosition = Offset(
-                    details.localPosition.dx / size.width,
-                    details.localPosition.dy / size.height,
-                  );
-                });
-              }
-            },
-            onPanEnd: (_) => setState(() => _touchPosition = null),
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _ParticlePainter(
-                particles: _particles,
-                color: widget.color.withValues(alpha: 0.6), // Base color
-                repaint: _controller,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _Particle {
-  double x; // 0..1
-  double y; // 0..1
-  double speed;
-  double size;
-  double opacity;
-
-  _Particle({
-    required this.x,
-    required this.y,
-    required this.speed,
-    required this.size,
-    required this.opacity,
-  });
-}
-
-class _ArticleFactory {
-  static final _rng = math.Random();
-
-  static _Particle createRandom() {
-    return _Particle(
-      x: _rng.nextDouble(),
-      y: _rng.nextDouble(),
-      speed: 0.001 + (_rng.nextDouble() * 0.004), // Varies speed for Parallax
-      size: 1.0 + (_rng.nextDouble() * 3.0), // 1..4 radius
-      opacity: 0.2 + (_rng.nextDouble() * 0.6), // 0.2..0.8
-    );
-  }
-}
-
-class _ParticlePainter extends CustomPainter {
-  final List<_Particle> particles;
-  final Color color;
-
-  _ParticlePainter({
-    required this.particles,
-    required this.color,
-    required Listenable repaint,
-  }) : super(repaint: repaint);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    for (var p in particles) {
-      paint.color = color.withValues(alpha: p.opacity * 0.6); // Global dim
-
-      final dx = p.x * size.width;
-      final dy = p.y * size.height;
-
-      canvas.drawCircle(Offset(dx, dy), p.size, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true;
-}
-
 // ============== ALERT BOTTOM SHEET ==============
 enum _AlertType { success, warning }
 
@@ -3463,149 +3446,164 @@ class _AlertBottomSheet extends StatefulWidget {
 }
 
 class _AlertBottomSheetState extends State<_AlertBottomSheet> {
+  Timer? _autoDismissTimer;
+
   @override
   void initState() {
     super.initState();
-    // 2 saniye sonra otomatik kapan
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pop(context);
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // VoiceOver/Switch Control kullanıcısı mesajı okuyup kapatabilsin diye
+      // otomatik kapanma yok; diğerlerinde uyarı 4 sn görünür kalır.
+      if (MediaQuery.accessibleNavigationOf(context)) return;
+      _autoDismissTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted) Navigator.pop(context);
+      });
     });
   }
 
   @override
+  void dispose() {
+    _autoDismissTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        // Yağ Yeşili Gradient Zemin
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            context.colors.primary, // Derin Adaçayı
-            context.colors.secondary, // Biraz daha canlı ton
-          ],
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Stack(
-        alignment: Alignment.center, // Stack içeriğini de ortala
-        children: [
-          // Content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              32,
-              16,
-              32,
-              56,
-            ), // Yanlardan padding artırıldı
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment:
-                  CrossAxisAlignment.center, // Kesinlikle ortala
-              children: [
-                // Drag Handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(
-                      alpha: 0.3,
-                    ), // Beyaz Opak Handle
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Icon Circle
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(
-                      alpha: 0.2,
-                    ), // Beyaz Opak Zemin
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child:
-                        widget.type == _AlertType.success
-                            ? const Icon(
-                              PhosphorIconsBold.check,
-                              color: Colors.white,
-                              size: 32,
-                            )
-                            : Text(
-                              "!",
-                              style: GoogleFonts.poppins(
-                                fontSize: 32, // Biraz küçültüldü
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                height: 1.0, // Dikey ortalama için
-                              ),
-                            ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20, // Biraz daha büyük ve iddialı
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white, // Başlık Beyaz
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(
-                  height: 12,
-                ), // Mesaj ile başlık arası biraz açıldı
-                // Message
-                Text(
-                  widget.message,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15, // Biraz daha okunur
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(
-                      alpha: 0.9,
-                    ), // Hafif kırık beyaz mesaj
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 16), // Buton olmadığı için alt boşluk
-              ],
-            ),
+    final foreground = BrandGradient.foreground(context);
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          // Yağ Yeşili Gradient Zemin
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            // Derin Adaçayı → canlı ton; beyaz/onPrimary yazı için ≥4.5:1.
+            colors: BrandGradient.colors(context),
           ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Stack(
+          alignment: Alignment.center, // Stack içeriğini de ortala
+          children: [
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                32,
+                16,
+                32,
+                56,
+              ), // Yanlardan padding artırıldı
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment:
+                    CrossAxisAlignment.center, // Kesinlikle ortala
+                children: [
+                  // Drag Handle
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: foreground.withValues(
+                        alpha: 0.3,
+                      ), // Beyaz Opak Handle
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-          // Close Button (Top Right)
-          Positioned(
-            top: 20,
-            right: 20,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => Navigator.pop(context),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    PhosphorIconsLight.x,
-                    size: 20,
-                    color: Colors.white.withValues(
-                      alpha: 0.8,
-                    ), // Beyaz X butonu
+                  // Icon Circle
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: foreground.withValues(
+                        alpha: 0.2,
+                      ), // Beyaz Opak Zemin
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child:
+                          widget.type == _AlertType.success
+                              ? Icon(
+                                PhosphorIconsBold.check,
+                                color: foreground,
+                                size: 32,
+                              )
+                              : Text(
+                                "!",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 32, // Biraz küçültüldü
+                                  fontWeight: FontWeight.w700,
+                                  color: foreground,
+                                  height: 1.0, // Dikey ortalama için
+                                ),
+                              ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Title
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20, // Biraz daha büyük ve iddialı
+                      fontWeight: FontWeight.w700,
+                      color: foreground, // Başlık Beyaz
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 12,
+                  ), // Mesaj ile başlık arası biraz açıldı
+                  // Message
+                  Text(
+                    widget.message,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15, // Biraz daha okunur
+                      fontWeight: FontWeight.w500,
+                      color: foreground,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16), // Buton olmadığı için alt boşluk
+                ],
+              ),
+            ),
+
+            // Close Button (Top Right)
+            Positioned(
+              top: 20,
+              right: 20,
+              child: Material(
+                color: Colors.transparent,
+                child: Semantics(
+                  button: true,
+                  label: AppLocalizations.of(context)!.a11yClose,
+                  excludeSemantics: true,
+                  onTap: () => Navigator.pop(context),
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        PhosphorIconsLight.x,
+                        size: 20,
+                        color: foreground, // Beyaz X butonu
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -23,8 +23,8 @@ class DesignTokens {
 
   // Text Colors
   static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color textSecondary = Color(0xFF646B78); // beyaz 5.36, #E8F1EF 4.66
+  static const Color textTertiary = Color(0xFF6B7280); // beyaz 4.83
   
   // Border Colors
   static const Color border = Color(0xFFE5E7EB);
@@ -100,8 +100,8 @@ class SoMineTokens {
   static const Color background = Color(0xFFF8F9FB); 
   static const Color cardBackground = Colors.white;
   static const Color textPrimary = Color(0xFF1A1E38); // Deep Navy
-  static const Color textSecondary = Color(0xFF89898E);
-  static const Color textTertiary = Color(0xFFB0B0B5);
+  static const Color textSecondary = Color(0xFF6E6E73); // beyaz 5.07
+  static const Color textTertiary = Color(0xFF707075); // beyaz 4.93, #F8F9FB 4.68
   static const Color accentEnd = Color(0xFF0EA5E9);
 
   // Gradients

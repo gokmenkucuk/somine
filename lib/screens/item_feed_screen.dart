@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/widgets/custom_note_icon.dart';
@@ -21,6 +22,8 @@ import 'package:somine_app/widgets/image_shimmer_placeholder.dart';
 import 'package:somine_app/widgets/masonry_image.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
+import 'package:somine_app/widgets/empty_state_add_button.dart';
+import 'package:somine_app/widgets/item_delete_flow.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/core/providers/notification_providers.dart';
@@ -33,10 +36,14 @@ class ItemFeedScreen extends ConsumerStatefulWidget {
   final VoidCallback onSearchTap;
   final VoidCallback onCatalogTap;
 
+  /// Boş durumdaki "İlk içeriğini ekle" butonu ekleme sheet'ini açar.
+  final VoidCallback? onAddTap;
+
   const ItemFeedScreen({
     super.key,
     required this.onSearchTap,
     required this.onCatalogTap,
+    this.onAddTap,
   });
 
   @override
@@ -571,11 +578,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             end: isSelected ? context.colors.primary : context.colors.hint,
           ),
           builder:
-              (context, color, _) => Icon(
-                icon,
-                size: 20,
-                color: color ?? context.colors.hint,
-              ),
+              (context, color, _) =>
+                  Icon(icon, size: 20, color: color ?? context.colors.hint),
         ),
       ),
     );
@@ -775,12 +779,23 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 32),
-                // Note: We don't have a direct callback for Add Content here easily without passing it down,
-                // but we can guide user to the FAB or Search if needed.
-                // For now, simple directional text is good, or a button if we had the callback.
-                // Since the FAB/BottomBar handles add, maybe just an arrow down?
-                // Or better, let's make it actionable if possible.
+                if (widget.onAddTap != null) ...[
+                  const SizedBox(height: 28),
+                  EmptyStateAddButton(
+                    label: l10n.feedEmptyAddButton,
+                    onPressed: widget.onAddTap!,
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Text(
+                  l10n.emptyStateShareTip,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: context.colors.body,
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           ),
@@ -810,7 +825,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childCount: 6,
-            itemBuilder: (context, index) => _buildSkeletonCard(index, bounded: false),
+            itemBuilder:
+                (context, index) => _buildSkeletonCard(index, bounded: false),
           );
         case ViewMode.feed:
           return SliverList(
@@ -892,6 +908,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     required bool isGrid,
     bool forceSquare = false,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     // Notes AND Links can have images now
     final isNote = item.type == ItemType.note;
     final hasImage =
@@ -1380,167 +1397,178 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     }
 
     // WRAP WITH LONG PRESS DRAGGABLE
-    return LongPressDraggable<ItemModel>(
-      data: item,
-      delay: const Duration(
-        milliseconds: 300,
-      ), // Short delay to prevent accidental drags
-      dragAnchorStrategy:
-          pointerDragAnchorStrategy, // Makes drag follow finger exactly
-      feedback: Transform.rotate(
-        angle: 0.05, // Slight tilt for drag effect
-        child: Material(
-          color: Colors.transparent,
-          elevation: 8,
-          shadowColor: Colors.black26,
-          borderRadius: BorderRadius.circular(16),
-          child: Opacity(
-            opacity: 0.9,
-            child: SizedBox(
-              width: 100, // Standardized size
-              height: 100,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Container(color: Colors.white), // Background
-                    if (isNote && !hasImage)
-                      const Center(
-                        child: Icon(
-                          PhosphorIconsBold.note,
-                          size: 40,
-                          color: Colors.grey,
+    // VoiceOver'da sürükle-bırak yapılamadığı için "Sil" özel aksiyonu
+    // (rotor → Aksiyonlar) eklenir; geri alma akışı aynıdır.
+    return Semantics(
+      customSemanticsActions: {
+        CustomSemanticsAction(label: l10n.a11yDelete): () => _deleteItem(item),
+      },
+      child: LongPressDraggable<ItemModel>(
+        data: item,
+        delay: const Duration(
+          milliseconds: 300,
+        ), // Short delay to prevent accidental drags
+        dragAnchorStrategy:
+            pointerDragAnchorStrategy, // Makes drag follow finger exactly
+        feedback: Transform.rotate(
+          angle: 0.05, // Slight tilt for drag effect
+          child: Material(
+            color: Colors.transparent,
+            elevation: 8,
+            shadowColor: Colors.black26,
+            borderRadius: BorderRadius.circular(16),
+            child: Opacity(
+              opacity: 0.9,
+              child: SizedBox(
+                width: 100, // Standardized size
+                height: 100,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(color: Colors.white), // Background
+                      if (isNote && !hasImage)
+                        const Center(
+                          child: Icon(
+                            PhosphorIconsBold.note,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                        )
+                      else if (hasImage)
+                        item.displayImage!.startsWith('http')
+                            ? buildAuthImage(
+                              imageUrl: item.displayImage!,
+                              fit: BoxFit.cover,
+                            )
+                            : item.displayImage!.startsWith('data:')
+                            ? Image.memory(
+                              const Base64Decoder().convert(
+                                item.displayImage!.substring(23),
+                              ),
+                              fit: BoxFit.cover,
+                            )
+                            : Image.asset(item.displayImage!, fit: BoxFit.cover)
+                      else
+                        const Center(
+                          child: Icon(
+                            PhosphorIconsBold.link,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
                         ),
-                      )
-                    else if (hasImage)
-                      item.displayImage!.startsWith('http')
-                          ? buildAuthImage(
-                            imageUrl: item.displayImage!,
-                            fit: BoxFit.cover,
-                          )
-                          : item.displayImage!.startsWith('data:')
-                          ? Image.memory(
-                            const Base64Decoder().convert(
-                              item.displayImage!.substring(23),
-                            ),
-                            fit: BoxFit.cover,
-                          )
-                          : Image.asset(item.displayImage!, fit: BoxFit.cover)
-                    else
-                      const Center(
-                        child: Icon(
-                          PhosphorIconsBold.link,
-                          size: 40,
-                          color: Colors.grey,
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
+        childWhenDragging: Opacity(
+          opacity: 0.3,
+          child: FadeInUp(
+            // Reuse same container but faded
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: context.colors.surfaceWhite,
+              ),
+              child: const SizedBox(height: 100), // Placeholder
+            ),
+          ),
+        ),
+        onDragStarted: () {
+          ref.read(isDraggingProvider.notifier).state = true;
+          HapticFeedback.selectionClick();
+        },
+        onDragEnd: (details) {
+          ref.read(isDraggingProvider.notifier).state = false;
+        },
+        onDraggableCanceled: (velocity, offset) {
+          ref.read(isDraggingProvider.notifier).state = false;
+        },
         child: FadeInUp(
-          // Reuse same container but faded
+          duration: const Duration(milliseconds: 400),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               color: context.colors.surfaceWhite,
+              boxShadow: [
+                BoxShadow(
+                  color: context.colors.premiumShadow.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: const SizedBox(height: 100), // Placeholder
-          ),
-        ),
-      ),
-      onDragStarted: () {
-        ref.read(isDraggingProvider.notifier).state = true;
-        HapticFeedback.selectionClick();
-      },
-      onDragEnd: (details) {
-        ref.read(isDraggingProvider.notifier).state = false;
-      },
-      onDraggableCanceled: (velocity, offset) {
-        ref.read(isDraggingProvider.notifier).state = false;
-      },
-      child: FadeInUp(
-        duration: const Duration(milliseconds: 400),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: context.colors.surfaceWhite,
-            boxShadow: [
-              BoxShadow(
-                color: context.colors.premiumShadow.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () async {
-                  final result = await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    enableDrag: true,
-                    builder:
-                        (context) => ItemDetailBottomSheet(
-                          item: item,
-                          categoryName: badgeText,
-                          categories: categories,
-                        ),
-                  );
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () async {
+                    final result = await showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      enableDrag: true,
+                      builder:
+                          (context) => ItemDetailBottomSheet(
+                            item: item,
+                            categoryName: badgeText,
+                            categories: categories,
+                            // Görünür silme yolu (sürükle-bırak gizli kalıyordu);
+                            // geri alma akışı FAB'a bırakmayla aynı.
+                            onDelete: () => _deleteItem(item),
+                          ),
+                    );
 
-                  if (result != null) {
-                    ref.invalidate(paginatedFeedProvider);
-                    ref.invalidate(itemCountProvider);
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    contentHeader,
-                    // Thin grey line above text area
-                    Container(
-                      height: 1,
-                      color: Colors.grey.withValues(alpha: 0.15),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            item.displayTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: context.colors.headline,
-                            ),
-                          ),
-                          Text(
-                            badgeText,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w400,
-                              color: context.colors.hint,
-                            ),
-                          ),
-                        ],
+                    if (result != null) {
+                      ref.invalidate(paginatedFeedProvider);
+                      ref.invalidate(itemCountProvider);
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Kapak görseli dekoratif; kart başlığı aşağıda okunur.
+                      ExcludeSemantics(child: contentHeader),
+                      // Thin grey line above text area
+                      Container(
+                        height: 1,
+                        color: Colors.grey.withValues(alpha: 0.15),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item.displayTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: context.colors.headline,
+                              ),
+                            ),
+                            Text(
+                              badgeText,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                                color: context.colors.hint,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1548,6 +1576,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         ),
       ),
     );
+  }
+
+  /// Detay sayfasındaki Sil butonu ve VoiceOver "Sil" aksiyonu.
+  Future<void> _deleteItem(ItemModel item) async {
+    HapticFeedback.mediumImpact();
+    await deleteFeedItemsWithUndo(context, ref, item);
   }
 
   // DEDICATED NOTE CARD
@@ -1649,7 +1683,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childCount: 4,
-          itemBuilder: (context, index) => _buildSkeletonCard(index, bounded: false),
+          itemBuilder:
+              (context, index) => _buildSkeletonCard(index, bounded: false),
         );
       case ViewMode.feed:
         return SliverList(
@@ -1688,7 +1723,8 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           itemCount: 6,
-          itemBuilder: (context, index) => _buildSkeletonCard(index, bounded: false),
+          itemBuilder:
+              (context, index) => _buildSkeletonCard(index, bounded: false),
         );
       case ViewMode.feed:
         return ListView.builder(
@@ -1711,10 +1747,7 @@ class _ShimmerBox extends StatefulWidget {
   final double? width;
   final double borderRadius = 8.0;
 
-  const _ShimmerBox({
-    required this.height,
-    this.width,
-  });
+  const _ShimmerBox({required this.height, this.width});
 
   @override
   State<_ShimmerBox> createState() => _ShimmerBoxState();
@@ -1731,11 +1764,22 @@ class _ShimmerBoxState extends State<_ShimmerBox>
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
-    )..repeat();
+    );
     _animation = Tween<double>(
       begin: -2.0,
       end: 2.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduce Motion: shimmer durur, iskelet statik görünür.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   @override

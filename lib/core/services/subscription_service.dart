@@ -1,17 +1,32 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Subscription tiers
 enum SubscriptionTier {
   starter, // Free
   curator, // Premium
+}
+
+enum PurchaseFailureCode { pending, network, notAllowed, storeUnavailable, failed }
+
+/// Kullanıcıya gösterilecek satın alma hatası (iptal bu sınıfa girmez).
+class PurchaseFailure implements Exception {
+  final PurchaseFailureCode code;
+  final Object? cause;
+
+  const PurchaseFailure(this.code, [this.cause]);
+
+  @override
+  String toString() => 'PurchaseFailure($code)';
 }
 
 /// Subscription service for RevenueCat integration
@@ -233,16 +248,54 @@ class SubscriptionService {
   }
 
   /// Purchase a package
+  ///
+  /// Kullanıcı iptalinde `false` döner (hata değildir). Diğer mağaza hataları
+  /// [PurchaseFailure] olarak fırlatılır ki arayüz kullanıcıya gösterebilsin.
   Future<bool> purchasePackage(Package package) async {
-    if (!await _ensureConfigured()) return false;
+    if (!await _ensureConfigured()) {
+      throw const PurchaseFailure(PurchaseFailureCode.storeUnavailable);
+    }
     try {
       final result = await Purchases.purchasePackage(package);
       _customerInfo = result;
       await _verifyWithBackend();
       return isPremium;
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      debugPrint('Purchase error: $code ($e)');
+      switch (code) {
+        case PurchasesErrorCode.purchaseCancelledError:
+          return false;
+        case PurchasesErrorCode.paymentPendingError:
+          throw PurchaseFailure(PurchaseFailureCode.pending, e);
+        case PurchasesErrorCode.networkError:
+        case PurchasesErrorCode.offlineConnectionError:
+          throw PurchaseFailure(PurchaseFailureCode.network, e);
+        case PurchasesErrorCode.purchaseNotAllowedError:
+          throw PurchaseFailure(PurchaseFailureCode.notAllowed, e);
+        default:
+          throw PurchaseFailure(PurchaseFailureCode.failed, e);
+      }
     } catch (e) {
       debugPrint('Purchase error: $e');
-      return false;
+      throw PurchaseFailure(PurchaseFailureCode.failed, e);
+    }
+  }
+
+  /// App Store abonelik yönetimini açar (premium kullanıcı için).
+  /// RevenueCat'in verdiği yönetim adresi yoksa Apple'ın genel adresi kullanılır.
+  static Future<void> openManagement() async {
+    Uri uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+    try {
+      final managementUrl = _instance._customerInfo?.managementURL;
+      if (managementUrl != null && managementUrl.isNotEmpty) {
+        uri = Uri.parse(managementUrl);
+      }
+    } catch (_) {}
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Open subscription management error: $e');
     }
   }
 

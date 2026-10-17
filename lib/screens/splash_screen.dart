@@ -1,33 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/widgets/somine_loading_widget.dart';
 
-class SplashScreen extends StatefulWidget {
+/// Açılış ekranı: yapay bekleme yok — oturum durumu çözülür çözülmez devam eder.
+class SplashScreen extends ConsumerStatefulWidget {
   final VoidCallback onAnimationComplete;
 
   const SplashScreen({super.key, required this.onAnimationComplete});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _completed = false;
+
+  void _complete() {
+    if (_completed || !mounted) return;
+    _completed = true;
+    widget.onAnimationComplete();
+  }
+
   @override
   void initState() {
     super.initState();
-
-    // Simulate minimum splash duration
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        widget.onAnimationComplete();
-      }
+    // Durum zaten çözülmüşse (önbellekten) ilk kareden sonra hemen geç.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!ref.read(authStateProvider).isLoading) _complete();
     });
-
-    // Set Status Bar is handled by AppTheme now to ensure consistency
-    // SystemChrome.setSystemUIOverlayStyle removed
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(authStateProvider, (_, next) {
+      if (!next.isLoading) _complete();
+    });
     return const SoMineLoadingWidget();
   }
 }

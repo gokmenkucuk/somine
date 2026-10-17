@@ -17,7 +17,11 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   // 3. YAZI
   final Color headline;
   final Color body;
+  /// İkincil metin rengi (her temada yüzeyine karşı ≥4.5:1).
   final Color hint;
+
+  /// Metin olmayan soluk ton (iskelet, dekoratif dolgu). Metinde kullanma.
+  final Color hintSubtle;
 
   // 4. İKONLAR & HEADER
   final Color iconActive;
@@ -34,6 +38,11 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   /// Yıkıcı aksiyon (silme vb.) rengi.
   final Color danger;
 
+  /// Başarı / uyarı / bilgi durum renkleri (metin için ≥4.5:1).
+  final Color success;
+  final Color warning;
+  final Color info;
+
   const AppColorsExtension({
     required this.backgroundTop,
     required this.backgroundBottom,
@@ -43,12 +52,16 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     required this.headline,
     required this.body,
     required this.hint,
+    required this.hintSubtle,
     required this.iconActive,
     required this.iconInactive,
     required this.surfaceWhite,
     required this.premiumShadow,
     required this.divider,
     required this.danger,
+    required this.success,
+    required this.warning,
+    required this.info,
   });
 
   @override
@@ -61,12 +74,16 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     Color? headline,
     Color? body,
     Color? hint,
+    Color? hintSubtle,
     Color? iconActive,
     Color? iconInactive,
     Color? surfaceWhite,
     Color? premiumShadow,
     Color? divider,
     Color? danger,
+    Color? success,
+    Color? warning,
+    Color? info,
   }) {
     return AppColorsExtension(
       backgroundTop: backgroundTop ?? this.backgroundTop,
@@ -77,12 +94,16 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       headline: headline ?? this.headline,
       body: body ?? this.body,
       hint: hint ?? this.hint,
+      hintSubtle: hintSubtle ?? this.hintSubtle,
       iconActive: iconActive ?? this.iconActive,
       iconInactive: iconInactive ?? this.iconInactive,
       surfaceWhite: surfaceWhite ?? this.surfaceWhite,
       premiumShadow: premiumShadow ?? this.premiumShadow,
       divider: divider ?? this.divider,
       danger: danger ?? this.danger,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      info: info ?? this.info,
     );
   }
 
@@ -100,12 +121,16 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       headline: Color.lerp(headline, other.headline, t)!,
       body: Color.lerp(body, other.body, t)!,
       hint: Color.lerp(hint, other.hint, t)!,
+      hintSubtle: Color.lerp(hintSubtle, other.hintSubtle, t)!,
       iconActive: Color.lerp(iconActive, other.iconActive, t)!,
       iconInactive: Color.lerp(iconInactive, other.iconInactive, t)!,
       surfaceWhite: Color.lerp(surfaceWhite, other.surfaceWhite, t)!,
       premiumShadow: Color.lerp(premiumShadow, other.premiumShadow, t)!,
       divider: Color.lerp(divider, other.divider, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      info: Color.lerp(info, other.info, t)!,
     );
   }
 
@@ -122,12 +147,16 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     headline: AppColors.headline,
     body: AppColors.body,
     hint: AppColors.hint,
+    hintSubtle: AppColors.hintSubtle,
     iconActive: AppColors.iconActive,
     iconInactive: AppColors.iconInactive,
     surfaceWhite: AppColors.surfaceWhite,
     premiumShadow: AppColors.premiumShadow,
     divider: AppColors.divider,
     danger: AppColors.danger,
+    success: AppColors.success,
+    warning: AppColors.warning,
+    info: AppColors.info,
   );
 }
 

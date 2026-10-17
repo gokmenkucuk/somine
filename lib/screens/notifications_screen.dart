@@ -12,14 +12,26 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/screens/share_requests_screen.dart';
 import 'package:somine_app/screens/my_shares_screen.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:somine_app/core/utils/relative_time.dart';
 import 'package:somine_app/core/utils/notification_display.dart';
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  /// Kaydırılıp "Geri Al" süresi bekleyen bildirimler. Sunucudan silme
+  /// SnackBar kapanınca (geri alınmadıysa) yapılır; bildirimler sunucuda
+  /// üretildiği için yeniden oluşturulamaz, bu yüzden silme ertelenir.
+  final Set<String> _pendingDeleteIds = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
     final notificationsAsync = ref.watch(notificationsProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -42,7 +54,7 @@ class NotificationsScreen extends ConsumerWidget {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: () => _markAllAsRead(context, ref),
+            onPressed: _markAllAsRead,
             child: Text(
               l10n.notificationsMarkAllRead,
               style: GoogleFonts.poppins(
@@ -55,7 +67,10 @@ class NotificationsScreen extends ConsumerWidget {
         ],
       ),
       body: notificationsAsync.when(
-        data: (notifications) {
+        data: (all) {
+          final notifications = all
+              .where((n) => !_pendingDeleteIds.contains(n.id))
+              .toList();
           if (notifications.isEmpty) {
             return _buildEmptyState(context);
           }
@@ -75,10 +90,13 @@ class NotificationsScreen extends ConsumerWidget {
                     color: context.colors.danger,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(PhosphorIconsRegular.trash, color: Colors.white),
+                  child: Icon(
+          PhosphorIconsRegular.trash,
+          color: Theme.of(context).colorScheme.onError,
+        ),
                 ),
                 onDismissed: (direction) {
-                  _deleteNotification(context, ref, notification.id!);
+                  _deleteWithUndo(notification.id!);
                 },
                 child: _NotificationCard(notification: notification),
               );
@@ -122,7 +140,7 @@ class NotificationsScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: context.colors.body.withValues(alpha: 0.7),
+                color: context.colors.body,
               ),
             ),
           ),
@@ -131,28 +149,59 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _markAllAsRead(BuildContext context, WidgetRef ref) async {
+  Future<void> _markAllAsRead() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final user = ref.read(authStateProvider).valueOrNull;
       if (user == null) return;
-      
+
       await ref.read(notificationRepositoryProvider).markAllAsRead(user.uid);
     } catch (e) {
-      // Handle error silently
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.notificationsMarkAllReadFailed)),
+      );
     }
   }
 
-  Future<void> _deleteNotification(BuildContext context, WidgetRef ref, String notificationId) async {
-    try {
-      await ref.read(notificationRepositoryProvider).deleteNotification(notificationId);
-    } catch (e) {
-      if (context.mounted) {
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.notificationsDeleteFailed(e.toString()))),
+  void _deleteWithUndo(String notificationId) {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final repository = ref.read(notificationRepositoryProvider);
+    setState(() => _pendingDeleteIds.add(notificationId));
+
+    messenger.hideCurrentSnackBar();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.notificationsDeleted),
+        action: SnackBarAction(label: l10n.commonUndo, onPressed: () {}),
+      ),
+    );
+
+    controller.closed.then((reason) async {
+      if (reason == SnackBarClosedReason.action) {
+        if (mounted) {
+          setState(() => _pendingDeleteIds.remove(notificationId));
+        }
+        return;
+      }
+      try {
+        await repository.deleteNotification(notificationId);
+      } catch (e) {
+        if (mounted) {
+          setState(() => _pendingDeleteIds.remove(notificationId));
+        }
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.notificationsDeleteFailed(
+                FailureMapper.toUserMessage(e, l10n),
+              ),
+            ),
+          ),
         );
       }
-    }
+    });
   }
 }
 
@@ -170,11 +219,11 @@ class _NotificationCard extends ConsumerWidget {
     switch (notification.type) {
       case NotificationType.shareRequest:
         icon = PhosphorIconsRegular.shareNetwork;
-        iconColor = Colors.blue;
+        iconColor = context.colors.info;
         break;
       case NotificationType.shareAccepted:
         icon = PhosphorIconsRegular.checkCircle;
-        iconColor = Colors.green;
+        iconColor = context.colors.success;
         break;
       case NotificationType.shareRejected:
         icon = PhosphorIconsRegular.xCircle;
@@ -190,7 +239,10 @@ class _NotificationCard extends ConsumerWidget {
         break;
     }
 
-    return GestureDetector(
+    return MergeSemantics(
+      child: Semantics(
+      button: true,
+      child: GestureDetector(
       onTap: () => _handleTap(context, ref),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -246,12 +298,15 @@ class _NotificationCard extends ConsumerWidget {
                         ),
                       ),
                       if (!notification.isRead)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: context.colors.primary,
-                            shape: BoxShape.circle,
+                        Semantics(
+                          label: l10n.notificationsUnreadLabel,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: context.colors.primary,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
                     ],
@@ -280,6 +335,8 @@ class _NotificationCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+      ),
       ),
     );
   }

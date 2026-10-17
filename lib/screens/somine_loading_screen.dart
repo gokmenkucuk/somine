@@ -24,12 +24,8 @@ class _SoMineLoadingScreenState extends State<SoMineLoadingScreen> {
   }
 
   Future<void> _navigateToHome() async {
-    // Wait longer for new users (demo content being created)
-    final delay = widget.isNewUser 
-        ? const Duration(milliseconds: 4000) 
-        : const Duration(milliseconds: 1500);
-    
-    await Future.delayed(delay);
+    // Yapay bekleme yok: ilk kare çizildikten hemen sonra ana ekrana geç.
+    await WidgetsBinding.instance.endOfFrame;
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
@@ -39,7 +35,7 @@ class _SoMineLoadingScreenState extends State<SoMineLoadingScreen> {
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
-          transitionDuration: const Duration(milliseconds: 500),
+          transitionDuration: const Duration(milliseconds: 250),
         ),
       );
     }

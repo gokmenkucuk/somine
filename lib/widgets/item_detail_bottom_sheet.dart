@@ -17,6 +17,7 @@ import '../core/utils/auth_image_provider.dart';
 import '../screens/add_content_screen.dart';
 import '../widgets/custom_note_icon.dart';
 import 'circle_icon_button.dart';
+import 'brand_gradient.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:somine_app/core/utils/category_display.dart';
@@ -27,12 +28,17 @@ class ItemDetailBottomSheet extends StatefulWidget {
   final List<CategoryModel> categories;
   final VoidCallback? onSave;
 
+  /// Verilirse üst barda Sil butonu gösterilir. Sheet önce kapanır, sonra
+  /// bu callback çağrılır (silme + "Geri Al" çağıranın context'inde yürür).
+  final VoidCallback? onDelete;
+
   const ItemDetailBottomSheet({
     super.key,
     required this.item,
     required this.categoryName,
     required this.categories,
     this.onSave,
+    this.onDelete,
   });
 
   static Future<void> show(
@@ -199,10 +205,15 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   String? _getPlatformName(String? url) {
     if (url == null) return null;
     final s = url.toLowerCase();
-    if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
-        s.contains('google.com/maps') || s.contains('maps.google') ||
-        s.contains('share.google')) { return 'Google Maps'; }
-    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return 'Yandex Harita';
+    if (s.contains('maps.app.goo.gl') ||
+        s.contains('goo.gl/maps') ||
+        s.contains('google.com/maps') ||
+        s.contains('maps.google') ||
+        s.contains('share.google')) {
+      return 'Google Maps';
+    }
+    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps'))
+      return 'Yandex Harita';
     if (s.contains('maps.apple.com')) return 'Apple Harita';
     if (s.contains('openstreetmap.org')) return 'OpenStreetMap';
     if (s.contains('instagram')) return 'Instagram';
@@ -236,12 +247,18 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final l10n = AppLocalizations.of(context)!;
     if (url == null) return l10n.itemDetailOpenInBrowser;
     final s = url.toLowerCase();
-    if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
-        s.contains('google.com/maps') || s.contains('maps.google') ||
-        s.contains('share.google')) { return l10n.itemDetailOpenInGoogleMaps; }
-    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return l10n.itemDetailOpenInYandexMaps;
+    if (s.contains('maps.app.goo.gl') ||
+        s.contains('goo.gl/maps') ||
+        s.contains('google.com/maps') ||
+        s.contains('maps.google') ||
+        s.contains('share.google')) {
+      return l10n.itemDetailOpenInGoogleMaps;
+    }
+    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps'))
+      return l10n.itemDetailOpenInYandexMaps;
     if (s.contains('maps.apple.com')) return l10n.itemDetailOpenInAppleMaps;
-    if (s.contains('openstreetmap.org')) return l10n.itemDetailOpenInOpenStreetMap;
+    if (s.contains('openstreetmap.org'))
+      return l10n.itemDetailOpenInOpenStreetMap;
     final name = _getPlatformName(url);
     if (name == null) return l10n.itemDetailOpenInBrowser;
     return l10n.itemDetailOpenInPlatform(name);
@@ -275,11 +292,17 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
       useSafeArea: false,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      enableDrag: true,
+      // Aşağı kaydırarak kapatma AddContentScreen içinde (DraggableScrollableSheet
+      // min boyuta inince maybePop) yönetilir; böylece kaydedilmemiş
+      // değişiklik onayı (PopScope) atlanmaz.
+      enableDrag: false,
       builder: (context) => AddContentScreen(editItem: widget.item),
     ).then((result) {
       if (result != null && mounted) {
-        Navigator.pop(context, result); // ignore: use_build_context_synchronously
+        Navigator.pop(
+          context,
+          result,
+        ); // ignore: use_build_context_synchronously
       }
     });
   }
@@ -304,16 +327,34 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     if (_isMapUrl(widget.item.url)) {
       final s = (widget.item.url ?? '').toLowerCase();
       final Widget mapIcon;
-      if (s.contains('google.com/maps') || s.contains('maps.app.goo') ||
-          s.contains('goo.gl/maps') || s.contains('maps.google') ||
+      if (s.contains('google.com/maps') ||
+          s.contains('maps.app.goo') ||
+          s.contains('goo.gl/maps') ||
+          s.contains('maps.google') ||
           s.contains('share.google')) {
-        mapIcon = FaIcon(FontAwesomeIcons.google, size: 56, color: Colors.white.withValues(alpha: 0.9));
+        mapIcon = FaIcon(
+          FontAwesomeIcons.google,
+          size: 56,
+          color: Colors.white.withValues(alpha: 0.9),
+        );
       } else if (s.contains('yandex')) {
-        mapIcon = FaIcon(FontAwesomeIcons.yandex, size: 56, color: Colors.white.withValues(alpha: 0.9));
+        mapIcon = FaIcon(
+          FontAwesomeIcons.yandex,
+          size: 56,
+          color: Colors.white.withValues(alpha: 0.9),
+        );
       } else if (s.contains('maps.apple.com')) {
-        mapIcon = FaIcon(FontAwesomeIcons.apple, size: 56, color: Colors.white.withValues(alpha: 0.9));
+        mapIcon = FaIcon(
+          FontAwesomeIcons.apple,
+          size: 56,
+          color: Colors.white.withValues(alpha: 0.9),
+        );
       } else {
-        mapIcon = Icon(PhosphorIconsBold.mapTrifold, size: 56, color: Colors.white.withValues(alpha: 0.9));
+        mapIcon = Icon(
+          PhosphorIconsBold.mapTrifold,
+          size: 56,
+          color: Colors.white.withValues(alpha: 0.9),
+        );
       }
       return Container(
         width: double.infinity,
@@ -373,20 +414,26 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                     player,
                     // FIX: Sadece video duraklatıldığında play ikonu göster
                     if (!_isPlaying)
-                      GestureDetector(
+                      Semantics(
+                        button: true,
+                        label: AppLocalizations.of(context)!.a11yPlayVideo,
+                        excludeSemantics: true,
                         onTap: () => _youtubeController!.play(),
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.play_arrow_rounded,
-                            size: 48,
-                            color: Colors.white,
+                        child: GestureDetector(
+                          onTap: () => _youtubeController!.play(),
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.play_arrow_rounded,
+                              size: 48,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -403,6 +450,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final hasImage =
         !_isMapUrl(widget.item.url) && // Maps never show OG image
         widget.item.displayImage != null &&
@@ -467,32 +515,42 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                   SizedBox(
                     height: headerHeight,
                     width: double.infinity,
-                    child: ClipRRect(
-                      // No border radius for full page
-                      child:
-                          _isYoutube && _youtubeController != null
-                              ? _buildYoutubePlayer()
-                              : hasImage
-                              ? widget.item.displayImage!.startsWith('http')
-                                  ? buildAuthImage(
-                                    imageUrl: widget.item.displayImage!,
-                                    fit: BoxFit.cover,
-                                    placeholder:
-                                        (context, url) =>
-                                            _buildFallbackHeader(platformIcon),
-                                    errorWidget:
-                                        (context, url, error) =>
-                                            _buildFallbackHeader(platformIcon),
-                                  )
-                                  : Image.asset(
-                                    widget.item.displayImage!,
-                                    fit: BoxFit.cover,
-                                    alignment: Alignment.topCenter,
-                                    errorBuilder:
-                                        (_, __, ___) =>
-                                            _buildFallbackHeader(platformIcon),
-                                  )
-                              : _buildFallbackHeader(platformIcon),
+                    // Kapak görseli dekoratif (başlık aşağıda okunuyor);
+                    // VoiceOver'da etiketsiz "görsel" olarak okunmasın.
+                    child: ExcludeSemantics(
+                      excluding: !(_isYoutube && _youtubeController != null),
+                      child: ClipRRect(
+                        // No border radius for full page
+                        child:
+                            _isYoutube && _youtubeController != null
+                                ? _buildYoutubePlayer()
+                                : hasImage
+                                ? widget.item.displayImage!.startsWith('http')
+                                    ? buildAuthImage(
+                                      imageUrl: widget.item.displayImage!,
+                                      fit: BoxFit.cover,
+                                      placeholder:
+                                          (context, url) =>
+                                              _buildFallbackHeader(
+                                                platformIcon,
+                                              ),
+                                      errorWidget:
+                                          (context, url, error) =>
+                                              _buildFallbackHeader(
+                                                platformIcon,
+                                              ),
+                                    )
+                                    : Image.asset(
+                                      widget.item.displayImage!,
+                                      fit: BoxFit.cover,
+                                      alignment: Alignment.topCenter,
+                                      errorBuilder:
+                                          (_, __, ___) => _buildFallbackHeader(
+                                            platformIcon,
+                                          ),
+                                    )
+                                : _buildFallbackHeader(platformIcon),
+                      ),
                     ),
                   ),
 
@@ -511,10 +569,19 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                             child: Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
+                                // Beyaz/onPrimary yazı için ≥4.5:1 kontrast.
                                 gradient: LinearGradient(
                                   colors: [
-                                    context.colors.primary,
-                                    const Color(0xFF6FBFAC),
+                                    BrandGradient.ensureContrast(
+                                      context.colors.primary,
+                                      BrandGradient.foreground(context),
+                                      BrandGradient.textContrast,
+                                    ),
+                                    BrandGradient.ensureContrast(
+                                      const Color(0xFF6FBFAC),
+                                      BrandGradient.foreground(context),
+                                      BrandGradient.textContrast,
+                                    ),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -551,17 +618,25 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                               ? PhosphorIconsBold.pencilSimple
                                               : platformIcon,
                                           size: 20,
-                                          color: Colors.white,
+                                          color: BrandGradient.foreground(
+                                            context,
+                                          ),
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
                                           widget.item.type == ItemType.note
-                                              ? AppLocalizations.of(context)!.itemDetailEditAction
-                                              : _getPlatformActionText(widget.item.url),
+                                              ? AppLocalizations.of(
+                                                context,
+                                              )!.itemDetailEditAction
+                                              : _getPlatformActionText(
+                                                widget.item.url,
+                                              ),
                                           style: GoogleFonts.poppins(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.white,
+                                            color: BrandGradient.foreground(
+                                              context,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -694,7 +769,9 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          AppLocalizations.of(context)!.itemDetailEmbedRestricted,
+                          AppLocalizations.of(
+                            context,
+                          )!.itemDetailEmbedRestricted,
                           textAlign: TextAlign.left,
                           style: GoogleFonts.poppins(
                             fontSize: 11,
@@ -718,6 +795,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                 left: 16,
                 child: CircleIconButton(
                   icon: PhosphorIconsLight.x,
+                  semanticLabel: l10n.a11yClose,
                   onTap: () => Navigator.pop(context),
                 ),
               ),
@@ -728,6 +806,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                 right: 16,
                 child: CircleIconButton(
                   icon: PhosphorIconsLight.paperPlaneTilt,
+                  semanticLabel: l10n.a11yShare,
                   onTap: _shareLink,
                 ),
               ),
@@ -738,9 +817,26 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                 right: 16 + 44 + 12,
                 child: CircleIconButton(
                   icon: PhosphorIconsLight.pencilSimple,
+                  semanticLabel: l10n.a11yEdit,
                   onTap: _openEditScreen,
                 ),
               ),
+
+              // Delete Button (Left of Edit) — sürükle-bırak dışında görünür
+              // bir silme yolu; geri alma akışı çağıran tarafta (onDelete).
+              if (widget.onDelete != null)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 56,
+                  right: 16 + (44 + 12) * 2,
+                  child: CircleIconButton(
+                    icon: PhosphorIconsLight.trash,
+                    semanticLabel: l10n.a11yDelete,
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onDelete!();
+                    },
+                  ),
+                ),
             ],
           ),
         );

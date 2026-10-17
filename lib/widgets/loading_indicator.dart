@@ -1,3 +1,4 @@
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class LoadingIndicator extends StatelessWidget {
@@ -32,7 +33,19 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
-    )..repeat();
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduce Motion: parıltı durur; renkli logo ortada sabit görünür.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+      _controller.value = 1 / 3;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   @override
@@ -43,49 +56,53 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.size,
-      width: widget.size, // Assuming square logo, or let it take width
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Base Layer: Black Logo
-          Image.asset(
-            'assets/images/logo.png',
-            height: widget.size,
-            fit: BoxFit.contain,
-          ),
-
-          // Overlay Layer: Color Logo with Moving Mask
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return ShaderMask(
-                shaderCallback: (bounds) {
-                  return LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: const [
-                      Colors.transparent,
-                      Colors.white,
-                      Colors.white,
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.3, 0.7, 1.0],
-                    transform: _GradientTransform(_controller.value),
-                  ).createShader(bounds);
-                },
-                blendMode: BlendMode.dstIn,
-                child: child,
-              );
-            },
-            child: Image.asset(
-              'assets/images/logo_v2.png',
+    return Semantics(
+      label: AppLocalizations.of(context)?.a11yLoading,
+      excludeSemantics: true,
+      child: SizedBox(
+        height: widget.size,
+        width: widget.size, // Assuming square logo, or let it take width
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Base Layer: Black Logo
+            Image.asset(
+              'assets/images/logo.png',
               height: widget.size,
               fit: BoxFit.contain,
             ),
-          ),
-        ],
+
+            // Overlay Layer: Color Logo with Moving Mask
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return ShaderMask(
+                  shaderCallback: (bounds) {
+                    return LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: const [
+                        Colors.transparent,
+                        Colors.white,
+                        Colors.white,
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.3, 0.7, 1.0],
+                      transform: _GradientTransform(_controller.value),
+                    ).createShader(bounds);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: child,
+                );
+              },
+              child: Image.asset(
+                'assets/images/logo_v2.png',
+                height: widget.size,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

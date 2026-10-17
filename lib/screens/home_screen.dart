@@ -15,8 +15,9 @@ import 'package:somine_app/core/providers/navigation_providers.dart'; // Added
 import 'package:somine_app/screens/catalog_screen.dart';
 import 'package:somine_app/screens/add_content_screen.dart';
 import 'package:somine_app/core/services/share_service.dart';
-import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
+import 'package:somine_app/widgets/item_delete_flow.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -121,7 +122,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         useSafeArea: false,
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black.withValues(alpha: 0.5),
-        enableDrag: true,
+        // Aşağı kaydırarak kapatma AddContentScreen içinde (DraggableScrollableSheet
+        // min boyuta inince maybePop) yönetilir; böylece kaydedilmemiş
+        // değişiklik onayı (PopScope) atlanmaz.
+        enableDrag: false,
         builder:
             (context) => AddContentScreen(
               initialText: initialText,
@@ -143,8 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             title: l10n.commonSuccessBang,
             message: l10n.homeAddSuccessMessage,
             // Yalnız YENİ kayıtta hızlı hatırlatıcı aksiyonları göster.
-            quickReminderItemId:
-                result.isNewItem ? result.createdItemId : null,
+            quickReminderItemId: result.isNewItem ? result.createdItemId : null,
             quickReminderItemTitle:
                 result.isNewItem ? result.createdItemTitle : null,
           );
@@ -159,11 +162,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(homeTabIndexProvider);
 
-    // Determine active color for tabs
+    final l10n = AppLocalizations.of(context)!;
+
+    // Determine active color for tabs. Pasif ikon rengi, sekme çubuğu
+    // zeminiyle en az 3:1 (WCAG ikon) kontrast sağlayacak şekilde koyulaştırılır.
+    final inactiveTabColor = BrandGradient.ensureContrast(
+      context.colors.iconInactive,
+      context.colors.surfaceWhite,
+      BrandGradient.iconContrast,
+    );
     Color getIconColor(int index) {
-      return selectedIndex == index
-          ? context.colors.primary
-          : context.colors.iconInactive;
+      return selectedIndex == index ? context.colors.primary : inactiveTabColor;
     }
 
     // Check if Vibe theme is active
@@ -190,57 +199,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Feed
-            IconButton(
-              alignment: Alignment.topCenter,
-              onPressed: () => _onItemTapped(0),
-              icon: Icon(
-                selectedIndex == 0
-                    ? PhosphorIconsFill.house
-                    : PhosphorIconsLight.house,
-                color: getIconColor(0),
-                size: 26,
-              ),
+            _buildTabButton(
+              index: 0,
+              selectedIndex: selectedIndex,
+              label: l10n.a11yTabFeed,
+              activeIcon: PhosphorIconsFill.house,
+              inactiveIcon: PhosphorIconsLight.house,
+              color: getIconColor(0),
             ),
-
-            // Search
-            IconButton(
-              alignment: Alignment.topCenter,
-              onPressed: () => _onItemTapped(1),
-              icon: Icon(
-                selectedIndex == 1
-                    ? PhosphorIconsFill.magnifyingGlass
-                    : PhosphorIconsLight.magnifyingGlass,
-                color: getIconColor(1),
-                size: 26,
-              ),
+            _buildTabButton(
+              index: 1,
+              selectedIndex: selectedIndex,
+              label: l10n.a11yTabSearch,
+              activeIcon: PhosphorIconsFill.magnifyingGlass,
+              inactiveIcon: PhosphorIconsLight.magnifyingGlass,
+              color: getIconColor(1),
             ),
-
             const SizedBox(width: 48), // Spacer for FAB
-            // Catalog (Squares)
-            IconButton(
-              alignment: Alignment.topCenter,
-              onPressed: () => _onItemTapped(2),
-              icon: Icon(
-                selectedIndex == 2
-                    ? PhosphorIconsFill.squaresFour
-                    : PhosphorIconsLight.squaresFour,
-                color: getIconColor(2),
-                size: 26,
-              ),
+            _buildTabButton(
+              index: 2,
+              selectedIndex: selectedIndex,
+              label: l10n.a11yTabCatalog,
+              activeIcon: PhosphorIconsFill.squaresFour,
+              inactiveIcon: PhosphorIconsLight.squaresFour,
+              color: getIconColor(2),
             ),
-
-            // Profile
-            IconButton(
-              alignment: Alignment.topCenter,
-              onPressed: () => _onItemTapped(3),
-              icon: Icon(
-                selectedIndex == 3
-                    ? PhosphorIconsFill.user
-                    : PhosphorIconsLight.user,
-                color: getIconColor(3),
-                size: 26,
-              ),
+            _buildTabButton(
+              index: 3,
+              selectedIndex: selectedIndex,
+              label: l10n.a11yTabProfile,
+              activeIcon: PhosphorIconsFill.user,
+              inactiveIcon: PhosphorIconsLight.user,
+              color: getIconColor(3),
             ),
           ],
         ),
@@ -248,6 +238,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       // Main Content Switching
       body: _buildBody(isVibeTheme, selectedIndex),
+    );
+  }
+
+  /// İkon-only sekme butonu: VoiceOver için yerelleştirilmiş etiket +
+  /// seçili durumu, uzun basışta tooltip.
+  Widget _buildTabButton({
+    required int index,
+    required int selectedIndex,
+    required String label,
+    required IconData activeIcon,
+    required IconData inactiveIcon,
+    required Color color,
+  }) {
+    final isSelected = selectedIndex == index;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      excludeSemantics: true,
+      onTap: () => _onItemTapped(index),
+      child: IconButton(
+        alignment: Alignment.topCenter,
+        tooltip: label,
+        onPressed: () => _onItemTapped(index),
+        icon: Icon(
+          isSelected ? activeIcon : inactiveIcon,
+          color: color,
+          size: 26,
+        ),
+      ),
     );
   }
 
@@ -260,6 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ItemFeedScreen(
           onSearchTap: () => _onItemTapped(1), // Switch to Search Tab
           onCatalogTap: () => _onItemTapped(2), // Switch to Catalog Tab
+          onAddTap: () => _openAddContentScreen(),
         ),
 
         // 1: Search
@@ -269,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         // 2: Catalog
         initializedTabs.contains(2)
-            ? const CatalogScreen()
+            ? CatalogScreen(onAddTap: () => _openAddContentScreen())
             : const SizedBox.shrink(),
 
         // 3: Profile
@@ -291,41 +312,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     if (!isDragging) {
       // NORMAL FAB
-      return Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [context.colors.primary, context.colors.secondary],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: context.colors.surfaceWhite.withValues(
-              alpha: 0.2,
-            ), // Subtle midnight-like border
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.colors.primary.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+      final l10n = AppLocalizations.of(context)!;
+      final fabForeground = BrandGradient.foreground(context);
+      return Semantics(
+        button: true,
+        enabled: !_isTrashActionInProgress,
+        label: l10n.a11yAddContent,
+        excludeSemantics: true,
+        onTap: _isTrashActionInProgress ? null : () => _openAddContentScreen(),
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            // İkon-only kontrol: beyaz/onPrimary artı ikonu için ≥3:1.
+            gradient: BrandGradient.linear(
+              context,
+              minContrast: BrandGradient.iconContrast,
             ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap:
-                _isTrashActionInProgress ? null : () => _openAddContentScreen(),
-            customBorder: const CircleBorder(),
-            splashColor: Colors.white.withValues(alpha: 0.3),
-            child: const Icon(
-              PhosphorIconsLight.plus,
-              color: Colors.white,
-              size: 28,
+            border: Border.all(
+              color: context.colors.surfaceWhite.withValues(
+                alpha: 0.2,
+              ), // Subtle midnight-like border
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: context.colors.primary.withValues(alpha: 0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap:
+                  _isTrashActionInProgress
+                      ? null
+                      : () => _openAddContentScreen(),
+              customBorder: const CircleBorder(),
+              splashColor: fabForeground.withValues(alpha: 0.3),
+              child: Tooltip(
+                message: l10n.a11yAddContent,
+                child: Icon(
+                  PhosphorIconsLight.plus,
+                  color: fabForeground,
+                  size: 28,
+                ),
+              ),
             ),
           ),
         ),
@@ -350,87 +385,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         // Reset drag state
         ref.read(isDraggingProvider.notifier).state = false;
 
-        final repo = ref.read(itemRepositoryProvider);
-        final selectedItems = ref.read(selectedItemsProvider);
-        final isSelectionMode = ref.read(isSelectionModeProvider);
-        final isBatchDelete =
-            isSelectionMode && selectedItems.contains(details.data.id);
-
-        final currentFeedItems = ref.read(paginatedFeedProvider).items;
-        final removedItems =
-            isBatchDelete
-                ? currentFeedItems
-                    .where((item) => selectedItems.contains(item.id))
-                    .toList()
-                : currentFeedItems
-                    .where((item) => item.id == details.data.id)
-                    .toList();
-        final removedIds = removedItems.map((item) => item.id).toSet();
-
-        ref
-            .read(paginatedFeedProvider.notifier)
-            .removeItemsOptimistically(removedIds);
-
-        if (isBatchDelete) {
-          ref.read(isSelectionModeProvider.notifier).state = false;
-          ref.read(selectedItemsProvider.notifier).state = {};
-        }
-
         try {
-          if (isBatchDelete) {
-            await repo.softDeleteItems(removedIds.toList());
-          } else {
-            await repo.deleteItem(details.data.id);
-          }
-
-          ref.invalidate(itemCountProvider);
-          if (!context.mounted) return;
-
-          final l10n = AppLocalizations.of(context)!;
-          final fallbackName = l10n.homeItemWord;
-          await SuccessNotificationSheet.show(
-            context,
-            title: l10n.commonDeleted,
-            message:
-                isBatchDelete
-                    ? l10n.homeBatchDeletedMessage(removedItems.length)
-                    : l10n.homeItemDeletedMessage(
-                      details.data.displayTitle.isEmpty
-                          ? fallbackName
-                          : details.data.displayTitle,
-                    ),
-            onUndo: () async {
-              ref
-                  .read(paginatedFeedProvider.notifier)
-                  .restoreItemsOptimistically(removedItems);
-              try {
-                await repo.restoreItems(removedIds.toList());
-                ref.invalidate(itemCountProvider);
-                ref.invalidate(paginatedFeedProvider);
-              } catch (error) {
-                ref
-                    .read(paginatedFeedProvider.notifier)
-                    .removeItemsOptimistically(removedIds);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(FailureMapper.toUserMessage(error))),
-                  );
-                }
-              }
-            },
-          );
-        } catch (error) {
-          ref
-              .read(paginatedFeedProvider.notifier)
-              .restoreItemsOptimistically(removedItems);
-          if (!context.mounted) return;
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(FailureMapper.toUserMessage(error))),
-          );
+          await deleteFeedItemsWithUndo(context, ref, details.data);
         } finally {
-          ref.invalidate(paginatedFeedProvider);
-          ref.invalidate(itemCountProvider);
           if (mounted) {
             setState(() => _isTrashActionInProgress = false);
           } else {

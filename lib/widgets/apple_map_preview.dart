@@ -58,9 +58,14 @@ class _AppleMapPreviewState extends State<AppleMapPreview> {
 
           // Gesture detector for tap to open
           Positioned.fill(
-            child: GestureDetector(
+            child: Semantics(
+              button: widget.onTap != null,
+              label: AppLocalizations.of(context)!.a11yOpenMap,
               onTap: widget.onTap,
-              child: Container(color: Colors.transparent),
+              child: GestureDetector(
+                onTap: widget.onTap,
+                child: Container(color: Colors.transparent),
+              ),
             ),
           ),
 
@@ -138,9 +143,14 @@ class _AppleMapPreviewState extends State<AppleMapPreview> {
             ),
           ),
           Positioned.fill(
-            child: GestureDetector(
+            child: Semantics(
+              button: widget.onTap != null,
+              label: AppLocalizations.of(context)!.a11yOpenMap,
               onTap: widget.onTap,
-              child: Container(color: Colors.transparent),
+              child: GestureDetector(
+                onTap: widget.onTap,
+                child: Container(color: Colors.transparent),
+              ),
             ),
           ),
         ],

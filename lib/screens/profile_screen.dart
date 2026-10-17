@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:somine_app/core/services/analytics_service.dart';
+import 'package:somine_app/core/services/subscription_service.dart';
 import 'package:somine_app/widgets/user_avatar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,6 +35,7 @@ import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
 import 'package:somine_app/screens/paywall_screen.dart';
+import 'package:somine_app/widgets/delete_account_flow.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -412,7 +416,7 @@ class ProfileScreen extends ConsumerWidget {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFEE2E2), // Soft Red Bg
+                                          color: context.colors.danger.withValues(alpha: 0.12), // Soft Red Bg
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Icon(
@@ -446,7 +450,7 @@ class ProfileScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
+                                  color: context.colors.premiumShadow.withValues(alpha: 0.04),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -455,71 +459,7 @@ class ProfileScreen extends ConsumerWidget {
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: () async {
-                                  // Show Delete Account Confirmation Dialog
-                                  final shouldDelete = await showCupertinoDialog<bool>(
-                                    context: context,
-                                    builder: (context) => CupertinoAlertDialog(
-                                      title: Text(l10n.profileDeleteAccount),
-                                      content: Text(l10n.profileDeleteAccountMessage),
-                                      actions: [
-                                        CupertinoDialogAction(
-                                          child: Text(l10n.profileCancel),
-                                          onPressed: () => Navigator.pop(context, false),
-                                        ),
-                                        CupertinoDialogAction(
-                                          isDestructiveAction: true,
-                                          child: Text(l10n.profileDeleteAccount),
-                                          onPressed: () => Navigator.pop(context, true),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-
-                                  if (shouldDelete == true && context.mounted) {
-                                    // Reset tab index removed to prevent showing empty feed
-                                    // ref.read(homeTabIndexProvider.notifier).state = 0;
-                                    
-                                    // Capture navigator before async operation
-                                    final navigator = Navigator.of(context);
-                                    
-                                    try {
-                                      // Show loading with OPAQUE background to hide empty feed flash
-                                      showDialog(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        barrierColor: Colors.black, 
-                                        builder: (context) => const Center(
-                                          child: CircularProgressIndicator(color: Colors.white),
-                                        ),
-                                      );
-
-                                      // Reset tab index to Feed before deleting account so next login starts fresh
-                                      ref.read(homeTabIndexProvider.notifier).state = 0;
-
-                                      // Perform account deletion
-                                      await AuthRepository().deleteAccount();
-
-                                      // Close loading using captured navigator
-                                      navigator.pop();
-
-                                      // Navigate to Login Screen
-                                      navigator.pushAndRemoveUntil(
-                                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                        (route) => false,
-                                      );
-                                    } catch (e) {
-                                      // Close loading
-                                      navigator.pop();
-                                      
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text(l10n.profileDeleteAccountFailed(e.toString()))),
-                                        );
-                                      }
-                                    }
-                                  }
-                                },
+                                onTap: () => runDeleteAccountFlow(context),
                                 borderRadius: BorderRadius.circular(20),
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -531,7 +471,7 @@ class ProfileScreen extends ConsumerWidget {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFEE2E2),
+                                          color: context.colors.danger.withValues(alpha: 0.12),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Icon(
@@ -559,13 +499,20 @@ class ProfileScreen extends ConsumerWidget {
                           const SizedBox(height: 32),
 
                           // Version
-                          Text(
-                            "v1.0.0",
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              color: context.colors.hint,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          FutureBuilder<PackageInfo>(
+                            future: PackageInfo.fromPlatform(),
+                            builder: (context, snapshot) {
+                              final info = snapshot.data;
+                              if (info == null) return const SizedBox(height: 15);
+                              return Text(
+                                'v${info.version} (${info.buildNumber})',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  color: context.colors.hint,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 40),
                         ],
@@ -685,7 +632,11 @@ class ProfileScreen extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // Navigate to Paywall
+            if (isPro) {
+              // Premium kullanıcı: paywall yerine App Store abonelik yönetimi.
+              unawaited(SubscriptionService.openManagement());
+              return;
+            }
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -754,7 +705,7 @@ class ProfileScreen extends ConsumerWidget {
                             return Text(
                               badgeText,
                               style: GoogleFonts.outfit(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                                 letterSpacing: 0.5,
@@ -781,7 +732,11 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildStatItem(BuildContext context, String label, String value, IconData icon, {VoidCallback? onTap}) {
-    return GestureDetector(
+    return Semantics(
+      button: onTap != null,
+      label: '$value $label',
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Row(
@@ -820,6 +775,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
         ],
       ),
+    ),
     );
   }
 
@@ -920,7 +876,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: Text(
                     badge,
                     style: GoogleFonts.outfit(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: badgeColor ?? Colors.blue,
                     ),
@@ -929,10 +885,10 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(width: 8),
               ],
 
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios,
                 size: 14,
-                color: Color(0xFF9CA3AF),
+                color: context.colors.hint,
               ),
             ],
           ),
@@ -993,17 +949,17 @@ class ProfileScreen extends ConsumerWidget {
                     style: GoogleFonts.outfit(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
               ],
 
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios,
                 size: 14,
-                color: Color(0xFF9CA3AF),
+                color: context.colors.hint,
               ),
             ],
           ),

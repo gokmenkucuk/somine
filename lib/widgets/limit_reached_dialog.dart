@@ -147,18 +147,19 @@ class LimitReachedDialog extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Premium CTA
-          GestureDetector(
+          Semantics(
+            button: true,
+            child: GestureDetector(
             onTap: () async {
-              Navigator.pop(context);
-              final result = await Navigator.push<bool>(
-                context,
+              // Navigator, sayfa kapanmadan önce yakalanır; kapanan context
+              // üzerinden push yapılmaz.
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              await navigator.push<bool>(
                 MaterialPageRoute(
                   builder: (_) => const PaywallScreen(source: 'limit_dialog'),
                 ),
               );
-              if (result == true && context.mounted) {
-                // User upgraded, can proceed
-              }
             },
             child: Container(
               width: double.infinity,
@@ -174,19 +175,24 @@ class LimitReachedDialog extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(PhosphorIconsBold.crown, color: Colors.white, size: 20),
+                  Icon(
+                    PhosphorIconsBold.crown,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     l10n.limitUpgradeCta,
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 ],
               ),
             ),
+          ),
           ),
 
           const SizedBox(height: 12),
@@ -197,7 +203,7 @@ class LimitReachedDialog extends StatelessWidget {
             child: Text(
               l10n.limitNotNow,
               style: GoogleFonts.outfit(
-                color: context.colors.hint,
+                color: context.colors.body,
               ),
             ),
           ),

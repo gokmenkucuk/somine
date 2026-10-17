@@ -31,11 +31,12 @@ class ReminderPickerBottomSheet extends StatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => ReminderPickerBottomSheet(
-        existingReminder: existingReminder,
-        onSave: (reminder) => Navigator.pop(context, reminder),
-        onDelete: onDelete,
-      ),
+      builder:
+          (context) => ReminderPickerBottomSheet(
+            existingReminder: existingReminder,
+            onSave: (reminder) => Navigator.pop(context, reminder),
+            onDelete: onDelete,
+          ),
     );
     if (reminder != null) {
       AnalyticsService.instance.logReminderSet(
@@ -117,6 +118,10 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
                     const SizedBox(height: 20),
                   ],
                   _buildTimeSelector(),
+                  if (_isOneTimeInPast) ...[
+                    const SizedBox(height: 12),
+                    _buildPastTimeError(),
+                  ],
                   const SizedBox(height: 30),
                   _buildSaveButton(),
                 ],
@@ -286,8 +291,9 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  AppLocalizations.of(context)!
-                      .reminderPickerDayOfMonthValue(_selectedDayOfMonth),
+                  AppLocalizations.of(
+                    context,
+                  )!.reminderPickerDayOfMonthValue(_selectedDayOfMonth),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     color: context.colors.headline,
@@ -472,10 +478,17 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _saveReminder,
+        // Geçmişte kalan tek seferlik hatırlatıcı kaydedilemez.
+        onPressed: _isOneTimeInPast ? null : _saveReminder,
         style: ElevatedButton.styleFrom(
           backgroundColor: context.colors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          disabledBackgroundColor: context.colors.primary.withValues(
+            alpha: 0.35,
+          ),
+          disabledForegroundColor: Theme.of(
+            context,
+          ).colorScheme.onPrimary.withValues(alpha: 0.8),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -486,41 +499,75 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
           widget.existingReminder != null
               ? AppLocalizations.of(context)!.commonUpdate
               : AppLocalizations.of(context)!.commonSave,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showCupertinoModalPopup<DateTime>(
+  /// Cupertino seçiciler için ortak alt panel: üstte Vazgeç / Bitti çubuğu,
+  /// altta seçici. Sabit toplam yükseklik yok — araç çubuğu büyük yazı
+  /// boyutlarında büyüyebilir, seçici iOS standardı 216pt kalır.
+  /// Seçim yalnızca "Bitti" ile uygulanır; Vazgeç / dışarı dokunma `null` döner.
+  Future<T?> _showPickerPopup<T>({
+    required Widget picker,
+    required T Function() result,
+  }) {
+    return showCupertinoModalPopup<T>(
       context: context,
-      builder: (context) => Container(
-        height: 300,
-        color: context.colors.surfaceWhite,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 200,
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.date,
-                initialDateTime: _selectedDate,
-                minimumDate: DateTime.now(),
-                maximumDate: DateTime.now().add(const Duration(days: 365 * 10)),
-                onDateTimeChanged: (date) {
-                  _selectedDate = date;
-                },
-              ),
+      builder: (popupContext) {
+        final l10n = AppLocalizations.of(popupContext)!;
+        return Container(
+          color: popupContext.colors.surfaceWhite,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      onPressed: () => Navigator.pop(popupContext),
+                      child: Text(
+                        l10n.commonCancel,
+                        style: TextStyle(color: popupContext.colors.body),
+                      ),
+                    ),
+                    CupertinoButton(
+                      onPressed: () => Navigator.pop(popupContext, result()),
+                      child: Text(
+                        l10n.commonDone,
+                        style: TextStyle(
+                          color: popupContext.colors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(height: 1, color: popupContext.colors.divider),
+                SizedBox(height: 216, child: picker),
+              ],
             ),
-            CupertinoButton(
-              child: Text(AppLocalizations.of(context)!.commonOk),
-              onPressed: () => Navigator.pop(context, _selectedDate),
-            ),
-          ],
-        ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickDate() async {
+    var temp = _selectedDate;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final picked = await _showPickerPopup<DateTime>(
+      result: () => temp,
+      picker: CupertinoDatePicker(
+        mode: CupertinoDatePickerMode.date,
+        initialDateTime: _selectedDate.isBefore(today) ? today : _selectedDate,
+        minimumDate: today,
+        maximumDate: today.add(const Duration(days: 365 * 10)),
+        onDateTimeChanged: (date) => temp = date,
       ),
     );
 
@@ -530,37 +577,23 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
   }
 
   Future<void> _pickTime() async {
-    final picked = await showCupertinoModalPopup<TimeOfDay>(
-      context: context,
-      builder: (context) => Container(
-        height: 300,
-        color: context.colors.surfaceWhite,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 200,
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: true, // 24 saatlik format
-                initialDateTime: DateTime(
-                  DateTime.now().year,
-                  DateTime.now().month,
-                  DateTime.now().day,
-                  _selectedTime.hour,
-                  _selectedTime.minute,
-                ),
-                onDateTimeChanged: (time) {
-                  _selectedTime =
-                      TimeOfDay(hour: time.hour, minute: time.minute);
-                },
-              ),
-            ),
-            CupertinoButton(
-              child: Text(AppLocalizations.of(context)!.commonOk),
-              onPressed: () => Navigator.pop(context, _selectedTime),
-            ),
-          ],
+    var temp = _selectedTime;
+    final now = DateTime.now();
+    final picked = await _showPickerPopup<TimeOfDay>(
+      result: () => temp,
+      picker: CupertinoDatePicker(
+        mode: CupertinoDatePickerMode.time,
+        // Cihazın 12/24 saat ayarına uyar.
+        use24hFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+        initialDateTime: DateTime(
+          now.year,
+          now.month,
+          now.day,
+          _selectedTime.hour,
+          _selectedTime.minute,
         ),
+        onDateTimeChanged:
+            (time) => temp = TimeOfDay(hour: time.hour, minute: time.minute),
       ),
     );
 
@@ -570,40 +603,24 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
   }
 
   Future<void> _pickDayOfMonth() async {
-    final picked = await showCupertinoModalPopup<int>(
-      context: context,
-      builder: (context) => Container(
-        height: 300,
-        color: context.colors.surfaceWhite,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 200,
-              child: CupertinoPicker(
-                itemExtent: 40,
-                scrollController: FixedExtentScrollController(
-                  initialItem: _selectedDayOfMonth - 1,
-                ),
-                children: List.generate(
-                  31,
-                  (index) => Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: GoogleFonts.poppins(fontSize: 18),
-                    ),
-                  ),
-                ),
-                onSelectedItemChanged: (index) {
-                  _selectedDayOfMonth = index + 1;
-                },
-              ),
-            ),
-            CupertinoButton(
-              child: Text(AppLocalizations.of(context)!.commonOk),
-              onPressed: () => Navigator.pop(context, _selectedDayOfMonth),
-            ),
-          ],
+    var temp = _selectedDayOfMonth;
+    final picked = await _showPickerPopup<int>(
+      result: () => temp,
+      picker: CupertinoPicker(
+        itemExtent: 40,
+        scrollController: FixedExtentScrollController(
+          initialItem: _selectedDayOfMonth - 1,
         ),
+        children: List.generate(
+          31,
+          (index) => Center(
+            child: Text(
+              '${index + 1}',
+              style: GoogleFonts.poppins(fontSize: 18),
+            ),
+          ),
+        ),
+        onSelectedItemChanged: (index) => temp = index + 1,
       ),
     );
 
@@ -614,121 +631,155 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
 
   Future<void> _pickMonthDay() async {
     final months = _monthNames();
+    var tempMonth = _selectedMonthOfYear;
+    var tempDay = _selectedDayOfYear;
 
     final picked = await showModalBottomSheet<DateTime>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        height: 320,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.colors.divider,
-                borderRadius: BorderRadius.circular(2),
+      builder:
+          (context) => Container(
+            // Sabit yükseklik yok: büyük yazı boyutunda başlık/butonlar büyür.
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: context.colors.surfaceWhite,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              AppLocalizations.of(context)!.reminderPickerMonthDaySheetTitle,
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: context.colors.headline,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Two columns: Month and Day
-            Expanded(
-              child: Row(
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Month picker
-                  Expanded(
-                    child: CupertinoPicker(
-                      itemExtent: 44,
-                      scrollController: FixedExtentScrollController(
-                        initialItem: _selectedMonthOfYear - 1,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        _selectedMonthOfYear = index + 1;
-                      },
-                      children: months.map((month) {
-                        return Center(
-                          child: Text(
-                            month,
-                            style: GoogleFonts.poppins(fontSize: 18),
-                          ),
-                        );
-                      }).toList(),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.colors.divider,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  // Day picker
-                  Expanded(
-                    child: CupertinoPicker(
-                      itemExtent: 44,
-                      scrollController: FixedExtentScrollController(
-                        initialItem: _selectedDayOfYear - 1,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        _selectedDayOfYear = index + 1;
-                      },
-                      children: List.generate(31, (index) {
-                        return Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: GoogleFonts.poppins(fontSize: 18),
-                          ),
-                        );
-                      }),
+                  const SizedBox(height: 20),
+                  Text(
+                    AppLocalizations.of(
+                      context,
+                    )!.reminderPickerMonthDaySheetTitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: context.colors.headline,
+                      letterSpacing: -0.5,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // Two columns: Month and Day
+                  SizedBox(
+                    height: 216,
+                    child: Row(
+                      children: [
+                        // Month picker
+                        Expanded(
+                          child: CupertinoPicker(
+                            itemExtent: 44,
+                            scrollController: FixedExtentScrollController(
+                              initialItem: _selectedMonthOfYear - 1,
+                            ),
+                            onSelectedItemChanged:
+                                (index) => tempMonth = index + 1,
+                            children:
+                                months.map((month) {
+                                  return Center(
+                                    child: Text(
+                                      month,
+                                      style: GoogleFonts.poppins(fontSize: 18),
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                        ),
+                        // Day picker
+                        Expanded(
+                          child: CupertinoPicker(
+                            itemExtent: 44,
+                            scrollController: FixedExtentScrollController(
+                              initialItem: _selectedDayOfYear - 1,
+                            ),
+                            onSelectedItemChanged:
+                                (index) => tempDay = index + 1,
+                            children: List.generate(31, (index) {
+                              return Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: GoogleFonts.poppins(fontSize: 18),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Vazgeç + Bitti
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              foregroundColor: context.colors.body,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!.commonCancel,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            // Yıl yalnızca ay/gün taşıyıcısı; 2024 artık yıl (29 Şubat).
+                            onPressed:
+                                () => Navigator.pop(
+                                  context,
+                                  DateTime(2024, tempMonth, tempDay),
+                                ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.colors.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!.commonDone,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            // Tamam butonu
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    DateTime(2026, _selectedMonthOfYear, _selectedDayOfYear),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context)!.commonOk,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (picked != null) {
@@ -794,66 +845,77 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
-                  children: options.map((option) {
-                    final value = option.$1;
-                    final label = option.$2;
-                    final isSelected = _selectedRepeat == value;
+                  children:
+                      options.map((option) {
+                        final value = option.$1;
+                        final label = option.$2;
+                        final isSelected = _selectedRepeat == value;
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: InkWell(
-                        onTap: () => Navigator.pop(builderContext, value),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? context.colors.primary.withValues(alpha: 0.1)
-                                : context.colors.hint.withValues(alpha: 0.08),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: InkWell(
+                            onTap: () => Navigator.pop(builderContext, value),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? context.colors.primary.withValues(alpha: 0.3)
-                                  : Colors.transparent,
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                label,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                  color: isSelected
-                                      ? context.colors.primary
-                                      : context.colors.headline,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    isSelected
+                                        ? context.colors.primary.withValues(
+                                          alpha: 0.1,
+                                        )
+                                        : context.colors.hintSubtle.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      isSelected
+                                          ? context.colors.primary.withValues(
+                                            alpha: 0.3,
+                                          )
+                                          : Colors.transparent,
+                                  width: 1,
                                 ),
                               ),
-                              const Spacer(),
-                              if (isSelected)
-                                Icon(
-                                  PhosphorIconsBold.checkCircle,
-                                  color: context.colors.primary,
-                                  size: 22,
-                                )
-                              else
-                                Icon(
-                                  PhosphorIconsBold.circle,
-                                  color: context.colors.iconInactive,
-                                  size: 22,
-                                ),
-                            ],
+                              child: Row(
+                                children: [
+                                  Text(
+                                    label,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight:
+                                          isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                      color:
+                                          isSelected
+                                              ? context.colors.primary
+                                              : context.colors.headline,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (isSelected)
+                                    Icon(
+                                      PhosphorIconsBold.checkCircle,
+                                      color: context.colors.primary,
+                                      size: 22,
+                                    )
+                                  else
+                                    Icon(
+                                      PhosphorIconsBold.circle,
+                                      color: context.colors.iconInactive,
+                                      size: 22,
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -889,11 +951,7 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
       case RepeatFrequency.monthly:
         // Sadece gün kullan, ay/yıl bugünden al
         final now = DateTime.now();
-        reminderDate = DateTime(
-          now.year,
-          now.month,
-          _selectedDayOfMonth,
-        );
+        reminderDate = DateTime(now.year, now.month, _selectedDayOfMonth);
         break;
       case RepeatFrequency.yearly:
         // Ay+gün kullan, yıl bugünden al
@@ -915,9 +973,10 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
       reminderDate: reminderDate,
       reminderTime: _selectedTime,
       repeat: _selectedRepeat,
-      customRepeatMinutes: _selectedRepeat == RepeatFrequency.customMinutes
-          ? _customMinutes
-          : null,
+      customRepeatMinutes:
+          _selectedRepeat == RepeatFrequency.customMinutes
+              ? _customMinutes
+              : null,
       isActive: true,
       createdAt: widget.existingReminder?.createdAt ?? DateTime.now(),
       lastTriggered: widget.existingReminder?.lastTriggered,
@@ -943,10 +1002,51 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
     return DateFormat('d MMM y', _dateLocale).format(date);
   }
 
+  /// Dile ve cihazın 12/24 saat ayarına göre saat biçimi.
   String _formatTime(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    return MaterialLocalizations.of(context).formatTimeOfDay(
+      time,
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+  }
+
+  /// Tek seferlik hatırlatıcının seçili tarih+saati şu an veya geçmişte mi?
+  bool get _isOneTimeInPast {
+    if (_selectedRepeat != RepeatFrequency.none) return false;
+    final combined = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+    return !combined.isAfter(DateTime.now());
+  }
+
+  Widget _buildPastTimeError() {
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            PhosphorIconsBold.warningCircle,
+            size: 18,
+            color: context.colors.danger,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              AppLocalizations.of(context)!.reminderPickerPastTimeError,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: context.colors.danger,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatMonthDay(int month, int day) {

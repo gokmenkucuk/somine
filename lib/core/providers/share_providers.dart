@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:somine_app/core/models/blocked_user_model.dart';
 import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/repositories/share_repository.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
@@ -12,7 +13,7 @@ final shareRepositoryProvider = Provider<ShareRepository>((ref) {
 final mySharesProvider = StreamProvider.autoDispose<List<ShareModel>>((ref) {
   final authState = ref.watch(authStateProvider);
   final shareRepo = ref.watch(shareRepositoryProvider);
-  
+
   return authState.when(
     data: (user) {
       if (user != null) {
@@ -26,10 +27,12 @@ final mySharesProvider = StreamProvider.autoDispose<List<ShareModel>>((ref) {
 });
 
 /// Benimle paylaşılanlar (kabul edilenler) - Stream provider
-final sharedWithMeProvider = StreamProvider.autoDispose<List<ShareModel>>((ref) {
+final sharedWithMeProvider = StreamProvider.autoDispose<List<ShareModel>>((
+  ref,
+) {
   final authState = ref.watch(authStateProvider);
   final shareRepo = ref.watch(shareRepositoryProvider);
-  
+
   return authState.when(
     data: (user) {
       if (user != null) {
@@ -43,24 +46,32 @@ final sharedWithMeProvider = StreamProvider.autoDispose<List<ShareModel>>((ref) 
 });
 
 /// Bekleyen paylaşım istekleri - Stream provider
-final pendingShareRequestsProvider = StreamProvider.autoDispose<List<ShareModel>>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final shareRepo = ref.watch(shareRepositoryProvider);
-  
-  return authState.when(
-    data: (user) {
-      if (user != null) {
-        return shareRepo.getPendingShareRequests(user.uid);
-      }
-      return Stream.value([]);
-    },
-    loading: () => Stream.value([]),
-    error: (_, __) => Stream.value([]),
-  );
-});
+final pendingShareRequestsProvider =
+    StreamProvider.autoDispose<List<ShareModel>>((ref) {
+      final authState = ref.watch(authStateProvider);
+      final shareRepo = ref.watch(shareRepositoryProvider);
+
+      return authState.when(
+        data: (user) {
+          if (user != null) {
+            return shareRepo.getPendingShareRequests(user.uid);
+          }
+          return Stream.value([]);
+        },
+        loading: () => Stream.value([]),
+        error: (_, __) => Stream.value([]),
+      );
+    });
 
 /// Bekleyen paylaşım isteği sayısı
 final pendingShareRequestCountProvider = Provider.autoDispose<int>((ref) {
   final pendingRequests = ref.watch(pendingShareRequestsProvider);
   return pendingRequests.valueOrNull?.length ?? 0;
 });
+
+/// Engellenen kullanıcılar (App Store 1.2).
+final blockedUsersProvider = FutureProvider.autoDispose<List<BlockedUserModel>>(
+  (ref) {
+    return ref.watch(shareRepositoryProvider).getBlockedUsers();
+  },
+);

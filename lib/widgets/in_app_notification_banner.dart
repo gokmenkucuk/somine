@@ -121,6 +121,10 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
   late final Animation<double> _fadeAnimation;
   Timer? _dismissTimer;
   bool _isClosing = false;
+  bool _started = false;
+
+  /// "Hareketi Azalt" açıksa kayma/solma animasyonu atlanır.
+  bool _reduceMotion = false;
 
   @override
   void initState() {
@@ -141,8 +145,21 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
       curve: Curves.easeOut,
     );
 
-    unawaited(_controller.forward());
     _dismissTimer = Timer(const Duration(seconds: 4), _dismiss);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (!_started) {
+      _started = true;
+      if (_reduceMotion) {
+        _controller.value = 1;
+      } else {
+        unawaited(_controller.forward());
+      }
+    }
   }
 
   @override
@@ -159,7 +176,9 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
 
     _isClosing = true;
     _dismissTimer?.cancel();
-    await _controller.reverse();
+    if (!_reduceMotion) {
+      await _controller.reverse();
+    }
     if (mounted) {
       widget.onDismissed();
     }
@@ -204,7 +223,7 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
                         child: Container(
                           width: double.infinity,
                           constraints: const BoxConstraints(maxWidth: 520),
-                          padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+                          padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
                           decoration: BoxDecoration(
                             color: appearance.backgroundColor,
                             borderRadius: BorderRadius.circular(20),
@@ -252,7 +271,7 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
                                         AppLocalizations.of(context)!,
                                         widget.notification,
                                       ),
-                                      maxLines: 1,
+                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.outfit(
                                         fontSize: 15,
@@ -267,7 +286,7 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
                                         AppLocalizations.of(context)!,
                                         widget.notification,
                                       ),
-                                      maxLines: 1,
+                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
@@ -279,20 +298,36 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () => unawaited(_dismiss()),
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: appearance.dismissBackgroundColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    PhosphorIconsRegular.x,
-                                    size: 12,
-                                    color: appearance.dismissIconColor,
+                              const SizedBox(width: 2),
+                              // Görsel 24pt daire korunur; dokunma alanı 44pt.
+                              Semantics(
+                                button: true,
+                                label: MaterialLocalizations.of(
+                                  context,
+                                ).closeButtonTooltip,
+                                excludeSemantics: true,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => unawaited(_dismiss()),
+                                  child: SizedBox(
+                                    width: 44,
+                                    height: 44,
+                                    child: Center(
+                                      child: Container(
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              appearance.dismissBackgroundColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          PhosphorIconsRegular.x,
+                                          size: 12,
+                                          color: appearance.dismissIconColor,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -348,7 +383,8 @@ class _BannerAppearance {
             ? colors.surfaceWhite.withValues(alpha: 0.92)
             : Colors.white.withValues(alpha: 0.92);
     final titleColor = colors.headline;
-    final bodyColor = colors.body.withValues(alpha: 0.94);
+    // Saydamlık yok: body tokenı yüzeyine karşı ≥4.5:1 hesaplandı.
+    final bodyColor = colors.body;
     final dismissBg =
         isDark
             ? Colors.white.withValues(alpha: 0.08)
@@ -373,11 +409,11 @@ class _BannerAppearance {
       case NotificationType.shareAccepted:
         return _BannerAppearance(
           icon: PhosphorIconsRegular.checkCircle,
-          accentColor: const Color(0xFF22C55E),
+          accentColor: colors.success,
           secondaryAccentColor: colors.secondary,
           backgroundColor: baseSurface,
-          borderColor: const Color(0xFF22C55E).withValues(alpha: 0.18),
-          shadowColor: const Color(0xFF22C55E).withValues(alpha: 0.14),
+          borderColor: colors.success.withValues(alpha: 0.18),
+          shadowColor: colors.success.withValues(alpha: 0.14),
           titleColor: titleColor,
           bodyColor: bodyColor,
           dismissBackgroundColor: dismissBg,
@@ -386,11 +422,11 @@ class _BannerAppearance {
       case NotificationType.shareRejected:
         return _BannerAppearance(
           icon: PhosphorIconsRegular.xCircle,
-          accentColor: const Color(0xFFEF4444),
+          accentColor: colors.danger,
           secondaryAccentColor: colors.secondary,
           backgroundColor: baseSurface,
-          borderColor: const Color(0xFFEF4444).withValues(alpha: 0.18),
-          shadowColor: const Color(0xFFEF4444).withValues(alpha: 0.14),
+          borderColor: colors.danger.withValues(alpha: 0.18),
+          shadowColor: colors.danger.withValues(alpha: 0.14),
           titleColor: titleColor,
           bodyColor: bodyColor,
           dismissBackgroundColor: dismissBg,

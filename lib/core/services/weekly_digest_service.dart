@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/utils/resurfacing_dates.dart';
@@ -8,9 +9,11 @@ import 'package:somine_app/core/utils/resurfacing_dates.dart';
 /// Haftalık "Sana geri geldi" lokal bildirimi (Resurfacing v1).
 ///
 /// App açılışında çağrılır; `notification_weekly` toggle'ına
-/// (notification_settings_screen) bağlıdır. Açıksa hiç açılmamış
-/// (`lastOpenedAt == null`) kayıtlardan aday seçip sıradaki Pazar 19:00'a
-/// sabit id ile idempotent schedule eder; kapalıysa bildirimi iptal eder.
+/// (notification_settings_screen) bağlıdır; varsayılan KAPALI (opt-in).
+/// Açıksa hiç açılmamış (`lastOpenedAt == null`) ve gizli kasada olmayan
+/// kayıtları sayıp sıradaki Pazar 19:00'a sabit id ile idempotent schedule
+/// eder; kapalıysa bildirimi iptal eder. Metin yalnızca bilgi verir (sayı),
+/// içerik başlığı göstermez.
 class WeeklyDigestService {
   static final WeeklyDigestService _instance = WeeklyDigestService._internal();
   factory WeeklyDigestService() => _instance;
@@ -23,9 +26,9 @@ class WeeklyDigestService {
   static const String _weeklyToggleKey = 'notification_weekly';
 
   static const int _digestHour = 19;
-  static const int _maxCandidates = 3;
 
   final ItemRepository _itemRepository = ItemRepository();
+  final CategoryRepository _categoryRepository = CategoryRepository();
   final NotificationService _notificationService = NotificationService();
 
   /// App açılışında çağrılır (main.dart, rescheduleUserReminders yanı).
@@ -33,9 +36,10 @@ class WeeklyDigestService {
   Future<void> syncOnAppStart(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Varsayılan AÇIK: resurfacing ürünün ana vaadi, opt-in bırakılamaz.
+      // Varsayılan KAPALI: pazarlama-benzeri hatırlatma kullanıcı açıkça
+      // istemedikçe gönderilmez.
       // (notification_settings_screen.dart'taki varsayılanla aynı olmalı.)
-      final enabled = prefs.getBool(_weeklyToggleKey) ?? true;
+      final enabled = prefs.getBool(_weeklyToggleKey) ?? false;
 
       if (!enabled) {
         await _notificationService.cancelReminder(digestNotificationId);
@@ -44,9 +48,30 @@ class WeeklyDigestService {
       }
 
       final items = await _itemRepository.getItems(userId);
+
+      // Gizli kasa içerikleri asla aday olmaz. Kategoriler alınamazsa
+      // fail-closed: yalnızca kategorisiz içerikler aday kalır.
+      Set<String>? vaultIds;
+      try {
+        final categories = await _categoryRepository.getCategories(userId);
+        vaultIds =
+            categories.where((c) => c.isVault).map((c) => c.id).toSet();
+      } catch (e) {
+        debugPrint('⚠️ [WeeklyDigest] Categories unavailable: $e');
+      }
+      bool isHidden(String? categoryId) {
+        if (categoryId == null || categoryId.isEmpty) return false;
+        return vaultIds == null || vaultIds.contains(categoryId);
+      }
+
       final candidates =
           items
-              .where((item) => !item.isDeleted && item.lastOpenedAt == null)
+              .where(
+                (item) =>
+                    !item.isDeleted &&
+                    item.lastOpenedAt == null &&
+                    !isHidden(item.categoryId),
+              )
               .toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -56,16 +81,9 @@ class WeeklyDigestService {
         return;
       }
 
-      final selected = candidates.take(_maxCandidates).toList();
-      final first = selected.first;
+      final first = candidates.first;
       final l10n = _resolveLocalizations();
-      final body =
-          selected.length == 1
-              ? l10n.weeklyDigestNotificationBody(first.displayTitle)
-              : l10n.weeklyDigestNotificationBodyMore(
-                first.displayTitle,
-                selected.length - 1,
-              );
+      final body = l10n.weeklyDigestNotificationBody(candidates.length);
 
       final scheduledAt = ResurfacingDates.nextSundayAt(
         DateTime.now(),

@@ -64,6 +64,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         backgroundColor: context.colors.backgroundTop,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: Icon(CupertinoIcons.back, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
@@ -94,10 +95,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             ),
             child: Column(
               children: [
-                const Icon(
+                Icon(
                   PhosphorIconsFill.lifebuoy,
                   size: 48,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -105,7 +106,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -113,7 +114,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   l10n.helpSupportHeaderSubtitle,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -201,7 +202,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             title: l10n.helpSupportEmailTitle,
             subtitle: 'support@somineapp.com',
             onTap: () async {
-              final uri = Uri.parse('mailto:support@somineapp.com?subject=Somine Destek');
+              final uri = Uri(
+                scheme: 'mailto',
+                path: 'support@somineapp.com',
+                query: 'subject=${Uri.encodeComponent(l10n.helpSupportEmailSubject)}',
+              );
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);
               }
@@ -356,8 +361,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }
 
   Widget _buildLinkButton(BuildContext context, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        minimumSize: const Size(44, 44),
+        foregroundColor: context.colors.primary,
+      ),
       child: Text(
         label,
         style: GoogleFonts.poppins(

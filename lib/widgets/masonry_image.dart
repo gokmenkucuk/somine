@@ -33,7 +33,13 @@ class MasonryImage extends StatefulWidget {
     required this.imageUrl,
     required this.errorBuilder,
     this.knownAspectRatio,
+    this.semanticLabel,
   });
+
+  /// Görsel anlam taşıyorsa VoiceOver etiketi. `null` ise görsel dekoratif
+  /// sayılır ve erişilebilirlik ağacından çıkarılır (kart başlığı zaten
+  /// okunuyor; "görsel" diye boş bir öğe okunmasın).
+  final String? semanticLabel;
 
   /// `http(s)://`, `data:` veya asset yolu olabilir.
   final String imageUrl;
@@ -153,9 +159,7 @@ class _MasonryImageState extends State<MasonryImage> {
     try {
       final provider =
           url.startsWith('data:')
-              ? MemoryImage(
-                const Base64Decoder().convert(url.split(',').last),
-              )
+              ? MemoryImage(const Base64Decoder().convert(url.split(',').last))
               : AssetImage(url) as ImageProvider;
       _measure(provider, url);
     } catch (_) {
@@ -245,6 +249,18 @@ class _MasonryImageState extends State<MasonryImage> {
     // denendi ve kaldırıldı: önbellek dolduktan sonra oran zaten ilk karede
     // doğru olduğu için animasyon neredeyse hiç tetiklenmiyor, buna karşılık
     // her kare masonry şeridini yeniden yerleştirme riski taşıyordu.
-    return AspectRatio(aspectRatio: ratio, child: image);
+    final label = widget.semanticLabel;
+    return AspectRatio(
+      aspectRatio: ratio,
+      child:
+          label == null
+              ? ExcludeSemantics(child: image)
+              : Semantics(
+                image: true,
+                label: label,
+                excludeSemantics: true,
+                child: image,
+              ),
+    );
   }
 }

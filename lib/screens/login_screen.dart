@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/services.dart'; // SystemUiOverlayStyle için gerekli
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,6 +14,7 @@ import 'package:somine_app/screens/onboarding_name_screen.dart';
 
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/utils/auth_failure_l10n.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final bool forceLogin;
@@ -25,6 +27,27 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
+
+  /// İptal sessizdir; diğer hatalar yerelleştirilmiş metinle gösterilir.
+  void _showAuthError(Object error) {
+    final l10n = AppLocalizations.of(context)!;
+    final message = authFailureMessage(
+      error,
+      l10n,
+      fallback: l10n.authErrorGeneric,
+    );
+    if (message == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _openLegal(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   Future<void> _signInWithGoogle() async {
     if (_isLoading) return; // Prevent double tap
@@ -65,10 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.loginErrorMessage(e.toString()))),
-        );
+        _showAuthError(e);
       }
     }
   }
@@ -112,10 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.loginErrorMessage(e.toString()))),
-        );
+        _showAuthError(e);
       }
     }
   }
@@ -156,110 +173,109 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               */
 
-              // Ana İçerik
+              // Ana İçerik — büyük yazı boyutlarında taşmasın diye kaydırılabilir;
+              // kısa içerikte Spacer'lar yine ekranı doldurur.
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: DesignTokens.spacingLG,
-                    vertical: DesignTokens.spacingXXL,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const Spacer(flex: 2),
-
-                      // Slogan (Left-aligned, no period)
-                      _ShimmerSlogan(l10n: l10n),
-
-                      const SizedBox(height: 48),
-
-                      // Apple Button (iOS/Mac için)
-                      if (Theme.of(context).platform == TargetPlatform.iOS ||
-                          Theme.of(context).platform ==
-                              TargetPlatform.macOS) ...[
-                        _SocialButton(
-                          onPressed: _signInWithApple,
-                          icon: Icons.apple,
-                          label: l10n.loginAppleContinue,
-                          backgroundColor: Colors.black,
-                          textColor: Colors.white,
-                        ),
-                        const SizedBox(height: DesignTokens.spacingMD),
-                      ],
-
-                      // Google Button
-                      // (Beyaz zemin üstünde beyaz buton olduğu için ince bir border ekledik)
-                      _SocialButton(
-                        onPressed: _signInWithGoogle,
-                        icon: Icons.g_mobiledata,
-                        label: l10n.loginGoogleContinue,
-                        backgroundColor: Colors.white,
-                        textColor: Colors.black87,
-                        hasShadow: true,
-                        useBorderOnWhite: true, // Yeni parametre
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: DesignTokens.spacingLG,
+                        vertical: DesignTokens.spacingXXL,
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // Legal Terms Acceptance
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text.rich(
-                          TextSpan(
-                            text: l10n.loginLegalPrefix,
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: Colors.grey,
-                              height: 1.5,
-                            ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: (constraints.maxHeight -
+                                  DesignTokens.spacingXXL * 2)
+                              .clamp(0, double.infinity),
+                        ),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              WidgetSpan(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    final uri = Uri.parse('https://www.somineapp.com/terms');
-                                    if (await canLaunchUrl(uri)) {
-                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                    }
-                                  },
-                                  child: Text(
-                                    l10n.legalTermsOfService,
+                              const Spacer(flex: 2),
+
+                              // Slogan (Left-aligned, no period)
+                              _ShimmerSlogan(l10n: l10n),
+
+                              const SizedBox(height: 48),
+
+                              // Sign in with Apple (iOS/Mac) — HIG: üstte, Google ile
+                              // aynı boyut ve köşe yarıçapında.
+                              if (Theme.of(context).platform ==
+                                      TargetPlatform.iOS ||
+                                  Theme.of(context).platform ==
+                                      TargetPlatform.macOS) ...[
+                                _AppleSignInButton(
+                                  onPressed: _signInWithApple,
+                                  label: l10n.loginAppleContinue,
+                                ),
+                                const SizedBox(height: DesignTokens.spacingMD),
+                              ],
+
+                              // Google Button
+                              // (Beyaz zemin üstünde beyaz buton olduğu için ince bir border ekledik)
+                              _SocialButton(
+                                onPressed: _signInWithGoogle,
+                                icon: Icons.g_mobiledata,
+                                label: l10n.loginGoogleContinue,
+                                backgroundColor: Colors.white,
+                                textColor: Colors.black87,
+                                hasShadow: true,
+                                useBorderOnWhite: true,
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Legal Terms Acceptance (≥11pt, ≥4.5:1 kontrast)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: l10n.loginLegalPrefix,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade700,
-                                      decoration: TextDecoration.underline,
+                                      fontSize: 12,
+                                      color: DesignTokens.textSecondary,
+                                      height: 1.5,
                                     ),
+                                    children: [
+                                      WidgetSpan(
+                                        alignment: PlaceholderAlignment.baseline,
+                                        baseline: TextBaseline.alphabetic,
+                                        child: _LegalLink(
+                                          label: l10n.legalTermsOfService,
+                                          onTap: () => _openLegal(
+                                            'https://www.somineapp.com/terms',
+                                          ),
+                                        ),
+                                      ),
+                                      TextSpan(text: l10n.loginLegalAnd),
+                                      WidgetSpan(
+                                        alignment: PlaceholderAlignment.baseline,
+                                        baseline: TextBaseline.alphabetic,
+                                        child: _LegalLink(
+                                          label: l10n.legalPrivacyPolicy,
+                                          onTap: () => _openLegal(
+                                            'https://www.somineapp.com/privacy',
+                                          ),
+                                        ),
+                                      ),
+                                      TextSpan(text: l10n.loginLegalSuffix),
+                                    ],
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                              TextSpan(text: l10n.loginLegalAnd),
-                              WidgetSpan(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    final uri = Uri.parse('https://www.somineapp.com/privacy');
-                                    if (await canLaunchUrl(uri)) {
-                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                    }
-                                  },
-                                  child: Text(
-                                    l10n.legalPrivacyPolicy,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade700,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              TextSpan(text: l10n.loginLegalSuffix),
+
+                              const Spacer(flex: 1),
                             ],
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
-
-                      const Spacer(flex: 1),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -399,6 +415,60 @@ class _SocialButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Yasal bağlantı: metin içinde, okunur kontrastla ve yeterli dokunma alanıyla.
+class _LegalLink extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _LegalLink({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      link: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: DesignTokens.textPrimary,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Sign in with Apple" düğmesi — Apple'ın kendi çizdiği resmî düğme
+/// (sign_in_with_apple). Giriş akışı Firebase üzerinden yürür; paket yalnız
+/// HIG'e uygun logo ve oranlar için kullanılır. Yükseklik ve köşe yarıçapı
+/// Google düğmesiyle aynıdır.
+class _AppleSignInButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final String label;
+
+  const _AppleSignInButton({required this.onPressed, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return SignInWithAppleButton(
+      onPressed: onPressed,
+      text: label,
+      height: 56,
+      style: SignInWithAppleButtonStyle.black,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
     );
   }
 }

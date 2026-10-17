@@ -55,7 +55,11 @@ class UserAvatar extends ConsumerWidget {
       height: radius * 2,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFFF5F5F7), // Neutral Soft Grey
+        // Nötr yumuşak gri; koyu temalarda kart yüzeyinden türetilir.
+        color: Color.alphaBlend(
+          context.colors.hintSubtle.withValues(alpha: 0.12),
+          context.colors.surfaceWhite,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -63,7 +67,9 @@ class UserAvatar extends ConsumerWidget {
             offset: const Offset(0, 4),
           ),
         ],
-        border: showBorder ? Border.all(color: Colors.white, width: 4) : null,
+        border: showBorder
+            ? Border.all(color: context.colors.surfaceWhite, width: 4)
+            : null,
       ),
       child: Center(
         child: imageProvider != null

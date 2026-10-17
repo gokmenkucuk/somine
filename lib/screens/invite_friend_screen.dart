@@ -10,7 +10,7 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 class InviteFriendScreen extends StatelessWidget {
   const InviteFriendScreen({super.key});
 
-  static const String appStoreLink = 'https://apps.apple.com/app/somine';
+  static const String appStoreLink = 'https://apps.apple.com/app/id6757957749';
 
   static String shareMessageFor(AppLocalizations l10n) =>
       l10n.inviteFriendShareMessage(appStoreLink);
@@ -25,6 +25,7 @@ class InviteFriendScreen extends StatelessWidget {
         backgroundColor: context.colors.backgroundTop,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: Icon(CupertinoIcons.back, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
@@ -116,7 +117,8 @@ class InviteFriendScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  GestureDetector(
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
                     onTap: () {
                       Clipboard.setData(const ClipboardData(text: appStoreLink));
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,6 +132,7 @@ class InviteFriendScreen extends StatelessWidget {
                       );
                     },
                     child: Container(
+                      constraints: const BoxConstraints(minHeight: 44),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: context.colors.primary.withValues(alpha: 0.1),
@@ -171,7 +174,7 @@ class InviteFriendScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -195,72 +198,9 @@ class InviteFriendScreen extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(height: 40),
-            
-            // Social Buttons Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildSocialButton(
-                  context,
-                  icon: PhosphorIconsRegular.whatsappLogo,
-                  label: 'WhatsApp',
-                  color: const Color(0xFF25D366),
-                  onTap: () => SharePlus.instance.share(ShareParams(text: shareMessage)),
-                ),
-                const SizedBox(width: 16),
-                _buildSocialButton(
-                  context,
-                  icon: PhosphorIconsRegular.telegramLogo,
-                  label: 'Telegram',
-                  color: const Color(0xFF0088CC),
-                  onTap: () => SharePlus.instance.share(ShareParams(text: shareMessage)),
-                ),
-                const SizedBox(width: 16),
-                _buildSocialButton(
-                  context,
-                  icon: PhosphorIconsRegular.messengerLogo,
-                  label: 'Messenger',
-                  color: const Color(0xFF0084FF),
-                  onTap: () => SharePlus.instance.share(ShareParams(text: shareMessage)),
-                ),
-              ],
-            ),
+            const SizedBox(height: 24),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSocialButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              color: context.colors.body,
-            ),
-          ),
-        ],
       ),
     );
   }

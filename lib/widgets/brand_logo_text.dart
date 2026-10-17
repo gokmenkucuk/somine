@@ -29,6 +29,8 @@ class BrandLogoText extends StatelessWidget {
           'assets/images/logo.png',
           height: fontSize ?? 80,
           fit: BoxFit.contain,
+          // VoiceOver logoyu marka adıyla okur.
+          semanticLabel: text ?? 'So mine.',
           errorBuilder: (context, error, stackTrace) {
             return _buildText(context, theme);
           },

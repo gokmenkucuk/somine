@@ -7,6 +7,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/core/services/analytics_service.dart';
+import 'package:somine_app/core/services/subscription_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PaywallScreen extends ConsumerStatefulWidget {
@@ -42,6 +43,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               child: Row(
                 children: [
                   IconButton(
+                    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(PhosphorIconsRegular.x, color: context.colors.headline),
                   ),
@@ -68,7 +70,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ),
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: const Icon(PhosphorIconsBold.crown, size: 40, color: Colors.white),
+                      child: Icon(
+                        PhosphorIconsBold.crown,
+                        size: 40,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
 
                     const SizedBox(height: 24),
@@ -88,9 +94,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
                     Text(
                       l10n.paywallSubtitle,
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
                         fontSize: 16,
-                        color: context.colors.hint,
+                        color: context.colors.body,
                       ),
                     ),
 
@@ -113,7 +120,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       const Center(child: CircularProgressIndicator())
                     else if (subscriptionState.availablePackages.isNotEmpty)
                       ...subscriptionState.availablePackages.map(
-                        (package) => _buildPackageCard(context, ref, package, l10n),
+                        (package) => _buildPackageCard(
+                          context,
+                          ref,
+                          package,
+                          l10n,
+                          yearlyDiscount: _yearlyDiscountPercent(
+                            subscriptionState.availablePackages,
+                          ),
+                        ),
                       )
                     else
                       // Planlar yüklenemediyse (ağ, StoreKit gecikmesi) sahte fiyat göstermek
@@ -122,8 +137,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Restore Button
+                    // Restore Button (≥44pt dokunma alanı, okunur kontrast)
                     TextButton(
+                      style: _linkButtonStyle(context),
                       onPressed: () async {
                         final success = await ref.read(subscriptionProvider.notifier).restore();
                         if (context.mounted) {
@@ -140,7 +156,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       child: Text(
                         l10n.paywallRestoreButton,
                         style: GoogleFonts.outfit(
-                          color: context.colors.hint,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.body,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -154,60 +172,44 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       child: Text(
                         l10n.paywallLegalDisclosure,
                         style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          color: context.colors.hint,
+                          fontSize: 12,
+                          color: context.colors.body,
                           height: 1.5,
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     // Privacy & Terms Links
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        GestureDetector(
-                          onTap: () async {
-                            final uri = Uri.parse('https://www.somineapp.com/terms');
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            }
-                          },
+                        TextButton(
+                          style: _linkButtonStyle(context),
+                          onPressed: () => _openUrl('https://www.somineapp.com/terms'),
                           child: Text(
                             l10n.legalTermsOfService,
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              color: context.colors.hint,
-                              decoration: TextDecoration.underline,
-                            ),
+                            style: _linkTextStyle(context),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ExcludeSemantics(
                           child: Text(
                             "|",
                             style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              color: context.colors.hint,
+                              fontSize: 12,
+                              color: context.colors.body,
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () async {
-                            final uri = Uri.parse('https://www.somineapp.com/privacy');
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            }
-                          },
+                        TextButton(
+                          style: _linkButtonStyle(context),
+                          onPressed: () => _openUrl('https://www.somineapp.com/privacy'),
                           child: Text(
                             l10n.legalPrivacyPolicy,
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              color: context.colors.hint,
-                              decoration: TextDecoration.underline,
-                            ),
+                            style: _linkTextStyle(context),
                           ),
                         ),
                       ],
@@ -222,6 +224,67 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         ),
       ),
     );
+  }
+
+  ButtonStyle _linkButtonStyle(BuildContext context) {
+    return TextButton.styleFrom(
+      minimumSize: const Size(44, 44),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      foregroundColor: context.colors.body,
+    );
+  }
+
+  TextStyle _linkTextStyle(BuildContext context) {
+    return GoogleFonts.outfit(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: context.colors.body,
+      decoration: TextDecoration.underline,
+    );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  /// Yıllık planın, aylık planın 12 katına göre gerçek indirim yüzdesi
+  /// (aşağı yuvarlanır). Hesaplanamıyorsa veya ≤0 ise null — rozet gizlenir.
+  int? _yearlyDiscountPercent(List<Package> packages) {
+    Package? find(PackageType type) {
+      for (final p in packages) {
+        if (p.packageType == type) return p;
+      }
+      return null;
+    }
+
+    final annual = find(PackageType.annual);
+    final monthly = find(PackageType.monthly);
+    if (annual == null || monthly == null) return null;
+    if (annual.storeProduct.currencyCode != monthly.storeProduct.currencyCode) {
+      return null;
+    }
+    final yearlyAtMonthly = monthly.storeProduct.price * 12;
+    if (yearlyAtMonthly <= 0) return null;
+    final percent =
+        ((1 - annual.storeProduct.price / yearlyAtMonthly) * 100).floor();
+    return percent > 0 ? percent : null;
+  }
+
+  String _purchaseErrorMessage(PurchaseFailureCode code, AppLocalizations l10n) {
+    switch (code) {
+      case PurchaseFailureCode.pending:
+        return l10n.paywallPurchasePending;
+      case PurchaseFailureCode.network:
+        return l10n.failureNetwork;
+      case PurchaseFailureCode.notAllowed:
+        return l10n.paywallPurchaseNotAllowed;
+      case PurchaseFailureCode.storeUnavailable:
+      case PurchaseFailureCode.failed:
+        return l10n.paywallPurchaseFailed;
+    }
   }
 
   Widget _buildFeatureItem(BuildContext context, IconData icon, String text) {
@@ -239,12 +302,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             child: Icon(icon, color: context.colors.primary, size: 20),
           ),
           const SizedBox(width: 16),
-          Text(
-            text,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: context.colors.headline,
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: context.colors.headline,
+              ),
             ),
           ),
         ],
@@ -252,18 +317,40 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  Widget _buildPackageCard(BuildContext context, WidgetRef ref, Package package, AppLocalizations l10n) {
+  Widget _buildPackageCard(
+    BuildContext context,
+    WidgetRef ref,
+    Package package,
+    AppLocalizations l10n, {
+    int? yearlyDiscount,
+  }) {
     final isYearly = package.packageType == PackageType.annual;
     final isLifetime = package.packageType == PackageType.lifetime;
+    final title = _getPackageTitle(package, l10n);
+    final description = _getPackageDescription(package, l10n, yearlyDiscount);
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: '$title, $description, ${package.storeProduct.priceString}',
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: () async {
-        final success = await ref.read(subscriptionProvider.notifier).purchase(package);
-        if (context.mounted && success) {
+        final notifier = ref.read(subscriptionProvider.notifier);
+        final success = await notifier.purchase(package);
+        if (!context.mounted) return;
+        if (success) {
           ref
               .read(analyticsServiceProvider)
               .logPaywallConvert(package.storeProduct.identifier);
           Navigator.pop(context, true);
+          return;
+        }
+        // Kullanıcı iptali sessiz; diğer mağaza hataları gösterilir.
+        final error = ref.read(subscriptionProvider).purchaseError;
+        if (error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_purchaseErrorMessage(error, l10n))),
+          );
         }
       },
       child: Container(
@@ -283,10 +370,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       Text(
-                        _getPackageTitle(package, l10n),
+                        title,
                         style: GoogleFonts.outfit(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -294,7 +384,6 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ),
                       ),
                       if (isYearly) ...[
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -304,15 +393,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           child: Text(
                             l10n.paywallMostPopularBadge,
                             style: GoogleFonts.outfit(
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
                       ],
                       if (isLifetime) ...[
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -322,7 +410,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           child: Text(
                             l10n.paywallLifetimeBadge,
                             style: GoogleFonts.outfit(
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: Colors.black,
                             ),
@@ -333,10 +421,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _getPackageDescription(package, l10n),
+                    description,
                     style: GoogleFonts.outfit(
                       fontSize: 13,
-                      color: context.colors.hint,
+                      color: context.colors.body,
                     ),
                   ),
                 ],
@@ -353,6 +441,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -371,14 +460,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
-  String _getPackageDescription(Package package, AppLocalizations l10n) {
+  String _getPackageDescription(
+    Package package,
+    AppLocalizations l10n,
+    int? yearlyDiscount,
+  ) {
     switch (package.packageType) {
       case PackageType.weekly:
         return l10n.paywallPlanWeeklyDescription;
       case PackageType.monthly:
         return l10n.paywallPlanMonthlyDescription;
       case PackageType.annual:
-        return l10n.paywallPlanYearlyDescription(20);
+        return yearlyDiscount != null
+            ? l10n.paywallPlanYearlyDescription(yearlyDiscount)
+            : l10n.paywallPlanYearlyDescriptionNoDiscount;
       case PackageType.lifetime:
         return l10n.paywallPlanLifetimeDescription;
       default:

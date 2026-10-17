@@ -5,19 +5,29 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 ///
 /// İçeriğin üzerinde `Positioned` ile yüzer; açık zeminli, ince kenarlıklı
 /// ve yumuşak gölgeli 44x44 daire. İkonlar phosphor ailesinden gelir.
+///
+/// Yalnız ikon içerdiği için [semanticLabel] zorunludur: VoiceOver bu
+/// etiketi okur, uzun basışta da tooltip olarak gösterilir.
 class CircleIconButton extends StatelessWidget {
   const CircleIconButton({
     super.key,
     required this.icon,
     required this.onTap,
+    required this.semanticLabel,
     this.iconSize = 20,
-    this.tooltip,
+    this.enabled = true,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final double iconSize;
-  final String? tooltip;
+
+  /// VoiceOver etiketi ve tooltip metni (yerelleştirilmiş olmalı).
+  final String semanticLabel;
+
+  /// Devre dışıyken VoiceOver "soluk" okur; dokunma yine [onTap]'e gider
+  /// (görsel soluklaştırmayı çağıran yapar).
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +55,13 @@ class CircleIconButton extends StatelessWidget {
       ),
     );
 
-    if (tooltip == null) return button;
-    return Tooltip(message: tooltip!, child: button);
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: semanticLabel,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: Tooltip(message: semanticLabel, child: button),
+    );
   }
 }

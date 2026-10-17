@@ -40,7 +40,7 @@ class AppearanceScreen extends ConsumerWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
-                color: Colors.grey,
+                color: context.colors.body,
               ),
             ),
             const SizedBox(height: 16),
@@ -111,7 +111,7 @@ class AppearanceScreen extends ConsumerWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
-                color: Colors.grey,
+                color: context.colors.body,
               ),
             ),
             const SizedBox(height: 16),
@@ -166,7 +166,7 @@ class AppearanceScreen extends ConsumerWidget {
                             l10n.appearanceChangeIconSubtitle,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey,
+                              color: context.colors.body,
                             ),
                           ),
                         ],
@@ -220,7 +220,12 @@ class AppearanceScreen extends ConsumerWidget {
     final isSelected = theme == currentTheme;
     final isLocked = isPremiumOnly && !isPremium;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$title, $subtitle',
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: () {
         if (isLocked) {
           showModalBottomSheet(
@@ -244,8 +249,8 @@ class AppearanceScreen extends ConsumerWidget {
           ),
         ),
         child: Container(
-          height: 80,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          constraints: const BoxConstraints(minHeight: 80),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             gradient: gradient,
             borderRadius: BorderRadius.circular(16),
@@ -306,12 +311,17 @@ class AppearanceScreen extends ConsumerWidget {
                 CircleAvatar(
                   radius: 12,
                   backgroundColor: Theme.of(context).primaryColor,
-                  child: const Icon(Icons.check, size: 16, color: Colors.white),
+                  child: Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
             ],
           ),
         ),
       ),
+    ),
     );
   }
 }

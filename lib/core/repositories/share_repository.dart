@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:somine_app/core/config/api_config.dart';
 import 'package:somine_app/core/exceptions/network_exceptions.dart';
+import 'package:somine_app/core/models/blocked_user_model.dart';
 import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/services/api_client.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
@@ -234,6 +235,135 @@ class ShareRepository {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // App Store 1.2 (kullanıcı üretimi içerik): şikâyet, engelleme, kaldırma.
+  //
+  // Bu uçların hataları _throwIfModerationFailed ile, FailureMapper'ın dilden
+  // bağımsız eşleyebildiği tiplere çevrilir (sunucunun İngilizce "error"
+  // metni kullanıcıya hiç gösterilmez).
+  // ---------------------------------------------------------------------------
+
+  /// Alıcı olarak paylaşılan koleksiyonu şikâyet eder.
+  Future<void> reportShare(
+    String shareId,
+    ShareReportReason reason, {
+    String? note,
+  }) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final trimmedNote = note?.trim();
+      final response = await _apiClient.post(
+        _buildUri('/api/shares/$shareId/report'),
+        headers: _jsonHeaders(accessToken),
+        body: jsonEncode({
+          'reason': reason.apiValue,
+          if (trimmedNote != null && trimmedNote.isNotEmpty)
+            'note': trimmedNote,
+        }),
+      );
+
+      _throwIfModerationFailed(response, action: 'report share');
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error reporting share: $e');
+      rethrow;
+    }
+  }
+
+  /// Kullanıcıyı engeller. Sunucu, ondan gelen bekleyen istekleri reddeder ve
+  /// paylaştığı koleksiyonlara erişimi kaldırır.
+  Future<void> blockUser(String userId) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.post(
+        _buildUri('/api/users/$userId/block'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfModerationFailed(response, action: 'block user');
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error blocking user: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> unblockUser(String userId) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.delete(
+        _buildUri('/api/users/$userId/block'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfModerationFailed(response, action: 'unblock user');
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error unblocking user: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<BlockedUserModel>> getBlockedUsers() async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.get(
+        _buildUri('/api/users/blocked'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfModerationFailed(response, action: 'fetch blocked users');
+      final payload = jsonDecode(response.body) as List<dynamic>;
+      return payload
+          .whereType<Map<String, dynamic>>()
+          .map(BlockedUserModel.fromApi)
+          .toList();
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error fetching blocked users: $e');
+      rethrow;
+    }
+  }
+
+  /// Alıcı olarak kabul edilmiş paylaşımı kütüphaneden kaldırır (gönderene
+  /// bildirim gitmez).
+  Future<void> leaveShare(String shareId) async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.put(
+        _buildUri('/api/shares/$shareId/leave'),
+        headers: _jsonHeaders(accessToken),
+      );
+
+      _throwIfModerationFailed(response, action: 'leave share');
+    } catch (e) {
+      debugPrint('❌ [ShareRepository] Error leaving share: $e');
+      rethrow;
+    }
+  }
+
+  /// "Reddet ve engelle": paylaşımı gönderen kişiyi engeller. Engelleme bekleyen
+  /// isteği sunucuda zaten reddettiği için ayrıca reject çağrılmaz (böylece
+  /// gönderene "reddedildi" bildirimi de gitmez). [fromUserId] bilinmiyorsa
+  /// (eski bildirim verisi) gelen paylaşımlardan bulunur.
+  Future<void> blockShareSender(String shareId, {String? fromUserId}) async {
+    var senderId = fromUserId?.trim() ?? '';
+    if (senderId.isEmpty) {
+      final incoming = await _getIncomingSharesFromApi();
+      for (final share in incoming) {
+        if (share.id == shareId) {
+          senderId = share.fromUserId;
+          break;
+        }
+      }
+    }
+
+    if (senderId.isEmpty) {
+      throw const FeatureUnavailableException(
+        'share sender could not be resolved',
+        userMessage: '',
+      );
+    }
+
+    await blockUser(senderId);
+  }
+
   Stream<List<ShareModel>> getMyShares(String userId) async* {
     while (true) {
       yield await _getOutgoingSharesFromApi();
@@ -430,6 +560,29 @@ class ShareRepository {
       _ => const ServerException(
         'share request failed',
         userMessage: 'İşlem başarısız oldu. Lütfen tekrar deneyin.',
+      ),
+    };
+  }
+
+  void _throwIfModerationFailed(
+    http.Response response, {
+    required String action,
+  }) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
+    }
+
+    debugPrint('API Error [$action]: ${response.statusCode}');
+
+    // userMessage boş: metni FailureMapper tipe göre yerelleştirir.
+    throw switch (response.statusCode) {
+      401 => UnauthorizedException('$action unauthorized', userMessage: ''),
+      // 404: paylaşım/kullanıcı artık yok ya da sunucu bu ucu henüz tanımıyor.
+      404 => FeatureUnavailableException('$action not found', userMessage: ''),
+      409 => ConflictException('$action conflict', userMessage: ''),
+      _ => ServerException(
+        '$action failed (${response.statusCode})',
+        userMessage: '',
       ),
     };
   }

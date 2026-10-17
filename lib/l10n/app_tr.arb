@@ -388,6 +388,10 @@
   "@commonDone": {
     "description": "Common Done action label used to finish an editing mode."
   },
+  "commonUndo": "Geri Al",
+  "@commonUndo": {
+    "description": "SnackBar action that reverts the last destructive action (e.g. a swipe-to-delete)."
+  },
   "commonCreate": "Oluştur",
   "@commonCreate": {
     "description": "Common Create action label used in creation dialogs."
@@ -1373,7 +1377,7 @@
   "@notificationSettingsWeeklyDigestSubtitle": {
     "description": "Subtitle of the weekly digest notifications toggle."
   },
-  "notificationsMarkAllRead": "Tümünü Oku",
+  "notificationsMarkAllRead": "Tümünü okundu say",
   "@notificationsMarkAllRead": {
     "description": "Button label to mark all notifications as read."
   },
@@ -1397,6 +1401,18 @@
         "type": "String"
       }
     }
+  },
+  "notificationsDeleted": "Bildirim silindi.",
+  "@notificationsDeleted": {
+    "description": "Snackbar confirmation after swiping a notification away; offers Undo."
+  },
+  "notificationsMarkAllReadFailed": "Bildirimler okundu olarak işaretlenemedi. Lütfen tekrar deneyin.",
+  "@notificationsMarkAllReadFailed": {
+    "description": "Snackbar shown when marking all notifications as read fails."
+  },
+  "notificationsUnreadLabel": "Okunmadı",
+  "@notificationsUnreadLabel": {
+    "description": "Screen reader label for the unread dot on a notification row."
   },
   "inviteFriendTitle": "Arkadaşını Davet Et",
   "@inviteFriendTitle": {
@@ -1541,17 +1557,25 @@
   "@myRemindersItemMissing": {
     "description": "Shown when the item a reminder points to no longer exists."
   },
-  "myRemindersEdit": "Hatırlatıcıyı Düzenle",
+  "myRemindersEdit": "Hatırlatıcıyı düzenle",
   "@myRemindersEdit": {
     "description": "Action sheet option to edit a reminder."
   },
-  "myRemindersDelete": "Hatırlatıcıyı Sil",
+  "myRemindersDelete": "Hatırlatıcıyı sil",
   "@myRemindersDelete": {
     "description": "Action sheet option to delete a reminder."
   },
   "myRemindersDeleted": "Hatırlatıcı silindi.",
   "@myRemindersDeleted": {
     "description": "Snackbar confirmation after deleting a reminder."
+  },
+  "myRemindersEmptyAction": "Kaydettiklerine göz at",
+  "@myRemindersEmptyAction": {
+    "description": "Button on the empty reminders state that returns to the saved items feed."
+  },
+  "myRemindersMoreActions": "Diğer işlemler",
+  "@myRemindersMoreActions": {
+    "description": "Tooltip / screen reader label for the reminder row's overflow (…) button."
   },
   "profileMenuMyReminders": "Hatırlatıcılarım",
   "@profileMenuMyReminders": {
@@ -2333,29 +2357,17 @@
   "@weeklyDigestNotificationTitle": {
     "description": "Title of the weekly resurfacing local notification."
   },
-  "weeklyDigestNotificationBody": "\"{title}\" hâlâ seni bekliyor. Göz atmaya ne dersin?",
+  "weeklyDigestNotificationBody": "{count, plural, other{Kaydettiğin {count} içeriği henüz açmadın.}}",
   "@weeklyDigestNotificationBody": {
-    "description": "Body of the weekly resurfacing notification with a single candidate item.",
+    "description": "Body of the weekly resurfacing notification. Plain information only (no item titles, no imperative nudge).",
     "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyDigestNotificationBodyMore": "\"{title}\" ve {count} kayıt daha seni bekliyor.",
-  "@weeklyDigestNotificationBodyMore": {
-    "description": "Body of the weekly resurfacing notification with multiple candidate items.",
-    "placeholders": {
-      "title": {
-        "type": "String"
-      },
       "count": {
         "type": "int"
       }
     }
   },
   "commonOk": "Tamam",
-  "reminderPickerEditTitle": "Hatırlatıcıyı Düzenle",
+  "reminderPickerEditTitle": "Hatırlatıcıyı düzenle",
   "reminderPickerFieldDate": "Tarih",
   "reminderPickerFieldRepeat": "Tekrarlama",
   "reminderPickerFieldDayOfMonth": "Gün (ayda bir)",
@@ -2368,8 +2380,8 @@
       }
     }
   },
-  "reminderPickerMonthDaySheetTitle": "Ay ve Gün Seç",
-  "reminderPickerRepeatSheetTitle": "Tekrarlama Seç",
+  "reminderPickerMonthDaySheetTitle": "Ay ve gün seç",
+  "reminderPickerRepeatSheetTitle": "Tekrarlama seç",
   "reminderPickerTimeLabel": "Saat",
   "reminderPickerTimeLabelDaily": "Saat (günde bir)",
   "reminderPickerTimeLabelWeekly": "Saat (haftada bir)",
@@ -2392,6 +2404,10 @@
     }
   },
   "reminderPickerDeleteTooltip": "Hatırlatıcıyı sil",
+  "reminderPickerPastTimeError": "Bu zaman geçmişte kaldı. İleri bir tarih veya saat seç.",
+  "@reminderPickerPastTimeError": {
+    "description": "Inline error under the time field when a one-time reminder's date and time is not in the future; Save is disabled."
+  },
   "paywallPlanWeekly": "Haftalık Plan",
   "paywallPlanMonthly": "Aylık Plan",
   "paywallPlanYearly": "Yıllık Plan",
@@ -2421,7 +2437,7 @@
   "defaultCategoryPlaces": "Gitmek İstediğim Yerler",
   "defaultCategoryRecipes": "Denemek İstediğim Tarifler",
   "defaultCategoryInspiration": "İlham",
-  "notificationLocalReminderTitle": "Hatırlatıcı 🔔",
+  "notificationLocalReminderTitle": "Hatırlatıcı",
   "notificationLocalReminderBody": "Not hatırlatıcınız var",
   "notificationReminderMessage": "Kaydettiğin bu içerik için kurduğun hatırlatıcının vakti geldi.",
   "notificationShareRequestTitle": "Yeni Paylaşım İsteği",
@@ -2453,5 +2469,110 @@
         "type": "String"
       }
     }
-  }
+  },
+  "ugcMoreActionsTooltip": "Diğer işlemler",
+  "ugcReportCollection": "Koleksiyonu şikâyet et",
+  "ugcBlockUser": "{name} adlı kullanıcıyı engelle",
+  "@ugcBlockUser": {"placeholders": {"name": {"type": "String"}}},
+  "ugcRemoveFromLibrary": "Kütüphanemden kaldır",
+  "ugcCancel": "Vazgeç",
+  "ugcReportReasonTitle": "Bu koleksiyonu neden şikâyet ediyorsunuz?",
+  "ugcReportReasonMessage": "Şikâyetiniz gizli tutulur; {name} kimin şikâyet ettiğini görmez.",
+  "@ugcReportReasonMessage": {"placeholders": {"name": {"type": "String"}}},
+  "ugcReasonSpam": "Spam veya yanıltıcı",
+  "ugcReasonInappropriate": "Uygunsuz içerik",
+  "ugcReasonHarassment": "Taciz veya zorbalık",
+  "ugcReasonOther": "Başka bir sebep",
+  "ugcReportThanks": "Teşekkürler, 24 saat içinde inceleyeceğiz.",
+  "ugcBlockConfirmTitle": "{name} engellensin mi?",
+  "@ugcBlockConfirmTitle": {"placeholders": {"name": {"type": "String"}}},
+  "ugcBlockConfirmMessage": "{name} size artık koleksiyon gönderemez. Sizinle paylaştığı koleksiyonlar kütüphanenizden kaldırılır, bekleyen istekleri reddedilir. Engellendiği kendisine bildirilmez.",
+  "@ugcBlockConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
+  "ugcBlockConfirmAction": "Engelle",
+  "ugcBlockDone": "{name} engellendi.",
+  "@ugcBlockDone": {"placeholders": {"name": {"type": "String"}}},
+  "ugcRemoveConfirmTitle": "Kütüphanenizden kaldırılsın mı?",
+  "ugcRemoveConfirmMessage": "\"{collection}\" koleksiyonuna artık erişemeyeceksiniz. Yeniden görmek için {name} koleksiyonu tekrar paylaşmalı.",
+  "@ugcRemoveConfirmMessage": {"placeholders": {"collection": {"type": "String"}, "name": {"type": "String"}}},
+  "ugcRemoveConfirmAction": "Kaldır",
+  "ugcRemoveDone": "Koleksiyon kütüphanenizden kaldırıldı.",
+  "ugcDecline": "Reddet",
+  "ugcDeclineAndBlock": "Reddet ve engelle",
+  "ugcDeclineSheetTitle": "{name} adlı kullanıcının isteği",
+  "@ugcDeclineSheetTitle": {"placeholders": {"name": {"type": "String"}}},
+  "ugcDeclineSheetMessage": "Engellerseniz {name} size bir daha koleksiyon gönderemez.",
+  "@ugcDeclineSheetMessage": {"placeholders": {"name": {"type": "String"}}},
+  "ugcDeclinedAndBlocked": "İstek reddedildi ve {name} engellendi.",
+  "@ugcDeclinedAndBlocked": {"placeholders": {"name": {"type": "String"}}},
+  "ugcBlockedUsersTitle": "Engellenen kullanıcılar",
+  "ugcBlockedUsersEmptyTitle": "Engellediğiniz kimse yok",
+  "ugcBlockedUsersEmptySubtitle": "Engellediğiniz kişiler size koleksiyon gönderemez ve burada listelenir.",
+  "ugcBlockedUsersLoadError": "Engellenen kullanıcılar yüklenemedi.",
+  "ugcUnblock": "Engeli kaldır",
+  "ugcUnblockConfirmTitle": "{name} için engel kaldırılsın mı?",
+  "@ugcUnblockConfirmTitle": {"placeholders": {"name": {"type": "String"}}},
+  "ugcUnblockConfirmMessage": "{name} size yeniden koleksiyon gönderebilir. Engellerken kaldırılan koleksiyonlar geri gelmez.",
+  "@ugcUnblockConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
+  "ugcUnblockDone": "{name} için engel kaldırıldı.",
+  "@ugcUnblockDone": {"placeholders": {"name": {"type": "String"}}},
+  "ugcUnknownUser": "Bu kullanıcı",
+  "authErrorGeneric": "Giriş yapılamadı. Lütfen tekrar deneyin.",
+  "authErrorAccountMismatch": "Lütfen bu cihazda giriş yaptığınız hesabı seçin.",
+  "deleteAccountErrorGeneric": "Hesap silinemedi. Lütfen tekrar deneyin.",
+  "deleteAccountSubscriptionNote": "Hesabınızı silmek aktif bir App Store aboneliğini iptal etmez. Aboneliği Ayarlar > Apple Kimliği > Abonelikler bölümünden ayrıca iptal edin.",
+  "onboardingNameUseDifferentAccount": "Farklı bir hesap kullan",
+  "paywallPlanYearlyDescriptionNoDiscount": "Yılda bir kez ödeme",
+  "paywallPurchaseFailed": "Satın alma tamamlanamadı. Lütfen tekrar deneyin.",
+  "paywallPurchasePending": "Satın alma onay bekliyor. Onaylandığında Premium otomatik açılacak.",
+  "paywallPurchaseNotAllowed": "Bu cihazda satın alma yapılmasına izin verilmiyor.",
+  "notificationSettingsPushOffHint": "Bildirimler kapalı — iOS Ayarları'nda aç",
+  "accountInfoEditFieldTooltip": "{field} düzenle",
+  "@accountInfoEditFieldTooltip": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "helpSupportEmailSubject": "Somine Destek",
+  "a11yTabFeed": "Akış",
+  "a11yTabSearch": "Ara",
+  "a11yTabCatalog": "Koleksiyonlar",
+  "a11yTabProfile": "Profil",
+  "a11yAddContent": "İçerik ekle",
+  "a11yClose": "Kapat",
+  "a11yShare": "Paylaş",
+  "a11yEdit": "Düzenle",
+  "a11yDelete": "Sil",
+  "a11yClearContent": "Girdiyi temizle",
+  "a11yPlayVideo": "Videoyu oynat",
+  "a11yNewCollection": "Yeni koleksiyon",
+  "a11yChangeImage": "Görseli değiştir",
+  "a11yRemoveImage": "Görseli kaldır",
+  "a11yLoading": "Yükleniyor",
+  "a11yOpenMap": "Haritada aç",
+  "a11yAllCollections": "Tüm koleksiyonlar",
+  "a11yVaultLock": "Gizli koleksiyonları kilitle",
+  "a11yVaultUnlock": "Gizli koleksiyonların kilidini aç",
+  "a11yRemove": "Kaldır",
+  "addContentOfflineError": "Bağlantı yok. Linkin burada duruyor — tekrar dene.",
+  "addContentUnsavedTitle": "Kaydedilmemiş değişikliklerin var.",
+  "addContentDiscardChanges": "Değişiklikleri At",
+  "addContentKeepEditing": "Düzenlemeye Devam Et",
+  "addContentClearConfirmTitle": "Girdiğin her şey temizlensin mi?",
+  "addContentClearAction": "Temizle",
+  "addContentDuplicateTitle": "Bu link zaten “{collection}” koleksiyonunda kayıtlı.",
+  "@addContentDuplicateTitle": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      }
+    }
+  },
+  "addContentDuplicateOpen": "Kaydı Aç",
+  "addContentDuplicateSaveAnyway": "Yine de Kaydet",
+  "feedEmptyAddButton": "İlk içeriğini ekle",
+  "catalogEmptyAddButton": "İçerik ekle",
+  "emptyStateShareTip": "İpucu: Başka bir uygulamada Paylaş’a dokunup Somine’yi seçerek de kaydedebilirsin.",
+  "catalogUnlockWithFaceId": "Face ID ile Aç"
 }

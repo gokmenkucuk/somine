@@ -7,8 +7,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
+import 'package:somine_app/screens/blocked_users_screen.dart';
 import 'package:somine_app/screens/shared_collection_view_screen.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
+import 'package:somine_app/widgets/share_moderation_sheets.dart';
 import 'package:somine_app/core/utils/relative_time.dart';
 
 class SharedWithMeScreen extends ConsumerWidget {
@@ -36,6 +38,20 @@ class SharedWithMeScreen extends ConsumerWidget {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: l10n.ugcBlockedUsersTitle,
+            icon: Icon(
+              PhosphorIconsRegular.prohibit,
+              color: context.colors.headline,
+            ),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+                ),
+          ),
+        ],
       ),
       body: sharedWithMeAsync.when(
         data: (shares) {
@@ -51,10 +67,11 @@ class SharedWithMeScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorStateWidget(
-          message: l10n.sharedWithMeLoadError,
-          onRetry: () => ref.invalidate(sharedWithMeProvider),
-        ),
+        error:
+            (e, _) => ErrorStateWidget(
+              message: l10n.sharedWithMeLoadError,
+              onRetry: () => ref.invalidate(sharedWithMeProvider),
+            ),
       ),
     );
   }
@@ -97,98 +114,130 @@ class SharedWithMeScreen extends ConsumerWidget {
   }
 }
 
-class _SharedCollectionCard extends StatelessWidget {
+class _SharedCollectionCard extends ConsumerWidget {
   final ShareModel share;
 
   const _SharedCollectionCard({required this.share});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SharedCollectionViewScreen(share: share),
-          ),
-        );
+    // Satır işlemleri (App Store 1.2): uzun basma veya sondaki ⋯ düğmesi.
+    void showActions() =>
+        ShareModerationSheets.showForShare(context, ref, share);
+
+    // Sondan kaydırma da aynı menüyü açar; satır listeden düşmez (false).
+    return Dismissible(
+      key: ValueKey('shared-with-me-${share.id ?? share.categoryId}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        showActions();
+        return false;
       },
-      child: Container(
+      background: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(right: 24),
+        alignment: Alignment.centerRight,
         decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
+          color: context.colors.primary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
-        child: Row(
-          children: [
-            // Avatar
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [context.colors.primary, context.colors.secondary],
+        child: Icon(CupertinoIcons.ellipsis, color: context.colors.primary),
+      ),
+      child: GestureDetector(
+        onLongPress: showActions,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SharedCollectionViewScreen(share: share),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.fromLTRB(16, 16, 4, 16),
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Avatar
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [context.colors.primary, context.colors.secondary],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Icon(
-                  PhosphorIconsRegular.cards,
-                  color: Colors.white,
-                  size: 24,
+                child: Center(
+                  child: Icon(
+                    PhosphorIconsRegular.cards,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 24,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    share.categoryName,
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.headline,
+              const SizedBox(width: 12),
+
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      share.categoryName,
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.headline,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    l10n.sharedWithMeFromUser(share.fromUserName),
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: context.colors.hint,
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.sharedWithMeFromUser(share.fromUserName),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: context.colors.hint,
+                      ),
                     ),
-                  ),
-                  Text(
-                    formatRelativeTime(context, share.acceptedAt ?? share.createdAt),
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: context.colors.hint.withValues(alpha: 0.7),
+                    Text(
+                      formatRelativeTime(
+                        context,
+                        share.acceptedAt ?? share.createdAt,
+                      ),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: context.colors.hint.withValues(alpha: 0.7),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            
-            // Arrow
-            Icon(
-              CupertinoIcons.chevron_right,
-              color: context.colors.hint,
-              size: 20,
-            ),
-          ],
+
+              // Actions (≥44pt tap target)
+              IconButton(
+                tooltip: l10n.ugcMoreActionsTooltip,
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                icon: Icon(
+                  CupertinoIcons.ellipsis,
+                  color: context.colors.hint,
+                  size: 20,
+                ),
+                onPressed: showActions,
+              ),
+            ],
+          ),
         ),
       ),
     );

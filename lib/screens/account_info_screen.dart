@@ -12,6 +12,7 @@ import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'dart:convert';
 import 'package:somine_app/widgets/user_avatar.dart';
+import 'package:somine_app/widgets/delete_account_flow.dart';
 import 'package:intl/intl.dart';
 
 class AccountInfoScreen extends StatefulWidget {
@@ -215,6 +216,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         backgroundColor: context.colors.backgroundTop,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: Icon(CupertinoIcons.back, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
@@ -231,7 +233,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         children: [
           // Profile Avatar - Direct tap to pick photo
           Center(
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              label: l10n.accountInfoSelectPhoto,
+              child: GestureDetector(
               onTap: () => _showProfilePhotoOptions(context),
               child: Stack(
                 children: [
@@ -250,17 +255,18 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                       decoration: BoxDecoration(
                         color: context.colors.headline,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: context.colors.surfaceWhite, width: 2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         PhosphorIconsRegular.camera,
-                        color: Colors.white,
+                        color: context.colors.surfaceWhite,
                         size: 16,
                       ),
                     ),
                   ),
                 ],
               ),
+            ),
             ),
           ),
 
@@ -328,7 +334,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
             label: l10n.accountInfoCreationLabel,
             value:
                 creationTime != null
-                    ? DateFormat('d MMMM yyyy', 'tr').format(creationTime)
+                    ? DateFormat('d MMMM yyyy', Localizations.localeOf(context).languageCode).format(creationTime)
                     : l10n.accountInfoUnknown,
           ),
 
@@ -433,6 +439,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
             ),
           ),
           IconButton(
+            tooltip: AppLocalizations.of(context)!.accountInfoEditFieldTooltip(label),
             onPressed: onEdit,
             icon: Icon(
               PhosphorIconsRegular.pencilSimple,
@@ -657,7 +664,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.colors.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -903,7 +910,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                     : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: context.colors.primary,
-                              foregroundColor: Colors.white,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -930,39 +937,6 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showCupertinoDialog(
-      context: context,
-      builder:
-          (context) => CupertinoAlertDialog(
-            title: Text(l10n.accountInfoDeleteAccount),
-            content: Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Text(
-                l10n.accountInfoDeleteAccountMessage,
-              ),
-            ),
-            actions: [
-              CupertinoDialogAction(
-                child: Text(l10n.commonCancel),
-                onPressed: () => Navigator.pop(context),
-              ),
-              CupertinoDialogAction(
-                isDestructiveAction: true,
-                onPressed: () async {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context)!.accountInfoReloginRequired,
-                      ),
-                    ),
-                  );
-                },
-                child: Text(l10n.commonDelete),
-              ),
-            ],
-          ),
-    );
+    runDeleteAccountFlow(context);
   }
 }

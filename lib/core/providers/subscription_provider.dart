@@ -11,12 +11,17 @@ class SubscriptionState {
   final List<Package> availablePackages;
   final String? error;
 
+  /// Son satın alma denemesinin kullanıcıya gösterilecek hatası
+  /// (iptal edildiyse null). Arayüz bunu l10n metnine çevirir.
+  final PurchaseFailureCode? purchaseError;
+
   const SubscriptionState({
     this.tier = SubscriptionTier.starter,
     this.activePackageName = "",
     this.isLoading = false,
     this.availablePackages = const [],
     this.error,
+    this.purchaseError,
   });
 
   SubscriptionState copyWith({
@@ -25,6 +30,7 @@ class SubscriptionState {
     bool? isLoading,
     List<Package>? availablePackages,
     String? error,
+    PurchaseFailureCode? purchaseError,
   }) {
     return SubscriptionState(
       tier: tier ?? this.tier,
@@ -32,6 +38,7 @@ class SubscriptionState {
       isLoading: isLoading ?? this.isLoading,
       availablePackages: availablePackages ?? this.availablePackages,
       error: error,
+      purchaseError: purchaseError,
     );
   }
 
@@ -94,8 +101,19 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
       }
 
       return success;
+    } on PurchaseFailure catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+        purchaseError: e.code,
+      );
+      return false;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+        purchaseError: PurchaseFailureCode.failed,
+      );
       return false;
     }
   }

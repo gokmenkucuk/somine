@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
 import 'package:somine_app/core/repositories/category_repository.dart';
@@ -13,6 +14,67 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/metadata_service.dart';
 import 'package:somine_app/core/services/subscription_service.dart';
+
+/// Hata kodları: UI bunları l10n metinlerine çevirir; ham `e.toString()`
+/// kullanıcıya gösterilmez.
+enum AuthFailureCode {
+  /// Kullanıcı giriş/doğrulama sayfasını kapattı — sessizce yok sayılır.
+  cancelled,
+  network,
+
+  /// Yeniden doğrulamada farklı bir hesap seçildi.
+  accountMismatch,
+  unknown,
+}
+
+class AuthFailure implements Exception {
+  final AuthFailureCode code;
+  final Object? cause;
+
+  const AuthFailure(this.code, [this.cause]);
+
+  bool get isCancelled => code == AuthFailureCode.cancelled;
+
+  /// Firebase / Google / Apple hatalarını tek bir koda indirger.
+  static AuthFailure from(Object error) {
+    if (error is AuthFailure) return error;
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'canceled':
+        case 'cancelled':
+        case 'web-context-canceled':
+        case 'web-context-cancelled':
+          return AuthFailure(AuthFailureCode.cancelled, error);
+        case 'network-request-failed':
+          return AuthFailure(AuthFailureCode.network, error);
+        case 'user-mismatch':
+          return AuthFailure(AuthFailureCode.accountMismatch, error);
+      }
+    }
+    if (error is PlatformException) {
+      switch (error.code) {
+        case 'sign_in_canceled':
+        case 'canceled':
+          return AuthFailure(AuthFailureCode.cancelled, error);
+        case 'network_error':
+          return AuthFailure(AuthFailureCode.network, error);
+      }
+    }
+    final text = error.toString().toLowerCase();
+    // ASAuthorizationError 1001 = kullanıcı iptali.
+    if (text.contains('error 1001') || text.contains('canceled') ||
+        text.contains('cancelled')) {
+      return AuthFailure(AuthFailureCode.cancelled, error);
+    }
+    if (text.contains('network')) {
+      return AuthFailure(AuthFailureCode.network, error);
+    }
+    return AuthFailure(AuthFailureCode.unknown, error);
+  }
+
+  @override
+  String toString() => 'AuthFailure($code${cause != null ? ': $cause' : ''})';
+}
 
 class AuthRepository {
   final UserRepository _userRepository = UserRepository();
@@ -135,7 +197,7 @@ class AuthRepository {
         try {
           await _googleSignIn.disconnect();
         } catch (_) {}
-        throw Exception('Failed to get Google authentication details: $e');
+        throw AuthFailure.from(e);
       }
 
       debugPrint('✅ [AuthRepository] Google auth details obtained');
@@ -184,7 +246,7 @@ class AuthRepository {
         await _googleSignIn.signOut();
       } catch (_) {}
 
-      throw Exception('Google sign-in failed: $e');
+      throw AuthFailure.from(e);
     }
   }
 
@@ -200,6 +262,10 @@ class AuthRepository {
       // Sign in with Apple
       final userCredential = await _auth.signInWithProvider(appleProvider);
       debugPrint('✅ [AuthRepository] Apple sign-in successful!');
+
+      if (userCredential.user != null) {
+        await _ensureAppleDisplayName(userCredential.user!);
+      }
 
       // Create/update user document in Firestore
       bool isNewUser = false;
@@ -221,7 +287,26 @@ class AuthRepository {
     } catch (e, stack) {
       debugPrint('❌ [AuthRepository] Apple sign-in error: $e');
       debugPrint('❌ [AuthRepository] Stack trace: $stack');
-      throw Exception('Apple sign-in failed: $e');
+      throw AuthFailure.from(e);
+    }
+  }
+
+  /// Apple adı yalnız ilk yetkilendirmede verir; Firebase iOS SDK bunu
+  /// (credential'daki fullName ile) normalde displayName'e yazar. Yazmadıysa
+  /// sağlayıcı kaydındaki adı kullanıcıya kopyalar ki onboarding'de kullanıcı
+  /// adını yeniden yazmak zorunda kalmasın.
+  Future<void> _ensureAppleDisplayName(User user) async {
+    try {
+      final current = user.displayName?.trim() ?? '';
+      if (current.isNotEmpty) return;
+      final fromProvider = user.providerData
+          .map((p) => p.displayName?.trim() ?? '')
+          .firstWhere((name) => name.isNotEmpty, orElse: () => '');
+      if (fromProvider.isEmpty) return;
+      await user.updateDisplayName(fromProvider);
+      await user.reload();
+    } catch (e) {
+      debugPrint('⚠️ [AuthRepository] Apple display name sync failed: $e');
     }
   }
 
@@ -403,15 +488,13 @@ class AuthRepository {
       }
 
       // 0. Proactively reauthenticate to prevent data loss if authentication is cancelled
+      String? appleAuthorizationCode;
       try {
-        await _reauthenticateUser(user);
+        appleAuthorizationCode = await _reauthenticateUser(user);
         debugPrint('✅ [AuthRepository] Pre-deletion re-authentication completed');
       } catch (e) {
         debugPrint('⚠️ [AuthRepository] Re-authentication failed or cancelled: $e');
-        if (e.toString().toLowerCase().contains('cancelled') || e.toString().contains('iptal')) {
-          throw Exception('Kullanıcı doğrulaması iptal edildi');
-        }
-        rethrow;
+        throw AuthFailure.from(e);
       }
 
       final userId = user.uid;
@@ -465,6 +548,17 @@ class AuthRepository {
         debugPrint('⚠️ [AuthRepository] Error deleting user doc: $e');
       }
 
+      // 7a. Sign in with Apple belirtecini iptal et (App Review 5.1.1(v)).
+      // Başarısızlık silmeyi engellemez; yalnızca loglanır.
+      if (appleAuthorizationCode != null && appleAuthorizationCode.isNotEmpty) {
+        try {
+          await _auth.revokeTokenWithAuthorizationCode(appleAuthorizationCode);
+          debugPrint('✅ [AuthRepository] Apple token revoked');
+        } catch (e) {
+          debugPrint('⚠️ [AuthRepository] Apple token revoke failed: $e');
+        }
+      }
+
       // 7. Delete Firebase Auth account
       try {
         await user.delete();
@@ -472,11 +566,27 @@ class AuthRepository {
       } on FirebaseAuthException catch (e) {
         if (e.code == 'requires-recent-login') {
           // Fallback if somehow it still requires login despite proactive reauth
-          await _reauthenticateUser(user);
+          try {
+            await _reauthenticateUser(user);
+          } catch (reauthError) {
+            throw AuthFailure.from(reauthError);
+          }
           await user.delete();
         } else {
-          rethrow;
+          throw AuthFailure.from(e);
         }
+      }
+
+      // 8a. Silinen hesabın abonelik/backend oturumu cihazda kalmasın.
+      try {
+        await _subscriptionService.logout();
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Subscription logout error: $e');
+      }
+      try {
+        await _backendAuthService.clearSession();
+      } catch (e) {
+        debugPrint('⚠️ [AuthRepository] Backend session clear error: $e');
       }
 
       // 8. Clean up Google Sign In (after successful deletion)
@@ -492,8 +602,11 @@ class AuthRepository {
     }
   }
 
-  /// Reauthenticate user before sensitive operations
-  Future<void> _reauthenticateUser(User user) async {
+  /// Reauthenticate user before sensitive operations.
+  ///
+  /// Apple sağlayıcısında, belirteç iptali için kullanılacak
+  /// `authorizationCode` döner (diğer sağlayıcılarda null).
+  Future<String?> _reauthenticateUser(User user) async {
     try {
       // Check which provider the user used
       final providerData = user.providerData;
@@ -501,7 +614,7 @@ class AuthRepository {
         debugPrint(
           '⚠️ [AuthRepository] No provider data, skipping reauthentication',
         );
-        return;
+        return null;
       }
 
       final providerId = providerData.first.providerId;
@@ -518,7 +631,7 @@ class AuthRepository {
         // Reauthenticate with Google
         final googleUser = await _googleSignIn.signIn();
         if (googleUser == null) {
-          throw Exception('Google doğrulama işlemi iptal edildi');
+          throw const AuthFailure(AuthFailureCode.cancelled);
         }
         final googleAuth = await googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
@@ -527,20 +640,20 @@ class AuthRepository {
         );
         await user.reauthenticateWithCredential(credential);
         debugPrint('✅ [AuthRepository] Google reauthentication successful');
+        return null;
       } else if (providerId == 'apple.com') {
         // Reauthenticate with Apple
         final appleProvider = AppleAuthProvider();
-        await user.reauthenticateWithProvider(appleProvider);
+        final result = await user.reauthenticateWithProvider(appleProvider);
         debugPrint('✅ [AuthRepository] Apple reauthentication successful');
+        return result.additionalUserInfo?.authorizationCode;
       } else {
         debugPrint('⚠️ [AuthRepository] Unknown provider: $providerId');
+        return null;
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-mismatch') {
-        throw Exception('Lütfen hesabı silmek için asıl giriş yaptığınız hesabı seçin. Farklı bir hesap seçtiniz.');
-      }
       debugPrint('❌ [AuthRepository] Reauthentication error: $e');
-      rethrow;
+      throw AuthFailure.from(e);
     } catch (e) {
       debugPrint('❌ [AuthRepository] Reauthentication error: $e');
       rethrow;

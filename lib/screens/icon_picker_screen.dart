@@ -90,6 +90,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: Icon(PhosphorIconsRegular.arrowLeft, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
@@ -119,7 +120,14 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                 final isSelected = _currentIcon == icon.key;
                 final isLocked = icon.isPremium && !isPremium;
 
-                return GestureDetector(
+                return Semantics(
+                  button: true,
+                  selected: isSelected,
+                  label: isLocked
+                      ? '${icon.name}, ${l10n.iconPickerPremiumBadge}'
+                      : icon.name,
+                  excludeSemantics: true,
+                  child: GestureDetector(
                   onTap: () => _changeIcon(icon),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -197,7 +205,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                           Text(
                             l10n.iconPickerPremiumBadge,
                             style: GoogleFonts.poppins(
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: context.colors.secondary,
                             ),
@@ -205,6 +213,7 @@ class _IconPickerScreenState extends ConsumerState<IconPickerScreen> {
                         ]
                       ],
                     ),
+                  ),
                   ),
                 );
               },

@@ -19,6 +19,9 @@ import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/splash_screen.dart';
 import 'package:somine_app/firebase_options.dart';
 import 'package:somine_app/widgets/somine_loading_widget.dart';
+import 'package:somine_app/widgets/error_state_widget.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -346,10 +349,14 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
       ],
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home:
-          _isSplashFinished
-              ? const AuthWrapper()
-              : SplashScreen(onAnimationComplete: _onSplashComplete),
+      // Kısa bir geçiş: splash, oturum durumu çözülür çözülmez kaybolur.
+      home: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child:
+            _isSplashFinished
+                ? const AuthWrapper()
+                : SplashScreen(onAnimationComplete: _onSplashComplete),
+      ),
     );
   }
 }
@@ -406,8 +413,18 @@ class AuthWrapper extends ConsumerWidget {
         return const LoginScreen();
       },
       loading: () => const SoMineLoadingWidget(),
-      error:
-          (error, stack) => Scaffold(body: Center(child: Text('Hata: $error'))),
+      error: (error, stack) {
+        final l10n = AppLocalizations.of(context)!;
+        return Scaffold(
+          backgroundColor: context.colors.backgroundBottom,
+          body: SafeArea(
+            child: ErrorStateWidget(
+              message: FailureMapper.toUserMessage(error, l10n),
+              onRetry: () => ref.invalidate(authStateProvider),
+            ),
+          ),
+        );
+      },
     );
   }
 }

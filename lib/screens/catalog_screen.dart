@@ -27,6 +27,10 @@ import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/core/utils/locale_case.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
+import 'package:somine_app/widgets/confirm_dialogs.dart';
+import 'package:somine_app/widgets/empty_state_add_button.dart';
 import 'package:somine_app/core/utils/category_display.dart';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
@@ -46,7 +50,10 @@ final selectedItemsProvider = StateProvider.autoDispose<Set<String>>(
 class CatalogScreen extends ConsumerStatefulWidget {
   final String? initialCategoryId;
 
-  const CatalogScreen({super.key, this.initialCategoryId});
+  const CatalogScreen({super.key, this.initialCategoryId, this.onAddTap});
+
+  /// Boş koleksiyon durumundaki "İçerik ekle" butonu (HomeScreen'den gelir).
+  final VoidCallback? onAddTap;
 
   @override
   ConsumerState<CatalogScreen> createState() => _CatalogScreenState();
@@ -181,88 +188,91 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     Row(
                       children: [
                         // GRID VIEW BUTTON - Opens all collections in a modal
-                        GestureDetector(
+                        Semantics(
+                          button: true,
+                          label: l10n.a11yAllCollections,
+                          excludeSemantics: true,
                           onTap: () => _showCollectionsGridSheet(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(
-                                alpha: 0.1,
+                          child: GestureDetector(
+                            onTap: () => _showCollectionsGridSheet(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.1,
+                                ),
+                                shape: BoxShape.circle,
                               ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              PhosphorIconsRegular.squaresFour,
-                              size: 20,
-                              color: context.colors.primary,
+                              child: Icon(
+                                PhosphorIconsRegular.squaresFour,
+                                size: 20,
+                                color: context.colors.primary,
+                              ),
                             ),
                           ),
                         ),
 
                         // VAULT TOGGLE BUTTON
-                        GestureDetector(
-                          onTap: () async {
-                            final isUnlocked = ref.read(
-                              isVaultUnlockedProvider,
-                            );
-                            if (isUnlocked) {
-                              // Lock immediately
-                              ref.read(isVaultUnlockedProvider.notifier).state =
-                                  false;
-                            } else {
-                              // Unlock via Auth
-                              final vaultService = VaultService();
-                              final result = await vaultService.authenticate(
-                                reason: l10n.catalogVaultUnlockReason,
-                              );
-                              if (result == VaultAuthResult.success) {
-                                ref
-                                    .read(isVaultUnlockedProvider.notifier)
-                                    .state = true;
-                              }
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color:
-                                  ref.watch(isVaultUnlockedProvider)
-                                      ? context.colors.primary
-                                      : context.colors.primary.withValues(
-                                        alpha: 0.1,
-                                      ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
+                        Semantics(
+                          button: true,
+                          label:
                               ref.watch(isVaultUnlockedProvider)
-                                  ? PhosphorIconsBold.lockKeyOpen
-                                  : PhosphorIconsBold.lockKey,
-                              size: 20,
-                              color:
-                                  ref.watch(isVaultUnlockedProvider)
-                                      ? Colors.white
-                                      : context.colors.primary,
+                                  ? l10n.a11yVaultLock
+                                  : l10n.a11yVaultUnlock,
+                          excludeSemantics: true,
+                          onTap: _toggleVault,
+                          child: GestureDetector(
+                            onTap: _toggleVault,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color:
+                                    ref.watch(isVaultUnlockedProvider)
+                                        ? context.colors.primary
+                                        : context.colors.primary.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                ref.watch(isVaultUnlockedProvider)
+                                    ? PhosphorIconsBold.lockKeyOpen
+                                    : PhosphorIconsBold.lockKey,
+                                size: 20,
+                                color:
+                                    ref.watch(isVaultUnlockedProvider)
+                                        ? Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary
+                                        : context.colors.primary,
+                              ),
                             ),
                           ),
                         ),
 
                         // ADD BUTTON
-                        GestureDetector(
+                        Semantics(
+                          button: true,
+                          label: l10n.a11yNewCollection,
+                          excludeSemantics: true,
                           onTap: _showAddCategoryDialog,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(
-                                alpha: 0.1,
+                          child: GestureDetector(
+                            onTap: _showAddCategoryDialog,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.1,
+                                ),
+                                shape: BoxShape.circle,
                               ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              PhosphorIconsRegular.plus,
-                              size: 20,
-                              color: context.colors.primary,
+                              child: Icon(
+                                PhosphorIconsRegular.plus,
+                                size: 20,
+                                color: context.colors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -373,7 +383,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error:
                     (err, stack) => ErrorStateWidget(
-                      message: FailureMapper.toUserMessage(err),
+                      message: FailureMapper.toUserMessage(err, AppLocalizations.of(context)),
                       onRetry: () => ref.invalidate(catalogItemsProvider),
                     ),
               ),
@@ -382,6 +392,28 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ),
       ),
     );
+  }
+
+  /// Kasa kilidini Face ID/Touch ID ile açar (başlıktaki kilit butonu ve
+  /// kilitli koleksiyon ekranındaki "Face ID ile Aç" aynı yolu kullanır).
+  Future<void> _unlockVault() async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await VaultService().authenticate(
+      reason: l10n.catalogVaultUnlockReason,
+    );
+    if (!mounted) return;
+    if (result == VaultAuthResult.success) {
+      ref.read(isVaultUnlockedProvider.notifier).state = true;
+    }
+  }
+
+  Future<void> _toggleVault() async {
+    if (ref.read(isVaultUnlockedProvider)) {
+      // Lock immediately
+      ref.read(isVaultUnlockedProvider.notifier).state = false;
+    } else {
+      await _unlockVault();
+    }
   }
 
   // Helper
@@ -432,9 +464,42 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             const SizedBox(height: 8),
             Text(
               l10n.catalogCollectionLockedMessage,
+              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: context.colors.body,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _unlockVault,
+              icon: Icon(
+                PhosphorIconsBold.scan,
+                size: 18,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+              label: Text(
+                l10n.catalogUnlockWithFaceId,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: BrandGradient.ensureContrast(
+                  context.colors.primary,
+                  Theme.of(context).colorScheme.onPrimary,
+                  BrandGradient.textContrast,
+                ),
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ],
@@ -1102,11 +1167,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                name.toUpperCase(),
+                // Türkçe "i" → "İ" (Dart'ın toUpperCase'i yerel ayarsız).
+                localeUpperCase(name, Localizations.localeOf(context)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.outfit(
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: badgeText,
                   letterSpacing: 0.5,
@@ -1189,6 +1255,23 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   fontSize: 14,
                   color: context.colors.body,
                   height: 1.5,
+                ),
+              ),
+              if (widget.onAddTap != null) ...[
+                const SizedBox(height: 24),
+                EmptyStateAddButton(
+                  label: l10n.catalogEmptyAddButton,
+                  onPressed: widget.onAddTap!,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.emptyStateShareTip,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: context.colors.body,
+                  height: 1.4,
                 ),
               ),
             ],
@@ -1333,8 +1416,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               ? Text(
                                 l10n.vaultName,
                                 style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  color: Colors.grey,
+                                  fontSize: 11,
+                                  color: context.colors.body,
                                 ),
                               )
                               : (!isPremium
@@ -1344,20 +1427,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          context.colors.primary,
-                                          context.colors.secondary,
-                                        ],
-                                      ),
+                                      gradient: BrandGradient.linear(context),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       "PRO",
                                       style: GoogleFonts.poppins(
-                                        fontSize: 10,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: BrandGradient.foreground(
+                                          context,
+                                        ),
                                       ),
                                     ),
                                   )
@@ -1418,20 +1498,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    context.colors.primary,
-                                    context.colors.secondary,
-                                  ],
-                                ),
+                                gradient: BrandGradient.linear(context),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 "PRO",
                                 style: GoogleFonts.poppins(
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: BrandGradient.foreground(context),
                                 ),
                               ),
                             )
@@ -1944,7 +2019,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -2315,8 +2390,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 ),
                 child: Text(
                   l10n.commonSave,
-                  style: GoogleFonts.outfit(color: Colors.white),
-                ), // Button text stays white usually
+                  style: GoogleFonts.outfit(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
               ),
             ],
           ),
@@ -2589,9 +2666,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ),
                         error:
                             (e, s) => Center(
-                              child: Text(
-                                l10n.commonErrorWithDetail(e.toString()),
-                              ),
+                              child: Text(FailureMapper.toUserMessage(e, l10n)),
                             ),
                       );
                     },
@@ -2606,63 +2681,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   void _confirmDeleteSelected(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final count = ref.read(selectedItemsProvider).length;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Center(
-              child: Text(
-                l10n.catalogDeleteSelectedTitle,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: context.colors.headline,
-                ),
-              ),
-            ),
-            content: Text(
-              l10n.catalogDeleteSelectedConfirm(count),
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: context.colors.body,
-                fontSize: 14,
-              ),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            backgroundColor: context.colors.surfaceWhite,
-            actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(
-                        l10n.commonCancel,
-                        style: GoogleFonts.poppins(color: context.colors.hint),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.danger,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        l10n.commonDelete,
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: l10n.catalogDeleteSelectedTitle,
+      message: l10n.catalogDeleteSelectedConfirm(count),
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
     );
 
     if (confirmed == true) {
@@ -2684,63 +2708,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   void _confirmDeleteItem(BuildContext context, ItemModel item) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Center(
-              child: Text(
-                l10n.catalogDeleteItemAction,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: context.colors.headline,
-                ),
-              ),
-            ),
-            content: Text(
-              l10n.catalogDeleteItemConfirm,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: context.colors.body,
-                fontSize: 14,
-              ),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            backgroundColor: context.colors.surfaceWhite,
-            actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(
-                        l10n.commonCancel,
-                        style: GoogleFonts.poppins(color: context.colors.hint),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.danger,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        l10n.commonDelete,
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: l10n.catalogDeleteItemAction,
+      message: l10n.catalogDeleteItemConfirm,
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
     );
 
     if (confirmed == true) {
@@ -3045,10 +3018,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               ),
                               child:
                                   isSelected
-                                      ? const Icon(
+                                      ? Icon(
                                         PhosphorIconsBold.check,
                                         size: 14,
-                                        color: Colors.white,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
                                       )
                                       : null,
                             )
@@ -3105,7 +3081,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w400,
                         color: context.colors.hint,
                       ),
@@ -3299,7 +3275,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ScaffoldMessenger.of(
           this.context, // ignore: use_build_context_synchronously, unnecessary_this
         ).showSnackBar(
-          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
+          SnackBar(content: Text(FailureMapper.toUserMessage(e, l10n))),
         );
       }
     }
@@ -3680,7 +3656,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   Text(
                     AppLocalizations.of(context)!.catalogItemCount(itemCount),
                     style: GoogleFonts.poppins(
-                      fontSize: 10,
+                      fontSize: 11,
                       color: context.colors.hint,
                     ),
                   ),
@@ -3813,20 +3789,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    context.colors.primary,
-                                    context.colors.secondary,
-                                  ],
-                                ),
+                                gradient: BrandGradient.linear(context),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 "PRO",
                                 style: GoogleFonts.poppins(
-                                  fontSize: 9,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: BrandGradient.foreground(context),
                                 ),
                               ),
                             ),
@@ -3930,7 +3901,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      l10n.commonErrorWithDetail(e.toString()),
+                                      FailureMapper.toUserMessage(e, l10n),
                                     ),
                                   ),
                                 );
@@ -3942,12 +3913,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                context.colors.primary,
-                                context.colors.secondary,
-                              ],
-                            ),
+                            gradient: BrandGradient.linear(context),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -3963,7 +3929,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             child: Text(
                               l10n.commonCreate,
                               style: GoogleFonts.poppins(
-                                color: Colors.white,
+                                color: BrandGradient.foreground(context),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -4028,40 +3994,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   ) {
     final l10n = AppLocalizations.of(context)!;
 
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: context.colors.surfaceWhite,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            title: Text(l10n.catalogDeleteCategoryTitle),
-            content: Text(l10n.catalogDeleteCategoryConfirm(categoryName)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  l10n.commonCancel,
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _deleteCategory(categoryId, deleteItems: false);
-                },
-                child: Text(
-                  l10n.commonDelete,
-                  style: TextStyle(
-                    color: context.colors.danger,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-    );
+    showDestructiveConfirmDialog(
+      context,
+      title: l10n.catalogDeleteCategoryTitle,
+      message: l10n.catalogDeleteCategoryConfirm(categoryName),
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
+    ).then((confirmed) {
+      if (confirmed && mounted) {
+        _deleteCategory(categoryId, deleteItems: false);
+      }
+    });
   }
 
   void _showAdvancedDeleteDialog(
@@ -4198,7 +4141,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: isDestructive ? context.colors.danger : context.colors.headline,
+                  color:
+                      isDestructive
+                          ? context.colors.danger
+                          : context.colors.headline,
                 ),
               ),
             ),
@@ -4412,7 +4358,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                   PhosphorIconsRegular.listChecks,
                   size: 20,
                   color:
-                      isSelectionMode ? Colors.white : context.colors.primary,
+                      isSelectionMode
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : context.colors.primary,
                 ),
               ),
             ),
@@ -4625,9 +4573,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             ),
                         error:
                             (e, s) => Center(
-                              child: Text(
-                                l10n.commonErrorWithDetail(e.toString()),
-                              ),
+                              child: Text(FailureMapper.toUserMessage(e, l10n)),
                             ),
                       );
                     },
@@ -4688,7 +4634,7 @@ class _ReorderListState extends ConsumerState<_ReorderList> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
+          SnackBar(content: Text(FailureMapper.toUserMessage(e, l10n))),
         );
         setState(() => _isSaving = false);
       }

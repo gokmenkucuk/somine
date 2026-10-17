@@ -5,6 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:somine_app/core/services/notification_service.dart';
+import 'package:somine_app/core/services/reminder_scheduler_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -13,26 +18,89 @@ class NotificationSettingsScreen extends StatefulWidget {
   State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
-  bool _pushEnabled = true;
-  bool _emailEnabled = false;
+class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
+    with WidgetsBindingObserver {
+  /// Gerçek iOS bildirim izni (Ayarlar'dan değiştirilebilir).
+  bool _pushEnabled = false;
   bool _reminderEnabled = true;
   bool _weeklyDigest = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Kullanıcı iOS Ayarları'ndan dönünce izni yeniden oku.
+    if (state == AppLifecycleState.resumed) _refreshPushPermission();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final reminders = await ReminderSchedulerService.remindersEnabled();
+    if (!mounted) return;
     setState(() {
-      _pushEnabled = prefs.getBool('notification_push') ?? true;
-      _emailEnabled = prefs.getBool('notification_email') ?? false;
-      _reminderEnabled = prefs.getBool('notification_reminder') ?? true;
-      _weeklyDigest = prefs.getBool('notification_weekly') ?? true;
+      _reminderEnabled = reminders;
+      _weeklyDigest = prefs.getBool('notification_weekly') ?? false;
     });
+    await _refreshPushPermission();
+  }
+
+  Future<bool> _systemPermissionGranted() async {
+    try {
+      final ios = FlutterLocalNotificationsPlugin()
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final options = await ios?.checkPermissions();
+      return options?.isEnabled ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _refreshPushPermission() async {
+    final granted = await _systemPermissionGranted();
+    if (mounted) setState(() => _pushEnabled = granted);
+  }
+
+  Future<void> _openSystemSettings() async {
+    final uri = Uri.parse('app-settings:');
+    try {
+      await launchUrl(uri);
+    } catch (e) {
+      debugPrint('Open app settings error: $e');
+    }
+  }
+
+  /// İzin henüz sorulmadıysa sistem penceresini gösterir; reddedilmişse veya
+  /// kullanıcı kapatmak istiyorsa (uygulama izni geri alamaz) iOS Ayarları açılır.
+  Future<void> _onPushToggled(bool value) async {
+    if (value) {
+      final granted = await NotificationService().requestPermissions();
+      if (granted) {
+        await _refreshPushPermission();
+        return;
+      }
+    }
+    await _openSystemSettings();
+  }
+
+  Future<void> _onRemindersToggled(bool value) async {
+    setState(() => _reminderEnabled = value);
+    await ReminderSchedulerService().setRemindersEnabled(
+      value,
+      userId: FirebaseAuth.instance.currentUser?.uid,
+    );
   }
 
   Future<void> _saveSetting(String key, bool value) async {
@@ -49,6 +117,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         backgroundColor: context.colors.backgroundTop,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: Icon(CupertinoIcons.back, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
@@ -129,11 +198,26 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             title: l10n.notificationSettingsPushTitle,
             subtitle: l10n.notificationSettingsPushSubtitle,
             value: _pushEnabled,
-            onChanged: (value) {
-              setState(() => _pushEnabled = value);
-              _saveSetting('notification_push', value);
-            },
+            onChanged: _onPushToggled,
           ),
+          if (!_pushEnabled) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+                onPressed: _openSystemSettings,
+                child: Text(
+                  l10n.notificationSettingsPushOffHint,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: context.colors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ],
 
           const SizedBox(height: 12),
 
@@ -143,28 +227,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             title: l10n.notificationSettingsRemindersTitle,
             subtitle: l10n.notificationSettingsRemindersSubtitle,
             value: _reminderEnabled,
-            onChanged: (value) {
-              setState(() => _reminderEnabled = value);
-              _saveSetting('notification_reminder', value);
-            },
+            onChanged: _onRemindersToggled,
           ),
 
           const SizedBox(height: 24),
-
-          // Email Notifications Section
-          _buildSectionTitle(context, l10n.notificationSettingsEmailSection),
-          const SizedBox(height: 12),
-          _buildToggleCard(
-            context,
-            icon: PhosphorIconsRegular.envelope,
-            title: l10n.notificationSettingsEmailSection,
-            subtitle: l10n.notificationSettingsEmailSubtitle,
-            value: _emailEnabled,
-            onChanged: (value) {
-              setState(() => _emailEnabled = value);
-              _saveSetting('notification_email', value);
-            },
-          ),
 
           const SizedBox(height: 12),
 
@@ -206,7 +272,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return Container(
+    // Başlık + alt başlık + anahtar VoiceOver'da tek öğe olarak okunsun.
+    return MergeSemantics(
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.colors.surfaceWhite,
@@ -253,6 +321,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           ),
         ],
       ),
+    ),
     );
   }
 }

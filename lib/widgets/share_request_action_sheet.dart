@@ -6,9 +6,11 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/notification_model.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
+import 'package:somine_app/widgets/share_moderation_sheets.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 
-enum _ShareRequestAction { none, accept, reject }
+enum _ShareRequestAction { none, accept, reject, rejectAndBlock }
 
 class ShareRequestActionSheet extends ConsumerStatefulWidget {
   const ShareRequestActionSheet({super.key, required this.notification});
@@ -47,6 +49,13 @@ class _ShareRequestActionSheetState
   String get _shareId =>
       widget.notification.data['shareId']?.toString().trim() ?? '';
 
+  /// Yeni sunucular bildirime fromUserId ekliyor; eskilerde boş kalır ve
+  /// repository göndereni gelen paylaşımlardan bulur.
+  String? get _fromUserId {
+    final value = widget.notification.data['fromUserId']?.toString().trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
   String get _categoryName {
     final value = widget.notification.data['categoryName']?.toString().trim();
     if (value != null && value.isNotEmpty) return value;
@@ -62,7 +71,9 @@ class _ShareRequestActionSheetState
   String get _userInitial {
     final normalized = _fromUserName.trim();
     if (normalized.isEmpty) {
-      return AppLocalizations.of(context)!.shareRequestActionSheetDefaultInitial;
+      return AppLocalizations.of(
+        context,
+      )!.shareRequestActionSheetDefaultInitial;
     }
     return String.fromCharCode(normalized.runes.first).toUpperCase();
   }
@@ -95,59 +106,110 @@ class _ShareRequestActionSheetState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    Center(
-                      child: Container(
-                        width: 48,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: colors.hint.withValues(alpha: 0.24),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: colors.hint.withValues(alpha: 0.24),
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [colors.primary, colors.secondary],
-                            ),
-                            shape: BoxShape.circle,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [colors.primary, colors.secondary],
                           ),
-                          child: Center(
-                            child: Text(
-                              _userInitial,
-                              style: GoogleFonts.outfit(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            _userInitial,
+                            style: GoogleFonts.outfit(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 14),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.shareRequestActionSheetTitle,
+                              style: GoogleFonts.outfit(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: colors.headline,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n.shareRequestActionSheetSubtitle(
+                                _fromUserName,
+                              ),
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: colors.body,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colors.backgroundTop,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: colors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            PhosphorIconsRegular.cards,
+                            color: colors.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                l10n.shareRequestActionSheetTitle,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: colors.headline,
+                                l10n.shareRequestActionSheetSharedCollection,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: colors.hint,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(
-                                l10n.shareRequestActionSheetSubtitle(_fromUserName),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  color: colors.body,
+                                _categoryName,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.headline,
                                 ),
                               ),
                             ],
@@ -155,153 +217,113 @@ class _ShareRequestActionSheetState
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colors.backgroundTop,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: colors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(14),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed:
+                              _isBusy || _shareId.isEmpty
+                                  ? null
+                                  : _chooseDeclineOption,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: colors.body,
+                            side: BorderSide(
+                              color: colors.hint.withValues(alpha: 0.22),
                             ),
-                            child: Icon(
-                              PhosphorIconsRegular.cards,
-                              color: colors.primary,
-                              size: 20,
+                            minimumSize: const Size.fromHeight(44),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.shareRequestActionSheetSharedCollection,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: colors.hint,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _categoryName,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    color: colors.headline,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed:
-                                _isBusy || _shareId.isEmpty
-                                    ? null
-                                    : () => _submit(_ShareRequestAction.reject),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: colors.body,
-                              side: BorderSide(
-                                color: colors.hint.withValues(alpha: 0.22),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child:
-                                _activeAction == _ShareRequestAction.reject
-                                    ? SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: colors.body,
-                                      ),
-                                    )
-                                    : Text(
-                                      l10n.shareRequestsReject,
-                                      style: GoogleFonts.outfit(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                          child:
+                              _activeAction == _ShareRequestAction.reject ||
+                                      _activeAction ==
+                                          _ShareRequestAction.rejectAndBlock
+                                  ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colors.body,
                                     ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed:
-                                _isBusy || _shareId.isEmpty
-                                    ? null
-                                    : () => _submit(_ShareRequestAction.accept),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.primary,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child:
-                                _activeAction == _ShareRequestAction.accept
-                                    ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                    : Text(
-                                      l10n.shareRequestsAccept,
-                                      style: GoogleFonts.outfit(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  )
+                                  : Text(
+                                    l10n.shareRequestsReject,
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w600,
                                     ),
-                          ),
+                                  ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    TextButton(
-                      onPressed:
-                          _isBusy ? null : () => Navigator.of(context).pop(false),
-                      style: TextButton.styleFrom(
-                        foregroundColor: colors.hint,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed:
+                              _isBusy || _shareId.isEmpty
+                                  ? null
+                                  : () => _submit(_ShareRequestAction.accept),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colors.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
+                            elevation: 0,
+                            minimumSize: const Size.fromHeight(44),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child:
+                              _activeAction == _ShareRequestAction.accept
+                                  ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary,
+                                    ),
+                                  )
+                                  : Text(
+                                    l10n.shareRequestsAccept,
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed:
+                        _isBusy ? null : () => Navigator.of(context).pop(false),
+                    style: TextButton.styleFrom(
+                      foregroundColor: colors.hint,
+                      minimumSize: const Size.fromHeight(44),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: Text(
+                      l10n.shareRequestActionSheetLater,
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  if (_shareId.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        l10n.shareRequestActionSheetLater,
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    if (_shareId.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          l10n.shareRequestActionSheetMissingInfo,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: colors.hint,
-                          ),
+                        l10n.shareRequestActionSheetMissingInfo,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: colors.hint,
                         ),
                       ),
+                    ),
                 ],
               ),
             ),
@@ -311,18 +333,38 @@ class _ShareRequestActionSheetState
     );
   }
 
+  Future<void> _chooseDeclineOption() async {
+    final choice = await ShareModerationSheets.pickDeclineOption(
+      context,
+      fromUserName: _fromUserName,
+    );
+    if (choice == null || !mounted) return;
+    await _submit(
+      choice == ShareDeclineChoice.declineAndBlock
+          ? _ShareRequestAction.rejectAndBlock
+          : _ShareRequestAction.reject,
+    );
+  }
+
   Future<void> _submit(_ShareRequestAction action) async {
     setState(() => _activeAction = action);
 
     try {
       final repository = ref.read(shareRepositoryProvider);
-      if (action == _ShareRequestAction.accept) {
-        await repository.acceptShare(_shareId);
-      } else {
-        await repository.rejectShare(_shareId);
+      switch (action) {
+        case _ShareRequestAction.accept:
+          await repository.acceptShare(_shareId);
+        case _ShareRequestAction.reject:
+          await repository.rejectShare(_shareId);
+        case _ShareRequestAction.rejectAndBlock:
+          // Engelleme bekleyen isteği sunucuda zaten reddeder.
+          await repository.blockShareSender(_shareId, fromUserId: _fromUserId);
+        case _ShareRequestAction.none:
+          return;
       }
 
       if (!mounted) return;
+      ref.invalidate(pendingShareRequestsProvider);
 
       final l10n = AppLocalizations.of(context)!;
       Navigator.of(context).pop(true);
@@ -335,6 +377,8 @@ class _ShareRequestActionSheetState
         message:
             action == _ShareRequestAction.accept
                 ? l10n.shareRequestActionSheetAcceptedMessage(_categoryName)
+                : action == _ShareRequestAction.rejectAndBlock
+                ? l10n.ugcDeclinedAndBlocked(_fromUserName)
                 : l10n.shareRequestsRejectedMessage,
       );
     } catch (error) {
@@ -342,9 +386,9 @@ class _ShareRequestActionSheetState
 
       setState(() => _activeAction = _ShareRequestAction.none);
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.commonErrorWithDetail(error.toString()))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(FailureMapper.toUserMessage(error, l10n))),
+      );
     }
   }
 }

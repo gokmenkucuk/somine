@@ -3,6 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
 
 class ErrorStateWidget extends StatelessWidget {
   final String message;
@@ -25,19 +26,21 @@ class ErrorStateWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.error.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: Theme.of(context).colorScheme.error,
+            ExcludeSemantics(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -76,8 +79,13 @@ class ErrorStateWidget extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.primary,
-                  foregroundColor: Colors.white,
+                  // Midnight'ta onPrimary koyu; Air/Vibe'da beyaz yazı ≥4.5:1.
+                  backgroundColor: BrandGradient.ensureContrast(
+                    context.colors.primary,
+                    Theme.of(context).colorScheme.onPrimary,
+                    BrandGradient.textContrast,
+                  ),
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,

@@ -9,6 +9,7 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/providers/navigation_providers.dart';
 import 'package:somine_app/core/providers/reminder_providers.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
@@ -26,6 +27,13 @@ class MyRemindersScreen extends ConsumerStatefulWidget {
 
 class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
   _ReminderFilter _filter = _ReminderFilter.upcoming;
+
+  /// Kaydırarak silinen satırlar, provider yenilenene kadar listeden hemen
+  /// düşürülür (Dismissible ağaçta kalamaz).
+  final Set<String> _hiddenKeys = <String>{};
+
+  String _keyOf(ReminderModel reminder) =>
+      reminder.id ?? '${reminder.itemId}-${reminder.createdAt}';
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +60,9 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
       ),
       body: remindersAsync.when(
         data: (all) {
-          final visible = _apply(_filter, all);
+          final visible = _apply(_filter, all)
+              .where((e) => !_hiddenKeys.contains(_keyOf(e.reminder)))
+              .toList();
           return Column(
             children: [
               _buildFilterRow(),
@@ -99,12 +109,12 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
 
   Widget _buildFilterRow() {
     final l10n = AppLocalizations.of(context)!;
-    return SizedBox(
-      height: 56,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    // Sabit yükseklik yok: büyük yazı boyutlarında satır büyüyebilir.
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
         children: [
           _buildFilterChip(
             l10n.myRemindersFilterUpcoming,
@@ -131,9 +141,16 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
   /// search_screen'deki vault/akıllı chip stiliyle aynı — tek seçimli hâli.
   Widget _buildFilterChip(String label, IconData icon, _ReminderFilter value) {
     final isSelected = _filter == value;
-    return GestureDetector(
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      excludeSemantics: true,
+      label: label,
+      child: GestureDetector(
       onTap: () => setState(() => _filter = value),
       child: Container(
+        constraints: const BoxConstraints(minHeight: 40),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color:
@@ -161,7 +178,7 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : context.colors.primary,
+              color: isSelected ? onPrimary : context.colors.primary,
             ),
             const SizedBox(width: 6),
             Text(
@@ -169,11 +186,12 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.white : context.colors.headline,
+                color: isSelected ? onPrimary : context.colors.headline,
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -215,13 +233,29 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: context.colors.body.withValues(alpha: 0.7),
+                color: context.colors.body,
               ),
             ),
           ),
+          if (_filter != _ReminderFilter.past) ...[
+            const SizedBox(height: 20),
+            TextButton.icon(
+              onPressed: _goToSaves,
+              icon: const Icon(PhosphorIconsRegular.bookmarkSimple, size: 18),
+              label: Text(l10n.myRemindersEmptyAction),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  /// Boş durumdan sonraki adım: hatırlatıcı kurulacak içeriklerin olduğu
+  /// akış sekmesine dön.
+  void _goToSaves() {
+    final tabNotifier = ref.read(homeTabIndexProvider.notifier);
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    tabNotifier.state = 0;
   }
 
   Widget _buildCard(ReminderWithItem entry) {
@@ -231,7 +265,7 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
     final isPast = entry.isPast;
 
     return Dismissible(
-      key: Key(reminder.id ?? '${reminder.itemId}-${reminder.createdAt}'),
+      key: Key(_keyOf(reminder)),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
@@ -241,7 +275,10 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
           color: context.colors.danger,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(PhosphorIconsRegular.trash, color: Colors.white),
+        child: Icon(
+          PhosphorIconsRegular.trash,
+          color: Theme.of(context).colorScheme.onError,
+        ),
       ),
       onDismissed: (_) => _delete(entry),
       child: GestureDetector(
@@ -320,6 +357,7 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
                 ),
               ),
               IconButton(
+                tooltip: l10n.myRemindersMoreActions,
                 icon: Icon(
                   PhosphorIconsRegular.dotsThreeVertical,
                   color: context.colors.iconInactive,
@@ -343,7 +381,7 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
       child: Text(
         _repeatLabel(repeat),
         style: GoogleFonts.poppins(
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
           color: context.colors.primary,
         ),
@@ -388,9 +426,15 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
     }
   }
 
+  /// Tarih dile göre; saat dile ve cihazın 12/24 saat ayarına göre.
   String _formatWhen(DateTime when) {
     final locale = Localizations.localeOf(context).toLanguageTag();
-    return DateFormat('d MMMM y • HH:mm', locale).format(when);
+    final date = DateFormat('d MMMM y', locale).format(when);
+    final time = MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay.fromDateTime(when),
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+    return '$date • $time';
   }
 
   Future<void> _openItem(ItemModel item) async {
@@ -454,11 +498,46 @@ class _MyRemindersScreenState extends ConsumerState<MyRemindersScreen> {
 
   /// Doğrudan repository.deleteReminder ÇAĞIRMA — bildirimi iptal etmez ve
   /// item.hasReminder bayrağını true bırakır. Scheduler ikisini de yapar.
+  /// Silme hemen uygulanır; "Geri Al" hatırlatıcıyı yeniden oluşturup
+  /// bildirimini yeniden kurar.
   Future<void> _delete(ReminderWithItem entry) async {
     final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final key = _keyOf(entry.reminder);
+    setState(() => _hiddenKeys.add(key));
     await ReminderSchedulerService().cancelReminder(entry.reminder.itemId);
     if (!mounted) return;
-    _toast(l10n.myRemindersDeleted);
+    ref.invalidate(remindersWithItemsProvider);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.myRemindersDeleted),
+          action: SnackBarAction(
+            label: l10n.commonUndo,
+            onPressed: () => _restore(entry, key, messenger, l10n),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _restore(
+    ReminderWithItem entry,
+    String key,
+    ScaffoldMessengerState messenger,
+    AppLocalizations l10n,
+  ) async {
+    final ok = await ReminderSchedulerService().scheduleReminder(
+      entry.reminder,
+      entry.item?.displayTitle ?? '',
+    );
+    if (!ok) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.successSheetReminderFailed)),
+      );
+    }
+    if (!mounted) return;
+    setState(() => _hiddenKeys.remove(key));
     ref.invalidate(remindersWithItemsProvider);
   }
 

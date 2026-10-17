@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
+import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/services/notification_service.dart';
@@ -13,6 +16,87 @@ class ReminderSchedulerService {
   final ReminderRepository _reminderRepo = ReminderRepository();
   final ItemRepository _itemRepo = ItemRepository();
   final NotificationService _notificationService = NotificationService();
+
+  /// Bildirim Ayarları'ndaki "Hatırlatıcılar" anahtarı. Kapalıyken hatırlatıcı
+  /// kayıtları saklanır ama cihazda bildirim planlanmaz.
+  static const String remindersEnabledPrefKey = 'notification_reminder';
+
+  static Future<bool> remindersEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(remindersEnabledPrefKey) ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Hatırlatıcı bildirimlerini aç/kapat: kapatınca bekleyen hatırlatıcı
+  /// bildirimleri iptal edilir (haftalık özet korunur), açınca yeniden kurulur.
+  Future<void> setRemindersEnabled(bool enabled, {String? userId}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(remindersEnabledPrefKey, enabled);
+    if (enabled) {
+      if (userId != null) await rescheduleUserReminders(userId);
+    } else {
+      await _cancelAllReminderNotifications();
+    }
+  }
+
+  Future<void> _cancelAllReminderNotifications() async {
+    try {
+      final pending = await _notificationService.getPendingNotifications();
+      for (final notification in pending) {
+        final type = NotificationService.typeFromPayload(notification.payload);
+        if (type == NotificationService.payloadTypeReminder) {
+          await _notificationService.cancelReminder(notification.id);
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [ReminderScheduler] Error cancelling reminder notifications: $e');
+    }
+  }
+  final CategoryRepository _categoryRepo = CategoryRepository();
+
+  /// Kullanıcının gizli kasa (vault) kategori id'leri. Alınamazsa `null`
+  /// döner — çağıran taraf bunu "bilinmiyor" sayıp fail-closed davranır.
+  Future<Set<String>?> _vaultCategoryIds(String userId) async {
+    try {
+      final categories = await _categoryRepo.getCategories(userId);
+      return categories
+          .where((c) => c.isVault)
+          .map((c) => c.id)
+          .toSet();
+    } catch (e) {
+      debugPrint('⚠️ [ReminderScheduler] Vault categories unavailable: $e');
+      return null;
+    }
+  }
+
+  /// Kilit ekranı gizliliği: kasadaki (veya kasa durumu doğrulanamayan)
+  /// içeriklerin başlığı bildirimde gösterilmez. Boş string döndüğünde
+  /// NotificationService genel `notificationLocalReminderBody` metnini kullanır.
+  String _lockScreenSafeTitle(
+    ItemModel? item,
+    String title,
+    Set<String>? vaultCategoryIds,
+  ) {
+    if (item == null) return '';
+    final categoryId = item.categoryId;
+    if (categoryId == null || categoryId.isEmpty) return title;
+    if (vaultCategoryIds == null) return '';
+    return vaultCategoryIds.contains(categoryId) ? '' : title;
+  }
+
+  Future<String> _resolveSafeTitle(ItemModel? item, String title) async {
+    if (item == null) return '';
+    final categoryId = item.categoryId;
+    if (categoryId == null || categoryId.isEmpty) return title;
+    return _lockScreenSafeTitle(
+      item,
+      title,
+      await _vaultCategoryIds(item.userId),
+    );
+  }
 
   Future<bool> scheduleReminder(
     ReminderModel reminder,
@@ -37,12 +121,17 @@ class ReminderSchedulerService {
         await _itemRepo.updateItem(updatedItem);
       }
 
+      if (!await remindersEnabled()) {
+        debugPrint('ℹ️ [ReminderScheduler] Reminders disabled in settings; saved without scheduling');
+        return true;
+      }
+
       // Hatırlatıcı kurmak bildirim izni istemenin doğal anı; karar verilmişse
       // iOS tekrar sormaz, mevcut durumu döner.
       await _notificationService.requestPermissions();
       final notificationId = await _notificationService.scheduleReminder(
         savedReminder,
-        noteTitle,
+        await _resolveSafeTitle(item, noteTitle),
       );
 
       debugPrint('✅ [ReminderScheduler] Reminder scheduled: ${savedReminder.id}');
@@ -61,11 +150,13 @@ class ReminderSchedulerService {
       await cancelReminderNotifications(reminder.itemId);
 
       await _reminderRepo.updateReminder(reminder);
+      if (!await remindersEnabled()) return true;
       await _notificationService.requestPermissions();
 
+      final item = await _itemRepo.getItem(reminder.itemId);
       final notificationId = await _notificationService.scheduleReminder(
         reminder,
-        noteTitle,
+        await _resolveSafeTitle(item, noteTitle),
       );
 
       debugPrint('✅ [ReminderScheduler] Reminder updated: ${reminder.id}');
@@ -119,7 +210,13 @@ class ReminderSchedulerService {
 
   Future<void> rescheduleUserReminders(String userId) async {
     try {
+      if (!await remindersEnabled()) {
+        await _cancelAllReminderNotifications();
+        return;
+      }
+
       final reminders = await _reminderRepo.getUserReminders(userId);
+      final vaultIds = await _vaultCategoryIds(userId);
 
       for (final reminder in reminders) {
         final item = await _itemRepo.getItem(reminder.itemId);
@@ -127,7 +224,7 @@ class ReminderSchedulerService {
         if (item != null && !item.isDeleted && reminder.isActive) {
           await _notificationService.scheduleReminder(
             reminder,
-            item.displayTitle,
+            _lockScreenSafeTitle(item, item.displayTitle, vaultIds),
           );
         } else if (item?.isDeleted == true) {
           // Clean up reminder if item is deleted
@@ -143,8 +240,11 @@ class ReminderSchedulerService {
 
   Future<void> processRepeatingReminders(String userId) async {
     try {
+      if (!await remindersEnabled()) return;
+
       final reminders = await _reminderRepo.getUserReminders(userId);
       final now = DateTime.now();
+      final vaultIds = await _vaultCategoryIds(userId);
 
       for (final reminder in reminders) {
         if (!reminder.isActive || reminder.repeat == RepeatFrequency.none) {
@@ -160,7 +260,7 @@ class ReminderSchedulerService {
           if (item != null) {
             await _notificationService.scheduleReminder(
               reminder,
-              item.displayTitle,
+              _lockScreenSafeTitle(item, item.displayTitle, vaultIds),
             );
           }
         }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
+import 'package:somine_app/widgets/confirm_dialogs.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/models/category_model.dart';
@@ -113,13 +115,16 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
+                gradient: BrandGradient.linear(
+                  context,
+                  minContrast: BrandGradient.iconContrast,
+                ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.folder_open_rounded,
                 size: 48,
-                color: Colors.white, // Icon on primary color should remain white or high contrast
+                color: BrandGradient.foreground(context),
               ),
             ),
             const SizedBox(height: SoMineTokens.spacingXXL),
@@ -261,27 +266,17 @@ class _CategoryManagerScreenState extends ConsumerState<CategoryManagerScreen> {
 
   void _showStandardDeleteDialog(BuildContext context, CategoryModel category) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(l10n.categoryManagerDeleteTitle),
-        content: Text(l10n.categoryManagerDeleteConfirm(category.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonCancel, style: const TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteCategory(category, deleteItems: false); // Empty anyway
-            },
-            child: Text(l10n.commonDelete, style: TextStyle(color: context.colors.danger, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+    showDestructiveConfirmDialog(
+      context,
+      title: l10n.categoryManagerDeleteTitle,
+      message: l10n.categoryManagerDeleteConfirm(category.name),
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
+    ).then((confirmed) {
+      if (confirmed && mounted) {
+        _deleteCategory(category, deleteItems: false); // Empty anyway
+      }
+    });
   }
 
   void _showAdvancedDeleteDialog(BuildContext context, CategoryModel category, int count) {
@@ -511,7 +506,9 @@ class _AddCategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -519,7 +516,7 @@ class _AddCategoryButton extends StatelessWidget {
           vertical: SoMineTokens.spacingS,
         ),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [context.colors.primary, context.colors.secondary]),
+          gradient: BrandGradient.linear(context),
           borderRadius: BorderRadius.circular(SoMineTokens.radiusRound),
           boxShadow: [
             BoxShadow(
@@ -532,21 +529,22 @@ class _AddCategoryButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.add_rounded,
-              color: Colors.white,
+              color: BrandGradient.foreground(context),
               size: 18,
             ),
             const SizedBox(width: SoMineTokens.spacingXS),
             Text(
               AppLocalizations.of(context)!.categoryManagerNew,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white,
+                color: BrandGradient.foreground(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -633,12 +631,14 @@ class _CategoryTile extends StatelessWidget {
                 _IconButton(
                   icon: Icons.edit_outlined,
                   onTap: onEdit,
+                  semanticLabel: AppLocalizations.of(context)!.a11yEdit,
                 ),
                 const SizedBox(width: SoMineTokens.spacingS),
                 _IconButton(
                   icon: Icons.delete_outline_rounded,
                   onTap: onDelete,
                   color: context.colors.danger,
+                  semanticLabel: AppLocalizations.of(context)!.a11yDelete,
                 ),
               ],
             ),
@@ -654,27 +654,39 @@ class _IconButton extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? color;
 
+  final String semanticLabel;
+
   const _IconButton({
     required this.icon,
+    required this.semanticLabel,
     this.onTap,
     this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      excludeSemantics: true,
       onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: context.colors.backgroundTop, // Slightly different bg for icon button
-          borderRadius: BorderRadius.circular(SoMineTokens.radiusSmall),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: color ?? context.colors.body,
+      child: Tooltip(
+        message: semanticLabel,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: context.colors.backgroundTop, // Slightly different bg for icon button
+              borderRadius: BorderRadius.circular(SoMineTokens.radiusSmall),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: color ?? context.colors.body,
+            ),
+          ),
         ),
       ),
     );
@@ -900,12 +912,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            context.colors.primary,
-                            context.colors.secondary,
-                          ],
-                        ),
+                        gradient: BrandGradient.linear(context),
                         borderRadius: BorderRadius.circular(SoMineTokens.radiusMedium),
                         boxShadow: [
                           BoxShadow(
@@ -918,8 +925,8 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       child: Center(
                         child: Text(
                           widget.isEditing ? AppLocalizations.of(context)!.commonUpdate : AppLocalizations.of(context)!.commonCreate,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: BrandGradient.foreground(context),
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),

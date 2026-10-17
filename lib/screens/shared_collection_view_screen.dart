@@ -12,6 +12,8 @@ import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/utils/auth_image_provider.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
+import 'package:somine_app/widgets/share_moderation_sheets.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 
 class SharedCollectionViewScreen extends ConsumerStatefulWidget {
@@ -82,6 +84,20 @@ class _SharedCollectionViewScreenState
     });
   }
 
+  Future<void> _showModerationActions() async {
+    final outcome = await ShareModerationSheets.showForShare(
+      context,
+      ref,
+      widget.share,
+    );
+    if (!mounted) return;
+    // Engellenen/kaldırılan koleksiyona artık erişim yok: ekrandan çık.
+    if (outcome == ShareModerationOutcome.blocked ||
+        outcome == ShareModerationOutcome.removed) {
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -119,12 +135,24 @@ class _SharedCollectionViewScreenState
             TextButton(
               onPressed: _selectAll,
               child: Text(
-                _selectedItemIds.length == _items.length ? l10n.sharedCollectionNone : l10n.commonAll,
+                _selectedItemIds.length == _items.length
+                    ? l10n.sharedCollectionNone
+                    : l10n.commonAll,
                 style: GoogleFonts.poppins(
                   color: context.colors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            ),
+          // Yalnızca alıcı tarafı: şikâyet / engelle / kütüphaneden kaldır.
+          if (widget.share.id != null)
+            IconButton(
+              tooltip: l10n.ugcMoreActionsTooltip,
+              icon: Icon(
+                CupertinoIcons.ellipsis_circle,
+                color: context.colors.headline,
+              ),
+              onPressed: _showModerationActions,
             ),
         ],
       ),
@@ -284,9 +312,9 @@ class _SharedCollectionViewScreenState
                           color: context.colors.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.check,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           size: 16,
                         ),
                       ),
@@ -339,7 +367,7 @@ class _SharedCollectionViewScreenState
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: context.colors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -410,7 +438,9 @@ class _SharedCollectionViewScreenState
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(alpha: 0.1),
+                              color: context.colors.primary.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -453,9 +483,9 @@ class _SharedCollectionViewScreenState
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             PhosphorIconsRegular.cards,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
                         title: Text(
@@ -508,9 +538,9 @@ class _SharedCollectionViewScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(FailureMapper.toUserMessage(e, l10n))),
+        );
       }
     }
   }
@@ -561,9 +591,9 @@ class _SharedCollectionViewScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(FailureMapper.toUserMessage(e, l10n))),
+        );
       }
     }
   }

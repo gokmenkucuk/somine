@@ -10,11 +10,7 @@ class ReminderIndicator extends StatelessWidget {
   final ReminderModel reminder;
   final VoidCallback? onTap;
 
-  const ReminderIndicator({
-    super.key,
-    required this.reminder,
-    this.onTap,
-  });
+  const ReminderIndicator({super.key, required this.reminder, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -32,52 +28,73 @@ class ReminderIndicator extends StatelessWidget {
 
     String timeLabel;
     if (isToday) {
-      timeLabel = l10n.reminderIndicatorToday(_formatTime(reminder.reminderTime));
+      timeLabel = l10n.reminderIndicatorToday(
+        _formatTime(context, reminder.reminderTime),
+      );
     } else if (isTomorrow) {
-      timeLabel = l10n.reminderIndicatorTomorrow(_formatTime(reminder.reminderTime));
+      timeLabel = l10n.reminderIndicatorTomorrow(
+        _formatTime(context, reminder.reminderTime),
+      );
     } else {
       timeLabel =
-          '${formatShortDate(context, nextOccurrence, withYear: !isThisYear)}, ${_formatTime(reminder.reminderTime)}';
+          '${formatShortDate(context, nextOccurrence, withYear: !isThisYear)}, ${_formatTime(context, reminder.reminderTime)}';
     }
     String repeatLabel = '';
     if (reminder.repeat != RepeatFrequency.none) {
       repeatLabel = _getRepeatLabel(reminder, l10n);
     }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isOverdue
-              ? context.colors.danger.withValues(alpha: 0.1)
-              : context.colors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isOverdue
-                ? context.colors.danger.withValues(alpha: 0.3)
-                : context.colors.primary.withValues(alpha: 0.3),
-            width: 1,
-          ),
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color:
+            isOverdue
+                ? context.colors.danger.withValues(alpha: 0.1)
+                : context.colors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              isOverdue
+                  ? context.colors.danger.withValues(alpha: 0.3)
+                  : context.colors.primary.withValues(alpha: 0.3),
+          width: 1,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _getRepeatIcon(reminder.repeat),
-              size: 12,
-              color: isOverdue ? context.colors.danger : context.colors.primary,
-            ),
-            const SizedBox(width: 4),
-            Text(
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _getRepeatIcon(reminder.repeat),
+            size: 12,
+            color: isOverdue ? context.colors.danger : context.colors.primary,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
               repeatLabel.isNotEmpty ? '$timeLabel ($repeatLabel)' : timeLabel,
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: isOverdue ? context.colors.danger : context.colors.primary,
+                color:
+                    isOverdue ? context.colors.danger : context.colors.primary,
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return chip;
+
+    // Görsel boyut (~26pt) korunur; dokunma alanı ≥44pt'ye genişletilir.
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          child: Align(widthFactor: 1, heightFactor: 1, child: chip),
         ),
       ),
     );
@@ -138,9 +155,11 @@ class ReminderIndicator extends StatelessWidget {
         date1.day == date2.day;
   }
 
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+  /// Dile ve cihazın 12/24 saat ayarına göre saat biçimi.
+  String _formatTime(BuildContext context, TimeOfDay time) {
+    return MaterialLocalizations.of(context).formatTimeOfDay(
+      time,
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
   }
 }

@@ -88,3 +88,16 @@ class ShareModel {
     );
   }
 }
+
+/// App Store 1.2: paylaşılan koleksiyonu şikâyet etme sebebi.
+/// [apiValue] sunucunun beklediği değerdir (POST /api/shares/{id}/report).
+enum ShareReportReason {
+  spam('spam'),
+  inappropriate('inappropriate'),
+  harassment('harassment'),
+  other('other');
+
+  const ShareReportReason(this.apiValue);
+
+  final String apiValue;
+}

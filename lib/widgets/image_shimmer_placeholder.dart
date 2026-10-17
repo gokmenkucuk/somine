@@ -25,11 +25,23 @@ class _ImageShimmerPlaceholderState extends State<ImageShimmerPlaceholder>
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
-    )..repeat();
+    );
     _animation = Tween<double>(
       begin: -2.0,
       end: 2.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // "Hareketi Azalt" açıksa parıltı durur; durağan yer tutucu kalır.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      if (_controller.isAnimating) _controller.stop();
+      _controller.value = 0.5;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   @override
@@ -41,7 +53,8 @@ class _ImageShimmerPlaceholderState extends State<ImageShimmerPlaceholder>
   @override
   Widget build(BuildContext context) {
     final surface = context.colors.surfaceWhite;
-    final tint = context.colors.hint;
+    // Metin tonu (hint) değil, soluk dekoratif ton.
+    final tint = context.colors.hintSubtle;
     // Yüzeyin üzerine ince bir tül: açık temada açık gri, koyu temada koyu
     // gri-mavi verir; her iki durumda da kartla aynı aileden kalır.
     final base = Color.alphaBlend(tint.withValues(alpha: 0.18), surface);

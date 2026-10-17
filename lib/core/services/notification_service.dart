@@ -131,6 +131,8 @@ class NotificationService {
     try {
       final scheduledTime = reminder.calculateNextOccurrence();
 
+      // Android kanal adları yalnızca Android sistem ayarlarında görünür;
+      // uygulama iOS-öncelikli olduğundan İngilizce bırakıldı.
       const androidDetails = AndroidNotificationDetails(
         'note_reminders',
         'Note Reminders',
@@ -157,6 +159,9 @@ class NotificationService {
 
       final l10n = appL10n;
 
+      // [noteTitle] boşsa (ör. gizli kasadaki içerik — bkz.
+      // ReminderSchedulerService._lockScreenSafeTitle) kilit ekranında başlık
+      // yerine genel metin gösterilir.
       await _notifications.zonedSchedule(
         notificationId,
         l10n.notificationLocalReminderTitle,
@@ -310,7 +315,8 @@ class NotificationService {
               _currentUserId ?? FirebaseAuth.instance.currentUser?.uid;
 
           List<CategoryModel> categories = [];
-          String categoryName = 'Kategori';
+          // Kategori çözülemezse boş ad (my_reminders_screen ile aynı kalıp).
+          String categoryName = '';
           CategoryModel? itemCategory;
 
           // Item'ın vault'ta olup olmadığını KESİN olarak belirleyebildik mi?
@@ -398,33 +404,5 @@ class NotificationService {
       return true;
     }
     return false;
-  }
-
-  Future<void> showTestNotification() async {
-    const androidDetails = AndroidNotificationDetails(
-      'test_channel',
-      'Test Notifications',
-      channelDescription: 'Channel for test notifications',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _notifications.show(
-      0,
-      'Test Bildirimi',
-      'Bu bir test hatırlatıcısı!',
-      notificationDetails,
-    );
   }
 }

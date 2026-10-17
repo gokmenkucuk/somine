@@ -159,6 +159,7 @@ class _YoutubeFullscreenScreenState extends State<YoutubeFullscreenScreen> {
               right: 16,
               child: SafeArea(
                 child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                   icon: const Icon(
                     Icons.close,
                     color: Colors.white,

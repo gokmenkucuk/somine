@@ -211,7 +211,10 @@ class Logger {
         return container.appendingPathComponent(logFileName)
     }
     
+    /// Yalnız DEBUG derlemede yazar: release'de paylaşılan URL/metin içerikleri
+    /// App Group kabındaki dosyaya veya konsola düşmez.
     func log(_ message: String) {
+        #if DEBUG
         let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
         let logMessage = "[\(timestamp)] [SHARE_EXT] \(message)\n"
         print("SOMINE_SHARE: \(message)")
@@ -229,6 +232,7 @@ class Logger {
                 fileHandle.closeFile()
             }
         }
+        #endif
     }
 }
 

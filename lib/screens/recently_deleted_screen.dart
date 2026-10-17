@@ -10,6 +10,7 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
+import 'package:somine_app/widgets/confirm_dialogs.dart';
 
 class RecentlyDeletedScreen extends ConsumerStatefulWidget {
   const RecentlyDeletedScreen({super.key});
@@ -43,97 +44,12 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
 
   Future<void> _deleteAllItems(List<ItemModel> items) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Center(
-          child: Text(
-            l10n.deleteConfirmTitle,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: context.colors.headline,
-            ),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.recentlyDeletedDeleteAllConfirm(items.length),
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: context.colors.body,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: context.colors.surfaceWhite,
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, false),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: context.colors.backgroundBottom,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        l10n.commonDiscard,
-                        style: GoogleFonts.poppins(
-                          color: context.colors.body,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, true),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.colors.danger.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        l10n.commonDelete,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: l10n.deleteConfirmTitle,
+      message: l10n.recentlyDeletedDeleteAllConfirm(items.length),
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
     );
 
     if (confirmed == true) {
@@ -173,6 +89,7 @@ class _RecentlyDeletedScreenState extends ConsumerState<RecentlyDeletedScreen> {
         backgroundColor: context.colors.backgroundTop,
         elevation: 0,
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: Icon(CupertinoIcons.back, color: context.colors.headline),
           onPressed: () => Navigator.pop(context),
         ),
@@ -449,97 +366,12 @@ class _DeletedItemCard extends ConsumerWidget {
 
   Future<void> _confirmPermanentDelete(BuildContext context, WidgetRef ref, String itemId) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Center(
-          child: Text(
-            l10n.deleteConfirmTitle,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: context.colors.headline,
-            ),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.deleteItemConfirm,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: context.colors.body,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: context.colors.surfaceWhite,
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, false),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: context.colors.backgroundBottom,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        l10n.commonDiscard,
-                        style: GoogleFonts.poppins(
-                          color: context.colors.body,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, true),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [const Color(0xFFFF5252), const Color(0xFFD32F2F)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.colors.danger.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        l10n.commonDelete,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    final confirmed = await showDestructiveConfirmDialog(
+      context,
+      title: l10n.deleteConfirmTitle,
+      message: l10n.deleteItemConfirm,
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
     );
 
     if (confirmed == true) {
@@ -555,7 +387,13 @@ class _DeletedItemCard extends ConsumerWidget {
           );
         }
       } catch (e) {
-        // Error handling
+        if (context.mounted) {
+          SuccessNotificationSheet.show(
+            context,
+            title: l10n.commonError,
+            message: l10n.recentlyDeletedDeleteError,
+          );
+        }
       }
     }
   }

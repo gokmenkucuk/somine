@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:somine_app/core/design/design_tokens.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/widgets/loading_indicator.dart';
 
 class SoMineLoadingWidget extends StatelessWidget {
@@ -17,7 +17,8 @@ class SoMineLoadingWidget extends StatelessWidget {
     
     return Scaffold(
       resizeToAvoidBottomInset: false, // Prevent logo jump when keyboard dismisses
-      backgroundColor: Colors.white,
+      // Temaya uyar: koyu temalarda beyaz flaş olmaz.
+      backgroundColor: context.colors.backgroundTop,
       body: Stack(
         fit: StackFit.expand,
         alignment: Alignment.center,
@@ -40,7 +41,7 @@ class SoMineLoadingWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: DesignTokens.textSecondary,
+                      color: context.colors.body,
                     ),
                   ),
                 );

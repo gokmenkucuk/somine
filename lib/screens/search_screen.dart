@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:somine_app/core/models/item_model.dart';
@@ -58,6 +59,14 @@ class _SearchScreenState extends State<SearchScreen> {
       _selectedPlatform != null ||
       _isVaultSearch;
 
+  /// Seçili chip zemini: üzerindeki onPrimary yazı için ≥4.5:1 kontrast.
+  Color _selectedChipColor(BuildContext context) =>
+      BrandGradient.ensureContrast(
+        context.colors.primary,
+        Theme.of(context).colorScheme.onPrimary,
+        BrandGradient.textContrast,
+      );
+
   /// "Akıllı" (semantic) arama modu chip'i — vault chip kalıbıyla aynı stil.
   Widget _buildSemanticFilterChip() {
     final l10n = AppLocalizations.of(context)!;
@@ -75,7 +84,9 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color:
-              isSelected ? context.colors.primary : context.colors.surfaceWhite,
+              isSelected
+                  ? _selectedChipColor(context)
+                  : context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color:
@@ -101,7 +112,10 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               PhosphorIconsBold.sparkle,
               size: 16,
-              color: isSelected ? Colors.white : context.colors.primary,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : context.colors.primary,
             ),
             const SizedBox(width: 6),
             Text(
@@ -109,7 +123,10 @@ class _SearchScreenState extends State<SearchScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.white : context.colors.headline,
+                color:
+                    isSelected
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : context.colors.headline,
               ),
             ),
           ],
@@ -150,7 +167,9 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color:
-              isSelected ? context.colors.primary : context.colors.surfaceWhite,
+              isSelected
+                  ? _selectedChipColor(context)
+                  : context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color:
@@ -178,7 +197,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   ? PhosphorIconsBold.lockKeyOpen
                   : PhosphorIconsBold.lockKey,
               size: 16,
-              color: isSelected ? Colors.white : context.colors.primary,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : context.colors.primary,
             ),
             const SizedBox(width: 6),
             Text(
@@ -186,7 +208,10 @@ class _SearchScreenState extends State<SearchScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.white : context.colors.headline,
+                color:
+                    isSelected
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : context.colors.headline,
               ),
             ),
           ],
@@ -234,7 +259,10 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (error) {
       if (mounted) {
         setState(() {
-          _errorMessage = FailureMapper.toUserMessage(error);
+          _errorMessage = FailureMapper.toUserMessage(
+            error,
+            AppLocalizations.of(context),
+          );
           _isLoading = false;
         });
       }
@@ -387,7 +415,10 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (error) {
       if (mounted) {
         setState(() {
-          _errorMessage = FailureMapper.toUserMessage(error);
+          _errorMessage = FailureMapper.toUserMessage(
+            error,
+            AppLocalizations.of(context),
+          );
           _filteredItems = [];
           _isLoading = false;
         });
@@ -931,10 +962,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Divider(
-              height: 1,
-              color: context.colors.divider,
-            ),
+            Divider(height: 1, color: context.colors.divider),
             Flexible(
               child: ListView.separated(
                 physics: const BouncingScrollPhysics(),
@@ -942,10 +970,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 padding: EdgeInsets.zero,
                 itemCount: _recentSearches.length,
                 separatorBuilder:
-                    (c, i) => Divider(
-                      height: 1,
-                      color: context.colors.divider,
-                    ),
+                    (c, i) => Divider(height: 1, color: context.colors.divider),
                 itemBuilder: (context, index) {
                   return FadeInUp(
                     delay: Duration(milliseconds: 300 + (index * 60)),
@@ -980,6 +1005,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       trailing: IconButton(
+        tooltip: AppLocalizations.of(context)!.a11yRemove,
         icon: Icon(Icons.close, size: 18, color: context.colors.hint),
         onPressed: () => _removeSearchItem(index),
         padding: EdgeInsets.zero,
@@ -1010,14 +1036,7 @@ class _SearchScreenState extends State<SearchScreen> {
           // Oil Green Gradient for Selected
           gradient:
               isSelected
-                  ? LinearGradient(
-                    colors: [
-                      context.colors.primary,
-                      context.colors.secondary,
-                    ], // Oil Green
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
+                  ? BrandGradient.linear(context) // Oil Green, ≥4.5:1
                   : null,
           color: isSelected ? null : context.colors.surfaceWhite,
           borderRadius: BorderRadius.circular(30),
@@ -1048,14 +1067,20 @@ class _SearchScreenState extends State<SearchScreen> {
               icon,
               size: 18,
               // White icon when selected
-              color: isSelected ? Colors.white : context.colors.hint,
+              color:
+                  isSelected
+                      ? BrandGradient.foreground(context)
+                      : context.colors.hint,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.poppins(
                 // White text when selected
-                color: isSelected ? Colors.white : context.colors.hint,
+                color:
+                    isSelected
+                        ? BrandGradient.foreground(context)
+                        : context.colors.hint,
                 // Lighter font weight as requested
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
                 fontSize: 14,
@@ -1234,7 +1259,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Text(
                               badgeText,
                               style: GoogleFonts.poppins(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w400,
                                 color: context.colors.hint,
                               ),

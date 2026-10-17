@@ -36,19 +36,24 @@ class AppTheme {
           headline: AppColors.headline,
           body: AppColors.body,
           hint: AppColors.hint,
+          hintSubtle: AppColors.hintSubtle,
           iconActive: AppColors.iconActive,
           iconInactive: AppColors.iconInactive,
           surfaceWhite: AppColors.surfaceWhite,
           premiumShadow: AppColors.premiumShadow,
           divider: AppColors.divider,
           danger: AppColors.danger,
+          success: AppColors.success,
+          warning: AppColors.warning,
+          info: AppColors.info,
         ),
       ],
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surfaceWhite,
-        error: Colors.red,
+        error: AppColors.danger,
+        // Beyaz / #688E8B = 3.60:1 — marka kimliği gereği korunuyor (bkz. rapor).
         onPrimary: Colors.white,
         onSecondary: AppColors.headline,
         onSurface: AppColors.headline,
@@ -72,7 +77,11 @@ class AppTheme {
     const surfaceDark = Color(0xFF1E1E1E); 
     const textLight = Color(0xFFF1F5F9); 
     const textDim = Color(0xFF94A3B8);
+    // İkincil metin: #1E1E1E yüzeyde 5.20:1, #121212 zeminde 5.84:1.
+    const hintText = Color(0xFF8291A6);
+    // İkon/ayraç tonu: yüzeyde 3.50:1 (ikon için ≥3:1).
     const iconDim = Color(0xFF64748B);
+    const dangerMidnight = Color(0xFFF87171); // yüzeyde 6.03:1
 
     return ThemeData(
       useMaterial3: true,
@@ -87,24 +96,28 @@ class AppTheme {
           accentDark: primaryColor,
           headline: textLight,
           body: textDim,
-          hint: iconDim,
+          hint: hintText,
+          hintSubtle: iconDim,
           iconActive: primaryColor,
           iconInactive: iconDim,
           surfaceWhite: surfaceDark,
           premiumShadow: Colors.black54,
           divider: iconDim.withValues(alpha: 0.35),
-          danger: const Color(0xFFEF4444),
+          danger: dangerMidnight,
+          success: const Color(0xFF4ADE80), // 9.57:1
+          warning: const Color(0xFFFBBF24), // 9.99:1
+          info: const Color(0xFF60A5FA), // 6.56:1
         ),
       ],
       colorScheme: const ColorScheme.dark(
         primary: primaryColor, // Changed from primaryAcid
         secondary: secondaryColor, // Changed from primaryAcid
         surface: surfaceDark,
-        error: Color(0xFFEF4444),
-        onPrimary: Color(0xFF0F172A), // Black content on acid green
+        error: dangerMidnight,
+        onPrimary: Color(0xFF0F172A), // #2DD4BF üzerinde 9.59:1
         onSecondary: Color(0xFF0F172A),
         onSurface: textLight,
-        onError: Colors.white,
+        onError: Color(0xFF0F172A),
       ),
       textTheme: _buildTextTheme(textLight, textDim),
       appBarTheme: _buildAppBarTheme(textLight, brightness: Brightness.dark),
@@ -128,7 +141,10 @@ class AppTheme {
     const secondaryVibe = Color(0xFF5A8AB5); // Blue accent
     const textLight = Color(0xFFF5F5F5); // Light text
     const textDim = Color(0xFFB0C0C8); // Dim text
-    const iconDim = Color(0xFF7A9AA8);
+    // İkincil metin: kart yüzeyinde 4.90:1, zeminde 6.15:1.
+    const hintText = Color(0xFF8EADBA);
+    const iconDim = Color(0xFF7A9AA8); // ikon: yüzeyde 3.89:1
+    const dangerVibe = Color(0xFFFF8A80); // yüzeyde 5.10:1
     
     return ThemeData(
       useMaterial3: true,
@@ -143,24 +159,29 @@ class AppTheme {
           accentDark: primaryVibe,
           headline: textLight,
           body: textDim,
-          hint: iconDim,
+          hint: hintText,
+          hintSubtle: iconDim,
           iconActive: primaryVibe,
           iconInactive: iconDim,
           surfaceWhite: surfaceVibe,
           premiumShadow: primaryVibe.withValues(alpha: 0.3),
           divider: iconDim.withValues(alpha: 0.35),
-          danger: Colors.redAccent,
+          danger: dangerVibe,
+          success: const Color(0xFF6EE7A0), // 7.55:1
+          warning: const Color(0xFFFCD34D), // 8.08:1
+          info: const Color(0xFF93C5FD), // 6.46:1
         ),
       ],
       colorScheme: const ColorScheme.dark(
         primary: primaryVibe,
         secondary: secondaryVibe,
         surface: surfaceVibe,
-        error: Colors.redAccent,
+        error: dangerVibe,
+        // Beyaz / #E86B8A = 3.04:1 — marka kimliği gereği korunuyor (bkz. rapor).
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textLight,
-        onError: Colors.white,
+        onError: bgVibe,
       ),
       textTheme: _buildTextTheme(textLight, textDim),
       appBarTheme: _buildAppBarTheme(textLight, brightness: Brightness.dark),

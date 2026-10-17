@@ -1,9 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/design/design_tokens.dart';
 import 'package:somine_app/core/design/app_colors.dart';
+import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:somine_app/core/repositories/user_repository.dart';
+import 'package:somine_app/screens/login_screen.dart';
 import 'package:somine_app/screens/onboarding_prep_screen.dart';
 import 'dart:async';
 import 'package:somine_app/core/design/app_colors_extension.dart';
@@ -29,6 +32,46 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
   String? _usernameError;
   Timer? _debounceTimer;
   String? _suggestedUsername;
+  bool _isSigningOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Apple/Google'dan gelen adı önceden doldur; kullanıcı yeniden yazmasın.
+    final prefilled = _providerDisplayName();
+    if (prefilled != null) {
+      _nameController.text = prefilled;
+      unawaited(_onNameChanged(prefilled));
+    }
+  }
+
+  String? _providerDisplayName() {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return null;
+      final candidates = <String?>[
+        user.displayName,
+        ...user.providerData.map((p) => p.displayName),
+      ];
+      for (final name in candidates) {
+        final trimmed = name?.trim() ?? '';
+        if (trimmed.isNotEmpty) return trimmed;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Yanlış hesapla giriş yapıldıysa oturumu kapatıp girişe döner.
+  Future<void> _useDifferentAccount() async {
+    if (_isSigningOut) return;
+    setState(() => _isSigningOut = true);
+    await AuthRepository().signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
 
   @override
   void dispose() {
@@ -214,7 +257,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _nameController,
-                  autofocus: true,
+                  autofocus: _nameController.text.isEmpty,
                   textCapitalization: TextCapitalization.words,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
@@ -350,7 +393,9 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Align(
                       alignment: Alignment.centerLeft, // Left aligned looks better under input
-                      child: GestureDetector(
+                      child: Semantics(
+                        button: true,
+                        child: GestureDetector(
                         onTap: () {
                           setState(() {
                             _usernameController.text = _suggestedUsername!;
@@ -390,6 +435,7 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                             ],
                           ),
                         ),
+                      ),
                       ),
                     ),
                   )
@@ -452,7 +498,28 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 40),
+                const SizedBox(height: 16),
+
+                Center(
+                  child: TextButton(
+                    onPressed:
+                        (_isLoading || _isSigningOut) ? null : _useDifferentAccount,
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(44, 44),
+                      foregroundColor: DesignTokens.textSecondary,
+                    ),
+                    child: Text(
+                      l10n.onboardingNameUseDifferentAccount,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),

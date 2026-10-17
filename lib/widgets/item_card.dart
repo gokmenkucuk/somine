@@ -22,122 +22,129 @@ class ItemCard extends StatelessWidget {
     // Reference: Tall, Clean, Image dominant, Minimal text
     final bool isNote = item.type == ItemType.note;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          borderRadius: BorderRadius.circular(
-            20,
-          ), // More rounded like reference
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              offset: const Offset(0, 4),
-              blurRadius: 16,
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 1. Image Area (Dominant)
-            Stack(
-              children: [
-                _CardImage(
-                  imageUrl: item.displayImage,
-                  heroTag: item.id,
-                  url: item.url, // Pass URL for fallback logic
-                  isNote: isNote, // Pass note type for special handling
-                  // If no image, show a nice gradient placeholder
-                  placeholderGradient: _getGradientForType(
-                    context,
-                    item.url,
-                    isNote,
-                  ),
-                ),
-
-                // Source Icon Badge (Subtle, Top Left)
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    padding: EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      color: context.colors.surfaceWhite.withValues(alpha: 0.9),
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: _getSourceIcon(context, item.url, isNote),
-                  ),
-                ),
-
-                // Reminder Badge (Subtle, Top Right)
-                if (item.hasReminder)
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      padding: EdgeInsets.zero,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.9),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        PhosphorIconsBold.bellRinging,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            // 2. Info Area (Clean White)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    item.displayTitle,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.headline, // Dark grey
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  // Source Name (Author style)
-                  Text(
-                    _getSourceName(item.url, isNote),
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                      color: AppColors.hint,
-                    ),
-                  ),
-                ],
+    return Semantics(
+      button: onTap != null,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.colors.surfaceWhite,
+            borderRadius: BorderRadius.circular(
+              20,
+            ), // More rounded like reference
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: const Offset(0, 4),
+                blurRadius: 16,
               ),
-            ),
-          ],
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Image Area (Dominant) — dekoratif; başlık aşağıda okunur.
+              ExcludeSemantics(
+                child: Stack(
+                  children: [
+                    _CardImage(
+                      imageUrl: item.displayImage,
+                      heroTag: item.id,
+                      url: item.url, // Pass URL for fallback logic
+                      isNote: isNote, // Pass note type for special handling
+                      // If no image, show a nice gradient placeholder
+                      placeholderGradient: _getGradientForType(
+                        context,
+                        item.url,
+                        isNote,
+                      ),
+                    ),
+
+                    // Source Icon Badge (Subtle, Top Left)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        padding: EdgeInsets.zero,
+                        decoration: BoxDecoration(
+                          color: context.colors.surfaceWhite.withValues(
+                            alpha: 0.9,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: _getSourceIcon(context, item.url, isNote),
+                      ),
+                    ),
+
+                    // Reminder Badge (Subtle, Top Right)
+                    if (item.hasReminder)
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          padding: EdgeInsets.zero,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            PhosphorIconsBold.bellRinging,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // 2. Info Area (Clean White)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      item.displayTitle,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.headline, // Dark grey
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    // Source Name (Author style)
+                    Text(
+                      _getSourceName(item.url, isNote),
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                        color: AppColors.hint,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -10,7 +10,9 @@ import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/screens/shared_collection_view_screen.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
+import 'package:somine_app/core/utils/failure_mapper.dart';
 import 'package:somine_app/core/utils/relative_time.dart';
+import 'package:somine_app/widgets/share_moderation_sheets.dart';
 
 class ShareRequestsScreen extends ConsumerWidget {
   const ShareRequestsScreen({super.key});
@@ -52,10 +54,11 @@ class ShareRequestsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorStateWidget(
-          message: l10n.shareRequestsLoadError,
-          onRetry: () => ref.invalidate(pendingShareRequestsProvider),
-        ),
+        error:
+            (e, _) => ErrorStateWidget(
+              message: l10n.shareRequestsLoadError,
+              onRetry: () => ref.invalidate(pendingShareRequestsProvider),
+            ),
       ),
     );
   }
@@ -137,11 +140,13 @@ class _ShareRequestCard extends ConsumerWidget {
                 ),
                 child: Center(
                   child: Text(
-                    share.fromUserName.isNotEmpty ? share.fromUserName[0].toUpperCase() : '?',
+                    share.fromUserName.isNotEmpty
+                        ? share.fromUserName[0].toUpperCase()
+                        : '?',
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 ),
@@ -171,9 +176,9 @@ class _ShareRequestCard extends ConsumerWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Collection Name
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -201,9 +206,9 @@ class _ShareRequestCard extends ConsumerWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Actions
           Row(
             children: [
@@ -211,8 +216,9 @@ class _ShareRequestCard extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: () => _rejectShare(context, ref),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey,
+                    foregroundColor: context.colors.body,
                     side: BorderSide(color: context.colors.divider),
+                    minimumSize: const Size.fromHeight(44),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -230,7 +236,8 @@ class _ShareRequestCard extends ConsumerWidget {
                   onPressed: () => _acceptShare(context, ref),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.colors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    minimumSize: const Size.fromHeight(44),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -280,28 +287,50 @@ class _ShareRequestCard extends ConsumerWidget {
       if (context.mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
+          SnackBar(content: Text(FailureMapper.toUserMessage(e, l10n))),
         );
       }
     }
   }
 
   Future<void> _rejectShare(BuildContext context, WidgetRef ref) async {
+    // App Store 1.2: reddederken göndereni engelleme seçeneği de sunulur.
+    final choice = await ShareModerationSheets.pickDeclineOption(
+      context,
+      fromUserName: share.fromUserName,
+    );
+    if (choice == null || !context.mounted) return;
+
     try {
-      await ref.read(shareRepositoryProvider).rejectShare(share.id!);
+      final repository = ref.read(shareRepositoryProvider);
+      if (choice == ShareDeclineChoice.declineAndBlock) {
+        // Engelleme bekleyen isteği sunucuda zaten reddeder.
+        await repository.blockShareSender(
+          share.id!,
+          fromUserId: share.fromUserId,
+        );
+      } else {
+        await repository.rejectShare(share.id!);
+      }
       if (context.mounted) {
         final l10n = AppLocalizations.of(context)!;
+        ref.invalidate(pendingShareRequestsProvider);
         SuccessNotificationSheet.show(
           context,
           title: l10n.shareRequestsRejectedTitle,
-          message: l10n.shareRequestsRejectedMessage,
+          message:
+              choice == ShareDeclineChoice.declineAndBlock
+                  ? l10n.ugcDeclinedAndBlocked(
+                    ShareModerationSheets.displayName(share.fromUserName, l10n),
+                  )
+                  : l10n.shareRequestsRejectedMessage,
         );
       }
     } catch (e) {
       if (context.mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.commonErrorWithDetail(e.toString()))),
+          SnackBar(content: Text(FailureMapper.toUserMessage(e, l10n))),
         );
       }
     }
