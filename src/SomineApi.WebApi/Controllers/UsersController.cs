@@ -73,6 +73,83 @@ public class UsersController : ControllerBase
         return Ok(new SearchHistoryDto(normalizedTerms));
     }
 
+    // Push bildirimleri için cihazın FCM token'ını kaydeder / yeniler. Oturum açıldığında ve
+    // token yenilendiğinde çağrılır. Token başka bir hesaba kayıtlıysa (aynı cihazda hesap
+    // değişimi) bu kullanıcıya taşınır; böylece eski hesabın bildirimi bu cihaza düşmez.
+    [HttpPut("me/device-token")]
+    public async Task<IActionResult> RegisterDeviceToken([FromBody] RegisterDeviceTokenRequest request)
+    {
+        var userId = HttpContext.GetUserId();
+        var token = request.Token?.Trim();
+
+        if (string.IsNullOrEmpty(token) || token.Length > DeviceToken.MaxTokenLength)
+            return BadRequest(new { error = "Invalid device token" });
+
+        var platform = NormalizeDeviceField(request.Platform, DeviceToken.MaxPlatformLength)?.ToLowerInvariant();
+        var locale = NormalizeDeviceField(request.Locale, DeviceToken.MaxLocaleLength);
+
+        var userExists = await _dbContext.Users.AnyAsync(u => u.Id == userId);
+        if (!userExists)
+            return NotFound(new { error = "User not found" });
+
+        for (var attempt = 0; ; attempt++)
+        {
+            var now = DateTime.UtcNow;
+            var existing = await _dbContext.DeviceTokens.FirstOrDefaultAsync(t => t.Token == token);
+
+            if (existing == null)
+            {
+                _dbContext.DeviceTokens.Add(new DeviceToken
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Token = token,
+                    Platform = platform,
+                    Locale = locale,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    LastSeenAt = now
+                });
+            }
+            else
+            {
+                existing.UserId = userId;
+                existing.Platform = platform ?? existing.Platform;
+                existing.Locale = locale ?? existing.Locale;
+                existing.LastSeenAt = now;
+            }
+
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateException) when (attempt == 0)
+            {
+                // Aynı token eşzamanlı iki istekle eklendi (benzersiz index); bir kez güncelleme olarak yeniden dene.
+                _dbContext.ChangeTracker.Clear();
+            }
+        }
+    }
+
+    // Oturum kapatılırken bu cihazın token'ını siler; çıkış yapılmış cihaza push gitmez.
+    // İdempotenttir; yalnız çağıranın kendi token'ı silinir.
+    [HttpDelete("me/device-token")]
+    public async Task<IActionResult> UnregisterDeviceToken([FromBody] UnregisterDeviceTokenRequest request)
+    {
+        var userId = HttpContext.GetUserId();
+        var token = request.Token?.Trim();
+
+        if (string.IsNullOrEmpty(token))
+            return BadRequest(new { error = "Invalid device token" });
+
+        await _dbContext.DeviceTokens
+            .Where(t => t.UserId == userId && t.Token == token)
+            .ExecuteDeleteAsync();
+
+        return NoContent();
+    }
+
     [HttpPut("me")]
     public async Task<ActionResult<UserDto>> UpdateCurrentUser([FromBody] UpdateUserRequest request)
     {
@@ -149,6 +226,9 @@ public class UsersController : ControllerBase
             .ExecuteDeleteAsync();
         await _dbContext.AuthSessions
             .Where(s => s.UserId == userId)
+            .ExecuteDeleteAsync();
+        await _dbContext.DeviceTokens
+            .Where(t => t.UserId == userId)
             .ExecuteDeleteAsync();
 
         var files = await _dbContext.UploadedFiles
@@ -273,6 +353,13 @@ public class UsersController : ControllerBase
             .ToListAsync();
 
         return Ok(users);
+    }
+
+    private static string? NormalizeDeviceField(string? value, int maxLength)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed)) return null;
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
     }
 
     private static IReadOnlyList<string> ParseSearchHistory(string? searchHistoryJson)

@@ -32,6 +32,8 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
 
     public FakeReportAlertSender ReportAlertSender { get; } = new();
 
+    public FakePushNotificationSender PushNotificationSender { get; } = new();
+
     public SaveChangesHookInterceptor SaveChangesHook { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -68,6 +70,8 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
             services.RemoveAll<IEmbeddingService>();
             services.RemoveAll<IReportAlertSender>();
             services.AddSingleton<IReportAlertSender>(ReportAlertSender);
+            services.RemoveAll<IPushNotificationSender>();
+            services.AddSingleton<IPushNotificationSender>(PushNotificationSender);
 
             var hostedServices = services
                 .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)

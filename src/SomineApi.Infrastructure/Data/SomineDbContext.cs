@@ -24,6 +24,7 @@ public class SomineDbContext : DbContext
     public DbSet<ExceptionLog> ExceptionLogs => Set<ExceptionLog>();
     public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

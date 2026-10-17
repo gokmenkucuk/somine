@@ -13,6 +13,7 @@ using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Logging;
 using SomineApi.WebApi.Middleware;
 using SomineApi.WebApi.Options;
+using SomineApi.WebApi.Push;
 using SomineApi.WebApi.Reminders;
 using SomineApi.WebApi.Security;
 using Microsoft.AspNetCore.RateLimiting;
@@ -52,6 +53,12 @@ builder.Services.AddSingleton<IEmbeddingQueue, ChannelEmbeddingQueue>();
 builder.Services.AddHostedService<EmbeddingBackgroundService>();
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<ReminderNotificationBackgroundService>();
+// Uzak bildirim (FCM push): HTTP isteğini bekletmeden kuyruk + arka plan gönderici.
+builder.Services.AddSingleton<IPushNotificationSender, FcmPushNotificationSender>();
+builder.Services.AddSingleton<IPushNotificationQueue, ChannelPushNotificationQueue>();
+builder.Services.AddHostedService<PushNotificationBackgroundService>();
+builder.Services.Configure<PushNotificationOptions>(
+    builder.Configuration.GetSection(PushNotificationOptions.SectionName));
 builder.Services.AddSingleton<IReportAlertQueue, ChannelReportAlertQueue>();
 builder.Services.AddSingleton<IReportAlertSender, SmtpReportAlertSender>();
 builder.Services.AddHostedService<ReportAlertBackgroundService>();

@@ -15,6 +15,7 @@ using SomineApi.WebApi.Extensions;
 using SomineApi.WebApi.Hubs;
 using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Options;
+using SomineApi.WebApi.Push;
 using System.Security.Cryptography;
 
 namespace SomineApi.WebApi.Controllers;
@@ -26,6 +27,7 @@ public class SharesController : ControllerBase
 {
     private readonly SomineDbContext _dbContext;
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
+    private readonly IPushNotificationQueue _pushNotificationQueue;
     private readonly ISubscriptionTierService _subscriptionTierService;
     private readonly PublicWebOptions _publicWebOptions;
     private readonly IReportAlertQueue _reportAlertQueue;
@@ -34,6 +36,7 @@ public class SharesController : ControllerBase
     public SharesController(
         SomineDbContext dbContext,
         IUserRealtimeEventPublisher realtimeEventPublisher,
+        IPushNotificationQueue pushNotificationQueue,
         ISubscriptionTierService subscriptionTierService,
         IOptions<PublicWebOptions> publicWebOptions,
         IReportAlertQueue reportAlertQueue,
@@ -41,6 +44,7 @@ public class SharesController : ControllerBase
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
+        _pushNotificationQueue = pushNotificationQueue;
         _subscriptionTierService = subscriptionTierService;
         _publicWebOptions = publicWebOptions.Value;
         _reportAlertQueue = reportAlertQueue;
@@ -147,6 +151,8 @@ public class SharesController : ControllerBase
         _dbContext.Notifications.Add(notification);
 
         await _dbContext.SaveChangesAsync();
+        // Uygulama kapalıyken de ulaşsın diye push; kuyruğa alınır, hata isteği etkilemez.
+        _pushNotificationQueue.Enqueue(PushNotificationRequest.FromNotification(notification));
         await _realtimeEventPublisher.PublishNotificationsChangedAsync(toUser.Id, "created", notification.Id, HttpContext.RequestAborted);
 
         return Ok(new ShareDto(share.Id, share.FromUserId, share.ToUserId, share.CategoryId,
@@ -244,6 +250,7 @@ public class SharesController : ControllerBase
         _dbContext.Notifications.Add(notification);
 
         await _dbContext.SaveChangesAsync();
+        _pushNotificationQueue.Enqueue(PushNotificationRequest.FromNotification(notification));
         await _realtimeEventPublisher.PublishNotificationsChangedAsync(share.FromUserId, "created", notification.Id, HttpContext.RequestAborted);
         return NoContent();
     }
@@ -279,6 +286,7 @@ public class SharesController : ControllerBase
         _dbContext.Notifications.Add(notification);
 
         await _dbContext.SaveChangesAsync();
+        _pushNotificationQueue.Enqueue(PushNotificationRequest.FromNotification(notification));
         await _realtimeEventPublisher.PublishNotificationsChangedAsync(share.FromUserId, "created", notification.Id, HttpContext.RequestAborted);
         return NoContent();
     }
