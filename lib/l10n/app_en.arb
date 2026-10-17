@@ -56,7 +56,7 @@
   "profileMembershipBadgeStandard": "STANDARD",
   "paywallSubtitle": "Premium Membership",
   "paywallFeatureUnlimited": "Unlimited Collections & Items",
-  "paywallFeatureVault": "Private Vault (FaceID/TouchID)",
+  "paywallFeatureVault": "Hidden Vault (FaceID/TouchID)",
   "paywallFeatureThemes": "Premium Themes",
   "paywallFeatureAppIcons": "Custom App Icons",
   "paywallFeatureSmartSearch": "Smart Search",
@@ -96,7 +96,7 @@
   "commonMoved": "Moved",
   "commonDeleted": "Deleted",
   "commonErrorWithDetail": "Error: {error}",
-  "vaultName": "Private Vault",
+  "vaultName": "Hidden Vault",
   "vaultCategoryAuthReason": "Authenticate to access the {name} collection",
   "commonEmptyItemsSubtitle": "Your saved links, notes and images will appear here.",
   "limitItemReachedDescription": "On the free plan you can save up to {limit} items. Switch to Premium for unlimited items!",
@@ -132,15 +132,15 @@
   "catalogShareViaLinkDescription": "Anyone with the link can view",
   "catalogShareLinkReshare": "Share Again",
   "catalogShareLinkUnavailable": "Sharing via link is not available right now. Please try again later.",
-  "catalogVaultNoShare": "Private vaults cannot be shared",
+  "catalogVaultNoShare": "Hidden vaults cannot be shared",
   "premiumFeature": "Premium Feature",
   "catalogSharePremiumMessage": "Sharing collections is a premium-only feature. Upgrade to manage shared collections with friends!",
-  "catalogRemoveFromVault": "Remove from Private Vault",
-  "catalogAddToVault": "Add to Private Vault",
-  "catalogVaultPremiumMessage": "The Private Vault is a premium-only feature. Protect your collections with FaceID/TouchID!",
-  "catalogVaultPremiumShortMessage": "The Private Vault is a premium-only feature.",
-  "catalogAddedToVault": "Collection added to private vault 🔒",
-  "catalogRemovedFromVault": "Collection removed from private vault 🔓",
+  "catalogRemoveFromVault": "Remove from Hidden Vault",
+  "catalogAddToVault": "Add to Hidden Vault",
+  "catalogVaultPremiumMessage": "The Hidden Vault is a premium-only feature. Protect your collections with FaceID/TouchID!",
+  "catalogVaultPremiumShortMessage": "The Hidden Vault is a premium-only feature.",
+  "catalogAddedToVault": "Collection added to Hidden Vault 🔒",
+  "catalogRemovedFromVault": "Collection removed from Hidden Vault 🔓",
   "catalogDeleteCollection": "Delete Collection",
   "catalogRenameTitle": "Collection Name",
   "catalogRenameHint": "Enter a new name",
@@ -200,6 +200,9 @@
   "shareErrorNoSession": "Not signed in",
   "shareErrorNoCollectionId": "Collection ID not found",
   "shareErrorMissingUser": "Missing user info (ID or email not found)",
+  "shareCreateUserNotFound": "We couldn't find that user.",
+  "shareCreateAlreadyShared": "You've already shared this collection with them.",
+  "shareCreateFailed": "The share request couldn't be created.",
   "addContentImagePickerTitle": "Add Image",
   "addContentGallery": "Gallery",
   "addContentCamera": "Camera",
@@ -455,13 +458,13 @@
   "helpSupportWebsiteTitle": "Website",
   "helpSupportAppVersion": "App Version",
   "helpSupportFaqQ1": "How does Somine work?",
-  "helpSupportFaqA1": "Somine lets you collect links from Instagram, YouTube, Twitter and other platforms in one place. Add content by tapping share or manually.",
+  "helpSupportFaqA1": "Somine lets you collect links from Instagram, YouTube, X and other platforms in one place. Add content by tapping share or manually.",
   "helpSupportFaqQ2": "How do I create collections?",
   "helpSupportFaqA2": "Tap the + button in the top right of the Collections tab to create a new collection. You can assign a name and an emoji to your collections.",
   "helpSupportFaqQ3": "What are the Premium features?",
-  "helpSupportFaqA3": "Premium gives you unlimited collections, custom app icons, widget support and more features.",
+  "helpSupportFaqA3": "Premium removes the collection and item limits. It also unlocks the Hidden Vault (Face ID / Touch ID), collection sharing, the Midnight and Vibe themes and 5 custom app icons. The widget, search and the weekly digest are free for everyone.",
   "helpSupportFaqQ4": "Is my data safe?",
-  "helpSupportFaqA4": "Yes! All your data is stored encrypted with Firebase security infrastructure. You can protect sensitive content with Face ID/Touch ID using the Private Vault.",
+  "helpSupportFaqA4": "Your content is stored on our own servers and all traffic between the app and the server is encrypted with HTTPS; Firebase is used only for signing in. Collections you move into the Hidden Vault are not downloaded to your device until you unlock them with Face ID / Touch ID. You can export your data at any time and delete your account permanently from inside the app.",
   "helpSupportFaqQ5": "How do I delete my content?",
   "helpSupportFaqA5": "Long press on a content card to access the delete option. Deleted items are kept in Recently Deleted for 30 days.",
   "commonUpdate": "Update",
@@ -583,5 +586,67 @@
       }
     }
   },
-  "reminderPickerDeleteTooltip": "Delete reminder"
+  "reminderPickerDeleteTooltip": "Delete reminder",
+  "paywallPlanWeekly": "Weekly Plan",
+  "paywallPlanMonthly": "Monthly Plan",
+  "paywallPlanYearly": "Yearly Plan",
+  "paywallPlanLifetime": "Lifetime",
+  "paywallPlanWeeklyDescription": "Renews automatically every week",
+  "paywallPlanMonthlyDescription": "Renews automatically every month",
+  "paywallPlanYearlyDescription": "{discount}% off, billed once a year",
+  "@paywallPlanYearlyDescription": {
+    "placeholders": {
+      "discount": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallPlanLifetimeDescription": "One-time payment, yours forever",
+  "commonToday": "Today",
+  "commonTomorrow": "Tomorrow",
+  "platformBrowser": "Browser",
+  "itemDetailOpenInGoogleMaps": "Open in Google Maps",
+  "itemDetailOpenInYandexMaps": "Open in Yandex Maps",
+  "itemDetailOpenInAppleMaps": "Open in Apple Maps",
+  "itemDetailOpenInOpenStreetMap": "Open in OpenStreetMap",
+  "itemDetailEditAction": "Edit",
+  "itemDetailEmbedRestricted": "Because of copyright and publisher policies, this content can only be viewed on its original source.",
+  "quickCategoryName": "Quick",
+  "defaultCategoryMusic": "To Listen",
+  "defaultCategoryPlaces": "Places to Visit",
+  "defaultCategoryRecipes": "Recipes to Try",
+  "defaultCategoryInspiration": "Inspiration",
+  "notificationLocalReminderTitle": "Reminder 🔔",
+  "notificationLocalReminderBody": "You have a saved item to revisit",
+  "notificationReminderMessage": "It's time for the reminder you set for this item.",
+  "notificationShareRequestTitle": "New Share Request",
+  "notificationShareRequestMessage": "{sender} wants to share the \"{collection}\" collection with you.",
+  "@notificationShareRequestMessage": {
+    "placeholders": {
+      "sender": {
+        "type": "String"
+      },
+      "collection": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationShareAcceptedTitle": "Share Accepted",
+  "notificationShareAcceptedMessage": "Your share request was accepted: {collection}",
+  "@notificationShareAcceptedMessage": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationShareRejectedTitle": "Share Rejected",
+  "notificationShareRejectedMessage": "Your share request was rejected: {collection}",
+  "@notificationShareRejectedMessage": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -49,9 +49,21 @@ class CategoryRepository {
     }
   }
 
-  Future<List<CategoryModel>> createDefaultCategories(String userId) async {
+  Future<List<CategoryModel>> createDefaultCategories(
+    String userId, {
+    required String musicName,
+    required String placesName,
+    required String recipesName,
+    required String inspirationName,
+  }) async {
     try {
-      final defaults = CategoryModel.defaultCategories(userId);
+      final defaults = CategoryModel.defaultCategories(
+        userId,
+        musicName: musicName,
+        placesName: placesName,
+        recipesName: recipesName,
+        inspirationName: inspirationName,
+      );
       final createdCategories = <CategoryModel>[];
 
       for (final category in defaults) {

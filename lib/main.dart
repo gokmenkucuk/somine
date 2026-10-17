@@ -52,9 +52,11 @@ void main() async {
       // görsel oranları ilk kare öncesinde belleğe alınır.
       await ImageAspectRatioCache.instance.init();
 
+      // Uygulama cihaz diline göre TR/EN arasında geçtiği için iki locale de hazırlanır.
       await initializeDateFormatting('tr', null);
+      await initializeDateFormatting('en', null);
       timeago.setLocaleMessages('tr', timeago.TrMessages());
-      timeago.setDefaultLocale('tr');
+      // timeago'nun varsayılanı 'en'; çağrı yerleri locale'i açıkça geçiyor.
 
       try {
         await Firebase.initializeApp(

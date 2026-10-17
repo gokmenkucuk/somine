@@ -929,6 +929,18 @@
   "@shareErrorMissingUser": {
     "description": "Error shown when the target user info is missing during sharing."
   },
+  "shareCreateUserNotFound": "Bu kullanıcı bulunamadı.",
+  "@shareCreateUserNotFound": {
+    "description": "Shown when the share target user does not exist (HTTP 404 from POST /api/shares)."
+  },
+  "shareCreateAlreadyShared": "Bu koleksiyon zaten bu kişiyle paylaşılmış.",
+  "@shareCreateAlreadyShared": {
+    "description": "Shown when the collection was already shared with this person (HTTP 409 from POST /api/shares)."
+  },
+  "shareCreateFailed": "Paylaşım isteği oluşturulamadı.",
+  "@shareCreateFailed": {
+    "description": "Shown when the share request could not be created (HTTP 400 from POST /api/shares)."
+  },
   "addContentImagePickerTitle": "Görsel Ekle",
   "@addContentImagePickerTitle": {
     "description": "Title of the image picker sheet."
@@ -1933,7 +1945,7 @@
   "@helpSupportFaqQ1": {
     "description": "First FAQ question on the help & support screen."
   },
-  "helpSupportFaqA1": "Somine, Instagram, YouTube, Twitter ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
+  "helpSupportFaqA1": "Somine, Instagram, YouTube, X ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
   "@helpSupportFaqA1": {
     "description": "First FAQ answer on the help & support screen."
   },
@@ -1949,7 +1961,7 @@
   "@helpSupportFaqQ3": {
     "description": "Third FAQ question on the help & support screen."
   },
-  "helpSupportFaqA3": "Premium ile sınırsız koleksiyon, özel app ikonları, widget desteği ve daha fazla özelliğe erişebilirsiniz.",
+  "helpSupportFaqA3": "Premium ile koleksiyon ve içerik sınırı kalkar. Ayrıca Gizli Kasa (Face ID / Touch ID), koleksiyon paylaşımı, Midnight ve Vibe temaları ile 5 özel uygulama ikonu Premium'a özeldir. Widget, arama ve haftalık özet herkese açıktır.",
   "@helpSupportFaqA3": {
     "description": "Third FAQ answer on the help & support screen."
   },
@@ -1957,7 +1969,7 @@
   "@helpSupportFaqQ4": {
     "description": "Fourth FAQ question on the help & support screen."
   },
-  "helpSupportFaqA4": "Evet! Tüm verileriniz Firebase güvenlik altyapısıyla şifrelenerek saklanır. Gizli Kasa özelliği ile hassas içeriklerinizi Face ID/Touch ID ile koruyabilirsiniz.",
+  "helpSupportFaqA4": "İçerikleriniz kendi sunucularımızda saklanıyor ve uygulamayla sunucu arasındaki tüm trafik HTTPS ile şifreleniyor; Firebase yalnızca giriş (kimlik doğrulama) için kullanılıyor. Gizli Kasa'ya aldığınız koleksiyonlar Face ID / Touch ID ile açılmadan cihaza indirilmez. Verilerinizi istediğiniz an dışa aktarabilir, hesabınızı uygulama içinden kalıcı olarak silebilirsiniz.",
   "@helpSupportFaqA4": {
     "description": "Fourth FAQ answer on the help & support screen."
   },
@@ -2375,5 +2387,67 @@
       }
     }
   },
-  "reminderPickerDeleteTooltip": "Hatırlatıcıyı sil"
+  "reminderPickerDeleteTooltip": "Hatırlatıcıyı sil",
+  "paywallPlanWeekly": "Haftalık Plan",
+  "paywallPlanMonthly": "Aylık Plan",
+  "paywallPlanYearly": "Yıllık Plan",
+  "paywallPlanLifetime": "Ömür Boyu",
+  "paywallPlanWeeklyDescription": "Her hafta otomatik yenilenir",
+  "paywallPlanMonthlyDescription": "Her ay otomatik yenilenir",
+  "paywallPlanYearlyDescription": "%{discount} indirimli, yılda bir kez ödeme",
+  "@paywallPlanYearlyDescription": {
+    "placeholders": {
+      "discount": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallPlanLifetimeDescription": "Tek seferlik ödeme, sonsuza kadar",
+  "commonToday": "Bugün",
+  "commonTomorrow": "Yarın",
+  "platformBrowser": "Tarayıcı",
+  "itemDetailOpenInGoogleMaps": "Google Maps'te Aç",
+  "itemDetailOpenInYandexMaps": "Yandex Harita'da Aç",
+  "itemDetailOpenInAppleMaps": "Apple Harita'da Aç",
+  "itemDetailOpenInOpenStreetMap": "OpenStreetMap'te Aç",
+  "itemDetailEditAction": "Düzenle",
+  "itemDetailEmbedRestricted": "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
+  "quickCategoryName": "Hızlı",
+  "defaultCategoryMusic": "Dinlemek İstediğim",
+  "defaultCategoryPlaces": "Gitmek İstediğim Yerler",
+  "defaultCategoryRecipes": "Denemek İstediğim Tarifler",
+  "defaultCategoryInspiration": "İlham",
+  "notificationLocalReminderTitle": "Hatırlatıcı 🔔",
+  "notificationLocalReminderBody": "Not hatırlatıcınız var",
+  "notificationReminderMessage": "Kaydettiğin bu içerik için kurduğun hatırlatıcının vakti geldi.",
+  "notificationShareRequestTitle": "Yeni Paylaşım İsteği",
+  "notificationShareRequestMessage": "{sender}, \"{collection}\" koleksiyonunu sizinle paylaşmak istiyor.",
+  "@notificationShareRequestMessage": {
+    "placeholders": {
+      "sender": {
+        "type": "String"
+      },
+      "collection": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationShareAcceptedTitle": "Paylaşım Kabul Edildi",
+  "notificationShareAcceptedMessage": "Paylaşım isteğiniz kabul edildi: {collection}",
+  "@notificationShareAcceptedMessage": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationShareRejectedTitle": "Paylaşım Reddedildi",
+  "notificationShareRejectedMessage": "Paylaşım isteğiniz reddedildi: {collection}",
+  "@notificationShareRejectedMessage": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      }
+    }
+  }
 }

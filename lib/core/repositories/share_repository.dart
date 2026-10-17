@@ -122,14 +122,29 @@ class ShareRepository {
         }),
       );
 
+      // Bu üç mesaj paylaşım sayfasında KULLANICIYA aynen gösteriliyor. Daha önce
+      // düz Exception('Türkçe metin') idi ve İngilizce cihazda da Türkçe çıkıyordu.
+      // Artık dilden bağımsız bir kod taşıyorlar; çeviriyi FailureMapper yapıyor.
       if (response.statusCode == 404) {
-        throw Exception('Kullanıcı bulunamadı');
+        throw const ValidationException(
+          'share target user not found',
+          userMessage: '',
+          code: AppErrorCodes.shareUserNotFound,
+        );
       }
       if (response.statusCode == 409) {
-        throw Exception('Bu koleksiyon zaten bu kişiyle paylaşılmış');
+        throw const ConflictException(
+          'collection already shared with this user',
+          userMessage: '',
+          code: AppErrorCodes.shareAlreadyShared,
+        );
       }
       if (response.statusCode == 400) {
-        throw Exception('Paylaşım isteği oluşturulamadı');
+        throw const ValidationException(
+          'share request could not be created',
+          userMessage: '',
+          code: AppErrorCodes.shareCreateFailed,
+        );
       }
 
       _throwIfNotSuccessful(response, action: 'create share');

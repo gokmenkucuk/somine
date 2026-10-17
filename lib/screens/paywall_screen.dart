@@ -122,27 +122,27 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                           context,
                           ref,
                           l10n,
-                          title: "Haftalık Plan",
+                          title: l10n.paywallPlanWeekly,
                           price: "₺29,99",
-                          description: "Her hafta otomatik yenilenir",
+                          description: l10n.paywallPlanWeeklyDescription,
                           isPopular: false,
                         ),
                         _buildPlaceholderPackageCard(
                           context,
                           ref,
                           l10n,
-                          title: "Aylık Plan",
+                          title: l10n.paywallPlanMonthly,
                           price: "₺79,99",
-                          description: "Her ay otomatik yenilenir",
+                          description: l10n.paywallPlanMonthlyDescription,
                           isPopular: false,
                         ),
                         _buildPlaceholderPackageCard(
                           context,
                           ref,
                           l10n,
-                          title: "Yıllık Plan",
+                          title: l10n.paywallPlanYearly,
                           price: "₺699,99",
-                          description: "%27 indirimli, yılda bir kez ödeme",
+                          description: l10n.paywallPlanYearlyDescription(27),
                           isPopular: true,
                         ),
                       ],
@@ -313,7 +313,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   Row(
                     children: [
                       Text(
-                        _getPackageTitle(package),
+                        _getPackageTitle(package, l10n),
                         style: GoogleFonts.outfit(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -360,7 +360,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _getPackageDescription(package),
+                    _getPackageDescription(package, l10n),
                     style: GoogleFonts.outfit(
                       fontSize: 13,
                       color: context.colors.hint,
@@ -383,31 +383,31 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  String _getPackageTitle(Package package) {
+  String _getPackageTitle(Package package, AppLocalizations l10n) {
     switch (package.packageType) {
       case PackageType.weekly:
-        return "Haftalık Plan";
+        return l10n.paywallPlanWeekly;
       case PackageType.monthly:
-        return "Aylık Plan";
+        return l10n.paywallPlanMonthly;
       case PackageType.annual:
-        return "Yıllık Plan";
+        return l10n.paywallPlanYearly;
       case PackageType.lifetime:
-        return "Ömür Boyu";
+        return l10n.paywallPlanLifetime;
       default:
         return package.storeProduct.title;
     }
   }
 
-  String _getPackageDescription(Package package) {
+  String _getPackageDescription(Package package, AppLocalizations l10n) {
     switch (package.packageType) {
       case PackageType.weekly:
-        return "Her hafta otomatik yenilenir";
+        return l10n.paywallPlanWeeklyDescription;
       case PackageType.monthly:
-        return "Her ay otomatik yenilenir";
+        return l10n.paywallPlanMonthlyDescription;
       case PackageType.annual:
-        return "%20 indirimli, yılda bir kez ödeme";
+        return l10n.paywallPlanYearlyDescription(20);
       case PackageType.lifetime:
-        return "Tek seferlik ödeme, sonsuza kadar";
+        return l10n.paywallPlanLifetimeDescription;
       default:
         return package.storeProduct.description;
     }

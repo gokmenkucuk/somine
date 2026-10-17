@@ -18,6 +18,8 @@ import '../screens/add_content_screen.dart';
 import '../widgets/custom_note_icon.dart';
 import 'circle_icon_button.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/core/utils/category_display.dart';
 
 class ItemDetailBottomSheet extends StatefulWidget {
   final ItemModel item;
@@ -192,8 +194,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
         s.contains('openstreetmap.org');
   }
 
-  String _getPlatformName(String? url) {
-    if (url == null) return 'Link';
+  /// Bilinen bir platform değilse null döner (çağıran yerelleştirilmiş
+  /// "tarayıcı" metnine düşer).
+  String? _getPlatformName(String? url) {
+    if (url == null) return null;
     final s = url.toLowerCase();
     if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
         s.contains('google.com/maps') || s.contains('maps.google') ||
@@ -212,7 +216,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     if (s.contains('medium.com')) return 'Medium';
     if (s.contains('behance')) return 'Behance';
     if (s.contains('dribbble')) return 'Dribbble';
-    return 'Tarayıcı'; // Generic web = Browser
+    return null; // Jenerik web: platform adı yerine "tarayıcı" metni kullanılır
   }
 
   IconData _getPlatformIcon(String? url) {
@@ -229,16 +233,18 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
   }
 
   String _getPlatformActionText(String? url) {
-    if (url == null) return "Tarayıcı'da Aç";
+    final l10n = AppLocalizations.of(context)!;
+    if (url == null) return l10n.itemDetailOpenInBrowser;
     final s = url.toLowerCase();
     if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
         s.contains('google.com/maps') || s.contains('maps.google') ||
-        s.contains('share.google')) return "Google Maps'te Aç";
-    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return "Yandex Harita'da Aç";
-    if (s.contains('maps.apple.com')) return "Apple Harita'da Aç";
-    if (s.contains('openstreetmap.org')) return "OpenStreetMap'te Aç";
+        s.contains('share.google')) return l10n.itemDetailOpenInGoogleMaps;
+    if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return l10n.itemDetailOpenInYandexMaps;
+    if (s.contains('maps.apple.com')) return l10n.itemDetailOpenInAppleMaps;
+    if (s.contains('openstreetmap.org')) return l10n.itemDetailOpenInOpenStreetMap;
     final name = _getPlatformName(url);
-    return "$name'da Aç";
+    if (name == null) return l10n.itemDetailOpenInBrowser;
+    return l10n.itemDetailOpenInPlatform(name);
   }
 
   Future<void> _openInApp() async {
@@ -550,7 +556,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                         const SizedBox(width: 8),
                                         Text(
                                           widget.item.type == ItemType.note
-                                              ? "Düzenle"
+                                              ? AppLocalizations.of(context)!.itemDetailEditAction
                                               : _getPlatformActionText(widget.item.url),
                                           style: GoogleFonts.poppins(
                                             fontSize: 15,
@@ -647,7 +653,10 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            assignedCategory.name,
+                                            categoryDisplayName(
+                                              context,
+                                              assignedCategory.name,
+                                            ),
                                             style: GoogleFonts.poppins(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
@@ -685,7 +694,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          "Telif hakları ve yayıncı politikaları gereği, bu içerik yalnızca orijinal kaynağında görüntülenebilir.",
+                          AppLocalizations.of(context)!.itemDetailEmbedRestricted,
                           textAlign: TextAlign.left,
                           style: GoogleFonts.poppins(
                             fontSize: 11,

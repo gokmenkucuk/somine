@@ -11,6 +11,13 @@ class FailureMapper {
   /// omit it; a Turkish fallback is used in that case pending their own
   /// migration.
   static String toUserMessage(Object error, [AppLocalizations? l10n]) {
+    // Repositories that know exactly what went wrong tag the exception with a
+    // language-independent code; translate that first.
+    if (l10n != null && error is AppException && error.code != null) {
+      final localized = _fromCode(error.code!, l10n);
+      if (localized != null) return localized;
+    }
+
     return switch (error) {
       TimeoutException() =>
         l10n?.failureTimeout ??
@@ -30,6 +37,15 @@ class FailureMapper {
       ConflictException() => l10n?.failureConflict ?? 'Bu işlem zaten yapıldı.',
       _ => l10n?.failureUnknown ??
           'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.',
+    };
+  }
+
+  static String? _fromCode(String code, AppLocalizations l10n) {
+    return switch (code) {
+      AppErrorCodes.shareUserNotFound => l10n.shareCreateUserNotFound,
+      AppErrorCodes.shareAlreadyShared => l10n.shareCreateAlreadyShared,
+      AppErrorCodes.shareCreateFailed => l10n.shareCreateFailed,
+      _ => null,
     };
   }
 

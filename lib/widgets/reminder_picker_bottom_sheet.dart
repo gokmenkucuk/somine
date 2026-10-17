@@ -997,23 +997,24 @@ class _ReminderPickerBottomSheetState extends State<ReminderPickerBottomSheet> {
 
   /// Get context-aware time label
   String _getTimeLabel() {
+    final l10n = AppLocalizations.of(context)!;
     switch (_selectedRepeat) {
       case RepeatFrequency.none:
-        return 'Saat';
+        return l10n.reminderPickerTimeLabel;
       case RepeatFrequency.yearly:
-        return 'Saat';
+        return l10n.reminderPickerTimeLabel;
       case RepeatFrequency.monthly:
-        return 'Saat';
+        return l10n.reminderPickerTimeLabel;
       case RepeatFrequency.daily:
-        return 'Saat (günde bir)';
+        return l10n.reminderPickerTimeLabelDaily;
       case RepeatFrequency.weekly:
-        return 'Saat (haftada bir)';
+        return l10n.reminderPickerTimeLabelWeekly;
       case RepeatFrequency.weekdays:
-        return 'Saat (hafta içi)';
+        return l10n.reminderPickerTimeLabelWeekdays;
       case RepeatFrequency.weekends:
-        return 'Saat (hafta sonu)';
+        return l10n.reminderPickerTimeLabelWeekends;
       default:
-        return 'Saat';
+        return l10n.reminderPickerTimeLabel;
     }
   }
 }

@@ -25,6 +25,7 @@ import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/screens/notifications_screen.dart';
 import 'package:somine_app/core/providers/notification_providers.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/core/utils/category_display.dart';
 
 enum ViewMode { square, masonry, feed }
 
@@ -138,7 +139,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
     final filteredCategories =
         categories.where((cat) {
           // Hide "Hızlı" category from chips
-          if (cat.name == 'Hızlı') return false;
+          if (cat.name == kQuickCategoryKey) return false;
           // Kasa koleksiyonlarının item'ları kilitliyken sunucudan hiç gelmediği
           // için "boş" görünürler; boş diye gizlersek kasa feed'den erişilemez
           // hale gelirdi. Ayrıca chip'in varlığı kasanın dolu olup olmadığını

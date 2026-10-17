@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/notification_model.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/core/utils/notification_display.dart';
 
 class InAppNotificationBannerService {
   factory InAppNotificationBannerService() => _instance;
@@ -246,7 +248,10 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      widget.notification.title,
+                                      NotificationDisplay.title(
+                                        AppLocalizations.of(context)!,
+                                        widget.notification,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.outfit(
@@ -258,7 +263,10 @@ class _InAppNotificationBannerState extends State<_InAppNotificationBanner>
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      widget.notification.message,
+                                      NotificationDisplay.message(
+                                        AppLocalizations.of(context)!,
+                                        widget.notification,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.poppins(

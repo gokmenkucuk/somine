@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/models/reminder_model.dart';
+import 'package:somine_app/core/utils/date_display.dart';
 
 class ReminderIndicator extends StatelessWidget {
   final ReminderModel reminder;
@@ -36,7 +37,7 @@ class ReminderIndicator extends StatelessWidget {
       timeLabel = l10n.reminderIndicatorTomorrow(_formatTime(reminder.reminderTime));
     } else {
       timeLabel =
-          '${_formatDate(nextOccurrence, isThisYear)}, ${_formatTime(reminder.reminderTime)}';
+          '${formatShortDate(context, nextOccurrence, withYear: !isThisYear)}, ${_formatTime(reminder.reminderTime)}';
     }
     String repeatLabel = '';
     if (reminder.repeat != RepeatFrequency.none) {
@@ -135,24 +136,6 @@ class ReminderIndicator extends StatelessWidget {
     return date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
-  }
-
-  String _formatDate(DateTime date, bool isThisYear) {
-    const months = [
-      'Oca',
-      'Şub',
-      'Mar',
-      'Nis',
-      'May',
-      'Haz',
-      'Tem',
-      'Ağu',
-      'Eyl',
-      'Eki',
-      'Kas',
-      'Ara'
-    ];
-    return '${date.day} ${months[date.month - 1]}${isThisYear ? '' : ', ${date.year}'}';
   }
 
   String _formatTime(TimeOfDay time) {

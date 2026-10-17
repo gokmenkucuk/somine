@@ -9,7 +9,7 @@ import 'package:somine_app/core/models/share_model.dart';
 import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/screens/shared_collection_view_screen.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'package:somine_app/core/utils/relative_time.dart';
 
 class SharedWithMeScreen extends ConsumerWidget {
   const SharedWithMeScreen({super.key});
@@ -172,7 +172,7 @@ class _SharedCollectionCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    timeago.format(share.acceptedAt ?? share.createdAt, locale: 'tr'),
+                    formatRelativeTime(context, share.acceptedAt ?? share.createdAt),
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       color: context.colors.hint.withValues(alpha: 0.7),

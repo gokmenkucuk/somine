@@ -10,7 +10,7 @@ import 'package:somine_app/core/providers/share_providers.dart';
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/screens/shared_collection_view_screen.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'package:somine_app/core/utils/relative_time.dart';
 
 class ShareRequestsScreen extends ConsumerWidget {
   const ShareRequestsScreen({super.key});
@@ -160,7 +160,7 @@ class _ShareRequestCard extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      timeago.format(share.createdAt, locale: 'tr'),
+                      formatRelativeTime(context, share.createdAt),
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: context.colors.hint,

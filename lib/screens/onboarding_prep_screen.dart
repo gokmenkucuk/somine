@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,8 @@ import 'package:somine_app/core/services/metadata_service.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/screens/home_screen.dart';
+import 'package:somine_app/core/utils/app_l10n.dart';
+import 'package:somine_app/core/models/category_model.dart';
 
 /// Onboarding screen that prepares demo content with a visual progress bar
 class OnboardingPrepScreen extends ConsumerStatefulWidget {
@@ -99,19 +102,41 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       incrementStep();
       
       // 2. Create default categories (Step 2)
-      final categories = await categoryRepository.createDefaultCategories(widget.userId);
+      // Adlar veri olarak saklanıyor; kullanıcının dilinde oluşturuluyor.
+      // Context yerine appL10n kullanılıyor: bu akış birden çok await sonrası
+      // devam ediyor ve context'e async boşluktan sonra dokunmak istemiyoruz.
+      final l10n = appL10n;
+      final categories = await categoryRepository.createDefaultCategories(
+        widget.userId,
+        musicName: l10n.defaultCategoryMusic,
+        placesName: l10n.defaultCategoryPlaces,
+        recipesName: l10n.defaultCategoryRecipes,
+        inspirationName: l10n.defaultCategoryInspiration,
+      );
       incrementStep();
-      
+
       // 3. Find categories for demo content
-      final placesCategory = categories.firstWhere(
-        (c) => c.name == 'Gitmek İstediğim Yerler',
+      //
+      // Eşleştirme, oluştururken GÖNDERDİĞİMİZ adla yapılıyor. `order` alanına
+      // bakılamaz: sunucu her yeni kategoriyi `SortOrder = 0` ile yaratıp
+      // diğerlerini bir kaydırıyor (CategoriesController), dolayısıyla dönen
+      // dört DTO'nun da order'ı 0 — order'a bakmak hepsini ilk kategoriye
+      // toplardı. Ada bakmak dilden bağımsız çalışır, çünkü karşılaştırılan
+      // dize de aynı l10n'dan geliyor.
+      CategoryModel categoryByName(String name) => categories.firstWhere(
+        (c) => c.name == name,
         orElse: () => categories.first,
       );
-      
-      final musicCategory = categories.firstWhere(
-        (c) => c.name == 'Dinlemek İstediğim',
-        orElse: () => categories.first,
-      );
+
+      final placesCategory = categoryByName(l10n.defaultCategoryPlaces);
+      final musicCategory = categoryByName(l10n.defaultCategoryMusic);
+
+      if (kDebugMode) {
+        debugPrint(
+          '[Onboarding] categories=${categories.map((c) => c.name).toList()} '
+          'places=${placesCategory.name} music=${musicCategory.name}',
+        );
+      }
       
       // 4. Create demo content (Steps 3-11)
       final demoUrls = [

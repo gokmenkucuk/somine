@@ -82,14 +82,23 @@ class CategoryModel {
     );
   }
 
-  /// Default categories for new users
-  static List<CategoryModel> defaultCategories(String userId) {
+  /// Yeni kullanıcı için varsayılan koleksiyonlar.
+  ///
+  /// Adlar veri olarak saklandığı için çağıran taraf onları kullanıcının
+  /// dilinde vermeli; model kendi içinde sabit metin tutmaz.
+  static List<CategoryModel> defaultCategories(
+    String userId, {
+    required String musicName,
+    required String placesName,
+    required String recipesName,
+    required String inspirationName,
+  }) {
     final now = DateTime.now();
     return [
       CategoryModel(
         id: '',
         userId: userId,
-        name: 'Dinlemek İstediğim',
+        name: musicName,
         icon: '🎵',
         color: '#8B5CF6',
         order: 0,
@@ -99,7 +108,7 @@ class CategoryModel {
       CategoryModel(
         id: '',
         userId: userId,
-        name: 'Gitmek İstediğim Yerler',
+        name: placesName,
         icon: '✈️',
         color: '#0EA5E9',
         order: 1,
@@ -109,7 +118,7 @@ class CategoryModel {
       CategoryModel(
         id: '',
         userId: userId,
-        name: 'Denemek İstediğim Tarifler',
+        name: recipesName,
         icon: '🍴',
         color: '#EF4444',
         order: 2,
@@ -119,7 +128,7 @@ class CategoryModel {
       CategoryModel(
         id: '',
         userId: userId,
-        name: 'İlham',
+        name: inspirationName,
         icon: '💡',
         color: '#FBBF24',
         order: 3,

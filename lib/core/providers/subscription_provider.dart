@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:somine_app/core/services/subscription_service.dart';
@@ -162,8 +163,21 @@ final subscriptionProvider =
       return SubscriptionNotifier(service);
     });
 
+/// Geliştirme anahtarı: `--dart-define=SOMINE_DEBUG_PREMIUM=true`
+///
+/// Premium'a kilitli yüzeyleri (temalar, uygulama ikonları, Gizli Kasa,
+/// koleksiyon paylaşımı) simülatörde satın alma yapmadan denemek için.
+/// **Yalnız debug derlemede** çalışır: release'de [kDebugMode] false olduğu için
+/// bayrak verilse bile etkisizdir. Sunucu tarafındaki premium sınırları
+/// (içerik/koleksiyon kotaları) bundan etkilenmez — bu bayrak sadece arayüzü açar.
+const bool _debugForcePremium = bool.fromEnvironment(
+  'SOMINE_DEBUG_PREMIUM',
+  defaultValue: false,
+);
+
 /// Convenience providers
 final isPremiumProvider = Provider<bool>((ref) {
+  if (kDebugMode && _debugForcePremium) return true;
   return ref.watch(subscriptionProvider).isPremium;
 });
 

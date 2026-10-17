@@ -37,6 +37,8 @@ import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/widgets/reminder_picker_bottom_sheet.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
+import 'package:somine_app/core/utils/date_display.dart';
+import 'package:somine_app/core/utils/category_display.dart';
 
 /// AddContentScreen pop sözleşmesi: başarıda `Navigator.pop(context, AddContentResult(...))`
 /// döner (eskiden `true` idi). Çağıranlar `result != null` / `result is AddContentResult`
@@ -406,14 +408,14 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   Future<void> _ensureHizliCategory(List<CategoryModel> categories) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
-    final hasHizli = categories.any((c) => c.name.toLowerCase() == 'hızlı');
+    final hasHizli = categories.any((c) => c.name.toLowerCase() == kQuickCategoryKey.toLowerCase());
     if (!hasHizli) {
       final now = DateTime.now();
       await _categoryRepository.createCategory(
         CategoryModel(
           id: '',
           userId: userId,
-          name: 'Hızlı',
+          name: kQuickCategoryKey,
           icon: '⚡',
           createdAt: now,
           updatedAt: now,
@@ -1066,7 +1068,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     if (_selectedCategoryIds.isEmpty) {
       final quickCat = (ref.read(categoriesProvider).value ?? [])
           .cast<CategoryModel?>()
-          .firstWhere((c) => c!.name == 'Hızlı', orElse: () => null);
+          .firstWhere((c) => c!.name == kQuickCategoryKey, orElse: () => null);
       if (quickCat != null) {
         _selectedCategoryIds.add(quickCat.id);
       } else {
@@ -2631,10 +2633,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                       clipBehavior: Clip.none,
                       // Hide "Hızlı" from UI - it's used silently for uncategorized items
                       itemCount:
-                          categories.where((c) => c.name != 'Hızlı').length,
+                          categories.where((c) => c.name != kQuickCategoryKey).length,
                       itemBuilder: (context, index) {
                         final visibleCategories =
-                            categories.where((c) => c.name != 'Hızlı').toList();
+                            categories.where((c) => c.name != kQuickCategoryKey).toList();
                         final cat = visibleCategories[index];
                         return _buildCategoryChip(cat, categories);
                       },
@@ -2943,27 +2945,15 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       DateTime.now().add(const Duration(days: 1)),
     );
 
+    final l10n = AppLocalizations.of(context)!;
+
     String dateLabel;
     if (isToday) {
-      dateLabel = 'Bugün';
+      dateLabel = l10n.commonToday;
     } else if (isTomorrow) {
-      dateLabel = 'Yarın';
+      dateLabel = l10n.commonTomorrow;
     } else {
-      const months = [
-        'Oca',
-        'Şub',
-        'Mar',
-        'Nis',
-        'May',
-        'Haz',
-        'Tem',
-        'Ağu',
-        'Eyl',
-        'Eki',
-        'Kas',
-        'Ara',
-      ];
-      dateLabel = '${nextOccurrence.day} ${months[nextOccurrence.month - 1]}';
+      dateLabel = formatShortDate(context, nextOccurrence);
     }
 
     final time =
@@ -3186,10 +3176,10 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
                 _selectedCategoryIds.remove(cat.id);
               } else {
                 // If selecting a non-Quick category, auto-deselect "Hızlı"
-                if (cat.name != 'Hızlı') {
+                if (cat.name != kQuickCategoryKey) {
                   try {
                     final quickCat = categories.firstWhere(
-                      (c) => c.name == 'Hızlı',
+                      (c) => c.name == kQuickCategoryKey,
                     );
                     _selectedCategoryIds.remove(quickCat.id);
                   } catch (_) {}

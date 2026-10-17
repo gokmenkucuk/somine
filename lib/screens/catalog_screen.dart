@@ -27,6 +27,7 @@ import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:somine_app/core/utils/category_display.dart';
 
 // State to track selected category in Catalog Screen (null = Uncategorized/Inbox)
 final selectedCatalogIdProvider = StateProvider.autoDispose<String?>(
@@ -470,7 +471,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
         // Sortable categories (exclude Hızlı, sorted by order)
         final sortedCategories =
-            categories.where((c) => c.name != 'Hızlı').toList()
+            categories.where((c) => c.name != kQuickCategoryKey).toList()
               ..sort((a, b) => a.order.compareTo(b.order));
 
         return SizedBox(
@@ -1699,7 +1700,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                           });
                                         } catch (e) {
                                           setState(() {
-                                            errorMessage = e.toString();
+                                            errorMessage =
+                                                FailureMapper.toUserMessage(
+                                                  e,
+                                                  l10n,
+                                                );
                                             isSearching = false;
                                           });
                                         }
@@ -1736,7 +1741,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               });
                             } catch (e) {
                               setState(() {
-                                errorMessage = e.toString();
+                                errorMessage = FailureMapper.toUserMessage(
+                                  e,
+                                  l10n,
+                                );
                                 isSearching = false;
                               });
                             }
@@ -1983,7 +1991,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       );
                     }
                   } catch (e) {
-                    onError(_userFacingErrorMessage(e, l10n));
+                    onError(FailureMapper.toUserMessage(e, l10n));
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -2192,7 +2200,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               );
             }
           } catch (e) {
-            onError(_userFacingErrorMessage(e, l10n));
+            onError(FailureMapper.toUserMessage(e, l10n));
           }
         },
         borderRadius: BorderRadius.circular(12),
@@ -2302,20 +2310,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     if (normalized.isEmpty) return 'U';
 
     return String.fromCharCode(normalized.runes.first).toUpperCase();
-  }
-
-  String _userFacingErrorMessage(Object error, AppLocalizations l10n) {
-    final raw = error.toString().trim();
-    if (raw.isEmpty) {
-      return l10n.catalogGenericError;
-    }
-
-    const prefix = 'Exception:';
-    if (raw.startsWith(prefix)) {
-      return raw.substring(prefix.length).trim();
-    }
-
-    return raw;
   }
 
   void _showRenameDialog(String categoryId, String currentName) {
@@ -3385,7 +3379,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
       // Sort categories same as carousel
       final sortedCategories =
-          categories.where((c) => c.name != 'Hızlı').toList()
+          categories.where((c) => c.name != kQuickCategoryKey).toList()
             ..sort((a, b) => a.order.compareTo(b.order));
 
       showModalBottomSheet(

@@ -13,6 +13,7 @@ import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/widgets/item_detail_bottom_sheet.dart';
 import 'package:somine_app/core/repositories/item_repository.dart';
+import 'package:somine_app/core/utils/app_l10n.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -152,10 +153,12 @@ class NotificationService {
 
       final notificationId = DateTime.now().millisecondsSinceEpoch % 100000;
 
+      final l10n = appL10n;
+
       await _notifications.zonedSchedule(
         notificationId,
-        'Hatırlatıcı 🔔',
-        noteTitle.isNotEmpty ? noteTitle : 'Not hatırlatıcınız var',
+        l10n.notificationLocalReminderTitle,
+        noteTitle.isNotEmpty ? noteTitle : l10n.notificationLocalReminderBody,
         tz.TZDateTime.from(scheduledTime, tz.local),
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

@@ -11,6 +11,7 @@ import 'package:somine_app/core/repositories/category_repository.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
 import 'package:somine_app/core/services/backend_realtime_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
+import 'package:somine_app/core/utils/category_display.dart';
 
 class PaginatedItemsResult {
   const PaginatedItemsResult({
@@ -486,7 +487,7 @@ class ItemRepository {
       final items = await getItems(userId);
       final categories = await CategoryRepository().getCategories(userId);
       final quickCategory =
-          categories.where((c) => c.name == 'Hızlı').firstOrNull;
+          categories.where((c) => c.name == kQuickCategoryKey).firstOrNull;
 
       return items.where((item) {
         if (item.categoryId == null) return true;

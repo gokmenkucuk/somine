@@ -12,7 +12,8 @@ import 'package:somine_app/core/providers/auth_providers.dart';
 import 'package:somine_app/screens/share_requests_screen.dart';
 import 'package:somine_app/screens/my_shares_screen.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'package:somine_app/core/utils/relative_time.dart';
+import 'package:somine_app/core/utils/notification_display.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -162,6 +163,7 @@ class _NotificationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     IconData icon;
     Color iconColor;
 
@@ -235,7 +237,7 @@ class _NotificationCard extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          notification.title,
+                          NotificationDisplay.title(l10n, notification),
                           style: GoogleFonts.outfit(
                             fontSize: 15,
                             fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
@@ -256,7 +258,7 @@ class _NotificationCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    notification.message,
+                    NotificationDisplay.message(l10n, notification),
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: context.colors.body,
@@ -265,7 +267,7 @@ class _NotificationCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    timeago.format(notification.createdAt, locale: 'tr'),
+                    formatRelativeTime(context, notification.createdAt),
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       color: context.colors.hint,
