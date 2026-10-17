@@ -261,6 +261,64 @@ namespace SomineApi.Infrastructure.Data.Migrations
                     b.ToTable("collection_shares", (string)null);
                 });
 
+            modelBuilder.Entity("SomineApi.Domain.Entities.ContentReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("ReportedUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reported_user_id");
+
+                    b.Property<Guid>("ReporterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reporter_id");
+
+                    b.Property<Guid?>("ShareId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("share_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("Open")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportedUserId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("content_reports", (string)null);
+                });
+
             modelBuilder.Entity("SomineApi.Domain.Entities.ExceptionLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -858,6 +916,29 @@ namespace SomineApi.Infrastructure.Data.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("SomineApi.Domain.Entities.UserBlock", b =>
+                {
+                    b.Property<Guid>("BlockerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("blocker_id");
+
+                    b.Property<Guid>("BlockedId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("blocked_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("BlockerId", "BlockedId");
+
+                    b.HasIndex("BlockedId");
+
+                    b.ToTable("user_blocks", (string)null);
+                });
+
             modelBuilder.Entity("SomineApi.Infrastructure.Entities.ItemEmbedding", b =>
                 {
                     b.Property<Guid>("ItemId")
@@ -946,6 +1027,25 @@ namespace SomineApi.Infrastructure.Data.Migrations
                     b.Navigation("ToUser");
                 });
 
+            modelBuilder.Entity("SomineApi.Domain.Entities.ContentReport", b =>
+                {
+                    b.HasOne("SomineApi.Domain.Entities.User", "ReportedUser")
+                        .WithMany()
+                        .HasForeignKey("ReportedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SomineApi.Domain.Entities.User", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReportedUser");
+
+                    b.Navigation("Reporter");
+                });
+
             modelBuilder.Entity("SomineApi.Domain.Entities.ExceptionLog", b =>
                 {
                     b.HasOne("SomineApi.Domain.Entities.RequestLog", "RequestLog")
@@ -1005,6 +1105,25 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SomineApi.Domain.Entities.UserBlock", b =>
+                {
+                    b.HasOne("SomineApi.Domain.Entities.User", "Blocked")
+                        .WithMany()
+                        .HasForeignKey("BlockedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SomineApi.Domain.Entities.User", "Blocker")
+                        .WithMany()
+                        .HasForeignKey("BlockerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Blocked");
+
+                    b.Navigation("Blocker");
                 });
 
             modelBuilder.Entity("SomineApi.Infrastructure.Entities.ItemEmbedding", b =>

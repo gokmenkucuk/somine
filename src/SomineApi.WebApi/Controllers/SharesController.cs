@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SomineApi.Application;
 using SomineApi.Application.DTOs.Items;
+using SomineApi.Application.DTOs.Moderation;
 using SomineApi.Application.DTOs.Shares;
 using SomineApi.Application.Interfaces;
 using SomineApi.Domain.Entities;
@@ -26,17 +27,20 @@ public class SharesController : ControllerBase
     private readonly IUserRealtimeEventPublisher _realtimeEventPublisher;
     private readonly ISubscriptionTierService _subscriptionTierService;
     private readonly PublicWebOptions _publicWebOptions;
+    private readonly ILogger<SharesController> _logger;
 
     public SharesController(
         SomineDbContext dbContext,
         IUserRealtimeEventPublisher realtimeEventPublisher,
         ISubscriptionTierService subscriptionTierService,
-        IOptions<PublicWebOptions> publicWebOptions)
+        IOptions<PublicWebOptions> publicWebOptions,
+        ILogger<SharesController> logger)
     {
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
         _subscriptionTierService = subscriptionTierService;
         _publicWebOptions = publicWebOptions.Value;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -77,6 +81,12 @@ public class SharesController : ControllerBase
             return BadRequest(new { error = "Target user identifier is required" });
 
         if (toUser == null) return NotFound(new { error = "Target user not found" });
+
+        // Alıcı göndereni engellediyse "kullanıcı bulunamadı" ile aynı cevap dönülür;
+        // böylece engellendiği gönderene sızdırılmaz.
+        var blockedBySender = await _dbContext.UserBlocks
+            .AnyAsync(b => b.BlockerId == toUser.Id && b.BlockedId == userId);
+        if (blockedBySender) return NotFound(new { error = "Target user not found" });
 
         if (toUser.Id == userId)
             return BadRequest(new { error = "Cannot share with yourself" });
@@ -123,6 +133,7 @@ public class SharesController : ControllerBase
             {
                 shareId = share.Id,
                 categoryId = category.Id,
+                fromUserId = fromUser.Id,
                 fromUserName = fromUser.DisplayName ?? fromUser.Email,
                 categoryName = category.Name
             }),
@@ -266,6 +277,79 @@ public class SharesController : ControllerBase
         await _dbContext.SaveChangesAsync();
         await _realtimeEventPublisher.PublishNotificationsChangedAsync(share.FromUserId, "created", notification.Id, HttpContext.RequestAborted);
         return NoContent();
+    }
+
+    // Alıcı için: kabul ettiği paylaşımı kütüphanesinden kaldırır. Gönderene bildirim
+    // gitmez; paylaşım satırı Rejected'a çekilir (gönderenin kotasından da düşer).
+    [HttpPut("{id}/leave")]
+    public async Task<IActionResult> LeaveShare(Guid id)
+    {
+        var userId = HttpContext.GetUserId();
+        var share = await _dbContext.CollectionShares.FirstOrDefaultAsync(s => s.Id == id && s.ToUserId == userId);
+
+        if (share == null) return NotFound(new { error = "Share not found" });
+
+        if (share.Status != ShareStatus.Rejected)
+        {
+            share.Status = ShareStatus.Rejected;
+            share.RejectedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return NoContent();
+    }
+
+    // Alıcı için: paylaşılan koleksiyonu şikâyet eder (App Store 1.2 / UGC).
+    // Kayıt kalıcıdır; ops ekibi Warning log'undan görür. API'de e-posta servisi yok.
+    [HttpPost("{id}/report")]
+    public async Task<ActionResult<ContentReportDto>> ReportShare(Guid id, [FromBody] ReportShareRequest request)
+    {
+        var userId = HttpContext.GetUserId();
+
+        if (string.IsNullOrWhiteSpace(request.Reason)
+            || int.TryParse(request.Reason, out _)
+            || !Enum.TryParse<ReportReason>(request.Reason.Trim(), ignoreCase: true, out var reason)
+            || !Enum.IsDefined(reason))
+            return BadRequest(new { error = "Invalid report reason" });
+
+        var note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        if (note != null && note.Length > ContentReport.MaxNoteLength)
+            return BadRequest(new { error = "Note is too long" });
+
+        var share = await _dbContext.CollectionShares
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id && s.ToUserId == userId);
+
+        if (share == null) return NotFound(new { error = "Share not found" });
+
+        // Aynı kişinin aynı paylaşım için açık şikâyeti varsa yenisini açmadan onu döndür.
+        var existing = await _dbContext.ContentReports
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.ReporterId == userId && r.ShareId == share.Id && r.Status == ReportStatus.Open);
+        if (existing != null)
+            return Ok(new ContentReportDto(existing.Id, existing.Reason.ToString(), existing.Status.ToString(), existing.CreatedAt));
+
+        var report = new ContentReport
+        {
+            Id = Guid.NewGuid(),
+            ReporterId = userId,
+            ReportedUserId = share.FromUserId,
+            ShareId = share.Id,
+            CategoryId = share.CategoryId,
+            Reason = reason,
+            Note = note,
+            Status = ReportStatus.Open,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.ContentReports.Add(report);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogWarning(
+            "UGC report {ReportId}: reporter {ReporterId} reported user {ReportedUserId} for share {ShareId} / category {CategoryId}, reason {Reason}",
+            report.Id, report.ReporterId, report.ReportedUserId, report.ShareId, report.CategoryId, report.Reason);
+
+        return Ok(new ContentReportDto(report.Id, report.Reason.ToString(), report.Status.ToString(), report.CreatedAt));
     }
 
     // Sahibi için: koleksiyona güvenli, herkese açık paylaşım linki üretir (varsa döndürür değil, rotate eder).

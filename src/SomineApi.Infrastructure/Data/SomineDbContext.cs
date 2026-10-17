@@ -22,6 +22,8 @@ public class SomineDbContext : DbContext
     public DbSet<Reminder> Reminders => Set<Reminder>();
     public DbSet<RequestLog> RequestLogs => Set<RequestLog>();
     public DbSet<ExceptionLog> ExceptionLogs => Set<ExceptionLog>();
+    public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
+    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

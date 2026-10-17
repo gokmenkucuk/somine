@@ -2,8 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SomineApi.Application.DTOs.Auth;
+using SomineApi.Application.DTOs.Moderation;
 using SomineApi.Application.DTOs.Users;
 using SomineApi.Application.Interfaces;
+using SomineApi.Domain.Entities;
+using SomineApi.Domain.Enums;
 using SomineApi.Domain.Reminders;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Extensions;
@@ -138,6 +141,12 @@ public class UsersController : ControllerBase
         await _dbContext.Notifications
             .Where(n => n.UserId == userId)
             .ExecuteDeleteAsync();
+        await _dbContext.UserBlocks
+            .Where(b => b.BlockerId == userId || b.BlockedId == userId)
+            .ExecuteDeleteAsync();
+        await _dbContext.ContentReports
+            .Where(r => r.ReporterId == userId || r.ReportedUserId == userId)
+            .ExecuteDeleteAsync();
         await _dbContext.AuthSessions
             .Where(s => s.UserId == userId)
             .ExecuteDeleteAsync();
@@ -162,6 +171,82 @@ public class UsersController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    // App Store 1.2 / UGC: kullanıcı engelleme.
+    // Engelleme: (1) engellenenden gelen bekleyen istekleri reddeder, (2) engellenenin
+    // daha önce paylaştığı koleksiyonlara erişimi kaldırır, (3) engellenen bundan sonra
+    // engelleyene paylaşım gönderemez (SharesController "user not found" döner).
+    // İdempotenttir; engellenene bildirim gitmez.
+    [HttpPost("{blockedUserId:guid}/block")]
+    public async Task<IActionResult> BlockUser(Guid blockedUserId)
+    {
+        var userId = HttpContext.GetUserId();
+
+        if (blockedUserId == userId)
+            return BadRequest(new { error = "Cannot block yourself" });
+
+        var targetExists = await _dbContext.Users.AnyAsync(u => u.Id == blockedUserId);
+        if (!targetExists)
+            return NotFound(new { error = "User not found" });
+
+        var alreadyBlocked = await _dbContext.UserBlocks
+            .AnyAsync(b => b.BlockerId == userId && b.BlockedId == blockedUserId);
+        if (!alreadyBlocked)
+        {
+            _dbContext.UserBlocks.Add(new UserBlock
+            {
+                BlockerId = userId,
+                BlockedId = blockedUserId,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        var now = DateTime.UtcNow;
+        var incomingShares = await _dbContext.CollectionShares
+            .Where(s => s.FromUserId == blockedUserId && s.ToUserId == userId && s.Status != ShareStatus.Rejected)
+            .ToListAsync();
+        foreach (var share in incomingShares)
+        {
+            share.Status = ShareStatus.Rejected;
+            share.RejectedAt = now;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // Engeli kaldırır. Engelleme sırasında kapatılan paylaşımlar geri açılmaz.
+    [HttpDelete("{blockedUserId:guid}/block")]
+    public async Task<IActionResult> UnblockUser(Guid blockedUserId)
+    {
+        var userId = HttpContext.GetUserId();
+
+        await _dbContext.UserBlocks
+            .Where(b => b.BlockerId == userId && b.BlockedId == blockedUserId)
+            .ExecuteDeleteAsync();
+
+        return NoContent();
+    }
+
+    [HttpGet("blocked")]
+    public async Task<ActionResult<List<BlockedUserDto>>> GetBlockedUsers()
+    {
+        var userId = HttpContext.GetUserId();
+
+        var blocked = await _dbContext.UserBlocks
+            .AsNoTracking()
+            .Where(b => b.BlockerId == userId)
+            .OrderByDescending(b => b.CreatedAt)
+            .Select(b => new BlockedUserDto(
+                b.BlockedId,
+                b.Blocked.DisplayName,
+                b.Blocked.Username,
+                b.Blocked.PhotoUrl,
+                b.CreatedAt))
+            .ToListAsync();
+
+        return Ok(blocked);
     }
 
     [HttpGet("search")]
