@@ -83,7 +83,6 @@ void main() async {
       // Initialize Notification Service
       try {
         await NotificationService().initialize();
-        await NotificationService().requestPermissions();
         debugPrint('NotificationService initialized successfully');
 
         // Reschedule existing reminders on app start

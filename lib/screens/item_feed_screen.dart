@@ -912,16 +912,6 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
           url.contains('maps.apple.com');
     }
 
-    bool isKnownBrandSite(String? url) {
-      if (url == null) return false;
-      final lowerUrl = url.toLowerCase();
-      // Exclude Maps services - they return real map images
-      if (isMapUrl(lowerUrl)) return false;
-
-      final knownBrands = ['google', 'yandex'];
-      return knownBrands.any((brand) => lowerUrl.contains(brand));
-    }
-
     // Helper to build Platform Icon
     Widget buildPlatformIcon(ItemModel item) {
       Widget iconWidget = Icon(
@@ -1322,7 +1312,6 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 
     // Determine if we should show the image or the branded placeholder
     // If it's a known brand (Google, Yandex, etc.) and NOT a map, we prefer the clean icon placeholder (fallback view)
-    final isKnownBrand = isKnownBrandSite(source);
     // Maps always show image if available. Other known brands show placeholder.
     // Regular sites show image if available.
     final bool shouldShowImage = hasImage && !isMapUrl(source.toLowerCase());
@@ -1562,329 +1551,13 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
   }
 
   // DEDICATED NOTE CARD
-  Widget _buildNoteCard(
-    ItemModel item,
-    String badgeText,
-    List<CategoryModel> categories,
-  ) {
-    final notePreview = item.note ?? item.displayTitle;
-
-    return LongPressDraggable<ItemModel>(
-      data: item,
-      delay: const Duration(milliseconds: 300),
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: Transform.rotate(
-        angle: 0.05, // Slight tilt for drag effect
-        child: Material(
-          color: Colors.transparent,
-          elevation: 8,
-          shadowColor: Colors.black26,
-          borderRadius: BorderRadius.circular(16),
-          child: Opacity(
-            opacity: 0.9,
-            child: SizedBox(
-              width: 100, // Standardized size
-              height: 100,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBF5), // Note color
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Center(
-                  child: Icon(
-                    PhosphorIconsBold.note,
-                    size: 40,
-                    color: Colors.orange,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: FadeInUp(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: context.colors.surfaceWhite,
-            ),
-            child: const SizedBox(height: 100),
-          ),
-        ),
-      ),
-      onDragStarted: () {
-        ref.read(isDraggingProvider.notifier).state = true;
-        HapticFeedback.selectionClick();
-      },
-      onDragEnd: (details) {
-        ref.read(isDraggingProvider.notifier).state = false;
-      },
-      onDraggableCanceled: (velocity, offset) {
-        ref.read(isDraggingProvider.notifier).state = false;
-      },
-      child: FadeInUp(
-        duration: const Duration(milliseconds: 400),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            // Warm paper-like gradient for notes
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFFFFFBF5), // Warm cream
-                const Color(0xFFF5F0E8), // Soft beige
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: context.colors.premiumShadow.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () async {
-                  final result = await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    enableDrag: true,
-                    builder:
-                        (context) => ItemDetailBottomSheet(
-                          item: item,
-                          categoryName: badgeText,
-                          categories: categories,
-                        ),
-                  );
-
-                  if (result != null) {
-                    ref.invalidate(paginatedFeedProvider);
-                    ref.invalidate(itemCountProvider);
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Note Icon Row
-                      Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: context.colors.primary.withValues(
-                                alpha: 0.15,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              PhosphorIconsBold.note,
-                              size: 16,
-                              color: context.colors.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            badgeText,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: context.colors.hint,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Title
-                      if (item.displayTitle.isNotEmpty)
-                        Text(
-                          item.displayTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: context.colors.headline,
-                          ),
-                        ),
-
-                      const SizedBox(height: 6),
-
-                      // Note Preview
-                      Text(
-                        notePreview,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.colors.body,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFallbackView(String source, {bool isNote = false}) {
-    IconData icon;
-
-    // UNIFIED: Same icon style for notes and links
-    if (isNote) {
-      icon = PhosphorIconsBold.note; // Note icon
-    } else if (source.contains('x.com') || source.contains('twitter')) {
-      icon = PhosphorIconsBold.xLogo;
-    } else if (source.contains('instagram')) {
-      icon = PhosphorIconsBold.instagramLogo;
-    } else if (source.contains('youtube')) {
-      icon = PhosphorIconsBold.youtubeLogo;
-    } else if (source.contains('pinterest')) {
-      icon = PhosphorIconsBold.pinterestLogo;
-    } else {
-      icon = PhosphorIconsBold.link;
-    }
-
-    // Unified Green Gradient for all Empty State Icons
-    List<Color> gradientColors = [
-      context.colors.primary,
-      context.colors.secondary,
-    ];
-
-    // Return container only - parent handles AspectRatio
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [context.colors.surfaceWhite, context.colors.backgroundTop],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      alignment: Alignment.center,
-      // Notes use CustomNoteIcon, links use gradient platform icon
-      child:
-          isNote
-              ? const CustomNoteIcon(size: 48)
-              : ShaderMask(
-                shaderCallback:
-                    (bounds) => LinearGradient(
-                      colors: gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                child: Icon(icon, size: 48, color: Colors.white),
-              ),
-    );
-  }
 
   // Custom notepad icon with text lines inside
-  Widget _buildNotepadGraphic(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [context.colors.primary, context.colors.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.primary.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Text lines mimicking written content
-          Container(
-            height: 2,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            height: 2,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            height: 2,
-            width: 16,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   /* 
   Widget _buildCustomNoteGraphic() { ... } 
   Removed custom graphic to use standard icons
   */
-
-  Widget _buildPlatformIconWidget(String source) {
-    final s = source.toLowerCase();
-    IconData icon;
-
-    if (s.contains('instagram')) {
-      icon = PhosphorIconsBold.instagramLogo;
-    } else if (s.contains('youtube')) {
-      icon = PhosphorIconsBold.youtubeLogo;
-    } else if (s.contains('twitter') || s.contains('x.com')) {
-      icon = PhosphorIconsBold.xLogo;
-    } else if (s.contains('pinterest')) {
-      icon = PhosphorIconsBold.pinterestLogo;
-    } else {
-      icon = PhosphorIconsBold.link;
-    }
-
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: context.colors.surfaceWhite,
-      ),
-      child: Center(
-        child: Icon(icon, color: context.colors.primary, size: 14),
-      ), // Green Icon
-    );
-  }
 
   /// [bounded] yalnızca kare ızgarada true'dur: orada hücrenin yüksekliği
   /// `childAspectRatio` ile sabittir ve görsel alanı [Expanded] ile kalanı
@@ -2036,13 +1709,11 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
 class _ShimmerBox extends StatefulWidget {
   final double height;
   final double? width;
-  final double borderRadius;
+  final double borderRadius = 8.0;
 
   const _ShimmerBox({
-    super.key,
     required this.height,
     this.width,
-    this.borderRadius = 8.0,
   });
 
   @override

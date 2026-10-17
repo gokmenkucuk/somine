@@ -337,17 +337,6 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
   }
 }
 
-class _SloganGradientTransform extends GradientTransform {
-  final double value;
-  const _SloganGradientTransform(this.value);
-
-  @override
-  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
-    final double dist = bounds.width * 2.5;
-    return Matrix4.translationValues(-bounds.width + (dist * value), 0, 0);
-  }
-}
-
 // GÜNCELLENEN BUTON WIDGET'I
 class _SocialButton extends StatelessWidget {
   final VoidCallback onPressed;

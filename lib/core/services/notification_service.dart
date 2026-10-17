@@ -80,10 +80,12 @@ class NotificationService {
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
+    // İzin açılışta istenmez; ilk içerik kaydında veya hatırlatıcı kurulurken
+    // requestPermissions() ile, kullanıcı neden istendiğini görürken istenir.
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const initSettings = InitializationSettings(

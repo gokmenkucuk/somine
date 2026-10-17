@@ -37,6 +37,9 @@ class ReminderSchedulerService {
         await _itemRepo.updateItem(updatedItem);
       }
 
+      // Hatırlatıcı kurmak bildirim izni istemenin doğal anı; karar verilmişse
+      // iOS tekrar sormaz, mevcut durumu döner.
+      await _notificationService.requestPermissions();
       final notificationId = await _notificationService.scheduleReminder(
         savedReminder,
         noteTitle,
@@ -58,6 +61,7 @@ class ReminderSchedulerService {
       await cancelReminderNotifications(reminder.itemId);
 
       await _reminderRepo.updateReminder(reminder);
+      await _notificationService.requestPermissions();
 
       final notificationId = await _notificationService.scheduleReminder(
         reminder,

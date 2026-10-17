@@ -201,7 +201,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final s = url.toLowerCase();
     if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
         s.contains('google.com/maps') || s.contains('maps.google') ||
-        s.contains('share.google')) return 'Google Maps';
+        s.contains('share.google')) { return 'Google Maps'; }
     if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return 'Yandex Harita';
     if (s.contains('maps.apple.com')) return 'Apple Harita';
     if (s.contains('openstreetmap.org')) return 'OpenStreetMap';
@@ -238,7 +238,7 @@ class _ItemDetailBottomSheetState extends State<ItemDetailBottomSheet> {
     final s = url.toLowerCase();
     if (s.contains('maps.app.goo.gl') || s.contains('goo.gl/maps') ||
         s.contains('google.com/maps') || s.contains('maps.google') ||
-        s.contains('share.google')) return l10n.itemDetailOpenInGoogleMaps;
+        s.contains('share.google')) { return l10n.itemDetailOpenInGoogleMaps; }
     if (s.contains('yandex.com/maps') || s.contains('yandex.ru/maps')) return l10n.itemDetailOpenInYandexMaps;
     if (s.contains('maps.apple.com')) return l10n.itemDetailOpenInAppleMaps;
     if (s.contains('openstreetmap.org')) return l10n.itemDetailOpenInOpenStreetMap;

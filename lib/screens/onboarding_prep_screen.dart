@@ -37,7 +37,6 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
   
   // Animation Controller for smooth progress bar
   late AnimationController _progressController;
-  late Animation<double> _progressAnimation;
   
   // Animation Controller for Text Shimmer
   late AnimationController _shimmerController;
@@ -50,7 +49,6 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _progressAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(_progressController);
     
     // Initialize Shimmer Controller
     _shimmerController = AnimationController(

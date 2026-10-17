@@ -11,6 +11,7 @@ import 'package:somine_app/core/models/reminder_model.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/core/repositories/reminder_repository.dart';
 import 'package:somine_app/core/services/analytics_service.dart';
+import 'package:somine_app/core/services/notification_service.dart';
 import 'package:somine_app/core/services/reminder_scheduler_service.dart';
 import 'package:somine_app/core/utils/resurfacing_dates.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
@@ -82,6 +83,13 @@ class _SuccessNotificationSheetState
         seconds: (widget.onUndo != null || _hasQuickReminder) ? 4 : 2,
       ),
     );
+    // İlk içerik kaydı bildirim iznini istemek için en anlamlı an: hatırlatıcı ve
+    // haftalık özet buna bağlı. Karar verilmişse iOS tekrar sormaz.
+    if (_hasQuickReminder) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(NotificationService().requestPermissions()),
+      );
+    }
   }
 
   @override

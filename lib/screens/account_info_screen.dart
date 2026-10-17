@@ -929,49 +929,6 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     );
   }
 
-  void _showPasswordChangeDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showCupertinoDialog(
-      context: context,
-      builder:
-          (context) => CupertinoAlertDialog(
-            title: Text(l10n.accountInfoChangePasswordTitle),
-            content: Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Text(
-                l10n.accountInfoChangePasswordMessage,
-              ),
-            ),
-            actions: [
-              CupertinoDialogAction(
-                child: Text(l10n.commonCancel),
-                onPressed: () => Navigator.pop(context),
-              ),
-              CupertinoDialogAction(
-                isDefaultAction: true,
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user?.email != null) {
-                    await FirebaseAuth.instance.sendPasswordResetEmail(
-                      email: user!.email!,
-                    );
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(AppLocalizations.of(context)!.accountInfoPasswordResetSent),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Text(l10n.accountInfoSend),
-              ),
-            ],
-          ),
-    );
-  }
-
   void _showDeleteAccountDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     showCupertinoDialog(

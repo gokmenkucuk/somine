@@ -631,9 +631,6 @@ class _CardImage extends StatelessWidget {
       color: Colors.white,
       size: 48,
     ); // Default
-    Color iconColor =
-        Colors.white; // We override this usually but keeping for safety
-    double iconSize = 48;
 
     if (isNote) {
       iconWidget = Icon(

@@ -354,14 +354,13 @@ class _SettingsItem extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
-  final Widget? trailing;
+  final Widget? trailing = null;
 
   const _SettingsItem({
     required this.icon,
     required this.title,
     this.subtitle,
     this.onTap,
-    this.trailing,
   });
 
   @override

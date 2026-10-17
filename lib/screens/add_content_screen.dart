@@ -17,12 +17,10 @@ import 'package:somine_app/core/repositories/item_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:somine_app/core/services/storage_service.dart';
 import 'package:somine_app/core/services/metadata_service.dart';
-import 'package:somine_app/widgets/apple_map_preview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
 import 'dart:math' as math;
-import 'package:url_launcher/url_launcher.dart';
 // import 'package:somine_app/core/design/app_colors.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/widgets/circle_icon_button.dart';
@@ -80,7 +78,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Animation
   late AnimationController _textAnimationController;
-  late Animation<double> _textAnimation;
   late AnimationController _loadingController;
   late AnimationController _rotationController;
   late AnimationController _arrowAnimationController;
@@ -92,7 +89,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   bool _isNoteMode = false; // Toggle between Note and Link mode
 
   // Clipboard State
-  bool _hasClipboardContent = false;
 
   // Link Preview State
   bool _hasLink = false;
@@ -123,7 +119,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   File? _selectedNoteImage;
   Uint8List? _noteImageBytes; // Store bytes to avoid File access issues
   String? _noteImageUrl; // For edit mode - existing image URL
-  bool _isUploadingImage = false;
 
   // Reminder State
   ReminderModel? _currentReminder;
@@ -180,31 +175,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     ];
 
     return knownBrands.any((brand) => url.contains(brand));
-  }
-
-  /// Checks if the URL is a social media platform where OG images are actual content, not logos
-  bool _isSocialPlatform([String? customUrl]) {
-    final url = (customUrl ?? _linkController.text).toLowerCase();
-    return url.contains('instagram.com') ||
-        url.contains('youtube.com') ||
-        url.contains('youtu.be') ||
-        url.contains('tiktok.com') ||
-        url.contains('pinterest.com') ||
-        url.contains('pin.it') ||
-        url.contains('open.spotify.com') ||
-        url.contains('x.com') ||
-        url.contains('twitter.com') ||
-        url.contains('github.com') ||
-        url.contains('linkedin.com') ||
-        url.contains('reddit.com') ||
-        url.contains('netflix.com') ||
-        url.contains('twitch.tv') ||
-        url.contains('gitlab.com') ||
-        url.contains('bitbucket.org') ||
-        url.contains('medium.com') ||
-        url.contains('behance.net') ||
-        url.contains('dribbble.com') ||
-        url.contains('trendyol.com');
   }
 
   /// Checks if the image URL appears to be a favicon (small logo image)
@@ -290,10 +260,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       vsync: this,
       duration: const Duration(seconds: 10), // Slow, smooth flow
     )..repeat();
-    _textAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(_textAnimationController);
 
     // Arrow shimmer animation for toggle
     _arrowAnimationController = AnimationController(
@@ -432,7 +398,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       final hasContent = await Clipboard.hasStrings();
       if (hasContent) {
         setState(() {
-          _hasClipboardContent = true;
           // _isManualEntry = false; // logic removed - keep manual entry active
         });
       }
@@ -451,19 +416,12 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       // If triggered manually by user (tapping button), open manual entry
       setState(() {
         _hasLink = false;
-        _hasClipboardContent = false;
       });
     }
   }
 
   bool _isUrl(String text) {
     return RegExp(r'(https?:\/\/[^\s]+)').hasMatch(text);
-  }
-
-  void _handlePaste() async {
-    // This is the manual "Paste" action from the button
-    // It should behave same as checkClipboard but force manual entry if failing
-    await _checkClipboardAndProcess(auto: false);
   }
 
   String _detectPlatform(String url) {
@@ -527,7 +485,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
         _detectedPlatform = _detectPlatform(url);
         _hasLink = true;
         _isManualEntry = false; // Disable manual entry mode if link found
-        _hasClipboardContent = false;
       });
       _fetchMetadata(url);
     } else {
@@ -796,12 +753,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     return ContentPreviewPolicy.isXUrl(url);
   }
 
-  /// Check if URL is Facebook link
-  bool _isFacebookUrl(String url) {
-    final lower = url.toLowerCase();
-    return lower.contains('facebook.com') || lower.contains('fb.watch');
-  }
-
   bool _shouldPersistRemoteMetadataImage(String imageUrl) {
     final lower = imageUrl.toLowerCase();
     if (lower.endsWith('.svg')) return false;
@@ -821,10 +772,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   bool _isAppleMapsUrl(String url) {
     return ContentPreviewPolicy.isAppleMapsUrl(url);
-  }
-
-  bool _isOSMUrl(String url) {
-    return url.contains('openstreetmap.org');
   }
 
   void _clearLinkField() {
@@ -858,7 +805,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
       _titleController.clear();
       _noteController.clear();
       _linkController.clear(); // Clear link input
-      _hasClipboardContent = false;
       _isManualEntry = true; // Always return to manual entry form
       _selectedNoteImage = null;
       _noteImageBytes = null;
@@ -1162,7 +1108,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
       if (_isNoteMode && _noteImageBytes != null) {
         // Upload to Firebase Storage
-        setState(() => _isUploadingImage = true);
         try {
           final fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final path = 'items/$userId/$fileName';
@@ -1179,8 +1124,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
           }
         } catch (e) {
           debugPrint("Error uploading note image: $e");
-        } finally {
-          if (mounted) setState(() => _isUploadingImage = false);
         }
       }
 
@@ -1471,22 +1414,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
             title: l10n.addContentWarningTitle,
             message: message,
             type: _AlertType.warning,
-          ),
-    );
-  }
-
-  void _showSuccess(String message) {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder:
-          (context) => _AlertBottomSheet(
-            title: l10n.commonSuccessBang,
-            message: message,
-            type: _AlertType.success,
           ),
     );
   }
@@ -1947,66 +1874,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   // Manual Entry Header (God Ray / Spotlight Cone Effect)
-  Widget _buildManualEntryHeader() {
-    return _buildPlatformBackground(animate: false);
-  }
 
   // Loading State (Filling Animation)
-  Widget _buildLoadingState() {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Container(
-      key: const ValueKey('loading'),
-      color: context.colors.surfaceWhite,
-      width: double.infinity,
-      height: double.infinity,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center, // Center vertically
-        children: [
-          // Animated Filling Icon
-          AnimatedBuilder(
-            animation: _loadingController,
-            builder: (context, child) {
-              return ShaderMask(
-                shaderCallback: (bounds) {
-                  return LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      context.colors.primary, // Filled Color (Green)
-                      context.colors.primary.withValues(
-                        alpha: 0.15,
-                      ), // Empty Color (Light Green)
-                    ],
-                    stops: [
-                      _loadingController
-                          .value, // Fill level moves from 0.0 to 1.0
-                      _loadingController.value + 0.05, // Smooth blurred edge
-                    ],
-                  ).createShader(bounds);
-                },
-                child: Icon(
-                  _getPlatformIcon(_detectedPlatform),
-                  size: 60, // Smaller Icon
-                  color: Colors.white, // Base color for ShaderMask target
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-
-          Text(
-            l10n.addContentLoading,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: context.colors.headline,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Platform Background (Gradient Preview Placeholder)
   Widget _buildPlatformBackground({bool animate = false}) {
@@ -2178,26 +2047,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
 
   // Custom Map Preview (Gradient + Icon) like ItemCard
   // If coordinates are available, show Apple Map preview
-  Widget _buildMapPreview() {
-    // If we have valid coordinates
-    if (_mapCoordinate != null && _mapCoordinate!.isValid) {
-      // Sadece Apple Maps için harita göster
-      if (_mapCoordinate!.provider == MapProvider.appleMaps) {
-        return AppleMapPreview(
-          key: const ValueKey('apple_map_preview'),
-          coordinate: _mapCoordinate!,
-          onTap: _launchInAppleMaps,
-          height: 200,
-        );
-      }
-
-      // Google/Yandex için sadece gradient + ikon
-      return _buildMapIconPlaceholder();
-    }
-
-    // Koordinat yoksa fallback
-    return _buildMapGradientFallback();
-  }
 
   // Map placeholder - tema rengi gradient + provider brand ikonu
   Widget _buildMapPlaceholder() {
@@ -2375,161 +2224,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
   }
 
   // Launch the original map URL in Google/Yandex Maps
-  Future<void> _launchOriginalUrl() async {
-    if (_detectedLink.isEmpty) return;
-
-    final uri = Uri.parse(_detectedLink);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 
   // Launch in Apple Maps when we have coordinates
-  Future<void> _launchInAppleMaps() async {
-    if (_mapCoordinate == null || !_mapCoordinate!.isValid) return;
-
-    final lat = _mapCoordinate!.latitude;
-    final lng = _mapCoordinate!.longitude;
-
-    // Apple Maps URL format
-    final appleMapsUrl = 'https://maps.apple.com/?ll=$lat,$lng&q=$lat,$lng';
-
-    final uri = Uri.parse(appleMapsUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 
   // Map icon placeholder for Google/Yandex (no map, just icon)
-  Widget _buildMapIconPlaceholder() {
-    final provider = _mapCoordinate!.provider;
-
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      key: const ValueKey('map_icon_placeholder'),
-      height: 200,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [context.colors.primary, context.colors.secondary],
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.map,
-                  size: 56,
-                  color: context.colors.surfaceWhite.withValues(alpha: 0.95),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  provider == MapProvider.googleMaps
-                      ? 'Google Maps'
-                      : 'Yandex Maps',
-                  style: GoogleFonts.poppins(
-                    color: context.colors.surfaceWhite.withValues(alpha: 0.95),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_mapCoordinate!.latitude.toStringAsFixed(4)}, ${_mapCoordinate!.longitude.toStringAsFixed(4)}',
-                  style: GoogleFonts.poppins(
-                    color: context.colors.surfaceWhite.withValues(alpha: 0.8),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _launchOriginalUrl,
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Gradient fallback when no coordinates
-  Widget _buildMapGradientFallback() {
-    final l10n = AppLocalizations.of(context)!;
-    final url = _detectedLink.toLowerCase();
-    List<Color> gradientColors = [
-      context.colors.primary,
-      context.colors.secondary,
-    ];
-
-    if (url.contains('maps.app.goo') ||
-        url.contains('goo.gl/maps') ||
-        url.contains('google.com/maps') ||
-        url.contains('maps.google') ||
-        url.contains('share.google')) {
-      gradientColors = [const Color(0xFF34A853), const Color(0xFF1EA362)];
-    } else if (url.contains('yandex.com/maps') ||
-        url.contains('yandex.ru/maps') ||
-        url.contains('yandex.o/maps')) {
-      gradientColors = [const Color(0xFFFFCC00), const Color(0xFFFF9900)];
-    } else if (url.contains('maps.apple.com')) {
-      gradientColors = [const Color(0xFFAAAAAA), const Color(0xFF888888)];
-    }
-
-    return GestureDetector(
-      onTap: _launchOriginalUrl,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        key: const ValueKey('map_preview'),
-        height: 200,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.map,
-                size: 48,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.addContentMapLocation,
-                style: GoogleFonts.poppins(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   // Launch the original map URL in Google/Yandex Maps
 
   // Reusable Ambient Animation Core (Liftoff Particles)
-  Widget _buildAmbientAnimationCore() {
-    // Scale is ignored in Particle simulation (it fills space),
-    // but if needed we could pass it. For now, filling space is better.
-    return _ParticleBackground(color: context.colors.primary);
-  }
 
   // ============== CONTROL CENTER ==============
 
@@ -3394,37 +3098,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen>
     }
   }
 
-  Color _getPlatformColor(String platform) {
-    switch (platform.toLowerCase()) {
-      case 'instagram':
-        return const Color(0xFFE4405F);
-      case 'youtube':
-        return const Color(0xFFFF0000);
-      case 'x':
-      case 'twitter':
-        return const Color(0xFF000000);
-      case 'tiktok':
-        return const Color(0xFF010101);
-      case 'linkedin':
-        return const Color(0xFF0A66C2);
-      case 'spotify':
-        return const Color(0xFF1DB954);
-      case 'pinterest':
-        return const Color(0xFFBD081C);
-      case 'reddit':
-        return const Color(0xFFFF4500);
-      case 'medium':
-        return const Color(0xFF000000);
-      case 'behance':
-        return const Color(0xFF1769FF);
-      case 'dribbble':
-        return const Color(0xFFEA4C89);
-
-      default:
-        return context.colors.primary;
-    }
-  }
-
   void _showAddCategoryDialog(BuildContext context) {
     // --- COLLECTION LIMIT CHECK ---
     final addSubState = ref.read(subscriptionProvider);
@@ -3576,70 +3249,6 @@ class _SimpleCategoryFormSheetState extends State<_SimpleCategoryFormSheet> {
 }
 
 // Custom Painter for Wavy Stream Effect (Flowing River)
-class _WavyStreamPainter extends CustomPainter {
-  final double animationValue;
-  final Color streamColor;
-
-  _WavyStreamPainter({required this.animationValue, required this.streamColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    // Stream parameters
-    final streamWidth = size.width * 0.15; // Width of the stream
-    final centerX = size.width / 2;
-    final waveAmplitude = size.width * 0.08; // How much the stream curves
-    final waveFrequency = 3.0; // Number of waves
-    final phaseShift = animationValue * 2 * math.pi; // Animated phase
-
-    // Draw multiple layers for soft glow effect
-    for (int layer = 0; layer < 3; layer++) {
-      final layerWidth = streamWidth + (layer * 15);
-      final layerOpacity =
-          (0.15 - (layer * 0.04)) * (0.5 + animationValue * 0.5);
-
-      final path = Path();
-
-      // Start from top center (slightly offset for each layer)
-      path.moveTo(centerX - layerWidth / 2, 0);
-
-      // Draw left edge with sine wave
-      for (double y = 0; y <= size.height; y += 5) {
-        final progress = y / size.height;
-        final fadeMultiplier = 1.0 - (progress * progress); // Quadratic fade
-        final wave =
-            math.sin((progress * waveFrequency * math.pi) + phaseShift) *
-            waveAmplitude *
-            fadeMultiplier;
-        final x = centerX - (layerWidth / 2) * fadeMultiplier + wave;
-        path.lineTo(x, y);
-      }
-
-      // Draw right edge with sine wave (reverse)
-      for (double y = size.height; y >= 0; y -= 5) {
-        final progress = y / size.height;
-        final fadeMultiplier = 1.0 - (progress * progress);
-        final wave =
-            math.sin((progress * waveFrequency * math.pi) + phaseShift) *
-            waveAmplitude *
-            fadeMultiplier;
-        final x = centerX + (layerWidth / 2) * fadeMultiplier + wave;
-        path.lineTo(x, y);
-      }
-
-      path.close();
-
-      paint.color = streamColor.withValues(alpha: layerOpacity);
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _WavyStreamPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
-  }
-}
 
 // ==========================================
 // LIFTOFF PARTICLE SYSTEM
@@ -3836,7 +3445,7 @@ class _ParticlePainter extends CustomPainter {
 }
 
 // ============== ALERT BOTTOM SHEET ==============
-enum _AlertType { success, warning, error }
+enum _AlertType { success, warning }
 
 class _AlertBottomSheet extends StatefulWidget {
   final String title;

@@ -258,6 +258,10 @@
   "@paywallRestoreSuccess": {
     "description": "Snackbar message shown after purchases are successfully restored."
   },
+  "paywallPlansUnavailable": "Abonelik planları şu anda yüklenemedi. Bağlantını kontrol edip tekrar dene.",
+  "@paywallPlansUnavailable": {
+    "description": "Paywall message when store plans fail to load"
+  },
   "paywallRestoreEmpty": "Geri yüklenecek satın alma bulunamadı.",
   "@paywallRestoreEmpty": {
     "description": "Snackbar message shown when there are no purchases to restore."

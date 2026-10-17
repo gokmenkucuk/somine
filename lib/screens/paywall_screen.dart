@@ -116,36 +116,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         (package) => _buildPackageCard(context, ref, package, l10n),
                       )
                     else
-                      // Fallback: Show placeholder cards when RevenueCat products not configured
-                      ...[
-                        _buildPlaceholderPackageCard(
-                          context,
-                          ref,
-                          l10n,
-                          title: l10n.paywallPlanWeekly,
-                          price: "₺29,99",
-                          description: l10n.paywallPlanWeeklyDescription,
-                          isPopular: false,
-                        ),
-                        _buildPlaceholderPackageCard(
-                          context,
-                          ref,
-                          l10n,
-                          title: l10n.paywallPlanMonthly,
-                          price: "₺79,99",
-                          description: l10n.paywallPlanMonthlyDescription,
-                          isPopular: false,
-                        ),
-                        _buildPlaceholderPackageCard(
-                          context,
-                          ref,
-                          l10n,
-                          title: l10n.paywallPlanYearly,
-                          price: "₺699,99",
-                          description: l10n.paywallPlanYearlyDescription(27),
-                          isPopular: true,
-                        ),
-                      ],
+                      // Planlar yüklenemediyse (ağ, StoreKit gecikmesi) sahte fiyat göstermek
+                      // yerine dürüst bir hata ve yeniden deneme sunulur.
+                      _buildPlansUnavailable(context, ref, l10n),
 
                     const SizedBox(height: 24),
 
@@ -413,113 +386,32 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
-  /// Placeholder package card (shown when RevenueCat products not configured)
-  Widget _buildPlaceholderPackageCard(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n, {
-    required String title,
-    required String price,
-    required String description,
-    bool isPopular = false,
-    bool isLifetime = false,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        // Show message that purchases will be available soon
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.paywallComingSoon),
-            backgroundColor: context.colors.primary,
+  /// Shown when the store's plans could not be loaded; never invents prices.
+  Widget _buildPlansUnavailable(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: context.colors.surfaceWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.colors.hint.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            l10n.paywallPlansUnavailable,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(fontSize: 15, color: context.colors.headline),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: context.colors.surfaceWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isPopular ? context.colors.primary : context.colors.hint.withValues(alpha: 0.2),
-            width: isPopular ? 2 : 1,
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () => ref.read(subscriptionProvider.notifier).refresh(),
+            child: Text(
+              l10n.errorStateRetry,
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: context.colors.primary),
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: context.colors.headline,
-                        ),
-                      ),
-                      if (isPopular) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: context.colors.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            l10n.paywallMostPopularBadge,
-                            style: GoogleFonts.outfit(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (isLifetime) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.amber,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            l10n.paywallLifetimeBadge,
-                            style: GoogleFonts.outfit(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color: context.colors.hint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              price,
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: context.colors.headline,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

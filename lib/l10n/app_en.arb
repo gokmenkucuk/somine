@@ -62,6 +62,10 @@
   "paywallFeatureSmartSearch": "Smart Search",
   "paywallFeatureQuickWidget": "Quick Widget Add",
   "paywallRestoreSuccess": "Purchases restored!",
+  "paywallPlansUnavailable": "Subscription plans could not be loaded right now. Check your connection and try again.",
+  "@paywallPlansUnavailable": {
+    "description": "Paywall message when store plans fail to load"
+  },
   "paywallRestoreEmpty": "No purchases found to restore.",
   "paywallRestoreButton": "Restore Purchases",
   "paywallLegalDisclosure": "Your subscription renews automatically based on the plan you selected. Unless you cancel at least 24 hours before the end of the current period, your subscription will renew automatically. You can manage or cancel your subscription anytime from Settings > Apple ID > Subscriptions.",

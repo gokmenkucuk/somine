@@ -1147,56 +1147,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     );
   }
 
-  Widget _buildAddCatalogButton() {
-    final l10n = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: _showAddCategoryDialog,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60, // Fixed height to match others (approx)
-            margin: const EdgeInsets.only(right: 20, bottom: 8),
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : context.colors.surfaceWhite,
-              shape: BoxShape.circle,
-              border: Border.all(color: context.colors.divider, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                PhosphorIconsRegular.plus,
-                size: 24,
-                color: context.colors.primary,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: Text(
-              l10n.catalogNewButton,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: context.colors.headline.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // --- CONTENT GRID ---
 
   Widget _buildItemGrid(List<ItemModel> items, List<CategoryModel> categories) {
@@ -1588,8 +1538,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     bool isSearching = false;
     bool hasSearched = false;
     String? errorMessage;
-    List<Map<String, dynamic>> recentUsers = [];
-    bool isLoadingRecent = true;
 
     showModalBottomSheet(
       context: context,
@@ -2553,14 +2501,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                             itemCount: validTargets.length,
                             itemBuilder: (ctx, index) {
                               final cat = validTargets[index];
-                              final catColor =
-                                  cat.color != null
-                                      ? Color(
-                                        int.parse(
-                                          cat.color!.replaceAll('#', '0xFF'),
-                                        ),
-                                      )
-                                      : context.colors.primary;
 
                               return ListTile(
                                 leading: Container(
@@ -2974,7 +2914,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final isSelected = selectedItems.contains(item.id);
 
     Widget contentHeader;
-    final isNote = item.type == ItemType.note;
 
     bool isMapUrl(String url) =>
         url.contains('maps.app.goo.gl') ||
@@ -4387,139 +4326,6 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
         );
       }
-    }
-  }
-
-  Future<void> _deleteSelectedItems(WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context)!;
-    final selectedIds = ref.read(selectedItemsProvider);
-    if (selectedIds.isEmpty) return;
-
-    // Custom Bottom Sheet Confirmation
-    final confirm = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder:
-          (context) => Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: context.colors.surfaceWhite,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icon
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: context.colors.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(
-                    PhosphorIconsFill.trash,
-                    size: 32,
-                    color: context.colors.danger,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Title
-                Text(
-                  l10n.catalogDeleteSelectedItemsTitle,
-                  style: GoogleFonts.outfit(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: context.colors.headline,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-
-                // Message
-                Text(
-                  l10n.catalogDeleteSelectedItemsMessage(selectedIds.length),
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
-                    fontSize: 15,
-                    color: context.colors.body,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Delete Action
-                GestureDetector(
-                  onTap: () => Navigator.pop(context, true),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: context.colors.danger,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.colors.danger.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        l10n.commonDelete,
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Cancel Action
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(
-                    l10n.commonDiscard,
-                    style: GoogleFonts.outfit(
-                      color: context.colors.hint,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final repo = ref.read(itemRepositoryProvider);
-      await repo.softDeleteItems(selectedIds.toList());
-      ref.invalidate(itemCountProvider);
-      ref.invalidate(paginatedFeedProvider);
-
-      // Reset Selection
-      ref.read(isSelectionModeProvider.notifier).state = false;
-      ref.read(selectedItemsProvider.notifier).state = {};
-
-      if (mounted) {
-        // Custom Success Toast
-        SuccessNotificationSheet.show(
-          context,
-          title: l10n.commonDeleted,
-          message: l10n.catalogDeletedToTrashMessage(selectedIds.length),
-        );
-      }
-    } catch (e) {
-      debugPrint("Bulk delete error: $e");
     }
   }
 
