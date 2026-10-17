@@ -1,3 +1,7 @@
-﻿@using SomineWeb
+@using SomineWeb
+@using SomineWeb.Localization
+@using Microsoft.Extensions.Localization
 @namespace SomineWeb.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject IStringLocalizer<SharedResource> L
+@inject LocalizedAssets Assets

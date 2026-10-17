@@ -1,0 +1,47 @@
+@*
+    Sade TR/EN geçişi. Yeni renk ya da tipografi getirmez; navbar'ın mevcut
+    rounded-full + nane yeşili diline yaslanır.
+
+    Model: "transparent" (hero üstündeki şeffaf navbar) · "solid" (beyaz navbar)
+           "menu" (mobil menü paneli) · "footer" (koyu zemin)
+*@
+@model string
+@{
+    var variant = string.IsNullOrEmpty(Model) ? "solid" : Model;
+    var current = SiteLanguages.Current;
+
+    var (shell, activeClass, idleClass) = variant switch
+    {
+        "transparent" => (
+            "bg-white/[0.10] border border-white/[0.18]",
+            "bg-white text-[#1a3b38]",
+            "text-white/70 hover:text-white"),
+        "footer" => (
+            "bg-white/[0.06] border border-white/[0.10]",
+            "bg-white/[0.9] text-[#1a3b38]",
+            "text-white/50 hover:text-white"),
+        "menu" => (
+            "bg-gray-50 border border-gray-100",
+            "bg-white text-[#688E8B] shadow-[0_1px_2px_rgba(0,0,0,0.06)]",
+            "text-gray-500 hover:text-gray-900"),
+        _ => (
+            "bg-black/[0.04] border border-black/[0.04]",
+            "bg-white text-[#688E8B] shadow-[0_1px_2px_rgba(0,0,0,0.06)]",
+            "text-gray-500 hover:text-gray-900"),
+    };
+}
+<div class="inline-flex items-center gap-0.5 rounded-full p-0.5 @shell" role="group" aria-label="@L["nav.languageLabel"]">
+    @foreach (var language in SiteLanguages.Supported)
+    {
+        var isActive = string.Equals(language, current, StringComparison.Ordinal);
+        var label = language == SiteLanguages.English ? L["nav.switchToEnglish"] : L["nav.switchToTurkish"];
+        <a href="@LanguageUrl.RelativeFor(Context.Request, language)"
+           hreflang="@language"
+           lang="@language"
+           title="@label"
+           aria-current="@(isActive ? "true" : "false")"
+           class="px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide transition-all duration-300 @(isActive ? activeClass : idleClass)">
+            @SiteLanguages.ShortLabel(language)
+        </a>
+    }
+</div>

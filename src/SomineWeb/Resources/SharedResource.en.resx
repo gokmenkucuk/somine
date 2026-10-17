@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    ÜRETİLMİŞ DEĞİL, ELLE DÜZENLENEBİLİR.
+    Bu dosya sitenin kısa arayüz metinlerini tutar. Uzun hukuki metinler burada DEĞİL,
+    Pages/Shared/_PrivacyBody.{tr,en}.cshtml ve _TermsBody.{tr,en}.cshtml içindedir.
+    KURAL: SharedResource.resx (Türkçe, nötr) ve SharedResource.en.resx aynı anahtar
+    kümesine sahip olmalıdır.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="common.backHome" xml:space="preserve">
+    <value>Back to Home</value>
+  </data>
+  <data name="common.legal" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="common.brand" xml:space="preserve">
+    <value>Somine</value>
+  </data>
+  <data name="layout.defaultTitle" xml:space="preserve">
+    <value>Somine — Everything You Love, in One Place</value>
+  </data>
+  <data name="layout.titleSuffix" xml:space="preserve">
+    <value>Somine</value>
+  </data>
+  <data name="layout.defaultDescription" xml:space="preserve">
+    <value>Save what you love from Instagram, Pinterest, YouTube and any web link — all in one place with Somine. Save content, organise it into collections, share it with friends.</value>
+  </data>
+  <data name="layout.scrollToTop" xml:space="preserve">
+    <value>Back to top</value>
+  </data>
+  <data name="nav.features" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="nav.screens" xml:space="preserve">
+    <value>Screens</value>
+  </data>
+  <data name="nav.themes" xml:space="preserve">
+    <value>Themes</value>
+  </data>
+  <data name="nav.premium" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="nav.support" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="nav.download" xml:space="preserve">
+    <value>Get</value>
+  </data>
+  <data name="nav.downloadAppStore" xml:space="preserve">
+    <value>Download on the App Store</value>
+  </data>
+  <data name="nav.menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="nav.close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="nav.privacy" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="nav.terms" xml:space="preserve">
+    <value>Terms of Use</value>
+  </data>
+  <data name="nav.languageLabel" xml:space="preserve">
+    <value>Choose language</value>
+  </data>
+  <data name="nav.switchToTurkish" xml:space="preserve">
+    <value>Turkish</value>
+  </data>
+  <data name="nav.switchToEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="footer.tagline" xml:space="preserve">
+    <value>Save everything you love in one place. Whatever the platform, Somine brings it all together.</value>
+  </data>
+  <data name="footer.appHeading" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="footer.legalHeading" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="footer.supportHeading" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="footer.howItWorks" xml:space="preserve">
+    <value>How It Works</value>
+  </data>
+  <data name="footer.deleteAccount" xml:space="preserve">
+    <value>Delete Account</value>
+  </data>
+  <data name="footer.faq" xml:space="preserve">
+    <value>Frequently Asked Questions</value>
+  </data>
+  <data name="footer.contact" xml:space="preserve">
+    <value>Contact Us</value>
+  </data>
+  <data name="footer.rights" xml:space="preserve">
+    <value>All rights reserved.</value>
+  </data>
+  <data name="footer.privacyShort" xml:space="preserve">
+    <value>Privacy</value>
+  </data>
+  <data name="footer.termsShort" xml:space="preserve">
+    <value>Terms</value>
+  </data>
+  <data name="index.description" xml:space="preserve">
+    <value>Save what you love from Instagram, Pinterest, YouTube and any web link — all in one place with Somine. Save content, organise it into collections, share it with friends.</value>
+  </data>
+  <data name="index.jsonLdDescription" xml:space="preserve">
+    <value>Organise content from the platforms you love, alongside any web link, in your own personal collections.</value>
+  </data>
+  <data name="index.heroTitleLine1" xml:space="preserve">
+    <value>Everything You Love,</value>
+  </data>
+  <data name="index.heroTitleLine2" xml:space="preserve">
+    <value>in One Place</value>
+  </data>
+  <data name="index.heroSubtitle" xml:space="preserve">
+    <value>From Instagram, Pinterest, YouTube — everything you save, finally in one place.</value>
+  </data>
+  <data name="index.ctaDownload" xml:space="preserve">
+    <value>Get it on</value>
+  </data>
+  <data name="index.ctaDownloadFree" xml:space="preserve">
+    <value>Download free</value>
+  </data>
+  <data name="index.exploreFeatures" xml:space="preserve">
+    <value>Explore Features</value>
+  </data>
+  <data name="index.scrollHint" xml:space="preserve">
+    <value>Scroll</value>
+  </data>
+  <data name="index.heroPhoneAlt" xml:space="preserve">
+    <value>The Somine home screen</value>
+  </data>
+  <data name="index.featuresEyebrow" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="index.featuresTitle" xml:space="preserve">
+    <value>Everything You Save, in One Place</value>
+  </data>
+  <data name="index.featuresSubtitle" xml:space="preserve">
+    <value>Somine does more than save. You categorise, annotate, protect and share.</value>
+  </data>
+  <data name="index.feature1Title" xml:space="preserve">
+    <value>Content from Every Platform</value>
+  </data>
+  <data name="index.feature1Desc" xml:space="preserve">
+    <value>Instagram, YouTube, Pinterest and more — add anything you like to your collection, whatever platform it came from.</value>
+  </data>
+  <data name="index.feature2Title" xml:space="preserve">
+    <value>Smart Categories</value>
+  </data>
+  <data name="index.feature2Desc" xml:space="preserve">
+    <value>Keep what you save tidy and easy to find. Create as many categories as you need and arrange them however you like.</value>
+  </data>
+  <data name="index.feature3Title" xml:space="preserve">
+    <value>Personal Notes</value>
+  </data>
+  <data name="index.feature3Desc" xml:space="preserve">
+    <value>Add your own note to anything you save, so you never lose track of why you saved it or what you meant to do with it.</value>
+  </data>
+  <data name="index.feature4Title" xml:space="preserve">
+    <value>Hidden Vault</value>
+  </data>
+  <data name="index.feature4Desc" xml:space="preserve">
+    <value>For the things only you should see. Private collections locked behind Face ID — included with Premium.</value>
+  </data>
+  <data name="index.feature5Title" xml:space="preserve">
+    <value>Effortless Sharing</value>
+  </data>
+  <data name="index.feature5Desc" xml:space="preserve">
+    <value>Find a friend by username or email and send them a collection. The moment they accept, it lands in their library. Included with Premium.</value>
+  </data>
+  <data name="index.feature6Title" xml:space="preserve">
+    <value>Premium Themes</value>
+  </data>
+  <data name="index.feature6Desc" xml:space="preserve">
+    <value>Air is free; the Midnight and Vibe themes, home-screen app icons and custom collection icons all unlock with Premium.</value>
+  </data>
+  <data name="index.screensEyebrow" xml:space="preserve">
+    <value>App Screens</value>
+  </data>
+  <data name="index.screensTitle" xml:space="preserve">
+    <value>Simple. Powerful. Beautiful.</value>
+  </data>
+  <data name="index.screensSubtitle" xml:space="preserve">
+    <value>Everything you saved is always one tap away, in an interface that stays clean, calm and easy on the eye.</value>
+  </data>
+  <data name="index.screenAltFormat" xml:space="preserve">
+    <value>Somine screen {0}</value>
+  </data>
+  <data name="index.howEyebrow" xml:space="preserve">
+    <value>How It Works</value>
+  </data>
+  <data name="index.howTitle" xml:space="preserve">
+    <value>Save to a Collection in One Tap</value>
+  </data>
+  <data name="index.howSubtitle" xml:space="preserve">
+    <value>Saving from any app into a Somine collection takes three steps. Nothing is copied — the content stays where it lives, on the original platform.</value>
+  </data>
+  <data name="index.step1Title" xml:space="preserve">
+    <value>Share from the Platform</value>
+  </data>
+  <data name="index.step1Desc" xml:space="preserve">
+    <value>Tap the share button in any platform we support.</value>
+  </data>
+  <data name="index.step2Title" xml:space="preserve">
+    <value>Tap Somine</value>
+  </data>
+  <data name="index.step2Desc" xml:space="preserve">
+    <value>Pick the Somine icon from the list of apps that appears.</value>
+  </data>
+  <data name="index.step3Title" xml:space="preserve">
+    <value>Add to a Collection</value>
+  </data>
+  <data name="index.step3Desc" xml:space="preserve">
+    <value>Hit "Add to Collection" and it is saved. That is all there is to it.</value>
+  </data>
+  <data name="index.platformsEyebrow" xml:space="preserve">
+    <value>Platform Support</value>
+  </data>
+  <data name="index.platformsTitlePart1" xml:space="preserve">
+    <value>Save from</value>
+  </data>
+  <data name="index.platformsTitleHighlight" xml:space="preserve">
+    <value>Anywhere</value>
+  </data>
+  <data name="index.platformsSubtitle" xml:space="preserve">
+    <value>Instagram, YouTube, Pinterest and more — over 15 popular platforms, plus any web link at all, gathered in one place.</value>
+  </data>
+  <data name="index.platformWebLinks" xml:space="preserve">
+    <value>Web Links</value>
+  </data>
+  <data name="index.themesEyebrow" xml:space="preserve">
+    <value>Themes</value>
+  </data>
+  <data name="index.themesTitle" xml:space="preserve">
+    <value>Make It Feel Like Yours</value>
+  </data>
+  <data name="index.themesSubtitle" xml:space="preserve">
+    <value>Air is free; Midnight and Vibe unlock with Premium. Pick whichever suits you and make the app feel the way you want it to.</value>
+  </data>
+  <data name="index.themeAirTag" xml:space="preserve">
+    <value>Minimal &amp; airy</value>
+  </data>
+  <data name="index.themeAirFootTitle" xml:space="preserve">
+    <value>Air theme</value>
+  </data>
+  <data name="index.themeAirFootSub" xml:space="preserve">
+    <value>Light tones, understated design</value>
+  </data>
+  <data name="index.themeMidnightTag" xml:space="preserve">
+    <value>Dark &amp; elegant</value>
+  </data>
+  <data name="index.themeMidnightFootTitle" xml:space="preserve">
+    <value>Midnight theme</value>
+  </data>
+  <data name="index.themeMidnightFootSub" xml:space="preserve">
+    <value>Deep tones, easy on the eyes</value>
+  </data>
+  <data name="index.themeVibeTag" xml:space="preserve">
+    <value>Bold &amp; energetic</value>
+  </data>
+  <data name="index.themeVibeFootTitle" xml:space="preserve">
+    <value>Vibe theme</value>
+  </data>
+  <data name="index.themeVibeFootSub" xml:space="preserve">
+    <value>A pink-to-blue gradient with plenty of energy</value>
+  </data>
+  <data name="index.themesFootnote" xml:space="preserve">
+    <value>Go Premium to unlock every theme and the custom app icons</value>
+  </data>
+  <data name="index.premiumEyebrow" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="index.premiumTitlePart1" xml:space="preserve">
+    <value>Remove the</value>
+  </data>
+  <data name="index.premiumTitleHighlight" xml:space="preserve">
+    <value>Limits</value>
+  </data>
+  <data name="index.premiumSubtitle" xml:space="preserve">
+    <value>Let your collections and your library grow without a ceiling, and tailor the app entirely to your taste.</value>
+  </data>
+  <data name="index.planFreeLabel" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="index.planStarterName" xml:space="preserve">
+    <value>Starter</value>
+  </data>
+  <data name="index.planStarterDesc" xml:space="preserve">
+    <value>Free forever, for the essentials</value>
+  </data>
+  <data name="index.planPaidLabel" xml:space="preserve">
+    <value>Paid</value>
+  </data>
+  <data name="index.planPremiumName" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="index.planPremiumDesc" xml:space="preserve">
+    <value>No limits, fully customisable</value>
+  </data>
+  <data name="plan.collections10" xml:space="preserve">
+    <value>10 collections</value>
+  </data>
+  <data name="plan.items500" xml:space="preserve">
+    <value>500 items in total</value>
+  </data>
+  <data name="plan.reminders3" xml:space="preserve">
+    <value>3 active reminders</value>
+  </data>
+  <data name="plan.vault" xml:space="preserve">
+    <value>Hidden Vault (Face ID / Touch ID)</value>
+  </data>
+  <data name="plan.cloudSync" xml:space="preserve">
+    <value>Cloud sync</value>
+  </data>
+  <data name="plan.collectionSharing" xml:space="preserve">
+    <value>Collection sharing</value>
+  </data>
+  <data name="plan.smartPreview" xml:space="preserve">
+    <value>Smart link previews</value>
+  </data>
+  <data name="plan.themeAir" xml:space="preserve">
+    <value>Air theme</value>
+  </data>
+  <data name="plan.themesAll" xml:space="preserve">
+    <value>Air, Midnight and Vibe themes</value>
+  </data>
+  <data name="plan.platforms" xml:space="preserve">
+    <value>15+ platforms supported</value>
+  </data>
+  <data name="plan.export" xml:space="preserve">
+    <value>Data export (JSON / CSV)</value>
+  </data>
+  <data name="plan.customIcons" xml:space="preserve">
+    <value>Custom app icons</value>
+  </data>
+  <data name="plan.customIcons5" xml:space="preserve">
+    <value>5 custom app icons</value>
+  </data>
+  <data name="plan.unlimitedCollections" xml:space="preserve">
+    <value>Unlimited collections</value>
+  </data>
+  <data name="plan.unlimitedItems" xml:space="preserve">
+    <value>Unlimited items</value>
+  </data>
+  <data name="plan.unlimitedReminders" xml:space="preserve">
+    <value>Unlimited reminders</value>
+  </data>
+  <data name="index.ctaEyebrow" xml:space="preserve">
+    <value>Start for free</value>
+  </data>
+  <data name="index.ctaTitlePart1" xml:space="preserve">
+    <value>Everything you love,</value>
+  </data>
+  <data name="index.ctaTitleHighlight" xml:space="preserve">
+    <value>in one place</value>
+  </data>
+  <data name="index.ctaSubtitle" xml:space="preserve">
+    <value>At last, everything has a home.</value>
+  </data>
+  <data name="share.notFoundPageTitle" xml:space="preserve">
+    <value>Link not found</value>
+  </data>
+  <data name="share.notFoundTitle" xml:space="preserve">
+    <value>This link is no longer valid</value>
+  </data>
+  <data name="share.notFoundBody" xml:space="preserve">
+    <value>The share may have been removed, or the link may be incorrect. Ask whoever sent it to you for a new one.</value>
+  </data>
+  <data name="share.backHome" xml:space="preserve">
+    <value>Back to home</value>
+  </data>
+  <data name="share.eyebrow" xml:space="preserve">
+    <value>Shared Collection</value>
+  </data>
+  <data name="share.sharedByFormat" xml:space="preserve">
+    <value>Shared by {0}</value>
+  </data>
+  <data name="share.itemCountOne" xml:space="preserve">
+    <value>{0} item</value>
+  </data>
+  <data name="share.itemCountOther" xml:space="preserve">
+    <value>{0} items</value>
+  </data>
+  <data name="share.emptyTitle" xml:space="preserve">
+    <value>There is nothing in this collection yet</value>
+  </data>
+  <data name="share.emptyBody" xml:space="preserve">
+    <value>As the owner adds items, they will show up here.</value>
+  </data>
+  <data name="share.openLink" xml:space="preserve">
+    <value>Open link</value>
+  </data>
+  <data name="share.ctaTitle" xml:space="preserve">
+    <value>Open this collection in Somine</value>
+  </data>
+  <data name="share.ctaBody" xml:space="preserve">
+    <value>Save everything you love in one place. Whatever the platform, Somine brings it all together.</value>
+  </data>
+  <data name="share.reportLink" xml:space="preserve">
+    <value>Report this content</value>
+  </data>
+  <data name="share.reportNote" xml:space="preserve">
+    <value>We review reports of objectionable content within 24 hours.</value>
+  </data>
+  <data name="share.reportDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="share.reportMailSubject" xml:space="preserve">
+    <value>Content report — Somine</value>
+  </data>
+  <data name="share.reportMailBodyFormat" xml:space="preserve">
+    <value>Reported page: {0}
+
+What is the problem?
+</value>
+  </data>
+  <data name="share.ogTitleFormat" xml:space="preserve">
+    <value>{0} — Somine</value>
+  </data>
+  <data name="share.ogDescriptionWithCountFormat" xml:space="preserve">
+    <value>A Somine collection with {0} items.</value>
+  </data>
+  <data name="share.ogDescriptionEmpty" xml:space="preserve">
+    <value>A collection shared on Somine.</value>
+  </data>
+  <data name="share.ogDescriptionNotFound" xml:space="preserve">
+    <value>Save everything you love in one place with Somine.</value>
+  </data>
+  <data name="support.title" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="support.description" xml:space="preserve">
+    <value>Frequently asked questions about the Somine app, and how to reach us for support.</value>
+  </data>
+  <data name="support.eyebrow" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="support.heading" xml:space="preserve">
+    <value>How can we help?</value>
+  </data>
+  <data name="support.subheading" xml:space="preserve">
+    <value>Ask us anything about Somine.</value>
+  </data>
+  <data name="support.emailLabel" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="support.responseTimeLabel" xml:space="preserve">
+    <value>Response time</value>
+  </data>
+  <data name="support.responseTimeValue" xml:space="preserve">
+    <value>Usually within 24 hours</value>
+  </data>
+  <data name="support.reportHeading" xml:space="preserve">
+    <value>Reporting content</value>
+  </data>
+  <data name="support.reportSubtitle" xml:space="preserve">
+    <value>If you come across objectionable or upsetting content, tell us.</value>
+  </data>
+  <data name="support.faqHeading" xml:space="preserve">
+    <value>Frequently Asked Questions</value>
+  </data>
+  <data name="support.faq1Q" xml:space="preserve">
+    <value>How does Somine work?</value>
+  </data>
+  <data name="support.faq1A" xml:space="preserve">
+    <value>Somine lets you gather everything you like on Instagram, YouTube, Pinterest and other platforms into one place. Just tap the share button in any app and choose Somine. Nothing is copied: the content stays on its original platform and Somine keeps the link to it.</value>
+  </data>
+  <data name="support.faq2Q" xml:space="preserve">
+    <value>How do I create a collection?</value>
+  </data>
+  <data name="support.faq2A" xml:space="preserve">
+    <value>Open the Collections tab and tap the + button in the top right. You can give each collection its own name and icon.</value>
+  </data>
+  <data name="support.faq3Q" xml:space="preserve">
+    <value>What do I get on the free plan?</value>
+  </data>
+  <data name="support.faq3A" xml:space="preserve">
+    <value>The free plan gives you 10 collections, 500 items in total and 3 active reminders. Cloud sync, search, the home-screen widget, the weekly digest notification, the Air theme and data export are all free.</value>
+  </data>
+  <data name="support.faq4Q" xml:space="preserve">
+    <value>What changes with Premium?</value>
+  </data>
+  <data name="support.faq4A" xml:space="preserve">
+    <value>Premium removes the limits on collections and items, so you can add as much as you like. It also unlocks the Hidden Vault (Face ID/Touch ID), collection sharing, the Midnight and Vibe themes, and 5 custom home-screen app icons.</value>
+  </data>
+  <data name="support.faq5Q" xml:space="preserve">
+    <value>How does the Hidden Vault work?</value>
+  </data>
+  <data name="support.faq5A" xml:space="preserve">
+    <value>The Hidden Vault is a Premium feature. It locks a collection behind Face ID or Touch ID: until you unlock it, that collection's items are not downloaded to your device and never appear in the home-screen widget or in notifications.</value>
+  </data>
+  <data name="support.faq6Q" xml:space="preserve">
+    <value>How do I share a collection with a friend?</value>
+  </data>
+  <data name="support.faq6A" xml:space="preserve">
+    <value>Collection sharing is a Premium feature. There are two ways to do it: share with a person (you enter your friend's username, and once they accept, the collection appears in their library), or create a public link. You can revoke the link at any time, and the page becomes inaccessible the moment you do.</value>
+  </data>
+  <data name="support.faq7Q" xml:space="preserve">
+    <value>How do reminders work?</value>
+  </data>
+  <data name="support.faq7A" xml:space="preserve">
+    <value>Give any saved item a date and time. When it comes due, your phone shows a notification and the reminder also appears in the in-app Notifications list. You can set repeating reminders too. On top of that, the weekly digest nudges you on Sunday evening about items you never opened — you can turn it off in Settings.</value>
+  </data>
+  <data name="support.faq8Q" xml:space="preserve">
+    <value>What should I do if I see objectionable content in a shared collection?</value>
+  </data>
+  <data name="support.faq8A" xml:space="preserve">
+    <value>Report it to us. The "Reporting content" section on this page explains where to write and what to include; we review every report within 24 hours. You can also reject a share request you did not want, and remove a share you already accepted from your library.</value>
+  </data>
+  <data name="support.faq9Q" xml:space="preserve">
+    <value>How do I delete my account?</value>
+  </data>
+  <data name="support.faq9A" xml:space="preserve">
+    <value>In the app, go to Profile &gt; Settings &gt; Delete Account to permanently erase your account and everything in it. Before you do, you can use "Export your data" on the Profile screen to download your records as JSON or CSV.</value>
+  </data>
+  <data name="support.contactHeading" xml:space="preserve">
+    <value>Contact Us</value>
+  </data>
+  <data name="support.contactIntroFormat" xml:space="preserve">
+    <value>Fill in the form and, when you press "Send Message", your mail app opens with a ready-made draft. You are just as welcome to write to {0} directly.</value>
+  </data>
+  <data name="support.formName" xml:space="preserve">
+    <value>Your name</value>
+  </data>
+  <data name="support.formNamePlaceholder" xml:space="preserve">
+    <value>Enter your name</value>
+  </data>
+  <data name="support.formEmail" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="support.formMessage" xml:space="preserve">
+    <value>Your message</value>
+  </data>
+  <data name="support.formMessagePlaceholder" xml:space="preserve">
+    <value>Write your message here...</value>
+  </data>
+  <data name="support.formSubmit" xml:space="preserve">
+    <value>Send Message</value>
+  </data>
+  <data name="support.mailSubject" xml:space="preserve">
+    <value>Somine Support</value>
+  </data>
+  <data name="support.mailFieldName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="support.mailFieldEmail" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="privacy.title" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="privacy.description" xml:space="preserve">
+    <value>Read the Somine privacy policy and learn how we handle your data.</value>
+  </data>
+  <data name="privacy.lastUpdated" xml:space="preserve">
+    <value>Last updated: 2 August 2026</value>
+  </data>
+  <data name="terms.title" xml:space="preserve">
+    <value>Terms of Use</value>
+  </data>
+  <data name="terms.description" xml:space="preserve">
+    <value>Read the terms and conditions that govern your use of the Somine app.</value>
+  </data>
+  <data name="terms.lastUpdated" xml:space="preserve">
+    <value>Last updated: 1 January 2026</value>
+  </data>
+  <data name="delete.title" xml:space="preserve">
+    <value>Delete Account</value>
+  </data>
+  <data name="delete.description" xml:space="preserve">
+    <value>Everything you need to know about deleting your Somine account.</value>
+  </data>
+  <data name="delete.eyebrow" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="delete.subheading" xml:space="preserve">
+    <value>How to permanently delete your account.</value>
+  </data>
+  <data name="delete.howHeading" xml:space="preserve">
+    <value>How Do You Delete Your Account?</value>
+  </data>
+  <data name="delete.stepsIntro" xml:space="preserve">
+    <value>Step by step:</value>
+  </data>
+  <data name="delete.step1" xml:space="preserve">
+    <value>Open the Somine app</value>
+  </data>
+  <data name="delete.step2" xml:space="preserve">
+    <value>Go to the Profile tab in the bottom bar</value>
+  </data>
+  <data name="delete.step3" xml:space="preserve">
+    <value>Tap Account Details</value>
+  </data>
+  <data name="delete.step4" xml:space="preserve">
+    <value>Tap "Delete My Account" at the bottom</value>
+  </data>
+  <data name="delete.step5" xml:space="preserve">
+    <value>Press "Delete" in the confirmation dialog</value>
+  </data>
+  <data name="delete.removedHeading" xml:space="preserve">
+    <value>What Gets Removed?</value>
+  </data>
+  <data name="delete.removedIntro" xml:space="preserve">
+    <value>When your account is deleted, all of the following is permanently removed:</value>
+  </data>
+  <data name="delete.tableData" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="delete.tableStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="delete.statusDeleted" xml:space="preserve">
+    <value>Permanently deleted</value>
+  </data>
+  <data name="delete.statusRemoved" xml:space="preserve">
+    <value>Removed</value>
+  </data>
+  <data name="delete.data1" xml:space="preserve">
+    <value>Everything you saved (links and notes)</value>
+  </data>
+  <data name="delete.data2" xml:space="preserve">
+    <value>The collections and categories you created</value>
+  </data>
+  <data name="delete.data3" xml:space="preserve">
+    <value>Your profile details (name, username, photo)</value>
+  </data>
+  <data name="delete.data4" xml:space="preserve">
+    <value>Your Firebase Authentication account</value>
+  </data>
+  <data name="delete.data5" xml:space="preserve">
+    <value>Google and Apple sign-in connections</value>
+  </data>
+  <data name="delete.importantHeading" xml:space="preserve">
+    <value>Important to Know</value>
+  </data>
+  <data name="delete.important1" xml:space="preserve">
+    <value>This cannot be undone.</value>
+  </data>
+  <data name="delete.important2" xml:space="preserve">
+    <value>If you have an active subscription, cancel it under Settings &gt; Apple ID &gt; Subscriptions before deleting your account. Otherwise it may keep renewing automatically.</value>
+  </data>
+  <data name="delete.important3" xml:space="preserve">
+    <value>Deletion happens immediately — there is no waiting period.</value>
+  </data>
+  <data name="delete.helpHeading" xml:space="preserve">
+    <value>Need a Hand?</value>
+  </data>
+  <data name="delete.helpBody" xml:space="preserve">
+    <value>If you have any questions about deleting your account, or need help along the way, do get in touch.</value>
+  </data>
+  <data name="delete.mailSubject" xml:space="preserve">
+    <value>Account Deletion Request</value>
+  </data>
+  <data name="delete.goSupport" xml:space="preserve">
+    <value>Go to Support</value>
+  </data>
+</root>

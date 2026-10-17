@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 
 namespace SomineWeb.Pages;
 
@@ -10,13 +11,18 @@ public class ShareModel : PageModel
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public ShareModel(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public ShareModel(
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration,
+        IStringLocalizer<SharedResource> localizer)
     {
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
+        _localizer = localizer;
     }
 
     public bool Found { get; private set; }
@@ -28,15 +34,17 @@ public class ShareModel : PageModel
     private const string FallbackOgImage = "https://somineapp.com/images/logo-gradient.png";
 
     // 404 (Found=false) durumunda koleksiyon bilgisi sızdırmayan nötr metinler döner.
+    // Metinler aktif kültürden gelir; sayfa hangi dilde render ediliyorsa OG etiketleri de
+    // o dildedir. Kazıyıcılar için dil OgScraperCultureProvider ile tr'ye sabitlenir.
     public string OgTitle => Found && Share != null
-        ? $"{Share.CategoryName} — Somine"
+        ? _localizer["share.ogTitleFormat", Share.CategoryName].Value
         : "Somine";
 
     public string OgDescription => Found && Share != null
         ? (Share.Items.Count > 0
-            ? $"{Share.Items.Count} içerik içeren bir Somine koleksiyonu."
-            : "Somine'de paylaşılan bir koleksiyon.")
-        : "Beğendiğin içerikleri Somine ile tek bir yerde topla.";
+            ? _localizer["share.ogDescriptionWithCountFormat", Share.Items.Count].Value
+            : _localizer["share.ogDescriptionEmpty"].Value)
+        : _localizer["share.ogDescriptionNotFound"].Value;
 
     // İlk görseli olan item'ın OG görseli (mutlak http/https URL); yoksa landing OG görseli.
     public string OgImage

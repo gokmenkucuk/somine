@@ -114,9 +114,18 @@ public class SharesController : ControllerBase
             Id = Guid.NewGuid(),
             UserId = toUser.Id,
             Type = NotificationTypes.ShareRequest,
+            // Title/Message Türkçe kalıyor: bu sürümü tanımayan istemciler onları
+            // olduğu gibi gösteriyor. Yeni istemciler metni aşağıdaki yapısal
+            // alanlardan kendi dilinde kuruyor.
             Title = "Yeni Paylaşım İsteği",
             Message = $"{fromUser.DisplayName ?? fromUser.Email} \"{category.Name}\" koleksiyonunu sizinle paylaşmak istiyor.",
-            Data = System.Text.Json.JsonDocument.Parse($"{{\"shareId\": \"{share.Id}\", \"categoryId\": \"{category.Id}\"}}"),
+            Data = System.Text.Json.JsonSerializer.SerializeToDocument(new
+            {
+                shareId = share.Id,
+                categoryId = category.Id,
+                fromUserName = fromUser.DisplayName ?? fromUser.Email,
+                categoryName = category.Name
+            }),
             IsRead = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -208,6 +217,12 @@ public class SharesController : ControllerBase
             Type = NotificationTypes.ShareAccepted,
             Title = "Paylaşım Kabul Edildi",
             Message = $"Paylaşım isteğiniz kabul edildi: {share.CategoryName}",
+            Data = System.Text.Json.JsonSerializer.SerializeToDocument(new
+            {
+                shareId = share.Id,
+                categoryId = share.CategoryId,
+                categoryName = share.CategoryName
+            }),
             IsRead = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -237,6 +252,12 @@ public class SharesController : ControllerBase
             Type = NotificationTypes.ShareRejected,
             Title = "Paylaşım Reddedildi",
             Message = $"Paylaşım isteğiniz reddedildi: {share.CategoryName}",
+            Data = System.Text.Json.JsonSerializer.SerializeToDocument(new
+            {
+                shareId = share.Id,
+                categoryId = share.CategoryId,
+                categoryName = share.CategoryName
+            }),
             IsRead = false,
             CreatedAt = DateTime.UtcNow
         };

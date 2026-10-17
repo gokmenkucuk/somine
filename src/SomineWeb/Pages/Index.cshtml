@@ -3,7 +3,7 @@
 @{
     Layout = "_LandingLayout";
     ViewData["TransparentNav"] = true;
-    ViewData["Description"] = "Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.";
+    ViewData["Description"] = L["index.description"].Value;
 
     var lucide = new Dictionary<string, string>
     {
@@ -25,21 +25,23 @@
 
     var appStore = "https://apps.apple.com";
 
+    // NOT: 4. ve 6. maddenin metni düzeltildi — Gizli Kasa ve koleksiyon paylaşımı Premium'a
+    // özel, temaların hepsi ücretsiz değil (bkz. subscription_service.dart / appearance_screen.dart).
     var features = new[]
     {
-        new { Icon = "play", Title = "Her Platformdan İçerik", Desc = "Instagram, YouTube, Pinterest ve daha fazlası — beğendiğin içerikleri hangi platformda olursa olsun koleksiyonuna ekle.", Accent = "#6FBFAC" },
-        new { Icon = "folder-open", Title = "Akıllı Kategoriler", Desc = "Beğendiğin içerikleri düzenli ve bulunması kolay hale getir. İstediğin kadar kategori oluştur, istediğin gibi düzenle.", Accent = "#95C5C1" },
-        new { Icon = "sticky-note", Title = "Kişisel Notlar", Desc = "Her içeriğe kendi notunu ekle. Neden beğendiğini, ne yapmak istediğini kaybet.", Accent = "#B8DDD9" },
-        new { Icon = "shield-check", Title = "Gizli Kasa", Desc = "Sadece senin görmeni istediğin içerikler için. Face ID ile korunan özel koleksiyonlar. Tamamen ücretsiz.", Accent = "#688E8B" },
-        new { Icon = "share-2", Title = "Kolay Paylaşım", Desc = "Kullanıcı adı veya e-posta ile arkadaşını bul ve koleksiyonunu gönder. Kabul ettiği anda içerikler onun kütüphanesinde.", Accent = "#6FBFAC" },
-        new { Icon = "palette", Title = "Premium Temalar", Desc = "Air, Midnight, Vibe — tüm temalar ücretsiz. Ana ekran uygulama ikonu ve özel koleksiyon ikonları Premium ile gelir.", Accent = "#95C5C1" },
+        new { Icon = "play", Title = L["index.feature1Title"].Value, Desc = L["index.feature1Desc"].Value, Accent = "#6FBFAC" },
+        new { Icon = "folder-open", Title = L["index.feature2Title"].Value, Desc = L["index.feature2Desc"].Value, Accent = "#95C5C1" },
+        new { Icon = "sticky-note", Title = L["index.feature3Title"].Value, Desc = L["index.feature3Desc"].Value, Accent = "#B8DDD9" },
+        new { Icon = "shield-check", Title = L["index.feature4Title"].Value, Desc = L["index.feature4Desc"].Value, Accent = "#688E8B" },
+        new { Icon = "share-2", Title = L["index.feature5Title"].Value, Desc = L["index.feature5Desc"].Value, Accent = "#6FBFAC" },
+        new { Icon = "palette", Title = L["index.feature6Title"].Value, Desc = L["index.feature6Desc"].Value, Accent = "#95C5C1" },
     };
 
     var steps = new[]
     {
-        new { Icon = "share-2", Title = "Platformtan Paylaş", Desc = "Desteklediğimiz platformlardan share (paylaş) seçimi yap.", Num = "01" },
-        new { Icon = "mouse-pointer-click", Title = "Somine'ye Tıkla", Desc = "Çıkan uygulama listesinden Somine logosuna tıkla.", Num = "02" },
-        new { Icon = "bookmark-plus", Title = "Koleksiyona Ekle", Desc = "\"Koleksiyona Ekle\" ile içeriğini kaydet — İşte bu kadar kolay!", Num = "03" },
+        new { Icon = "share-2", Title = L["index.step1Title"].Value, Desc = L["index.step1Desc"].Value, Num = "01" },
+        new { Icon = "mouse-pointer-click", Title = L["index.step2Title"].Value, Desc = L["index.step2Desc"].Value, Num = "02" },
+        new { Icon = "bookmark-plus", Title = L["index.step3Title"].Value, Desc = L["index.step3Desc"].Value, Num = "03" },
     };
 
     var carousel = new[]
@@ -95,25 +97,39 @@
         new { Name = "Medium", ViewBox = "0 0 24 24", Path = "M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" },
         new { Name = "Behance", ViewBox = "0 0 24 24", Path = "M22 7h-7V5h7zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14H15.97c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zm-9.574 6.988H0V5.021h6.953c5.476.081 5.58 5.444 2.72 6.906 3.461 1.26 3.577 8.061-3.207 8.061zM3 11h3.584c2.508 0 2.906-3-.312-3H3v3zm3.391 3H3v3.016h3.341c3.055 0 2.868-3.016.05-3.016z" },
         new { Name = "Dribbble", ViewBox = "0 0 24 24", Path = "M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm10.12-10.358c-.35-.11-3.17-.953-6.384-.438 1.34 3.684 1.887 6.684 1.992 7.308 2.3-1.555 3.936-4.02 4.395-6.87zm-6.115 7.808c-.153-.9-.75-4.032-2.19-7.77l-.066.02c-5.79 2.015-7.86 6.025-8.04 6.4 1.73 1.358 3.92 2.166 6.29 2.166 1.42 0 2.77-.29 4-.81zm-11.62-2.58c.232-.4 3.045-5.055 8.332-6.765.135-.045.27-.084.405-.12-.26-.585-.54-1.167-.832-1.74C7.17 11.775 2.206 11.71 1.756 11.7l-.004.312c0 2.633.998 5.037 2.634 6.855zm-2.42-8.955c.46.008 4.683.026 9.477-1.248-1.698-3.018-3.53-5.558-3.8-5.928-2.868 1.35-5.01 3.99-5.676 7.17zM9.6 2.052c.282.38 2.145 2.914 3.822 6 3.645-1.365 5.19-3.44 5.373-3.702C16.86 2.61 14.545 1.62 12 1.62c-.8 0-1.6.1-2.4.285v.15zm10.335 3.483c-.218.29-1.91 2.493-5.724 4.04.24.49.47.985.68 1.486.08.18.15.36.22.53 3.41-.43 6.8.26 7.14.33-.02-2.42-.88-4.64-2.31-6.38z" },
-        new { Name = "Web Links", ViewBox = "0 0 24 24", Path = "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" },
+        new { Name = L["index.platformWebLinks"].Value, ViewBox = "0 0 24 24", Path = "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" },
     };
 
+    // Bu tablo SubscriptionLimits (API) ve subscription_service.dart (mobil) ile birebir
+    // tutulmalı. Önceki hâlinde üç yanlış vardı: "koleksiyon başına 5 içerik" (gerçekte
+    // TOPLAM 500), Gizli Kasa ücretsiz görünüyordu (Premium) ve hatırlatıcı limiti hiç yoktu.
     var starter = new[]
     {
-        new { Label = "10 Koleksiyon", Ok = true },
-        new { Label = "Koleksiyon başına 5 içerik", Ok = true },
-        new { Label = "Gizli Kasa (Face ID / Touch ID)", Ok = true },
-        new { Label = "Bulut senkronizasyonu", Ok = true },
-        new { Label = "Koleksiyon paylaşımı", Ok = false },
-        new { Label = "Akıllı link önizleme", Ok = true },
-        new { Label = "Air teması", Ok = true },
-        new { Label = "15+ platform desteği", Ok = true },
-        new { Label = "Özel uygulama ikonları", Ok = false },
+        new { Label = L["plan.collections10"].Value, Ok = true },
+        new { Label = L["plan.items500"].Value, Ok = true },
+        new { Label = L["plan.reminders3"].Value, Ok = true },
+        new { Label = L["plan.cloudSync"].Value, Ok = true },
+        new { Label = L["plan.smartPreview"].Value, Ok = true },
+        new { Label = L["plan.themeAir"].Value, Ok = true },
+        new { Label = L["plan.platforms"].Value, Ok = true },
+        new { Label = L["plan.export"].Value, Ok = true },
+        new { Label = L["plan.vault"].Value, Ok = false },
+        new { Label = L["plan.collectionSharing"].Value, Ok = false },
+        new { Label = L["plan.customIcons"].Value, Ok = false },
     };
     var premium = new[]
     {
-        "Sınırsız koleksiyon","Sınırsız içerik","Gizli Kasa (Face ID / Touch ID)","Bulut senkronizasyonu",
-        "Koleksiyon paylaşımı","Akıllı link önizleme","Air, Midnight, Vibe temaları","15+ platform desteği","5 Özel uygulama ikonu",
+        L["plan.unlimitedCollections"].Value,
+        L["plan.unlimitedItems"].Value,
+        L["plan.unlimitedReminders"].Value,
+        L["plan.vault"].Value,
+        L["plan.collectionSharing"].Value,
+        L["plan.cloudSync"].Value,
+        L["plan.smartPreview"].Value,
+        L["plan.themesAll"].Value,
+        L["plan.platforms"].Value,
+        L["plan.export"].Value,
+        L["plan.customIcons5"].Value,
     };
 
     var appStoreSvg = new Microsoft.AspNetCore.Html.HtmlString("<path d=\"M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z\" />");
@@ -127,7 +143,8 @@
         "name": "Somine",
         "operatingSystem": "iOS",
         "applicationCategory": "ProductivityApplication",
-        "description": "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize et.",
+        "description": "@L["index.jsonLdDescription"]",
+        "inLanguage": "@SiteLanguages.Current",
         "url": "https://somineapp.com",
         "offers": { "@@type": "Offer", "price": "0", "priceCurrency": "TRY" }
     }
@@ -153,29 +170,29 @@
             <div class="grid lg:grid-cols-2 gap-4 lg:gap-12 items-center">
                 <div class="text-center lg:text-left order-2 lg:order-1">
                     <h1 class="hero-fade text-4xl sm:text-6xl lg:text-7xl font-semibold text-white leading-[1.08] mb-3 sm:mb-8 tracking-tight" style="--hero-delay: 0.3s">
-                        Beğendiklerini
-                        <span class="bg-gradient-to-r from-white to-[#D4EDE9] bg-clip-text text-transparent">Tek Bir Yerde Topla</span>
+                        @L["index.heroTitleLine1"]
+                        <span class="bg-gradient-to-r from-white to-[#D4EDE9] bg-clip-text text-transparent">@L["index.heroTitleLine2"]</span>
                     </h1>
                     <p class="hero-fade text-sm sm:text-lg md:text-xl text-white max-w-lg mx-auto lg:mx-0 mb-6 sm:mb-10 leading-relaxed font-light" style="--hero-delay: 0.5s">
-                        Instagram'dan, Pinterest'ten, YouTube'dan — beğendiğin her şey artık bir arada.
+                        @L["index.heroSubtitle"]
                     </p>
                     <div class="hero-fade flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start" style="--hero-delay: 0.7s">
                         <a href="@appStore" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] hover:scale-[1.04] hover:-translate-y-0.5 transition-all">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">@appStoreSvg</svg>
                             <span class="text-left">
-                                <span class="block text-[10px] opacity-50 leading-none font-normal">İndir</span>
+                                <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownload"]</span>
                                 <span class="block font-semibold leading-tight text-sm">App Store</span>
                             </span>
                         </a>
                         <a href="/#ozellikler" class="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.15] text-white/80 hover:bg-white/[0.15] hover:text-white hover:border-white/[0.25] backdrop-blur-sm font-medium px-6 py-2.5 text-sm transition-colors">
-                            Özellikleri Keşfet
+                            @L["index.exploreFeatures"]
                             @Icon("arrow-right", "w-4 h-4")
                         </a>
                     </div>
                     <a href="@appStore" target="_blank" rel="noopener noreferrer" class="hero-fade sm:hidden inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] mb-6" style="--hero-delay: 0.8s">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">@appStoreSvg</svg>
                         <span class="text-left">
-                            <span class="block text-[10px] opacity-50 leading-none font-normal">İndir</span>
+                            <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownload"]</span>
                             <span class="block font-semibold leading-tight text-sm">App Store</span>
                         </span>
                     </a>
@@ -202,7 +219,7 @@
                         <div class="relative animate-float">
                             <div class="w-40 sm:w-52 md:w-72 mx-auto">
                                 <div class="phone-frame-apple">
-                                    <img src="/images/mockups/vibe/home.png" alt="Somine Ana Sayfa" width="300" height="650" class="w-full" />
+                                    <img src="@Assets.Resolve("/images/mockups/vibe/home.png")" alt="@L["index.heroPhoneAlt"]" width="300" height="650" class="w-full" />
                                 </div>
                             </div>
                         </div>
@@ -213,7 +230,7 @@
 
         <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 hidden sm:block">
             <div class="flex flex-col items-center gap-2">
-                <span class="text-[11px] text-white/30 uppercase tracking-widest">Keşfet</span>
+                <span class="text-[11px] text-white/30 uppercase tracking-widest">@L["index.scrollHint"]</span>
                 <div class="w-5 h-8 rounded-full border border-white/15 flex items-start justify-center pt-1.5">
                     <div class="w-1 h-1 rounded-full bg-white/50 animate-float"></div>
                 </div>
@@ -225,9 +242,9 @@
     <section id="ozellikler" class="py-32 bg-[#E8F1EF]">
         <div class="max-w-6xl mx-auto px-6 sm:px-8">
             <div class="reveal text-center mb-20">
-                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">Özellikler</p>
-                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">Her Şeyi Tek Bir Yerde Topla</h2>
-                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">Sadece kaydetmekle kalmaz — kategorize eder, not alır, güvende tutar ve paylaşırsın.</p>
+                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">@L["index.featuresEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">@L["index.featuresTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.featuresSubtitle"]</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 @for (var i = 0; i < features.Length; i++)
@@ -249,9 +266,9 @@
     <section id="ekranlar" class="py-32 bg-white overflow-hidden">
         <div class="max-w-6xl mx-auto px-6 sm:px-8">
             <div class="reveal text-center mb-16">
-                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">Uygulama Ekranları</p>
-                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">Basit. Güçlü. Güzel.</h2>
-                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">Beğendiğin içeriklere her zaman tek dokunuşla ulaş. Temiz, sade ve göze zevk veren bir deneyim.</p>
+                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">@L["index.screensEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">@L["index.screensTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.screensSubtitle"]</p>
             </div>
         </div>
         <div class="reveal relative py-4">
@@ -263,7 +280,7 @@
                     {
                         <div class="swiper-slide">
                             <div class="carousel-card relative rounded-[1.5rem] overflow-hidden">
-                                <img src="@carousel[i]" alt="Somine ekran @(i + 1)" width="220" height="476" class="w-full h-auto" loading="lazy" />
+                                <img src="@Assets.Resolve(carousel[i])" alt="@L["index.screenAltFormat", i + 1]" width="220" height="476" class="w-full h-auto" loading="lazy" />
                             </div>
                         </div>
                     }
@@ -276,9 +293,9 @@
     <section id="nasil-calisir" class="py-32 bg-[#E8F1EF]">
         <div class="max-w-6xl mx-auto px-6 sm:px-8">
             <div class="reveal text-center mb-20">
-                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">Nasıl Çalışır</p>
-                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">Tek Tıkla Koleksiyonuna Ekle</h2>
-                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">Herhangi bir uygulamadan içeriklerini Somine koleksiyonlarına kaydetmek sadece 3 adım. İçerik kopyalanmaz — orijinal haliyle platforma bağlı kalır.</p>
+                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">@L["index.howEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">@L["index.howTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.howSubtitle"]</p>
             </div>
             <div class="relative">
                 <div class="hidden md:block absolute top-[4.5rem] left-[22%] w-[23%] h-[2px] overflow-hidden">
@@ -328,9 +345,9 @@
         </div>
         <div class="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
             <div class="reveal text-center mb-20">
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">Platform Desteği</p>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">Her Yerden <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">Kaydet</span></h2>
-                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">Instagram, YouTube, Pinterest ve daha fazlası — 15+ popüler platformun yanı sıra tüm web linklerini tek bir yerde topla.</p>
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">@L["index.platformsEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">@L["index.platformsTitlePart1"] <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">@L["index.platformsTitleHighlight"]</span></h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.platformsSubtitle"]</p>
             </div>
         </div>
         <div class="max-w-4xl mx-auto px-6 sm:px-8 relative z-10">
@@ -353,17 +370,17 @@
     <section id="temalar" class="py-32 bg-[#FAFAFA] overflow-hidden">
         <div class="max-w-6xl mx-auto px-6 sm:px-8">
             <div class="reveal text-center mb-20">
-                <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Temalar</p>
-                <h2 class="text-4xl sm:text-5xl font-semibold tracking-tight mb-4 animate-theme-gradient">Kendi Tarzını Yansıt</h2>
-                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">Air ücretsiz, Midnight ve Vibe ise Premium ile açılır. Hangisi sana uygunsa onu seç, uygulamanı istediğin gibi hissettir.</p>
+                <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">@L["index.themesEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold tracking-tight mb-4 animate-theme-gradient">@L["index.themesTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.themesSubtitle"]</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 @{
                     var themes = new[]
                     {
-                        new { Grad = "from-[#688E8B] to-[#E8F1EF]", Name = "Air", Tag = "Minimalist & Ferah", FootBg = "bg-[#E8F1EF]", FootBorder = "border-[#D4E8E4]", TitleCol = "text-[#2D312F]", SubCol = "text-[#636E72]", FootTitle = "Air Teması", FootSub = "Açık renkler, sade tasarım", Dark = false },
-                        new { Grad = "from-[#2DD4BF] to-[#1E1E1E]", Name = "Midnight", Tag = "Karanlık & Şık", FootBg = "bg-[#1E1E1E]", FootBorder = "border-white/5", TitleCol = "text-[#F1F5F9]", SubCol = "text-[#94A3B8]", FootTitle = "Midnight Teması", FootSub = "Koyu tonlar, göz dostu", Dark = true },
-                        new { Grad = "from-[#E86B8A] to-[#1A2A3A]", Name = "Vibe", Tag = "Enerjik & Cesur", FootBg = "bg-[#1A2A3A]", FootBorder = "border-[#E86B8A]/10", TitleCol = "text-[#F5F5F5]", SubCol = "text-[#B0C0C8]", FootTitle = "Vibe Teması", FootSub = "Pembe-mavi gradient, enerjik", Dark = true },
+                        new { Grad = "from-[#688E8B] to-[#E8F1EF]", Name = "Air", Tag = L["index.themeAirTag"].Value, FootBg = "bg-[#E8F1EF]", FootBorder = "border-[#D4E8E4]", TitleCol = "text-[#2D312F]", SubCol = "text-[#636E72]", FootTitle = L["index.themeAirFootTitle"].Value, FootSub = L["index.themeAirFootSub"].Value, Dark = false },
+                        new { Grad = "from-[#2DD4BF] to-[#1E1E1E]", Name = "Midnight", Tag = L["index.themeMidnightTag"].Value, FootBg = "bg-[#1E1E1E]", FootBorder = "border-white/5", TitleCol = "text-[#F1F5F9]", SubCol = "text-[#94A3B8]", FootTitle = L["index.themeMidnightFootTitle"].Value, FootSub = L["index.themeMidnightFootSub"].Value, Dark = true },
+                        new { Grad = "from-[#E86B8A] to-[#1A2A3A]", Name = "Vibe", Tag = L["index.themeVibeTag"].Value, FootBg = "bg-[#1A2A3A]", FootBorder = "border-[#E86B8A]/10", TitleCol = "text-[#F5F5F5]", SubCol = "text-[#B0C0C8]", FootTitle = L["index.themeVibeFootTitle"].Value, FootSub = L["index.themeVibeFootSub"].Value, Dark = true },
                     };
                 }
                 @for (var t = 0; t < themes.Length; t++)
@@ -410,7 +427,7 @@
                 }
             </div>
             <div class="reveal text-center mt-14">
-                <p class="text-sm text-gray-400">Premium'a geçerek tüm temalara ve özel uygulama ikonlarına eriş</p>
+                <p class="text-sm text-gray-400">@L["index.themesFootnote"]</p>
             </div>
         </div>
     </section>
@@ -422,16 +439,16 @@
         </div>
         <div class="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
             <div class="reveal text-center mb-20">
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">Premium</p>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">Sınırları <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">Kaldır</span></h2>
-                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">Sınırları kaldır, koleksiyonlarını ve içeriklerini sınırsız büyüt. Uygulamanı tamamen kendine göre özelleştir.</p>
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">@L["index.premiumEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">@L["index.premiumTitlePart1"] <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">@L["index.premiumTitleHighlight"]</span></h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.premiumSubtitle"]</p>
             </div>
             <div class="max-w-4xl mx-auto">
                 <div class="grid sm:grid-cols-2 gap-6">
                     <div class="reveal bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7">
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-2">Ücretsiz</p>
-                        <h3 class="text-2xl font-semibold text-white mb-1">Starter</h3>
-                        <p class="text-sm text-gray-500 mb-6">Temel ihtiyaçlar için tamamen ücretsiz</p>
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-2">@L["index.planFreeLabel"]</p>
+                        <h3 class="text-2xl font-semibold text-white mb-1">@L["index.planStarterName"]</h3>
+                        <p class="text-sm text-gray-500 mb-6">@L["index.planStarterDesc"]</p>
                         <div class="space-y-3">
                             @foreach (var f in starter)
                             {
@@ -451,9 +468,9 @@
                     </div>
                     <div class="reveal relative bg-gradient-to-b from-[#95C5C1]/10 to-white/[0.02] border border-[#95C5C1]/25 rounded-2xl p-7" style="--reveal-delay: 100ms">
                         <div class="absolute top-4 right-4 text-[11px] font-medium bg-[#95C5C1]/15 text-[#95C5C1] px-3 py-1 rounded-full border border-[#95C5C1]/20">👑 Premium</div>
-                        <p class="text-xs font-medium text-[#95C5C1]/60 uppercase tracking-widest mb-2">Ücretli</p>
-                        <h3 class="text-2xl font-semibold text-white mb-1">Premium</h3>
-                        <p class="text-sm text-gray-500 mb-6">Sınırsız özgürlük, tam özelleştirme</p>
+                        <p class="text-xs font-medium text-[#95C5C1]/60 uppercase tracking-widest mb-2">@L["index.planPaidLabel"]</p>
+                        <h3 class="text-2xl font-semibold text-white mb-1">@L["index.planPremiumName"]</h3>
+                        <p class="text-sm text-gray-500 mb-6">@L["index.planPremiumDesc"]</p>
                         <div class="space-y-3">
                             @foreach (var f in premium)
                             {
@@ -476,13 +493,13 @@
         </div>
         <div class="max-w-2xl mx-auto px-6 sm:px-8 text-center relative z-10">
             <div class="reveal">
-                <p class="text-sm font-medium text-[#95C5C1]/70 uppercase tracking-widest mb-4">Ücretsiz başla</p>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 text-white">Beğendiklerini <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">tek bir yerde topla</span></h2>
-                <p class="text-white/40 text-lg max-w-md mx-auto mb-10 leading-relaxed">Artık her şeyin bir yeri var.</p>
+                <p class="text-sm font-medium text-[#95C5C1]/70 uppercase tracking-widest mb-4">@L["index.ctaEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 text-white">@L["index.ctaTitlePart1"] <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">@L["index.ctaTitleHighlight"]</span></h2>
+                <p class="text-white/40 text-lg max-w-md mx-auto mb-10 leading-relaxed">@L["index.ctaSubtitle"]</p>
                 <a href="@appStore" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 bg-white text-[#1a3b38] text-sm font-medium px-7 py-3.5 rounded-full shadow-[0_0_50px_rgba(149,197,193,0.2)] hover:shadow-[0_0_70px_rgba(149,197,193,0.35)] hover:scale-[1.04] hover:-translate-y-0.5 transition-all">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">@appStoreSvg</svg>
                     <span class="text-left">
-                        <span class="block text-[10px] opacity-50 leading-none font-normal">Ücretsiz İndir</span>
+                        <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownloadFree"]</span>
                         <span class="block font-semibold leading-tight text-[13px]">App Store</span>
                     </span>
                 </a>
