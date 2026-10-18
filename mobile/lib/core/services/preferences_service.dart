@@ -125,7 +125,7 @@ class PreferencesService {
 
   Future<String> getTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyThemeMode) ?? 'air';
+    return prefs.getString(_keyThemeMode) ?? 'system';
   }
 
   Future<void> setTheme(String theme) async {

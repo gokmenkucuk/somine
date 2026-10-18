@@ -1305,6 +1305,8 @@
   "@appearanceThemeSectionHeader": {
     "description": "Section header for theme options on the appearance screen."
   },
+  "appearanceThemeSystemTitle": "Otomatik",
+  "appearanceThemeSystemSubtitle": "Telefonun açık ve karanlık moduna uyar",
   "appearanceThemeAirSubtitle": "Varsayılan, aydınlık ve ferah görünüm.",
   "@appearanceThemeAirSubtitle": {
     "description": "Subtitle describing the Air theme option."

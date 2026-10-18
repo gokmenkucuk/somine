@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/services/preferences_service.dart';
 
 enum AppThemeEnum {
+  /// Telefonun açık/karanlık ayarını izler: açıkta Air, karanlıkta Midnight.
+  /// Herkese açık (ücretsiz); elle sabit Midnight ve Vibe Premium'dur.
+  system,
   air,
   midnight,
   vibe
@@ -13,7 +16,7 @@ final themeProvider = StateNotifierProvider<ThemeNotifier, AppThemeEnum>((ref) {
 });
 
 class ThemeNotifier extends StateNotifier<AppThemeEnum> {
-  ThemeNotifier() : super(AppThemeEnum.air) {
+  ThemeNotifier() : super(AppThemeEnum.system) {
     _loadTheme();
   }
 
@@ -33,7 +36,8 @@ class ThemeNotifier extends StateNotifier<AppThemeEnum> {
     switch (val) {
       case 'midnight': return AppThemeEnum.midnight;
       case 'vibe': return AppThemeEnum.vibe;
-      default: return AppThemeEnum.air;
+      case 'air': return AppThemeEnum.air;
+      default: return AppThemeEnum.system;
     }
   }
 
@@ -42,6 +46,7 @@ class ThemeNotifier extends StateNotifier<AppThemeEnum> {
       case AppThemeEnum.midnight: return 'midnight';
       case AppThemeEnum.vibe: return 'vibe';
       case AppThemeEnum.air: return 'air';
+      case AppThemeEnum.system: return 'system';
     }
   }
 }

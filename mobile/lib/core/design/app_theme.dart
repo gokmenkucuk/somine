@@ -16,6 +16,7 @@ class AppTheme {
       case AppThemeEnum.vibe:
         return _vibeTheme;
       case AppThemeEnum.air:
+      case AppThemeEnum.system:
         return _airTheme;
     }
   }

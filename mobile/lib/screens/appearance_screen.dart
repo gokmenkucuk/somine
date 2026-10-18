@@ -45,7 +45,26 @@ class AppearanceScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             
-            // Air (Default)
+            // Otomatik (varsayılan, ücretsiz): telefonun açık/karanlık modunu izler.
+            _buildThemeOption(
+              context: context,
+              ref: ref,
+              theme: AppThemeEnum.system,
+              currentTheme: currentTheme,
+              title: l10n.appearanceThemeSystemTitle,
+              subtitle: l10n.appearanceThemeSystemSubtitle,
+              icon: PhosphorIconsRegular.circleHalf,
+              gradient: const LinearGradient(
+                // Açıktan griye: Air ile Midnight arasını ima eder, yazı her yerde okunur.
+                colors: [Color(0xFFE8F1EF), Color(0xFFB9C3C6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Air
             _buildThemeOption(
               context: context,
               ref: ref,

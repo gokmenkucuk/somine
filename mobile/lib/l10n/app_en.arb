@@ -285,6 +285,8 @@
   "reminderIndicatorTomorrow": "Tomorrow, {time}",
   "appearanceTitle": "Appearance",
   "appearanceThemeSectionHeader": "THEME OPTIONS",
+  "appearanceThemeSystemTitle": "Automatic",
+  "appearanceThemeSystemSubtitle": "Follows your iPhone's light and dark mode",
   "appearanceThemeAirSubtitle": "Default, bright and airy look.",
   "appearanceThemeMidnightSubtitle": "Dark mode with neon accents.",
   "appearanceThemeVibeSubtitle": "Dark background with a red glow.",
