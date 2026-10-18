@@ -8,7 +8,7 @@ import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/core/services/analytics_service.dart';
 import 'package:somine_app/core/services/subscription_service.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:somine_app/core/utils/open_in_app_link.dart';
 
 class PaywallScreen extends ConsumerStatefulWidget {
   /// Paywall'ı açan yüzey (analitik `paywall_view` source parametresi).
@@ -243,12 +243,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  Future<void> _openUrl(String url) => openInAppLink(url);
 
   /// Yıllık planın, aylık planın 12 katına göre gerçek indirim yüzdesi
   /// (aşağı yuvarlanır). Hesaplanamıyorsa veya ≤0 ise null — rozet gizlenir.

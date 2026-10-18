@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/services.dart'; // SystemUiOverlayStyle için gerekli
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
@@ -15,6 +14,7 @@ import 'package:somine_app/screens/onboarding_name_screen.dart';
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/utils/auth_failure_l10n.dart';
+import 'package:somine_app/core/utils/open_in_app_link.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final bool forceLogin;
@@ -42,12 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Future<void> _openLegal(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  Future<void> _openLegal(String url) => openInAppLink(url);
 
   Future<void> _signInWithGoogle() async {
     if (_isLoading) return; // Prevent double tap

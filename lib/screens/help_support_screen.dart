@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:somine_app/core/utils/open_in_app_link.dart';
 
 class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
@@ -266,12 +267,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                       child: _buildLinkButton(
                         context,
                         l10n.legalPrivacyPolicy,
-                        () async {
-                          final uri = Uri.parse('https://www.somineapp.com/privacy');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
-                          }
-                        },
+                        () => openInAppLink('https://www.somineapp.com/privacy'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -279,12 +275,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                       child: _buildLinkButton(
                         context,
                         l10n.legalTermsOfService,
-                        () async {
-                          final uri = Uri.parse('https://www.somineapp.com/terms');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
-                          }
-                        },
+                        () => openInAppLink('https://www.somineapp.com/terms'),
                       ),
                     ),
                   ],
