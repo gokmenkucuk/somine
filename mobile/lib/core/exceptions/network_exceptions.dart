@@ -76,4 +76,5 @@ abstract final class AppErrorCodes {
   static const shareUserNotFound = 'share.userNotFound';
   static const shareAlreadyShared = 'share.alreadyShared';
   static const shareCreateFailed = 'share.createFailed';
+  static const shareMonthlyLimit = 'share.monthlyLimit';
 }

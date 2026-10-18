@@ -54,6 +54,29 @@ public class SharesController : ControllerBase
         _logger = logger;
     }
 
+    // Bu ayki paylaşım hakkı (uygulama "bu ay X hakkın kaldı" gösterir).
+    [HttpGet("quota")]
+    public async Task<ActionResult<ShareQuotaDto>> GetShareQuota()
+    {
+        var userId = HttpContext.GetUserId();
+        var isPremium = await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted);
+        return Ok(await GetQuotaAsync(userId, isPremium));
+    }
+
+    private async Task<ShareQuotaDto> GetQuotaAsync(Guid userId, bool isPremium)
+    {
+        var monthStart = SubscriptionLimits.MonthStartUtc(DateTime.UtcNow);
+        var used = await _dbContext.CollectionShares
+            .CountAsync(s => s.FromUserId == userId && s.CreatedAt >= monthStart, HttpContext.RequestAborted);
+        var limit = SubscriptionLimits.FreeMonthlyShares;
+        return new ShareQuotaDto(
+            Unlimited: isPremium,
+            Limit: limit,
+            Used: used,
+            Remaining: isPremium ? int.MaxValue : Math.Max(0, limit - used),
+            ResetsAtUtc: monthStart.AddMonths(1));
+    }
+
     [HttpPost]
     public async Task<ActionResult<ShareDto>> CreateShare([FromBody] CreateShareRequest request)
     {
@@ -61,15 +84,15 @@ public class SharesController : ControllerBase
 
         if (!await _subscriptionTierService.IsPremiumForEnforcementAsync(userId, HttpContext.RequestAborted))
         {
-            var current = await _dbContext.CollectionShares
-                .CountAsync(s => s.FromUserId == userId && s.Status != ShareStatus.Rejected);
-            if (current >= SubscriptionLimits.FreeMaxActiveShares)
+            var quota = await GetQuotaAsync(userId, isPremium: false);
+            if (quota.Remaining <= 0)
                 return StatusCode(403, new
                 {
                     error = "limit_reached",
-                    message = "Ücretsiz planda aynı anda 1 aktif paylaşımınız olabilir. Daha fazlası için Premium'a geçin.",
-                    limit = SubscriptionLimits.FreeMaxActiveShares,
-                    current
+                    message = $"Ücretsiz planda ayda {SubscriptionLimits.FreeMonthlyShares} koleksiyon paylaşabilirsin. Bu ayın hakkı doldu; sınırsız paylaşım için Premium'a geç.",
+                    limit = quota.Limit,
+                    current = quota.Used,
+                    resetsAtUtc = quota.ResetsAtUtc
                 });
         }
 

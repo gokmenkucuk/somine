@@ -52,30 +52,45 @@ public class ControllerIntegrationTests
     }
 
     [Fact]
-    public async Task CreateShare_FreeUserWithOneActiveShareReturnsLimitReached()
+    public async Task CreateShare_FreeUserGetsFiveSharesPerMonth()
     {
         using var factory = new SomineApiWebApplicationFactory();
         await factory.ResetDatabaseAsync();
 
         var sender = TestUser("share-sender");
-        var existingRecipient = TestUser("existing-recipient");
-        var newRecipient = TestUser("new-recipient");
         var category = TestCategory(sender.Id, "Shared collection");
-        var existingShare = TestShare(sender.Id, existingRecipient.Id, category.Id, ShareStatus.Pending);
+        var recipients = Enumerable.Range(0, 6).Select(i => TestUser($"recipient-{i}")).ToList();
+        // Geçen aydan kalan paylaşımlar bu ayın hakkından düşmez.
+        var lastMonth = TestShare(sender.Id, recipients[0].Id, category.Id, ShareStatus.Rejected);
+        lastMonth.CreatedAt = SubscriptionLimits.MonthStartUtc(DateTime.UtcNow).AddDays(-2);
+        // Bu ay reddedilen paylaşım da sayılır.
+        var rejectedThisMonth = TestShare(sender.Id, recipients[0].Id, category.Id, ShareStatus.Rejected);
 
         await SeedAsync(factory, db =>
         {
-            db.Users.AddRange(sender, existingRecipient, newRecipient);
+            db.Users.Add(sender);
+            db.Users.AddRange(recipients);
             db.Categories.Add(category);
-            db.CollectionShares.Add(existingShare);
+            db.CollectionShares.AddRange(lastMonth, rejectedThisMonth);
         });
 
         using var client = factory.CreateAuthenticatedClient(sender.Id, sender.Email!, sender.FirebaseUid);
 
+        var quota = await client.GetFromJsonAsync<JsonElement>("/api/shares/quota");
+        Assert.False(quota.GetProperty("unlimited").GetBoolean());
+        Assert.Equal(1, quota.GetProperty("used").GetInt32());
+        Assert.Equal(4, quota.GetProperty("remaining").GetInt32());
+
+        for (var i = 1; i <= 4; i++)
+        {
+            var ok = await client.PostAsJsonAsync("/api/shares", new { categoryId = category.Id, toUserId = recipients[i].Id });
+            Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        }
+
         var response = await client.PostAsJsonAsync("/api/shares", new
         {
             categoryId = category.Id,
-            toUserId = newRecipient.Id
+            toUserId = recipients[5].Id
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);

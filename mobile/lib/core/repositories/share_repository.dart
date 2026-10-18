@@ -102,6 +102,23 @@ class ShareRepository {
     }
   }
 
+  /// Bu ayki paylaşım hakkı (GET /api/shares/quota). Hata olursa null:
+  /// arayüz hak bilgisini göstermez ama paylaşımı engellemez.
+  Future<ShareQuota?> getShareQuota() async {
+    try {
+      final accessToken = await _requireAccessToken();
+      final response = await _apiClient.get(
+        _buildUri('/api/shares/quota'),
+        headers: _jsonHeaders(accessToken),
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      return ShareQuota.fromApi(jsonDecode(response.body) as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('⚠️ [ShareRepository] Share quota unavailable: $e');
+      return null;
+    }
+  }
+
   Future<ShareModel?> createShare({
     required String fromUserId,
     required String fromUserName,
@@ -131,6 +148,14 @@ class ShareRepository {
           'share target user not found',
           userMessage: '',
           code: AppErrorCodes.shareUserNotFound,
+        );
+      }
+      if (response.statusCode == 403 &&
+          response.body.contains('limit_reached')) {
+        throw const ValidationException(
+          'monthly share limit reached',
+          userMessage: '',
+          code: AppErrorCodes.shareMonthlyLimit,
         );
       }
       if (response.statusCode == 409) {
@@ -597,4 +622,26 @@ class ShareRepository {
       return 'İşlem başarısız oldu. Lütfen tekrar deneyin.';
     }
   }
+}
+
+/// Ücretsiz planın aylık paylaşım hakkı. Premium'da [unlimited] true.
+class ShareQuota {
+  final bool unlimited;
+  final int limit;
+  final int used;
+  final int remaining;
+
+  const ShareQuota({
+    required this.unlimited,
+    required this.limit,
+    required this.used,
+    required this.remaining,
+  });
+
+  factory ShareQuota.fromApi(Map<String, dynamic> json) => ShareQuota(
+    unlimited: json['unlimited'] == true,
+    limit: (json['limit'] as num?)?.toInt() ?? 0,
+    used: (json['used'] as num?)?.toInt() ?? 0,
+    remaining: (json['remaining'] as num?)?.toInt() ?? 0,
+  );
 }

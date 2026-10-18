@@ -45,6 +45,7 @@ class FailureMapper {
       AppErrorCodes.shareUserNotFound => l10n.shareCreateUserNotFound,
       AppErrorCodes.shareAlreadyShared => l10n.shareCreateAlreadyShared,
       AppErrorCodes.shareCreateFailed => l10n.shareCreateFailed,
+      AppErrorCodes.shareMonthlyLimit => l10n.shareMonthlyLimitReached(5),
       _ => null,
     };
   }

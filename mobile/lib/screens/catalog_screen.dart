@@ -23,6 +23,8 @@ import 'package:somine_app/widgets/custom_note_icon.dart';
 import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
+import 'package:somine_app/core/exceptions/network_exceptions.dart';
+import 'package:somine_app/core/repositories/share_repository.dart' show ShareQuota;
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
@@ -1458,18 +1460,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           return;
                         }
 
-                        if (!isPremium) {
-                          Navigator.pop(ctx);
-                          LimitReachedDialog.show(
-                            context: context,
-                            ref: ref,
-                            title: l10n.premiumFeature,
-                            message: l10n.catalogSharePremiumMessage,
-                            type: LimitType.collection,
-                          );
-                          return;
-                        }
-
+                        // Paylaşım ücretsiz planda da açık (ayda 5 istek; sınırı
+                        // sunucu uygular, dolunca gönderirken Premium önerilir).
                         Navigator.pop(ctx);
                         _showCollectionShareOptions(category);
                       },
@@ -1663,6 +1655,27 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 fontSize: 14,
                                 color: context.colors.body,
                               ),
+                            ),
+                            FutureBuilder<ShareQuota?>(
+                              future: ref.read(shareRepositoryProvider).getShareQuota(),
+                              builder: (context, snapshot) {
+                                final quota = snapshot.data;
+                                if (quota == null || quota.unlimited) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    l10n.shareQuotaRemaining(quota.remaining, quota.limit),
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 13,
+                                      color: quota.remaining > 0
+                                          ? context.colors.body
+                                          : context.colors.danger,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -2014,6 +2027,20 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       );
                     }
                   } catch (e) {
+                    if (e is AppException &&
+                        e.code == AppErrorCodes.shareMonthlyLimit) {
+                      if (dialogContext.mounted) Navigator.pop(dialogContext);
+                      if (mounted) {
+                        LimitReachedDialog.show(
+                          context: this.context, // ignore: use_build_context_synchronously, unnecessary_this
+                          ref: ref,
+                          title: l10n.premiumFeature,
+                          message: l10n.shareMonthlyLimitReached(5),
+                          type: LimitType.collection,
+                        );
+                      }
+                      return;
+                    }
                     onError(FailureMapper.toUserMessage(e, l10n));
                   }
                 },

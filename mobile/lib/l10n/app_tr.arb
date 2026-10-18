@@ -945,6 +945,10 @@
   "@shareCreateAlreadyShared": {
     "description": "Shown when the collection was already shared with this person (HTTP 409 from POST /api/shares)."
   },
+  "shareMonthlyLimitReached": "Ücretsiz planda ayda {limit} koleksiyon paylaşabilirsin. Bu ayın hakkı doldu; sınırsız paylaşım için Premium'a geç.",
+  "@shareMonthlyLimitReached": {"placeholders": {"limit": {"type": "int"}}},
+  "shareQuotaRemaining": "Bu ay {remaining}/{limit} paylaşım hakkın kaldı",
+  "@shareQuotaRemaining": {"placeholders": {"remaining": {"type": "int"}, "limit": {"type": "int"}}},
   "shareCreateFailed": "Paylaşım isteği oluşturulamadı.",
   "@shareCreateFailed": {
     "description": "Shown when the share request could not be created (HTTP 400 from POST /api/shares)."
@@ -1375,7 +1379,7 @@
   "@notificationSettingsWeeklyDigestTitle": {
     "description": "Title of the weekly digest notifications toggle."
   },
-  "notificationSettingsWeeklyDigestSubtitle": "Her hafta özet e-postası al",
+  "notificationSettingsWeeklyDigestSubtitle": "Her hafta kaydettiklerinden bir özet bildirimi al",
   "@notificationSettingsWeeklyDigestSubtitle": {
     "description": "Subtitle of the weekly digest notifications toggle."
   },
@@ -1991,7 +1995,7 @@
   "@helpSupportFaqQ3": {
     "description": "Third FAQ question on the help & support screen."
   },
-  "helpSupportFaqA3": "Premium ile koleksiyon ve içerik sınırı kalkar. Ayrıca Gizli Kasa (Face ID / Touch ID), koleksiyon paylaşımı, Midnight ve Vibe temaları ile 5 özel uygulama ikonu Premium'a özeldir. Widget, arama ve haftalık özet herkese açıktır.",
+  "helpSupportFaqA3": "Premium ile koleksiyon ve içerik sınırı kalkar, koleksiyonlarını sınırsız paylaşabilirsin (ücretsiz planda ayda 5 paylaşım). Ayrıca Gizli Kasa (Face ID / Touch ID), Midnight ve Vibe temaları ile 5 özel uygulama ikonu Premium'a özeldir. Widget, arama, otomatik karanlık mod ve haftalık özet herkese açıktır.",
   "@helpSupportFaqA3": {
     "description": "Third FAQ answer on the help & support screen."
   },

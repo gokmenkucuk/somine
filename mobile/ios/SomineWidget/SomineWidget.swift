@@ -170,8 +170,25 @@ struct SomineWidget: Widget {
         StaticConfiguration(kind: kind, provider: SomineProvider()) { entry in
             SomineWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Günün Kaydı")
-        .description("Kaydettiklerinden biri her gün sana geri gelsin.")
+        .configurationDisplayName(WidgetCopy.displayName)
+        .description(WidgetCopy.description)
         .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+/// Widget galerisindeki ad ve açıklama; cihaz Türkçe ise Türkçe, değilse İngilizce.
+private enum WidgetCopy {
+    private static var isTurkish: Bool {
+        Locale.preferredLanguages.first?.hasPrefix("tr") ?? false
+    }
+
+    static var displayName: String {
+        isTurkish ? "Günün Kaydı" : "Today's Save"
+    }
+
+    static var description: String {
+        isTurkish
+            ? "Kaydettiklerinden biri her gün sana geri gelsin."
+            : "One of your saves comes back to you every day."
     }
 }

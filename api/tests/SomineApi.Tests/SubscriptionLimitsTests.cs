@@ -23,9 +23,16 @@ public class SubscriptionLimitsTests
     }
 
     [Fact]
-    public void FreeMaxActiveShares_Is1()
+    public void FreeMonthlyShares_Is5()
     {
-        Assert.Equal(1, SubscriptionLimits.FreeMaxActiveShares);
+        Assert.Equal(5, SubscriptionLimits.FreeMonthlyShares);
+    }
+
+    [Fact]
+    public void MonthStartUtc_IsFirstDayOfMonth()
+    {
+        Assert.Equal(new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc),
+            SubscriptionLimits.MonthStartUtc(new DateTime(2026, 10, 18, 13, 5, 0, DateTimeKind.Utc)));
     }
 
     [Theory]
@@ -60,11 +67,11 @@ public class SubscriptionLimitsTests
     }
 
     [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, true)]
+    [InlineData(4, false)]
+    [InlineData(5, true)]
     public void ShareLimit_ReachedWhenCurrentGreaterOrEqualToLimit(int current, bool expectedReached)
     {
-        var reached = current >= SubscriptionLimits.FreeMaxActiveShares;
+        var reached = current >= SubscriptionLimits.FreeMonthlyShares;
 
         Assert.Equal(expectedReached, reached);
     }

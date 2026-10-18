@@ -22,3 +22,6 @@ public record ShareDto(
     // Yalnızca paylaşımın sahibine (outgoing) gönderilir; alıcıya null gider
     string? PublicLinkToken = null
 );
+
+/// <summary>Bu ayki paylaşım hakkı. Premium'da <c>Unlimited</c> true, sayılar bilgi amaçlı.</summary>
+public record ShareQuotaDto(bool Unlimited, int Limit, int Used, int Remaining, DateTime ResetsAtUtc);
