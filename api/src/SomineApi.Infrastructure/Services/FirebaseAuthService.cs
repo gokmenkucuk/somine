@@ -24,6 +24,25 @@ public class FirebaseAuthService : IFirebaseAuthService
         return await VerifyTokenAsync(idToken);
     }
 
+    public async Task<bool?> UserExistsAsync(string firebaseUid, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(firebaseUid)) return false;
+
+        try
+        {
+            await _auth.GetUserAsync(firebaseUid, cancellationToken);
+            return true;
+        }
+        catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.UserNotFound)
+        {
+            return false;
+        }
+        catch (Exception ex) when (ex is FirebaseAuthException or HttpRequestException or TaskCanceledException)
+        {
+            return null;
+        }
+    }
+
     private async Task<FirebaseUserInfo> VerifyTokenAsync(string idToken)
     {
         if (string.IsNullOrWhiteSpace(idToken))

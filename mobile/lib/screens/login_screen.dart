@@ -354,9 +354,17 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
 }
 
 // GÜNCELLENEN BUTON WIDGET'I
-/// İki giriş düğmesinin ortak yüksekliği. Apple düğmesi yazıyı yüksekliğin
-/// %43'ü yapar; Google düğmesi de aynı oranı kullanır.
+/// İki giriş düğmesinin ortak yüksekliği ve yazısı.
 const double _kSignInButtonHeight = 50;
+
+TextStyle _signInLabelStyle(Color color) => TextStyle(
+  inherit: false,
+  fontFamily: '.SF Pro Text',
+  fontSize: 16,
+  fontWeight: FontWeight.w500,
+  letterSpacing: -0.2,
+  color: color,
+);
 
 class _SocialButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -406,20 +414,13 @@ class _SocialButton extends StatelessWidget {
               children: [
                 leading,
                 const SizedBox(width: 8),
-                // Apple düğmesiyle aynı yazı: SF Pro, yüksekliğin %43'ü, -0.41 aralık
-                // (sign_in_with_apple'ın HIG'e göre kullandığı değerler).
+                // İki giriş düğmesi aynı sade yazıyı kullanır (sistem fontu, 16pt).
                 Flexible(
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      inherit: false,
-                      fontFamily: '.SF Pro Text',
-                      fontSize: _kSignInButtonHeight * 0.43,
-                      letterSpacing: -0.41,
-                      color: textColor,
-                    ),
+                    style: _signInLabelStyle(textColor),
                   ),
                 ),
               ],
@@ -463,10 +464,9 @@ class _LegalLink extends StatelessWidget {
   }
 }
 
-/// "Sign in with Apple" düğmesi — Apple'ın kendi çizdiği resmî düğme
-/// (sign_in_with_apple). Giriş akışı Firebase üzerinden yürür; paket yalnız
-/// HIG'e uygun logo ve oranlar için kullanılır. Yükseklik ve köşe yarıçapı
-/// Google düğmesiyle aynıdır.
+/// "Apple ile devam et" düğmesi. Apple'ın resmî logosu (sign_in_with_apple'ın
+/// AppleLogoPainter'ı), siyah zemin ve sistem fontu: HIG'in özel düğme
+/// kurallarına uyar; yazı boyutu Google düğmesiyle aynı tutulur.
 class _AppleSignInButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String label;
@@ -475,12 +475,44 @@ class _AppleSignInButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SignInWithAppleButton(
-      onPressed: onPressed,
-      text: label,
-      height: _kSignInButtonHeight,
-      style: SignInWithAppleButtonStyle.black,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: SizedBox(
+        width: double.infinity,
+        height: _kSignInButtonHeight,
+        child: Material(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
+            splashColor: Colors.white24,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 19,
+                  child: CustomPaint(
+                    painter: AppleLogoPainter(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _signInLabelStyle(Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -31,6 +31,7 @@ public class SharesController : ControllerBase
     private readonly ISubscriptionTierService _subscriptionTierService;
     private readonly PublicWebOptions _publicWebOptions;
     private readonly IReportAlertQueue _reportAlertQueue;
+    private readonly IFirebaseAuthService _firebaseAuthService;
     private readonly ILogger<SharesController> _logger;
 
     public SharesController(
@@ -40,6 +41,7 @@ public class SharesController : ControllerBase
         ISubscriptionTierService subscriptionTierService,
         IOptions<PublicWebOptions> publicWebOptions,
         IReportAlertQueue reportAlertQueue,
+        IFirebaseAuthService firebaseAuthService,
         ILogger<SharesController> logger)
     {
         _dbContext = dbContext;
@@ -48,6 +50,7 @@ public class SharesController : ControllerBase
         _subscriptionTierService = subscriptionTierService;
         _publicWebOptions = publicWebOptions.Value;
         _reportAlertQueue = reportAlertQueue;
+        _firebaseAuthService = firebaseAuthService;
         _logger = logger;
     }
 
@@ -98,6 +101,14 @@ public class SharesController : ControllerBase
 
         if (toUser.Id == userId)
             return BadRequest(new { error = "Cannot share with yourself" });
+
+        // Firebase hesabı silinmiş ama sunucuda kalmış bir kayda paylaşım gitmesin.
+        // Firebase'e ulaşılamazsa (null) paylaşım engellenmez.
+        if (await _firebaseAuthService.UserExistsAsync(toUser.FirebaseUid, HttpContext.RequestAborted) == false)
+        {
+            _logger.LogWarning("Share target {TargetUserId} has no Firebase account (orphaned user row).", toUser.Id);
+            return NotFound(new { error = "Target user not found" });
+        }
 
         var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == request.CategoryId && c.UserId == userId);
         if (category == null) return NotFound(new { error = "Category not found" });

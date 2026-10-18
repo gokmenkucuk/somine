@@ -549,12 +549,16 @@ class AuthRepository {
         debugPrint('⚠️ [AuthRepository] Error deleting storage files: $e');
       }
 
-      // 6. Delete user document
+      // 6. Sunucudaki hesabı sil (DELETE /api/users/me; verileri de siler).
+      // ZORUNLU: başarısız olursa Firebase hesabını silmeden dur. Aksi halde
+      // Firebase'de olmayan ama sunucuda kalan "hayalet" bir hesap oluşur ve
+      // başkaları ona paylaşım gönderebilir.
       try {
         await _userRepository.deleteUser(userId);
         debugPrint('✅ [AuthRepository] User document deleted');
       } catch (e) {
-        debugPrint('⚠️ [AuthRepository] Error deleting user doc: $e');
+        debugPrint('❌ [AuthRepository] Server account deletion failed, aborting: $e');
+        rethrow;
       }
 
       // 7a. Sign in with Apple belirtecini iptal et (App Review 5.1.1(v)).

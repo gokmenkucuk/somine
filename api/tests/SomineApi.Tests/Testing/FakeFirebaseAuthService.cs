@@ -16,4 +16,12 @@ public sealed class FakeFirebaseAuthService : IFirebaseAuthService
     {
         return Task.FromResult(UserInfo);
     }
+
+    /// <summary>Firebase'de silinmiş sayılacak kullanıcılar.</summary>
+    public HashSet<string> DeletedFirebaseUids { get; } = [];
+
+    public Task<bool?> UserExistsAsync(string firebaseUid, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<bool?>(!DeletedFirebaseUids.Contains(firebaseUid));
+    }
 }

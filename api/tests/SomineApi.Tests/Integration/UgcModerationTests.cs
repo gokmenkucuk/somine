@@ -357,6 +357,36 @@ public class UgcModerationTests
         await dbContext.SaveChangesAsync();
     }
 
+    [Fact]
+    public async Task CreateShare_RejectsTargetWhoseFirebaseAccountWasDeleted()
+    {
+        using var factory = new SomineApiWebApplicationFactory();
+        await factory.ResetDatabaseAsync();
+
+        var sender = TestUser("ghost-sender");
+        var ghost = TestUser("ghost-target");
+        var category = TestCategory(sender.Id, "To ghost");
+        await SeedAsync(factory, db =>
+        {
+            db.Users.AddRange(sender, ghost);
+            db.Categories.Add(category);
+        });
+        // Firebase hesabı silinmiş ama sunucuda kalmış kayıt.
+        factory.FirebaseAuthService.DeletedFirebaseUids.Add(ghost.FirebaseUid);
+
+        using var client = factory.CreateAuthenticatedClient(sender.Id, sender.Email!, sender.FirebaseUid);
+        var byId = await client.PostAsJsonAsync("/api/shares", new { categoryId = category.Id, toUserId = ghost.Id });
+        var byEmail = await client.PostAsJsonAsync("/api/shares", new { categoryId = category.Id, toUserEmail = ghost.Email });
+
+        Assert.Equal(HttpStatusCode.NotFound, byId.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, byEmail.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SomineDbContext>();
+        Assert.Equal(0, await db.CollectionShares.CountAsync());
+        Assert.Equal(0, await db.Notifications.CountAsync());
+    }
+
     private static User TestUser(string key) => new()
     {
         Id = Guid.NewGuid(),
