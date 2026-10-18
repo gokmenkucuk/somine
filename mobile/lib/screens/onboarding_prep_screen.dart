@@ -115,7 +115,7 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
         widget.userId,
         musicName: l10n.defaultCategoryMusic,
         placesName: l10n.defaultCategoryPlaces,
-        recipesName: l10n.defaultCategoryRecipes,
+        restaurantsName: l10n.defaultCategoryRestaurants,
         inspirationName: l10n.defaultCategoryInspiration,
       );
       incrementStep();
@@ -137,7 +137,10 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       final categoryIdByKey = {
         DemoCollection.music: categoryByName(l10n.defaultCategoryMusic).id,
         DemoCollection.places: categoryByName(l10n.defaultCategoryPlaces).id,
-        DemoCollection.recipes: categoryByName(l10n.defaultCategoryRecipes).id,
+        DemoCollection.restaurants:
+            categoryByName(l10n.defaultCategoryRestaurants).id,
+        DemoCollection.recipes:
+            categoryByName(l10n.defaultCategoryRestaurants).id,
         DemoCollection.inspiration:
             categoryByName(l10n.defaultCategoryInspiration).id,
       };

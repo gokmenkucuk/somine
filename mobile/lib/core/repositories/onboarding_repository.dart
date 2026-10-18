@@ -64,6 +64,7 @@ class OnboardingRepository {
     const known = {
       DemoCollection.music,
       DemoCollection.places,
+      DemoCollection.restaurants,
       DemoCollection.recipes,
       DemoCollection.inspiration,
     };

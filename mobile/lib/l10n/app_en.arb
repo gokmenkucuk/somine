@@ -631,6 +631,7 @@
   "defaultCategoryMusic": "To Listen",
   "defaultCategoryPlaces": "Places to Visit",
   "defaultCategoryRecipes": "Recipes to Try",
+  "defaultCategoryRestaurants": "Restaurants to Try",
   "defaultCategoryInspiration": "Inspiration",
   "notificationLocalReminderTitle": "Reminder",
   "notificationLocalReminderBody": "You have a saved item to revisit",

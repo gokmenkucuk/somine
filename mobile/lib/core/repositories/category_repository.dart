@@ -53,7 +53,7 @@ class CategoryRepository {
     String userId, {
     required String musicName,
     required String placesName,
-    required String recipesName,
+    required String restaurantsName,
     required String inspirationName,
   }) async {
     try {
@@ -61,7 +61,7 @@ class CategoryRepository {
         userId,
         musicName: musicName,
         placesName: placesName,
-        recipesName: recipesName,
+        restaurantsName: restaurantsName,
         inspirationName: inspirationName,
       );
       final createdCategories = <CategoryModel>[];

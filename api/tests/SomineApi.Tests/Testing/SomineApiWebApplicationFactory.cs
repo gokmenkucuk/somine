@@ -61,6 +61,7 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
                 ["Jwt:Audience"] = "somine-app",
                 ["Jwt:AccessTokenExpireMinutes"] = "60",
                 ["Moderation:ReportEmail"] = "moderator@example.com",
+                ["LogRetention:Enabled"] = "false",
                 ["Moderation:Smtp:Host"] = "smtp.invalid",
                 ["Storage:LocalPath"] = Path.Combine(Path.GetTempPath(), "somine-api-tests", Guid.NewGuid().ToString("N"))
             });

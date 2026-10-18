@@ -12,6 +12,7 @@ using SomineApi.WebApi.Hubs;
 using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Onboarding;
 using SomineApi.WebApi.Logging;
+using SomineApi.WebApi.Maintenance;
 using SomineApi.WebApi.Middleware;
 using SomineApi.WebApi.Options;
 using SomineApi.WebApi.Push;
@@ -82,6 +83,10 @@ builder.Services.Configure<ModerationOptions>(
 builder.Services.Configure<OnboardingOptions>(
     builder.Configuration.GetSection(OnboardingOptions.SectionName));
 builder.Services.AddSingleton<OnboardingDemoContentProvider>();
+builder.Services.Configure<LogRetentionOptions>(
+    builder.Configuration.GetSection(LogRetentionOptions.SectionName));
+builder.Services.AddSingleton<LogRetentionService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<LogRetentionService>());
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");

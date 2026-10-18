@@ -90,7 +90,7 @@ class CategoryModel {
     String userId, {
     required String musicName,
     required String placesName,
-    required String recipesName,
+    required String restaurantsName,
     required String inspirationName,
   }) {
     final now = DateTime.now();
@@ -118,8 +118,8 @@ class CategoryModel {
       CategoryModel(
         id: '',
         userId: userId,
-        name: recipesName,
-        icon: '🍴',
+        name: restaurantsName,
+        icon: '🍽️',
         color: '#EF4444',
         order: 2,
         createdAt: now,

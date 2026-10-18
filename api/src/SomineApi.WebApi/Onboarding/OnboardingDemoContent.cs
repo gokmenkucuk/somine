@@ -27,7 +27,7 @@ public sealed class OnboardingOptions
 public sealed class OnboardingDemoContentProvider
 {
     public static readonly IReadOnlySet<string> Collections =
-        new HashSet<string>(StringComparer.Ordinal) { "music", "places", "recipes", "inspiration" };
+        new HashSet<string>(StringComparer.Ordinal) { "music", "places", "restaurants", "inspiration", "recipes" /* eski anahtar */ };
 
     private const int MaxItems = 50;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };

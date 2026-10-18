@@ -22,6 +22,10 @@ library;
 abstract final class DemoCollection {
   static const music = 'music';
   static const places = 'places';
+  static const restaurants = 'restaurants';
+
+  /// Eski anahtar (tarifler koleksiyonu restoranlara dönüştü); gelirse
+  /// restoran koleksiyonuna konur.
   static const recipes = 'recipes';
   static const inspiration = 'inspiration';
 }
@@ -64,6 +68,11 @@ const List<OnboardingDemoItem> onboardingDemoItems = [
     note: 'Shakshuka With Feta — NYT Cooking (YouTube)',
   ),
   OnboardingDemoItem(
+    collection: DemoCollection.music,
+    url: 'https://www.youtube.com/watch?v=oD6fL4yyhDk',
+    note: 'Can Ozan — Sar Bu Şehri (Can Ozan resmi kanalı)',
+  ),
+  OnboardingDemoItem(
     collection: DemoCollection.inspiration,
     url: 'https://www.pinterest.com/pin/529032287499307043/',
     note: 'Pinterest — Mediterranean Style Terrace (dikey)',
@@ -81,9 +90,7 @@ const List<OnboardingDemoItem> onboardingDemoItems = [
   OnboardingDemoItem(
     collection: DemoCollection.places,
     url: 'https://www.instagram.com/p/DeVt2tNseKn/',
-    note: 'Kopenhag — Nyhavn\'da altın saat, @christopherraunleth_cph (Instagram '
-        'fotoğrafı, kare). Not: Instagram CDN görsel adresi birkaç gün içinde '
-        'sona eriyor; kayıttan sonra kart yer tutucuya düşebilir.',
+    note: 'Kopenhag — Nyhavn\'da altın saat, @christopherraunleth_cph (Instagram fotoğrafı, kare). Not: Instagram CDN görsel adresi birkaç gün içinde sona eriyor; kayıttan sonra kart yer tutucuya düşebilir.',
   ),
   OnboardingDemoItem(
     collection: DemoCollection.recipes,
@@ -94,6 +101,11 @@ const List<OnboardingDemoItem> onboardingDemoItems = [
     collection: DemoCollection.music,
     url: 'https://www.youtube.com/watch?v=frspQ0XRico',
     note: 'Arlo Parks — Hurt, A COLORS SHOW (COLORS resmi kanalı)',
+  ),
+  OnboardingDemoItem(
+    collection: DemoCollection.music,
+    url: 'https://www.youtube.com/watch?v=Z2BQK2hO5HI',
+    note: 'Max McNown — A Lot More Free, resmi klip',
   ),
   OnboardingDemoItem(
     collection: DemoCollection.inspiration,
