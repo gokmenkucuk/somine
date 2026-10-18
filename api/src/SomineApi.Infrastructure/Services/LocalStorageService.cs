@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using SomineApi.Application.Interfaces;
 
@@ -15,7 +16,7 @@ public class LocalStorageService : IStorageService
     public LocalStorageService(IConfiguration configuration)
     {
         _storagePath = configuration["Storage:LocalPath"] ?? "./uploads";
-        _baseUrl = configuration["Storage:BaseUrl"] ?? "http://localhost:5000/storage";
+        _baseUrl = ResolveApiBaseUrl(configuration["Storage:BaseUrl"]);
         Directory.CreateDirectory(_storagePath);
     }
 
@@ -60,11 +61,74 @@ public class LocalStorageService : IStorageService
     public string GetUrl(string fileName)
     {
         // URL now points to authenticated endpoint instead of static /storage
-        // Strip /storage suffix from baseUrl if present, use /api/storage instead
-        var baseUrlClean = _baseUrl.TrimEnd('/');
+        return $"{_baseUrl}/api/storage/{fileName}";
+    }
+
+    /// <summary>
+    /// Storage:BaseUrl değerinden API kök adresini üretir ("/storage" son eki ve sondaki "/" atılır).
+    /// Ör. "https://api.somineapp.com/storage" → "https://api.somineapp.com".
+    /// </summary>
+    public static string ResolveApiBaseUrl(string? configuredBaseUrl)
+    {
+        var baseUrlClean = (string.IsNullOrWhiteSpace(configuredBaseUrl)
+            ? "http://localhost:5000/storage"
+            : configuredBaseUrl).Trim().TrimEnd('/');
         if (baseUrlClean.EndsWith("/storage", StringComparison.OrdinalIgnoreCase))
             baseUrlClean = baseUrlClean[..^"/storage".Length];
-        return $"{baseUrlClean}/api/storage/{fileName}";
+        return baseUrlClean;
+    }
+
+    private static readonly Regex PublicPathSegment = new("^[a-z0-9][a-z0-9._-]{0,127}$", RegexOptions.CultureInvariant);
+
+    private string ResolvePublicObjectPath(string relativePath)
+    {
+        var segments = relativePath.Split('/');
+        if (segments.Length is < 1 or > 4 ||
+            segments.Any(segment => !PublicPathSegment.IsMatch(segment) || segment.Contains("..")))
+        {
+            throw new ArgumentException("Invalid public object path.", nameof(relativePath));
+        }
+
+        return Path.Combine([_storagePath, .. segments]);
+    }
+
+    public async Task SavePublicObjectAsync(string relativePath, ReadOnlyMemory<byte> content, CancellationToken cancellationToken = default)
+    {
+        var filePath = ResolvePublicObjectPath(relativePath);
+        if (File.Exists(filePath))
+            return;
+
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        // Geçici dosyaya yaz + yeniden adlandır: yarım yazılmış dosya asla servis edilmez,
+        // eşzamanlı iki yazım da aynı içeriği üreteceği için yarış zararsızdır.
+        var tempPath = $"{filePath}.{Guid.NewGuid():N}.tmp";
+        try
+        {
+            await File.WriteAllBytesAsync(tempPath, content.ToArray(), cancellationToken);
+            File.Move(tempPath, filePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
+
+    public bool PublicObjectExists(string relativePath)
+        => File.Exists(ResolvePublicObjectPath(relativePath));
+
+    public Stream? OpenPublicObject(string relativePath)
+    {
+        var filePath = ResolvePublicObjectPath(relativePath);
+        return File.Exists(filePath)
+            ? new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+            : null;
+    }
+
+    public string GetPublicObjectUrl(string relativePath)
+    {
+        ResolvePublicObjectPath(relativePath);
+        return $"{_baseUrl}/public/{relativePath}";
     }
 
     public Stream? GetStream(string fileName)

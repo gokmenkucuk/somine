@@ -16,6 +16,7 @@ using SomineApi.Infrastructure.Options;
 using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Extensions;
 using SomineApi.WebApi.Hubs;
+using SomineApi.WebApi.ImageCache;
 
 namespace SomineApi.WebApi.Controllers;
 
@@ -32,6 +33,8 @@ public class ItemsController : ControllerBase
     private readonly IOptions<EmbeddingOptions> _embeddingOptions;
     private readonly IOptions<SearchOptions> _searchOptions;
     private readonly ILogger<ItemsController> _logger;
+    private readonly IOgImageCacheQueue _ogImageCacheQueue;
+    private readonly OgImageUrlPolicy _ogImageUrlPolicy;
 
     public ItemsController(
         SomineDbContext dbContext,
@@ -41,8 +44,12 @@ public class ItemsController : ControllerBase
         IEmbeddingQueue embeddingQueue,
         IOptions<EmbeddingOptions> embeddingOptions,
         IOptions<SearchOptions> searchOptions,
-        ILogger<ItemsController> logger)
+        ILogger<ItemsController> logger,
+        IOgImageCacheQueue ogImageCacheQueue,
+        OgImageUrlPolicy ogImageUrlPolicy)
     {
+        _ogImageCacheQueue = ogImageCacheQueue;
+        _ogImageUrlPolicy = ogImageUrlPolicy;
         _searchOptions = searchOptions;
         _dbContext = dbContext;
         _realtimeEventPublisher = realtimeEventPublisher;
@@ -181,6 +188,9 @@ public class ItemsController : ControllerBase
         _dbContext.Items.Add(item);
         await _dbContext.SaveChangesAsync();
         _embeddingQueue.Enqueue(item.Id);
+        // Harici OG görseli (imzalı CDN adresleri birkaç günde ölüyor) arka planda sunucuya kopyalanır.
+        if (_ogImageUrlPolicy.ShouldCache(item.OgImageUrl))
+            _ogImageCacheQueue.Enqueue(item.Id);
         await _realtimeEventPublisher.PublishItemsChangedAsync(userId, "created", item.Id, HttpContext.RequestAborted);
 
         return CreatedAtAction(nameof(GetItem), new { id = item.Id }, new ItemDto(
@@ -218,7 +228,19 @@ public class ItemsController : ControllerBase
         }
         if (request.OgTitle != null) item.OgTitle = request.OgTitle;
         if (request.OgDescription != null) item.OgDescription = request.OgDescription;
-        if (request.OgImageUrl != null) item.OgImageUrl = request.OgImageUrl;
+        var ogImageChanged = false;
+        if (request.OgImageUrl != null && request.OgImageUrl != item.OgImageUrl)
+        {
+            // İstemci, sunucunun zaten kopyaladığı orijinal (süresi dolabilecek) adresi geri
+            // gönderiyorsa kopyayı koru. Gerçekten yeni bir görselse kopya bilgisi sıfırlanır.
+            if (item.OgImageSourceUrl == null || request.OgImageUrl != item.OgImageSourceUrl)
+            {
+                item.OgImageUrl = request.OgImageUrl;
+                item.OgImageSourceUrl = null;
+                item.OgImageCacheFailedAt = null;
+                ogImageChanged = true;
+            }
+        }
         if (request.OgSiteName != null) item.OgSiteName = request.OgSiteName;
         if (request.OgFaviconUrl != null) item.OgFaviconUrl = request.OgFaviconUrl;
         if (request.OgImageWidth != null) item.OgImageWidth = SanitizeImageDimension(request.OgImageWidth);
@@ -228,6 +250,8 @@ public class ItemsController : ControllerBase
         item.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
         _embeddingQueue.Enqueue(item.Id);
+        if (ogImageChanged && _ogImageUrlPolicy.ShouldCache(item.OgImageUrl))
+            _ogImageCacheQueue.Enqueue(item.Id);
         await _realtimeEventPublisher.PublishItemsChangedAsync(userId, "updated", item.Id, HttpContext.RequestAborted);
 
         return Ok(new ItemDto(
@@ -661,6 +685,7 @@ public class ItemsController : ControllerBase
         if (sourceItems.Count != request.ItemIds.Distinct().Count())
             return NotFound(new { error = "One or more items were not found" });
 
+        var copies = new List<Item>();
         foreach (var source in sourceItems)
         {
             var copy = new Item
@@ -679,15 +704,23 @@ public class ItemsController : ControllerBase
                 OgFaviconUrl = source.OgFaviconUrl,
                 OgImageWidth = source.OgImageWidth,
                 OgImageHeight = source.OgImageHeight,
+                OgImageSourceUrl = source.OgImageSourceUrl,
+                OgImageCacheFailedAt = source.OgImageCacheFailedAt,
                 IsFavorite = false,
                 SortOrder = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             _dbContext.Items.Add(copy);
+            copies.Add(copy);
         }
 
         await _dbContext.SaveChangesAsync();
+        foreach (var copy in copies)
+        {
+            if (copy.OgImageCacheFailedAt == null && _ogImageUrlPolicy.ShouldCache(copy.OgImageUrl))
+                _ogImageCacheQueue.Enqueue(copy.Id);
+        }
         await _realtimeEventPublisher.PublishItemsChangedAsync(userId, "copied", null, HttpContext.RequestAborted);
         return NoContent();
     }

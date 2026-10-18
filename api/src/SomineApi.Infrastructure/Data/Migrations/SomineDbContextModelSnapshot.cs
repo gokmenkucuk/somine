@@ -532,9 +532,17 @@ namespace SomineApi.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("og_favicon_url");
 
+                    b.Property<DateTime?>("OgImageCacheFailedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("og_image_cache_failed_at");
+
                     b.Property<int?>("OgImageHeight")
                         .HasColumnType("integer")
                         .HasColumnName("og_image_height");
+
+                    b.Property<string>("OgImageSourceUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("og_image_source_url");
 
                     b.Property<string>("OgImageUrl")
                         .HasColumnType("text")

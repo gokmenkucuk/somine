@@ -8,8 +8,13 @@ public sealed class RecordingUserRealtimeEventPublisher : IUserRealtimeEventPubl
 {
     public ConcurrentQueue<(Guid UserId, string Action, Guid? EntityId)> NotificationEvents { get; } = new();
 
+    public ConcurrentQueue<(Guid UserId, string Action, Guid? EntityId)> ItemEvents { get; } = new();
+
     public Task PublishItemsChangedAsync(Guid userId, string action, Guid? itemId = null, CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
+    {
+        ItemEvents.Enqueue((userId, action, itemId));
+        return Task.CompletedTask;
+    }
 
     public Task PublishCategoriesChangedAsync(Guid userId, string action, Guid? categoryId = null, CancellationToken cancellationToken = default)
         => Task.CompletedTask;

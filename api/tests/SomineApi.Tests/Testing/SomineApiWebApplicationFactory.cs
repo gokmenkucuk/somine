@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using SomineApi.Application.Interfaces;
 using SomineApi.Infrastructure.Data;
 using SomineApi.WebApi.Embeddings;
+using SomineApi.WebApi.ImageCache;
 using SomineApi.WebApi.Logging;
 using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Reminders;
@@ -35,6 +36,12 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
     public FakePushNotificationSender PushNotificationSender { get; } = new();
 
     public SaveChangesHookInterceptor SaveChangesHook { get; } = new();
+
+    /// <summary>OG görsel indirmeleri için sahte HTTP; testler asla gerçek ağa çıkmaz.</summary>
+    public FakeImageHttpHandler ImageHttpHandler { get; } = new();
+
+    /// <summary>Sahte DNS; varsayılan olarak her host'u public bir belgeleme dışı adrese çözer.</summary>
+    public FakeHostAddressResolver HostAddressResolver { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -85,6 +92,7 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
                 .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
                     && (descriptor.ImplementationType == typeof(LogPersistenceBackgroundService)
                         || descriptor.ImplementationType == typeof(EmbeddingBackgroundService)
+                        || descriptor.ImplementationType == typeof(OgImageCacheBackgroundService)
                         || descriptor.ImplementationType == typeof(ReminderNotificationBackgroundService)))
                 .ToList();
             foreach (var descriptor in hostedServices)
@@ -109,6 +117,11 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
             services.AddSingleton<ILogPersistenceQueue, NoOpLogPersistenceQueue>();
             services.AddSingleton<IFirebaseAuthService>(FirebaseAuthService);
             services.AddSingleton<IEmbeddingService>(EmbeddingService);
+            services.RemoveAll<IHostAddressResolver>();
+            services.AddSingleton<IHostAddressResolver>(HostAddressResolver);
+            services.AddHttpClient(ImageCacheService.HttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => ImageHttpHandler)
+                .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
         });
     }
 

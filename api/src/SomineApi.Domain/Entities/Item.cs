@@ -25,6 +25,14 @@ public class Item : IAuditableEntity
     public int? OgImageWidth { get; set; }
     public int? OgImageHeight { get; set; }
 
+    // OG görsel önbelleği: Instagram/Facebook CDN adresleri imzalı ve birkaç günde
+    // süresi doluyor (`oe=`). Sunucu görseli kendi depolamasına kopyalar ve OgImageUrl'i
+    // kendi public adresiyle değiştirir; orijinal adres izlenebilirlik için burada kalır.
+    public string? OgImageSourceUrl { get; set; }
+    // Kaynak kalıcı olarak alınamadıysa (403/404/geçersiz içerik) işaretlenir ki
+    // backfill aynı item'ı sonsuza kadar yeniden denemesin.
+    public DateTime? OgImageCacheFailedAt { get; set; }
+
     public bool IsFavorite { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }

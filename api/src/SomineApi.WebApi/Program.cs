@@ -9,6 +9,7 @@ using SomineApi.Infrastructure.Repositories;
 using SomineApi.Infrastructure.Services;
 using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Hubs;
+using SomineApi.WebApi.ImageCache;
 using SomineApi.WebApi.Moderation;
 using SomineApi.WebApi.Onboarding;
 using SomineApi.WebApi.Logging;
@@ -65,6 +66,18 @@ builder.Services.AddSingleton<IReportAlertQueue, ChannelReportAlertQueue>();
 builder.Services.AddSingleton<IReportAlertSender, SmtpReportAlertSender>();
 builder.Services.AddHostedService<ReportAlertBackgroundService>();
 builder.Services.AddHttpClient();
+// OG görsel önbelleği: harici önizleme görselleri (süresi dolan imzalı CDN adresleri) sunucuya kopyalanır.
+builder.Services.Configure<ImageCacheOptions>(builder.Configuration.GetSection(ImageCacheOptions.SectionName));
+builder.Services.AddHttpClient(ImageCacheService.HttpClientName)
+    .ConfigurePrimaryHttpMessageHandler(ImageCacheService.CreatePrimaryHandler);
+builder.Services.AddSingleton<IHostAddressResolver, DnsHostAddressResolver>();
+builder.Services.AddSingleton<OgImageUrlPolicy>();
+builder.Services.AddScoped<IImageCacheService, ImageCacheService>();
+builder.Services.AddSingleton<IOgImageCacheQueue, ChannelOgImageCacheQueue>();
+builder.Services.AddSingleton<OgImageCacheProcessor>();
+builder.Services.AddHostedService<OgImageCacheBackgroundService>();
+builder.Services.AddSingleton<OgImageBackfillService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<OgImageBackfillService>());
 builder.Services.AddMemoryCache();
 builder.Services.Configure<ClientRequestSecurityOptions>(
     builder.Configuration.GetSection(ClientRequestSecurityOptions.SectionName));

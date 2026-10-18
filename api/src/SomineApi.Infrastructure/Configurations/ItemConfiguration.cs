@@ -27,6 +27,8 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
         builder.Property(i => i.OgFaviconUrl).HasColumnName("og_favicon_url");
         builder.Property(i => i.OgImageWidth).HasColumnName("og_image_width");
         builder.Property(i => i.OgImageHeight).HasColumnName("og_image_height");
+        builder.Property(i => i.OgImageSourceUrl).HasColumnName("og_image_source_url");
+        builder.Property(i => i.OgImageCacheFailedAt).HasColumnName("og_image_cache_failed_at");
         builder.Property(i => i.IsFavorite).HasColumnName("is_favorite").HasDefaultValue(false);
         builder.Property(i => i.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
         builder.Property(i => i.DeletedAt).HasColumnName("deleted_at");
