@@ -164,7 +164,7 @@ void main() {
     await pumpScreen(tester);
 
     expect(find.text(_titles[0]), findsOneWidget);
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(find.text(_titles[1]), findsOneWidget);
 
@@ -192,7 +192,7 @@ void main() {
     );
     await gesture.up();
     await tester.pump(const Duration(seconds: 9));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.text(_titles[0]), findsOneWidget);
 
     await unmount(tester);

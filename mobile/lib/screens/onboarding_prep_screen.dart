@@ -41,7 +41,7 @@ class OnboardingPrepScreen extends ConsumerStatefulWidget {
 const int _kTourPageCount = 5;
 
 /// Otomatik ilerleme aralığı.
-const Duration _kAutoAdvanceInterval = Duration(seconds: 4);
+const Duration _kAutoAdvanceInterval = Duration(seconds: 5);
 
 class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> {
   /// Ekran kapandıktan sonra da provider'lara erişebilmek için `initState`'te
@@ -738,11 +738,15 @@ class _IconBubble extends StatelessWidget {
   final Color? background;
   final Color? foreground;
 
+  /// Paylaş menüsündeki uygulama simgeleri gibi yuvarlatılmış kare çizer.
+  final bool appShape;
+
   const _IconBubble({
     required this.icon,
     this.size = 44,
     this.background,
     this.foreground,
+    this.appShape = false,
   });
 
   @override
@@ -753,7 +757,8 @@ class _IconBubble extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: background ?? colors.secondary.withValues(alpha: 0.22),
-        shape: BoxShape.circle,
+        shape: appShape ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: appShape ? BorderRadius.circular(size * 0.24) : null,
       ),
       child: Icon(icon, size: size * 0.5, color: foreground ?? colors.primary),
     );
@@ -785,130 +790,280 @@ class _AppIcon extends StatelessWidget {
   }
 }
 
-/// 1. Paylaş sayfası: kaynak uygulamalar → paylaşım menüsünde SoMine.
-class _ShareSheetIllustration extends StatelessWidget {
+/// 1. Paylaş sayfası: kendi kendine oynayan küçük bir kayıt anı.
+/// Kaynak uygulama öne çıkar → paylaşım menüsü açılır → somine seçilir →
+/// "Kaydedildi" belirir. Her turda farklı kaynak (Instagram, YouTube, Safari).
+/// Hareketi Azalt açıkken son kare sabit gösterilir.
+class _ShareSheetIllustration extends StatefulWidget {
   const _ShareSheetIllustration();
+
+  @override
+  State<_ShareSheetIllustration> createState() =>
+      _ShareSheetIllustrationState();
+}
+
+class _ShareSheetIllustrationState extends State<_ShareSheetIllustration>
+    with SingleTickerProviderStateMixin {
+  static const _cycle = Duration(milliseconds: 4500);
+  static const _sources = [
+    PhosphorIconsRegular.instagramLogo,
+    PhosphorIconsRegular.youtubeLogo,
+    PhosphorIconsRegular.compass,
+  ];
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _cycle,
+  );
+  int _sourceIndex = 0;
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted && !_reduceMotion) {
+        setState(() => _sourceIndex = (_sourceIndex + 1) % _sources.length);
+        _controller.forward(from: 0);
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reduceMotion) {
+      _controller.stop();
+      _controller.value = 1;
+    } else if (!_controller.isAnimating) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  // t'nin [from, to] aralığındaki ilerlemesi (0–1), yumuşatılmış.
+  double _phase(double t, double from, double to) =>
+      Curves.easeOutCubic.transform(((t - from) / (to - from)).clamp(0.0, 1.0));
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final neutral = colors.iconInactive.withValues(alpha: 0.14);
 
-    Widget shareTarget(Widget icon, {bool highlighted = false}) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: highlighted ? colors.primary : Colors.transparent,
-                width: 2.5,
-              ),
-            ),
-            child: icon,
-          ),
-          const SizedBox(height: 6),
-          if (highlighted)
-            Text(
-              'SoMine',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: colors.headline,
-              ),
-            )
-          else
-            const _Bar(width: 30, height: 6),
-        ],
-      );
-    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        final sourcePop = _phase(t, 0.0, 0.18) * (1 - _phase(t, 0.30, 0.42));
+        final sheetIn = _phase(t, 0.18, 0.40);
+        final select = _phase(t, 0.48, 0.62);
+        final saved = _phase(t, 0.66, 0.78) * (1 - _phase(t, 0.94, 1.0));
+        final pulse = select * (1 - _phase(t, 0.62, 0.78));
 
-    return SizedBox(
-      width: 300,
-      height: 250,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        Widget source(int i) {
+          final active = i == _sourceIndex;
+          return Transform.scale(
+            scale: active ? 1 + 0.18 * sourcePop : 1,
+            child: _IconBubble(
+              icon: _sources[i],
+              size: 38,
+              appShape: true,
+              background:
+                  active
+                      ? colors.primary.withValues(
+                        alpha: 0.16 + 0.14 * sourcePop,
+                      )
+                      : null,
+            ),
+          );
+        }
+
+        Widget target(Widget icon, {bool somine = false}) {
+          final ring = somine ? select : 0.0;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _IconBubble(icon: PhosphorIconsRegular.instagramLogo, size: 38),
-              const SizedBox(width: 12),
-              _IconBubble(icon: PhosphorIconsRegular.youtubeLogo, size: 38),
-              const SizedBox(width: 12),
-              _IconBubble(icon: PhosphorIconsRegular.compass, size: 38),
+              Transform.scale(
+                scale: somine ? 1 + 0.10 * pulse : 1,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: colors.primary.withValues(alpha: ring),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: icon,
+                ),
+              ),
+              const SizedBox(height: 6),
+              if (somine)
+                Text(
+                  'somine',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: colors.headline,
+                  ),
+                )
+              else
+                const _Bar(width: 30, height: 6),
+            ],
+          );
+        }
+
+        return SizedBox(
+          width: 300,
+          height: 250,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
+            children: [
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      source(0),
+                      const SizedBox(width: 12),
+                      source(1),
+                      const SizedBox(width: 12),
+                      source(2),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Transform.translate(
+                    offset: Offset(0, 4 * sourcePop),
+                    child: Icon(
+                      PhosphorIconsBold.arrowDown,
+                      size: 18,
+                      color: colors.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Opacity(
+                    opacity: 0.35 + 0.65 * sheetIn,
+                    child: Transform.translate(
+                      offset: Offset(0, 28 * (1 - sheetIn)),
+                      child: _MockSurface(
+                        width: 290,
+                        radius: 24,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const _Bar(width: 36, height: 4),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: colors.secondary.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    _sources[_sourceIndex],
+                                    size: 18,
+                                    color: colors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                const Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _Bar(width: 120),
+                                    SizedBox(height: 6),
+                                    _Bar(width: 80, height: 6),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: colors.divider),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                target(const _AppIcon(size: 44), somine: true),
+                                for (final icon in const [
+                                  PhosphorIconsRegular.chatCircleDots,
+                                  PhosphorIconsRegular.envelopeSimple,
+                                  PhosphorIconsRegular.notePencil,
+                                ])
+                                  target(
+                                    _IconBubble(
+                                      icon: icon,
+                                      background: neutral,
+                                      foreground: colors.iconInactive,
+                                      appShape: true,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // "Kaydedildi" etiketi
+              Positioned(
+                top: 44,
+                child: Opacity(
+                  opacity: saved,
+                  child: Transform.scale(
+                    scale: 0.9 + 0.1 * saved,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.headline,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            PhosphorIconsBold.check,
+                            size: 14,
+                            color: colors.surfaceWhite,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.onboardingTourSavedChip,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: colors.surfaceWhite,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 6),
-          Icon(PhosphorIconsBold.arrowDown, size: 18, color: colors.secondary),
-          const SizedBox(height: 6),
-          _MockSurface(
-            width: 290,
-            radius: 24,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const _Bar(width: 36, height: 4),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: colors.secondary.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _Bar(width: 120),
-                        SizedBox(height: 6),
-                        _Bar(width: 80, height: 6),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Divider(height: 1, color: colors.divider),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    shareTarget(const _AppIcon(size: 44), highlighted: true),
-                    shareTarget(
-                      _IconBubble(
-                        icon: PhosphorIconsRegular.chatCircleDots,
-                        background: neutral,
-                        foreground: colors.iconInactive,
-                      ),
-                    ),
-                    shareTarget(
-                      _IconBubble(
-                        icon: PhosphorIconsRegular.envelopeSimple,
-                        background: neutral,
-                        foreground: colors.iconInactive,
-                      ),
-                    ),
-                    shareTarget(
-                      _IconBubble(
-                        icon: PhosphorIconsRegular.notePencil,
-                        background: neutral,
-                        foreground: colors.iconInactive,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

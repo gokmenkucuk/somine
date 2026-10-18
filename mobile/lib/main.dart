@@ -450,7 +450,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'Somine',
+      title: 'somine',
       // "Otomatik": açık modda Air, karanlık modda Midnight (telefonu izler).
       theme: AppTheme.getTheme(currentTheme),
       darkTheme:

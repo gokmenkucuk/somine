@@ -49,7 +49,7 @@ Not:
 - Mobil istemci imzalı client proof üretmiyorsa `ClientRequestSecurity__Enabled=false` kalmalı.
 - Şikâyet e-postaları için `Moderation__ReportEmail` ve `Moderation__Smtp__*` doldurulmalı. Boşsa şikâyetler yalnızca `content_reports` tablosuna düşer, kimseye haber gitmez.
 - GSO Studio yönetim paneli için `Admin__ApiKey` (en az 32 karakter rastgele, ör. `openssl rand -hex 32`). Boşsa `/api/admin/*` uçları 404 döner. Panel aynı değeri `SOMINE_ADMIN_KEY` env'i ile kullanır; `ApiKey__Enabled=true` ise panele `X-SoMine-Api-Key` değeri de verilmeli.
-- Karşılama (onboarding) içeriği panelden düzenlenecekse `Onboarding__DemoContentPath=/app/config/onboarding-demo-content.json` ve compose'a yazılabilir bir **klasör** bağla (dosya değil; kayıt geçici dosya + yeniden adlandırma ile atomik yapılır): `- ./config:/app/config`. Klasör konteyner kullanıcısına yazılabilir olmalı: `mkdir -p /opt/somine/config && chown 1654:1654 /opt/somine/config` (.NET imajındaki `app` kullanıcısı). Dosya yoksa API gömülü listeyi döner; panelden ilk kayıtta dosya oluşur.
+- Karşılama (onboarding) içeriği panelden düzenlenecekse `Onboarding__DemoContentPath=/app/config/onboarding-demo-content.json` ve konteynere yazılabilir bir **klasör** bağla (dosya değil; kayıt geçici dosya + yeniden adlandırma ile atomik yapılır): `docker run … -v /opt/somine/config:/app/config` (compose kullanılıyorsa `- ./config:/app/config`). Klasör konteyner kullanıcısına yazılabilir olmalı: `mkdir -p /opt/somine/config && chown 1654:1654 /opt/somine/config` (.NET imajındaki `app` kullanıcısı). Dosya yoksa API gömülü listeyi döner; panelden ilk kayıtta dosya oluşur.
 
 ## 4. Firebase admin dosyasını yerleştir
 
