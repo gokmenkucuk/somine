@@ -27,6 +27,13 @@ import 'package:somine_app/widgets/error_state_widget.dart';
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
+  /// Yalnız App Store ekran görüntüsü düzeneği için (integration_test/):
+  /// `true` iken "Kaynaklara Göz At" satırında üçüncü taraf platform çipleri
+  /// (Instagram, YouTube, X…) gizlenir; Gizli ve Web çipleri kalır. Mağaza
+  /// görsellerinde başka uygulamaların logo/adı gösterilmemeli. Varsayılan
+  /// `false`; üretim davranışı değişmez.
+  static bool debugHidePlatformSourceChips = false;
+
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -634,6 +641,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   ],
                                   _buildVaultFilterChip(),
                                   const SizedBox(width: 8),
+                                  if (!SearchScreen
+                                      .debugHidePlatformSourceChips) ...[
                                   _buildPlatformFilterChip(
                                     "Instagram",
                                     PhosphorIconsBold.instagramLogo,
@@ -689,6 +698,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                     PhosphorIconsBold.dribbbleLogo,
                                   ),
                                   const SizedBox(width: 8),
+                                  ],
                                   _buildPlatformFilterChip(
                                     "Web",
                                     PhosphorIconsBold.globe,

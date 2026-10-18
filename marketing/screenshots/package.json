@@ -1,0 +1,23 @@
+{
+  "name": "somine-store-assets",
+  "private": true,
+  "version": "1.0.0",
+  "description": "somine App Store ekran görüntüleri, header ve App Preview (Remotion)",
+  "scripts": {
+    "studio": "remotion studio",
+    "capture": "scripts/capture.sh",
+    "render:stills": "node scripts/render-stills.mjs",
+    "render:header": "node scripts/render-header.mjs",
+    "render:preview": "node scripts/render-preview.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.535",
+    "@remotion/google-fonts": "^4.0.535",
+    "@remotion/transitions": "^4.0.535",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.535",
+    "typescript": "^7.0.2"
+  }
+}

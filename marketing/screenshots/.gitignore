@@ -1,0 +1,6 @@
+node_modules
+out
+.DS_Store
+# Uygulama kayıtları büyük olabilir; commit etmek isteğe bağlı.
+public/recordings/**/*.mp4
+public/recordings/**/*.mov
