@@ -1773,25 +1773,84 @@
   "@onboardingNameSelectValidUsername": {
     "description": "Snackbar error shown when the user tries to continue with an unavailable username."
   },
-  "onboardingPrepTitle": "Koleksiyonlar Hazırlanıyor",
-  "@onboardingPrepTitle": {
-    "description": "Gradient headline on the onboarding preparation screen."
+  "onboardingTourSaveTitle": "Her yerden kaydet",
+  "@onboardingTourSaveTitle": {
+    "description": "Feature tour card 1 title (save from any app via the share sheet)."
   },
-  "onboardingPrepDescription": "Sizin için seveceğinizi düşündüğümüz örnek içerikler hazırlıyoruz.",
-  "@onboardingPrepDescription": {
-    "description": "Description text under the headline on the onboarding preparation screen."
+  "onboardingTourSaveBody": "Instagram, YouTube, Safari… Paylaş → SoMine. Gördüğün her şey tek bir yerde.",
+  "@onboardingTourSaveBody": {
+    "description": "Feature tour card 1 sentence."
   },
-  "onboardingPrepComplete": "Tamamlandı",
-  "@onboardingPrepComplete": {
-    "description": "Status label shown when the onboarding preparation finishes."
+  "onboardingTourSaveTip": "İpucu: Paylaş menüsünde SoMine'ı en başa taşı.",
+  "@onboardingTourSaveTip": {
+    "description": "Feature tour card 1 tip line."
   },
-  "onboardingPrepPreparing": "Hazırlanıyor...",
-  "@onboardingPrepPreparing": {
-    "description": "Status label shown while the onboarding preparation is in progress."
+  "onboardingTourOrganizeTitle": "Düzenle ve paylaş",
+  "@onboardingTourOrganizeTitle": {
+    "description": "Feature tour card 2 title (collections and sharing)."
   },
-  "onboardingPrepStartExploring": "Keşfetmeye Başla",
-  "@onboardingPrepStartExploring": {
-    "description": "Primary button label that finishes onboarding and opens the app."
+  "onboardingTourOrganizeBody": "Kayıtlarını koleksiyonlara ayır, arkadaşlarınla tek dokunuşla paylaş.",
+  "@onboardingTourOrganizeBody": {
+    "description": "Feature tour card 2 sentence."
+  },
+  "onboardingTourRemindTitle": "Hiçbir şeyi unutma",
+  "@onboardingTourRemindTitle": {
+    "description": "Feature tour card 3 title (reminders)."
+  },
+  "onboardingTourRemindBody": "Kaydettiğin her şeye hatırlatıcı kur; doğru anda karşına çıksın.",
+  "@onboardingTourRemindBody": {
+    "description": "Feature tour card 3 sentence."
+  },
+  "onboardingTourVaultTitle": "Gizli Kasa",
+  "@onboardingTourVaultTitle": {
+    "description": "Feature tour card 4 title (Face ID locked private collections)."
+  },
+  "onboardingTourVaultBody": "Özel koleksiyonlarını Face ID ile kilitle; yalnızca sen görürsün.",
+  "@onboardingTourVaultBody": {
+    "description": "Feature tour card 4 sentence."
+  },
+  "onboardingTourPremiumChip": "Premium",
+  "@onboardingTourPremiumChip": {
+    "description": "Small chip marking a feature tour card as a Premium feature."
+  },
+  "onboardingTourWidgetTitle": "Her gün ana ekranında",
+  "@onboardingTourWidgetTitle": {
+    "description": "Feature tour card 5 title (home screen widget)."
+  },
+  "onboardingTourWidgetBody": "Widget'ı ekle; kaydettiklerinden biri her gün sana geri dönsün.",
+  "@onboardingTourWidgetBody": {
+    "description": "Feature tour card 5 sentence."
+  },
+  "onboardingTourPreparing": "Koleksiyonların hazırlanıyor…",
+  "@onboardingTourPreparing": {
+    "description": "Status under the feature tour while sample content is created in the background."
+  },
+  "onboardingTourReady": "Hazır!",
+  "@onboardingTourReady": {
+    "description": "Status under the feature tour once sample content is ready."
+  },
+  "onboardingTourStartNow": "Hemen başla",
+  "@onboardingTourStartNow": {
+    "description": "Primary button while preparation is still running; opens the app right away."
+  },
+  "onboardingTourStart": "Başlayalım",
+  "@onboardingTourStart": {
+    "description": "Primary button once preparation is finished; opens the app."
+  },
+  "onboardingTourPageIndicator": "Sayfa {current} / {total}",
+  "@onboardingTourPageIndicator": {
+    "description": "Screen reader label for the feature tour page dots.",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "onboardingTourProgressValue": "%{percent}",
+  "@onboardingTourProgressValue": {
+    "description": "Screen reader value of the preparation progress bar.",
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
   },
   "recentlyDeletedTitle": "Son Silinenler",
   "@recentlyDeletedTitle": {

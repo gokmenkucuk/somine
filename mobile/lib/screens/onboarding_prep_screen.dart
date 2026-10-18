@@ -1,388 +1,289 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:somine_app/core/design/design_tokens.dart';
-import 'package:somine_app/core/design/app_colors.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/auth_providers.dart';
-import 'package:somine_app/core/repositories/user_repository.dart';
-import 'package:somine_app/core/repositories/category_repository.dart';
-import 'package:somine_app/core/services/metadata_service.dart';
-import 'package:somine_app/core/repositories/item_repository.dart';
-import 'package:somine_app/core/models/item_model.dart';
+import 'package:somine_app/core/providers/firestore_providers.dart';
+import 'package:somine_app/core/services/onboarding_content_preparer.dart';
 import 'package:somine_app/screens/home_screen.dart';
-import 'package:somine_app/core/utils/app_l10n.dart';
-import 'package:somine_app/core/models/category_model.dart';
-import 'package:somine_app/core/data/onboarding_demo_content.dart';
-import 'package:somine_app/core/repositories/onboarding_repository.dart';
+import 'package:somine_app/widgets/brand_gradient.dart';
 
-/// Onboarding screen that prepares demo content with a visual progress bar
+/// Ad adımından sonraki ekran: örnek içerik arka planda hazırlanırken
+/// kullanıcıya uygulamanın neler yapabildiğini anlatan kısa bir tur gösterir.
+///
+/// Hazırlık ([onboardingContentPreparerProvider]) `initState`'te başlatılan
+/// sıradan bir Future'dır; ekrana bağlı değildir. Kullanıcı "Hemen başla"ya
+/// erken dokunursa ana ekrana geçilir ve hazırlık arkada sürer. Bittiğinde
+/// (başarı ya da hata) önceden yakalanan [ProviderContainer] üzerinden
+/// onboarding durumu sıfırlanır ve akış/kategori provider'ları tazelenir;
+/// arada kaydedilen öğeler zaten `items_changed` (SignalR) ile akışa düşer.
 class OnboardingPrepScreen extends ConsumerStatefulWidget {
   final String userId;
   final String? displayName;
-  
+
   const OnboardingPrepScreen({
-    super.key, 
+    super.key,
     required this.userId,
     this.displayName,
   });
 
   @override
-  ConsumerState<OnboardingPrepScreen> createState() => _OnboardingPrepScreenState();
+  ConsumerState<OnboardingPrepScreen> createState() =>
+      _OnboardingPrepScreenState();
 }
 
-class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> with TickerProviderStateMixin {
-  // Progress State (0.0 to 1.0)
+/// Turdaki kart sayısı.
+const int _kTourPageCount = 5;
+
+/// Otomatik ilerleme aralığı.
+const Duration _kAutoAdvanceInterval = Duration(seconds: 4);
+
+class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> {
+  /// Ekran kapandıktan sonra da provider'lara erişebilmek için `initState`'te
+  /// yakalanır (dispose sonrası `ref` kullanılamaz).
+  late final ProviderContainer _container;
+
+  final PageController _pageController = PageController();
+  Timer? _autoAdvanceTimer;
+  bool _userTookControl = false;
+  bool _reduceMotion = false;
+  int _currentPage = 0;
+
   double _progress = 0.0;
   bool _isComplete = false;
-  
-  // Animation Controller for smooth progress bar
-  late AnimationController _progressController;
-  
-  // Animation Controller for Text Shimmer
-  late AnimationController _shimmerController;
+  bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize Animation Controller
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    
-    // Initialize Shimmer Controller
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: false);
+    _container = ProviderScope.containerOf(context, listen: false);
+    final preparer = ref.read(onboardingContentPreparerProvider);
+    // Bilerek beklenmiyor: ekran kapansa da tamamlanmalı.
+    unawaited(_runPreparation(preparer));
+  }
 
-    // Start Content Preparation
-    _prepareContent();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    _syncAutoAdvance();
   }
 
   @override
   void dispose() {
-    _progressController.dispose();
-    _shimmerController.dispose();
+    _autoAdvanceTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
-  void _updateProgress(double value) {
-    if (mounted) {
-      setState(() {
-        _progress = value.clamp(0.0, 1.0);
-      });
-      _progressController.animateTo(_progress, curve: Curves.easeInOut);
-    }
-  }
+  // ---------------------------------------------------------------------------
+  // Arka plan hazırlığı
+  // ---------------------------------------------------------------------------
 
-  Future<void> _prepareContent() async {
+  Future<void> _runPreparation(OnboardingContentPreparer preparer) async {
     try {
-      final userRepository = UserRepository();
-      final categoryRepository = CategoryRepository();
-      final itemRepository = ItemRepository();
-      
-      // Örnek içerik listesi önce API'den istenir (uygulama sürümü
-      // yayınlamadan güncellenebilsin); alınamazsa sabit listeye düşülür.
-      final demoItems = await OnboardingRepository().loadDemoItems();
-
-      // Profil + kategoriler + her örnek içerik için birer adım.
-      final totalSteps = 2 + demoItems.length;
-      int currentStep = 0;
-
-      void incrementStep() {
-        currentStep++;
-        _updateProgress(currentStep / totalSteps);
-      }
-      
-      // 1. Update user name (Step 1)
-      if (widget.displayName != null && widget.displayName!.isNotEmpty) {
-        await userRepository.updateUserProfile(
-          uid: widget.userId,
-          displayName: widget.displayName,
-        );
-      }
-      incrementStep();
-      
-      // 2. Create default categories (Step 2)
-      // Adlar veri olarak saklanıyor; kullanıcının dilinde oluşturuluyor.
-      // Context yerine appL10n kullanılıyor: bu akış birden çok await sonrası
-      // devam ediyor ve context'e async boşluktan sonra dokunmak istemiyoruz.
-      final l10n = appL10n;
-      final categories = await categoryRepository.createDefaultCategories(
-        widget.userId,
-        musicName: l10n.defaultCategoryMusic,
-        placesName: l10n.defaultCategoryPlaces,
-        restaurantsName: l10n.defaultCategoryRestaurants,
-        inspirationName: l10n.defaultCategoryInspiration,
+      await preparer(
+        userId: widget.userId,
+        displayName: widget.displayName,
+        onProgress: _onProgress,
       );
-      incrementStep();
-
-      // 3. Find categories for demo content
-      //
-      // Eşleştirme, oluştururken GÖNDERDİĞİMİZ adla yapılıyor. `order` alanına
-      // bakılamaz: sunucu her yeni kategoriyi `SortOrder = 0` ile yaratıp
-      // diğerlerini bir kaydırıyor (CategoriesController), dolayısıyla dönen
-      // dört DTO'nun da order'ı 0 — order'a bakmak hepsini ilk kategoriye
-      // toplardı. Ada bakmak dilden bağımsız çalışır, çünkü karşılaştırılan
-      // dize de aynı l10n'dan geliyor.
-      CategoryModel categoryByName(String name) => categories.firstWhere(
-        (c) => c.name == name,
-        orElse: () => categories.first,
-      );
-
-      // Dilden bağımsız koleksiyon anahtarı -> oluşturulan kategori.
-      final categoryIdByKey = {
-        DemoCollection.music: categoryByName(l10n.defaultCategoryMusic).id,
-        DemoCollection.places: categoryByName(l10n.defaultCategoryPlaces).id,
-        DemoCollection.restaurants:
-            categoryByName(l10n.defaultCategoryRestaurants).id,
-        DemoCollection.recipes:
-            categoryByName(l10n.defaultCategoryRestaurants).id,
-        DemoCollection.inspiration:
-            categoryByName(l10n.defaultCategoryInspiration).id,
-      };
-
-      if (kDebugMode) {
-        debugPrint(
-          '[Onboarding] categories=${categories.map((c) => c.name).toList()} '
-          'demoItems=${demoItems.length}',
-        );
-      }
-
-      // 4. Create demo content (one step per item)
-      // Liste: API (GET /api/onboarding/demo-content), yedeği
-      // lib/core/data/onboarding_demo_content.dart
-      //
-      // Önizlemeler hepsi birden paralel çekiliyor (16 sıralı istek ~15 sn
-      // sürüyordu); öğeler yine liste sırasıyla kaydediliyor ki tarih
-      // sıralaması ve ilerleme çubuğu bozulmasın.
-      final metadataFutures = [
-        for (final demo in demoItems)
-          MetadataService.fetchMetadata(
-            demo.url,
-          ).catchError((Object _) => null),
-      ];
-
-      final now = DateTime.now();
-      int hourOffset = 0;
-      
-      for (var i = 0; i < demoItems.length; i++) {
-        final demo = demoItems[i];
-        try {
-          final url = demo.url;
-          final categoryId =
-              categoryIdByKey[demo.collection] ?? categories.first.id;
-          
-          final metadata = await metadataFutures[i];
-          
-          final item = ItemModel(
-            id: '',
-            userId: widget.userId,
-            categoryId: categoryId,
-            type: ItemType.link,
-            url: url,
-            ogMetadata: metadata,
-            createdAt: now.subtract(Duration(hours: hourOffset)),
-            updatedAt: now.subtract(Duration(hours: hourOffset)),
-          );
-          
-          await itemRepository.createItem(item);
-          hourOffset++;
-        } catch (e) {
-          debugPrint('⚠️ [Onboarding] Error creating demo item: $e');
-        } finally {
-          incrementStep();
-        }
-      }
-      
-      // Complete!
-      if (mounted) {
-        _updateProgress(1.0);
-        await Future.delayed(const Duration(milliseconds: 500));
-        setState(() => _isComplete = true);
-        
-        // Reset onboarding state so AuthWrapper is happy, but DON'T navigate yet
-        ref.read(onboardingStateProvider.notifier).state = false;
-      }
     } catch (e) {
+      // Hata olsa da kullanıcı devam edebilmeli ("zorla tamamla").
       debugPrint('❌ [Onboarding] Error preparing content: $e');
-      // If error, force complete state to allow user to proceed anyway
-      if (mounted) {
-        _updateProgress(1.0);
-        setState(() => _isComplete = true);
-        ref.read(onboardingStateProvider.notifier).state = false;
-      }
     }
+    _onPreparationFinished();
   }
+
+  void _onProgress(double value) {
+    if (!mounted) return;
+    setState(() => _progress = value.clamp(0.0, 1.0));
+  }
+
+  void _onPreparationFinished() {
+    try {
+      // AuthWrapper'ın normal akışa dönmesi için.
+      _container.read(onboardingStateProvider.notifier).state = false;
+      // Kullanıcı erken geçtiyse ana ekran açık: son öğeler realtime olayını
+      // kaçırmış olsa bile akış ve kategoriler bir kez tazelensin.
+      _container.invalidate(categoriesProvider);
+      _container.invalidate(paginatedFeedProvider);
+      _container.invalidate(itemCountProvider);
+    } catch (e) {
+      // Uygulama kapanırken container dispose edilmiş olabilir.
+      if (kDebugMode) debugPrint('[Onboarding] refresh skipped: $e');
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _progress = 1.0;
+      _isComplete = true;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tur: otomatik ilerleme
+  // ---------------------------------------------------------------------------
+
+  bool get _shouldAutoAdvance =>
+      !_reduceMotion && !_userTookControl && _currentPage < _kTourPageCount - 1;
+
+  void _syncAutoAdvance() {
+    if (!_shouldAutoAdvance) {
+      _autoAdvanceTimer?.cancel();
+      _autoAdvanceTimer = null;
+      return;
+    }
+    _autoAdvanceTimer ??= Timer.periodic(_kAutoAdvanceInterval, (_) {
+      if (!mounted || !_pageController.hasClients || !_shouldAutoAdvance) {
+        _syncAutoAdvance();
+        return;
+      }
+      _pageController.animateToPage(
+        _currentPage + 1,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  /// Kullanıcı karta dokunduğu/kaydırdığı anda kontrol ondadır: otomatik
+  /// ilerleme kalıcı olarak durur.
+  void _onUserInteraction() {
+    if (_userTookControl) return;
+    _userTookControl = true;
+    _syncAutoAdvance();
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _currentPage = index);
+    _syncAutoAdvance();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Navigasyon
+  // ---------------------------------------------------------------------------
 
   void _continueToHome() {
+    if (_navigated) return;
+    _navigated = true;
+    _autoAdvanceTimer?.cancel();
+
+    // Erken geçişte de onboarding bayrağı kapatılır; hazırlık arkada sürer.
+    if (!_isComplete) {
+      ref.read(onboardingStateProvider.notifier).state = false;
+    }
+
+    final transition =
+        _reduceMotion ? Duration.zero : const Duration(milliseconds: 400);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+        pageBuilder:
+            (context, animation, secondaryAnimation) => const HomeScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: transition,
+        reverseTransitionDuration: transition,
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colors = context.colors;
+
+    final pages = <_TourPageData>[
+      _TourPageData(
+        illustration: const _ShareSheetIllustration(),
+        title: l10n.onboardingTourSaveTitle,
+        body: l10n.onboardingTourSaveBody,
+        tip: l10n.onboardingTourSaveTip,
+      ),
+      _TourPageData(
+        illustration: const _CollectionsIllustration(),
+        title: l10n.onboardingTourOrganizeTitle,
+        body: l10n.onboardingTourOrganizeBody,
+      ),
+      _TourPageData(
+        illustration: const _ReminderIllustration(),
+        title: l10n.onboardingTourRemindTitle,
+        body: l10n.onboardingTourRemindBody,
+      ),
+      _TourPageData(
+        illustration: const _VaultIllustration(),
+        title: l10n.onboardingTourVaultTitle,
+        body: l10n.onboardingTourVaultBody,
+        premiumLabel: l10n.onboardingTourPremiumChip,
+      ),
+      _TourPageData(
+        illustration: const _WidgetIllustration(),
+        title: l10n.onboardingTourWidgetTitle,
+        body: l10n.onboardingTourWidgetBody,
+      ),
+    ];
+    assert(pages.length == _kTourPageCount);
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
+      backgroundColor: colors.backgroundTop,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [colors.backgroundTop, colors.backgroundBottom],
+          ),
+        ),
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(flex: 3),
-              
-              // Title with Gradient
-              // Title with Shimmer Effect
-              AnimatedBuilder(
-                animation: _shimmerController,
-                builder: (context, child) {
-                  return ShaderMask(
-                    shaderCallback: (bounds) {
-                      return LinearGradient(
-                        colors: const [
-                          AppColors.secondary,
-                          AppColors.primary,
-                          AppColors.secondary,
-                        ],
-                        stops: const [
-                          0.0,
-                          0.5,
-                          1.0,
-                        ],
-                        // Soldan sağa hareket için:
-                        transform: _SlidingGradientTransform(slidePercent: _shimmerController.value),
-                        tileMode: TileMode.repeated, // Sürekli akış için repeated
-                      ).createShader(bounds);
-                    },
-                    child: Text(
-                      l10n.onboardingPrepTitle,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, 
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Description
-              Text(
-                l10n.onboardingPrepDescription,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  height: 1.5,
-                  fontWeight: FontWeight.w400,
-                  color: DesignTokens.textSecondary,
-                ),
-              ),
-              
-              const Spacer(flex: 2),
-              
-              // Progress Bar
-              AnimatedBuilder(
-                animation: _progressController,
-                builder: (context, child) {
-                   return Container(
-                     height: 8,
-                     width: double.infinity,
-                     decoration: BoxDecoration(
-                       color: DesignTokens.background,
-                       borderRadius: BorderRadius.circular(4),
-                     ),
-                     child: FractionallySizedBox(
-                       alignment: Alignment.centerLeft,
-                       widthFactor: _progressController.value,
-                       child: Container(
-                         decoration: BoxDecoration(
-                           borderRadius: BorderRadius.circular(4),
-                           gradient: const LinearGradient(
-                             colors: [AppColors.secondary, AppColors.primary], // Oil Green Gradient
-                           ),
-                         ),
-                       ),
-                     ),
-                   );
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Percentage Text (Optional, or just status)
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  _isComplete ? l10n.onboardingPrepComplete : l10n.onboardingPrepPreparing,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: _isComplete ? AppColors.primary : DesignTokens.textTertiary,
-                  ),
-                ),
-              ),
-              
-              const Spacer(flex: 3),
-              
-              // Continue Button (Only Visible when Complete)
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 500),
-                opacity: _isComplete ? 1.0 : 0.0,
-                child: IgnorePointer(
-                  ignoring: !_isComplete,
-                  child: Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.secondary, AppColors.primary],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        )
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _continueToHome,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: Text(
-                        l10n.onboardingPrepStartExploring,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+              const SizedBox(height: 8),
+              Expanded(
+                child: Listener(
+                  onPointerDown: (_) => _onUserInteraction(),
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: pages.length,
+                    onPageChanged: _onPageChanged,
+                    itemBuilder:
+                        (context, index) => _TourPage(
+                          data: pages[index],
+                          isActive: index == _currentPage,
+                          reduceMotion: _reduceMotion,
                         ),
-                      ),
-                    ),
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 48),
+              const SizedBox(height: 12),
+              _PageDots(
+                count: pages.length,
+                current: _currentPage,
+                reduceMotion: _reduceMotion,
+                semanticsLabel: l10n.onboardingTourPageIndicator(
+                  _currentPage + 1,
+                  pages.length,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _PrepFooter(
+                  progress: _progress,
+                  isComplete: _isComplete,
+                  reduceMotion: _reduceMotion,
+                  onContinue: _continueToHome,
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -391,20 +292,1050 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
   }
 }
 
-class _SlidingGradientTransform extends GradientTransform {
-  final double slidePercent;
+// =============================================================================
+// Tur sayfası
+// =============================================================================
 
-  const _SlidingGradientTransform({required this.slidePercent});
+class _TourPageData {
+  final Widget illustration;
+  final String title;
+  final String body;
+  final String? tip;
+  final String? premiumLabel;
+
+  const _TourPageData({
+    required this.illustration,
+    required this.title,
+    required this.body,
+    this.tip,
+    this.premiumLabel,
+  });
+}
+
+class _TourPage extends StatelessWidget {
+  final _TourPageData data;
+  final bool isActive;
+  final bool reduceMotion;
+
+  const _TourPage({
+    required this.data,
+    required this.isActive,
+    required this.reduceMotion,
+  });
 
   @override
-  Matrix4 transform(Rect bounds, {TextDirection? textDirection}) {
-    // Soldan sağa hareket (slidePercent 0 -> 1)
-    // 0 iken translasyon 0
-    // 1 iken translasyon bounds.width kadar (veya biraz daha fazla)
-    // Tam bir döngü için 2 katı kadar kaydırıp TileMode ile tekrar etmesini sağlayabiliriz
-    // Ama TileMode.mirror kullandık, o yüzden sürekli kayması lazım
-    
-    // Basit bir x ekseni translasyonu
-    return Matrix4.translationValues(bounds.width * slidePercent * 2.0 - bounds.width, 0.0, 0.0);
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Büyük yazı boyutlarında metne yer açılsın diye çizim alanı esner;
+        // gerekirse sayfa dikeyde kayar.
+        final illustrationHeight = (constraints.maxHeight * 0.5).clamp(
+          120.0,
+          280.0,
+        );
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: illustrationHeight,
+                  child: ExcludeSemantics(
+                    // Dekoratif çizim: sistem yazı boyutu çizimdeki minik
+                    // etiketleri büyütüp taşırmasın.
+                    child: MediaQuery.withNoTextScaling(
+                      child: AnimatedScale(
+                        scale: isActive || reduceMotion ? 1.0 : 0.92,
+                        duration:
+                            reduceMotion
+                                ? Duration.zero
+                                : const Duration(milliseconds: 400),
+                        curve: Curves.easeOutCubic,
+                        child: FittedBox(child: data.illustration),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                if (data.premiumLabel != null) ...[
+                  _PremiumChip(label: data.premiumLabel!),
+                  const SizedBox(height: 12),
+                ],
+                Semantics(
+                  header: true,
+                  child: Text(
+                    data.title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 28,
+                      height: 1.2,
+                      fontWeight: FontWeight.w700,
+                      color: colors.headline,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  data.body,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: colors.body,
+                  ),
+                ),
+                if (data.tip != null) ...[
+                  const SizedBox(height: 20),
+                  _TipLine(text: data.tip!),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PremiumChip extends StatelessWidget {
+  final String label;
+
+  const _PremiumChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(PhosphorIconsFill.crown, size: 14, color: colors.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              // Metin rengi başlık tonunda: marka rengi açık zeminde 4.5:1'i
+              // tutturmuyor.
+              color: colors.headline,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TipLine extends StatelessWidget {
+  final String text;
+
+  const _TipLine({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.surfaceWhite.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              PhosphorIconsRegular.lightbulbFilament,
+              size: 18,
+              color: colors.primary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              text,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                height: 1.4,
+                color: colors.hint,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PageDots extends StatelessWidget {
+  final int count;
+  final int current;
+  final bool reduceMotion;
+  final String semanticsLabel;
+
+  const _PageDots({
+    required this.count,
+    required this.current,
+    required this.reduceMotion,
+    required this.semanticsLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Semantics(
+      label: semanticsLabel,
+      excludeSemantics: true,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (var i = 0; i < count; i++)
+            AnimatedContainer(
+              duration:
+                  reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: i == current ? 22 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color:
+                    i == current
+                        ? colors.primary
+                        : colors.iconInactive.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Alt alan: ilerleme + birincil düğme
+// =============================================================================
+
+class _PrepFooter extends StatelessWidget {
+  final double progress;
+  final bool isComplete;
+  final bool reduceMotion;
+  final VoidCallback onContinue;
+
+  const _PrepFooter({
+    required this.progress,
+    required this.isComplete,
+    required this.reduceMotion,
+    required this.onContinue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colors = context.colors;
+    final percent = (progress * 100).round();
+    final statusText =
+        isComplete ? l10n.onboardingTourReady : l10n.onboardingTourPreparing;
+    final buttonLabel =
+        isComplete ? l10n.onboardingTourStart : l10n.onboardingTourStartNow;
+    final foreground = BrandGradient.foreground(context);
+    final switchDuration =
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 250);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          liveRegion: true,
+          child: Row(
+            children: [
+              if (isComplete) ...[
+                ExcludeSemantics(
+                  child: Icon(
+                    PhosphorIconsBold.checkCircle,
+                    size: 18,
+                    color: colors.primary,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: isComplete ? FontWeight.w600 : FontWeight.w500,
+                    color: isComplete ? colors.headline : colors.hint,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: progress),
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          builder: (context, value, _) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: value,
+                minHeight: 4,
+                backgroundColor: colors.iconInactive.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                semanticsLabel: statusText,
+                semanticsValue: l10n.onboardingTourProgressValue(percent),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        Semantics(
+          button: true,
+          label: buttonLabel,
+          excludeSemantics: true,
+          child: ConstrainedBox(
+            // ≥44pt dokunma alanı; büyük yazıda yükselebilsin.
+            constraints: const BoxConstraints(minHeight: 56),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: BrandGradient.linear(
+                  context,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.primary.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: const ValueKey('onboardingTourPrimaryButton'),
+                  onTap: onContinue,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: Center(
+                      child: AnimatedSwitcher(
+                        duration: switchDuration,
+                        child: Text(
+                          buttonLabel,
+                          key: ValueKey(buttonLabel),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// Çizimler (yalnız widget'larla; tema renklerinde)
+// =============================================================================
+
+/// Kartların ortak zemini.
+class _MockSurface extends StatelessWidget {
+  final double width;
+  final double? height;
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+
+  const _MockSurface({
+    required this.width,
+    this.height,
+    required this.child,
+    this.padding = const EdgeInsets.all(14),
+    this.radius = 20,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      width: width,
+      height: height,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: colors.surfaceWhite,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: colors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: colors.premiumShadow,
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Metin yerine geçen yuvarlak çubuk.
+class _Bar extends StatelessWidget {
+  final double width;
+  final double height;
+  final Color? color;
+
+  const _Bar({required this.width, this.height = 8, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color ?? context.colors.iconInactive.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(height / 2),
+      ),
+    );
+  }
+}
+
+class _IconBubble extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final Color? background;
+  final Color? foreground;
+
+  const _IconBubble({
+    required this.icon,
+    this.size = 44,
+    this.background,
+    this.foreground,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: background ?? colors.secondary.withValues(alpha: 0.22),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: size * 0.5, color: foreground ?? colors.primary),
+    );
+  }
+}
+
+class _AppIcon extends StatelessWidget {
+  final double size;
+
+  const _AppIcon({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.24),
+      child: Image.asset(
+        'assets/images/appicon.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder:
+            (context, _, __) => Container(
+              width: size,
+              height: size,
+              color: context.colors.primary,
+            ),
+      ),
+    );
+  }
+}
+
+/// 1. Paylaş sayfası: kaynak uygulamalar → paylaşım menüsünde SoMine.
+class _ShareSheetIllustration extends StatelessWidget {
+  const _ShareSheetIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final neutral = colors.iconInactive.withValues(alpha: 0.14);
+
+    Widget shareTarget(Widget icon, {bool highlighted = false}) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: highlighted ? colors.primary : Colors.transparent,
+                width: 2.5,
+              ),
+            ),
+            child: icon,
+          ),
+          const SizedBox(height: 6),
+          if (highlighted)
+            Text(
+              'SoMine',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colors.headline,
+              ),
+            )
+          else
+            const _Bar(width: 30, height: 6),
+        ],
+      );
+    }
+
+    return SizedBox(
+      width: 300,
+      height: 250,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _IconBubble(icon: PhosphorIconsRegular.instagramLogo, size: 38),
+              const SizedBox(width: 12),
+              _IconBubble(icon: PhosphorIconsRegular.youtubeLogo, size: 38),
+              const SizedBox(width: 12),
+              _IconBubble(icon: PhosphorIconsRegular.compass, size: 38),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Icon(PhosphorIconsBold.arrowDown, size: 18, color: colors.secondary),
+          const SizedBox(height: 6),
+          _MockSurface(
+            width: 290,
+            radius: 24,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const _Bar(width: 36, height: 4),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: colors.secondary.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Bar(width: 120),
+                        SizedBox(height: 6),
+                        _Bar(width: 80, height: 6),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: colors.divider),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    shareTarget(const _AppIcon(size: 44), highlighted: true),
+                    shareTarget(
+                      _IconBubble(
+                        icon: PhosphorIconsRegular.chatCircleDots,
+                        background: neutral,
+                        foreground: colors.iconInactive,
+                      ),
+                    ),
+                    shareTarget(
+                      _IconBubble(
+                        icon: PhosphorIconsRegular.envelopeSimple,
+                        background: neutral,
+                        foreground: colors.iconInactive,
+                      ),
+                    ),
+                    shareTarget(
+                      _IconBubble(
+                        icon: PhosphorIconsRegular.notePencil,
+                        background: neutral,
+                        foreground: colors.iconInactive,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 2. Koleksiyonlar + arkadaşlarla paylaşım.
+class _CollectionsIllustration extends StatelessWidget {
+  const _CollectionsIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final foreground = BrandGradient.foreground(context);
+
+    Widget tile(IconData icon) {
+      return Container(
+        width: 122,
+        height: 88,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colors.secondary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _IconBubble(icon: icon, size: 30),
+            const Spacer(),
+            const _Bar(width: 70),
+            const SizedBox(height: 5),
+            const _Bar(width: 40, height: 6),
+          ],
+        ),
+      );
+    }
+
+    Widget avatar(Color color) {
+      return Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: colors.surfaceWhite, width: 2),
+        ),
+        child: Icon(PhosphorIconsFill.user, size: 14, color: foreground),
+      );
+    }
+
+    return SizedBox(
+      width: 300,
+      height: 250,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 10,
+            top: 0,
+            child: _MockSurface(
+              width: 280,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      tile(PhosphorIconsRegular.musicNotes),
+                      tile(PhosphorIconsRegular.mapPin),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      tile(PhosphorIconsRegular.forkKnife),
+                      tile(PhosphorIconsRegular.lightbulb),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
+              decoration: BoxDecoration(
+                gradient: BrandGradient.linear(context),
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.primary.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 64,
+                    height: 28,
+                    child: Stack(
+                      children: [
+                        Positioned(left: 0, child: avatar(colors.secondary)),
+                        Positioned(left: 18, child: avatar(colors.primary)),
+                        Positioned(left: 36, child: avatar(colors.iconActive)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    PhosphorIconsBold.shareNetwork,
+                    size: 20,
+                    color: foreground,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 3. Hatırlatıcı: bildirim + çanlı içerik kartı.
+class _ReminderIllustration extends StatelessWidget {
+  const _ReminderIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final foreground = BrandGradient.foreground(context);
+
+    return SizedBox(
+      width: 300,
+      height: 250,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // İçerik kartı
+          Positioned(
+            left: 30,
+            top: 70,
+            child: _MockSurface(
+              width: 240,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 96,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colors.secondary.withValues(alpha: 0.45),
+                          colors.primary.withValues(alpha: 0.25),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        PhosphorIconsRegular.image,
+                        size: 32,
+                        color: colors.surfaceWhite.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const _Bar(width: 150),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        PhosphorIconsRegular.clock,
+                        size: 14,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      _Bar(
+                        width: 60,
+                        height: 6,
+                        color: colors.primary.withValues(alpha: 0.35),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Bildirim
+          Positioned(
+            left: 6,
+            right: 6,
+            top: 0,
+            child: _MockSurface(
+              width: 288,
+              radius: 18,
+              padding: const EdgeInsets.all(12),
+              child: const Row(
+                children: [
+                  _AppIcon(size: 34),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Bar(width: 110),
+                        SizedBox(height: 6),
+                        _Bar(width: 170, height: 6),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Çan rozeti
+          Positioned(
+            right: 18,
+            top: 150,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: BrandGradient.linear(context),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.primary.withValues(alpha: 0.3),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(
+                PhosphorIconsFill.bellRinging,
+                size: 24,
+                color: foreground,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 4. Gizli Kasa: örtülü koleksiyon + Face ID çerçevesi.
+class _VaultIllustration extends StatelessWidget {
+  const _VaultIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return SizedBox(
+      width: 300,
+      height: 250,
+      child: Center(
+        child: _MockSurface(
+          width: 240,
+          height: 240,
+          padding: const EdgeInsets.all(14),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              GridView.count(
+                crossAxisCount: 3,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  for (var i = 0; i < 9; i++)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: colors.iconInactive.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                ],
+              ),
+              Container(
+                width: 116,
+                height: 116,
+                decoration: BoxDecoration(
+                  color: colors.surfaceWhite,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.premiumShadow,
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      PhosphorIconsLight.scan,
+                      size: 100,
+                      color: colors.secondary,
+                    ),
+                    Icon(
+                      PhosphorIconsFill.lockSimple,
+                      size: 38,
+                      color: colors.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 5. Ana ekran widget'ı: kayıtlardan biri her gün geri döner.
+class _WidgetIllustration extends StatelessWidget {
+  const _WidgetIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final appSquare = colors.iconInactive.withValues(alpha: 0.16);
+
+    Widget appRow() => Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        for (var i = 0; i < 4; i++)
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: appSquare,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+      ],
+    );
+
+    return SizedBox(
+      width: 300,
+      height: 250,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          _MockSurface(
+            width: 210,
+            height: 250,
+            radius: 34,
+            padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+            child: Column(
+              children: [
+                // Widget
+                Container(
+                  height: 104,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.secondary.withValues(alpha: 0.55),
+                        colors.primary.withValues(alpha: 0.55),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(children: [_AppIcon(size: 22), Spacer()]),
+                      const Spacer(),
+                      _Bar(
+                        width: 110,
+                        color: colors.surfaceWhite.withValues(alpha: 0.85),
+                      ),
+                      const SizedBox(height: 6),
+                      _Bar(
+                        width: 70,
+                        height: 6,
+                        color: colors.surfaceWhite.withValues(alpha: 0.6),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                appRow(),
+                const SizedBox(height: 12),
+                appRow(),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 22,
+            top: 4,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.premiumShadow,
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: _IconBubble(
+                icon: PhosphorIconsFill.sun,
+                size: 44,
+                background: colors.surfaceWhite,
+                foreground: colors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
