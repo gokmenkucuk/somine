@@ -1,7 +1,7 @@
 import { AbsoluteFill, Easing, Img, interpolate, OffthreadVideo, Sequence, staticFile, useCurrentFrame } from 'remotion';
 import type { CalculateMetadataFunction } from 'remotion';
 import type { Locale } from './copy';
-import { previewConfig, type ClipConfig } from './preview.config';
+import { clipFor, previewConfig, type ClipConfig } from './preview.config';
 import { backdrop, color, fontFamily, headline } from './theme';
 
 // App Store önizlemesi (886x1920, 30 fps). Görüntü tamamen kullanıcının gerçek
@@ -15,9 +15,10 @@ const OUTRO = Math.round(previewConfig.outroSeconds * fps);
 const clipFrames = (c: ClipConfig) =>
   Math.max(1, Math.round((((c.end ?? c.start + previewConfig.fallbackSeconds) - c.start) / c.speed) * fps));
 
-const timeline = () => {
+const timeline = (locale: Locale) => {
   let from = 0;
-  return previewConfig.clips.map((clip) => {
+  return previewConfig.clips.map((c) => {
+    const clip = clipFor(c, locale);
     const length = clipFrames(clip);
     const item = { clip, from, length };
     from += length;
@@ -39,7 +40,7 @@ export const previewMetadata: CalculateMetadataFunction<PreviewProps> = async ({
       }
     }),
   );
-  const items = timeline();
+  const items = timeline(props.locale);
   const last = items[items.length - 1];
   return { durationInFrames: last.from + last.length + OUTRO, props: { ...props, available } };
 };
@@ -98,7 +99,7 @@ const Outro = ({ locale }: { locale: Locale }) => {
 };
 
 export const AppPreview = ({ locale, available }: PreviewProps) => {
-  const items = timeline();
+  const items = timeline(locale);
   const end = items[items.length - 1].from + items[items.length - 1].length;
   const full = previewConfig.layout === 'full';
   const box = full
