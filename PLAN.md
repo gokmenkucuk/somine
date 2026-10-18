@@ -1,7 +1,7 @@
 # SoMine — Tek Plan
 
 Son güncelleme: 2026-08-03
-Bu, projenin **tek** plan dosyasıdır. Eski plan/migrasyon dokümanlarının tamamı silindi; tarihsel bilgiye ihtiyaç olursa kaynak koddur. Operasyonel istisnalar: `somine_api/DOCKER_HETZNER_DEPLOYMENT.md` (deploy talimatı) ve `somine_api/LOCAL_SECRETS.md` (lokal secret kurulumu) plan olmadıkları için korundu.
+Bu, projenin **tek** plan dosyasıdır. Eski plan/migrasyon dokümanlarının tamamı silindi; tarihsel bilgiye ihtiyaç olursa kaynak koddur. Operasyonel istisnalar: `api/DOCKER_HETZNER_DEPLOYMENT.md` (deploy talimatı) ve `api/LOCAL_SECRETS.md` (lokal secret kurulumu) plan olmadıkları için korundu.
 
 ---
 
@@ -14,7 +14,7 @@ apple-design becerisiyle (Apple HIG) uçtan uca denetim; ~60 bulgu düzeltildi. 
 - InfoPlist.strings en/tr, mikrofon izni kaldırıldı; paylaşım eklentisi sadece link/metin.
 - Kontrast tokenları AA, VoiceOver etiketleri, min 11pt, Hareketi Azalt; kaydetme hataları görünür, kaydedilmemiş değişiklik uyarısı, boş ekran düğmeleri, kasa açma düğmesi, tekrar kayıt uyarısı.
 - Haftalık özet varsayılan kapalı; kasa içerikleri kilit ekranı bildiriminde görünmez.
-- **Deploy sırası:** prod'da `somine_api/prod_v18_ugc_reports_and_blocks.sql` → yeni API imajı → build 37.
+- **Deploy sırası:** prod'da `api/prod_v18_ugc_reports_and_blocks.sql` → yeni API imajı → build 37.
 - **Açık karar:** karanlık mod sistemi takip etmiyor (Midnight Premium). Air/Vibe primary düğmelerinde beyaz yazı 3.6/3.0:1 (marka kararı).
 
 
@@ -283,7 +283,7 @@ Plan: `~/.claude/plans/tingly-toasting-hippo.md`. Tetikleyici: kullanıcı "hat�
 2. **Ölçüm yarış durumu:** Masonry kartları geri dönüştürüldüğü için ertelenmiş ölçüm bir görselin oranını başka URL'ye yazabiliyordu → ölçüm URL'ye bağlandı, önbellek anahtarı v2'ye çekildi.
 3. **Edit ekranı sunum hatası:** `AddContentScreen` saydam `DraggableScrollableSheet` kökü ile yazılmış (ekleme akışı `showModalBottomSheet` ile açıyor) ama **edit akışı opak `MaterialPageRoute` ile push ediyordu** → aşağı sürükleyince beyaz kutu boşlukta kayıyor ve hiç kapanmıyordu. `_openEditScreen` ekleme akışıyla aynı sunuma çevrildi. **Cihazda sürükleyerek teyit edilmedi — kullanıcı doğrulaması bekliyor.**
 **Shimmer düzeltmesi:** `_ImageShimmerPlaceholder` sabit `Colors.grey.shade200/100`, katalogdaki yer tutucu sabit `grey[100]/[300]` ve shimmer'sızdı → koyu/vibe temada parlak beyaz blok (kullanıcının gördüğü "beyaz zemin" buydu). Tek `image_shimmer_placeholder.dart`'a çıkarıldı, renk kart yüzeyinden türetiliyor.
-**Öneri (kapsam dışı):** `somine_api` og:image çekerken genişlik/yükseklik de saklarsa ilk görüntülemedeki 10.9px de sıfırlanır, istemci hiç ölçüm yapmaz.
+**Öneri (kapsam dışı):** `api` og:image çekerken genişlik/yükseklik de saklarsa ilk görüntülemedeki 10.9px de sıfırlanır, istemci hiç ölçüm yapmaz.
 analyze 48/0-hata · 24/24 · release build ✓ · `dart format` çalıştırılmadı · geçici harness'ler geri alındı (grep ile teyitli).
 
 ### 🎨 TASARIM DİLİ DENETİMİ (2026-08-02) ✅
@@ -378,7 +378,7 @@ Kök neden doğrulandı ve giderildi. Bu oturumda yapılanlar:
 - **Kalan doğrulama (kullanıcıda):** Telefonda gerçek Google login testi — `flutter run --profile -d <iphone> --dart-define=SOMINE_API_KEY=a148c8a4a82faab8fb7743d5903fe7128fa405a17b8e257942d7ecbd3035b92a`. (Firebase kotası aşıldıysa soğuma gerekebilir.) Landing girip-çıkma döngüsünün bittiği telefonda teyit edilmeli.
 
 ### ⏳ AÇIK TAKİP: Kalıcı düzeltmeler
-1. **Startup migration bayrağı** — sunucu `somine_api/.env`'ine `Database__ApplyMigrationsOnStartup=true` eklenmeli (compose `env_file: .env`). Bu olmadan hiçbir deploy migration'ı otomatik uygulamıyor; bu oturumdaki elle SQL geçici bir onarımdı. **Bayrak eklendi mi teyit bekliyor.** (`Program.cs:181-186` bu bayrağa bakıyor.)
+1. **Startup migration bayrağı** — sunucu `api/.env`'ine `Database__ApplyMigrationsOnStartup=true` eklenmeli (compose `env_file: .env`). Bu olmadan hiçbir deploy migration'ı otomatik uygulamıyor; bu oturumdaki elle SQL geçici bir onarımdı. **Bayrak eklendi mi teyit bekliyor.** (`Program.cs:181-186` bu bayrağa bakıyor.)
 2. **App-tarafı devre kesici** — auth retry'ye exponential backoff + 429/`quota-exceeded`'de devre kesici (`lib/core/services/backend_auth_service.dart` + `lib/core/repositories/user_repository.dart:138`). Geçici bir 500'ün kendini DoS'a çevirmesini engeller. Henüz yapılmadı.
 3. **Image tag teyidi** — sunucuda `docker inspect somine-api --format '{{.Config.Image}}'` ile çalışan imajın `prod_v11` olduğu doğrulanabilir (fonksiyonel olarak DB fix yeterliydi; imaj teyidi opsiyonel).
 
@@ -393,7 +393,7 @@ Fiziksel telefonda prod'a karşı (profile build, prod key `a148c8a4…`) test e
 **GÜNCELLEME (2026-07-12, deploy sonrası):** `prod_v11` kullanıcı tarafından deploy edildi ama 500 sürüyor (probe: geçersiz token'la `POST /api/auth/refresh` → 500; 401 dönmeliydi — sorgu `AuthController.cs:104`'te `Include(s => s.User)` ile eksik premium kolonlarına çarpıyor). **Asıl kök neden bulundu:** `Database:ApplyMigrationsOnStartup` bayrağı hiçbir yerde tanımlı değil (appsettings*.json, docker-compose*.yml, .env tarandı) → varsayılan `false` → `Program.cs:181-186`'daki `Database.Migrate()` **hiç çalışmıyor**. "v11 açılışta migration'ı otomatik uygular" varsayımı yanlıştı; imaj değil, bayrak eksikti.
 
 **ÇÖZÜM (sırayla):**
-1. **`somine_api/prod_migration_fix.sql`'i prod DB'de çalıştır** (idempotent, `dotnet ef migrations script --idempotent` çıktısı; yalnız eksik `AddUserPremiumSnapshot` + `AddPublicShareLink`'i uygular). Sunucuda: `docker exec -i <postgres_container> psql -U admin -d somine_db < prod_migration_fix.sql` sonra `docker restart somine-api`. SSH bu ortamdan hâlâ yetkisiz; çalıştırma kullanıcıda. (Prod PG 18, DB `somine_db`, user `admin`, `postgresql_default` network.)
+1. **`api/prod_migration_fix.sql`'i prod DB'de çalıştır** (idempotent, `dotnet ef migrations script --idempotent` çıktısı; yalnız eksik `AddUserPremiumSnapshot` + `AddPublicShareLink`'i uygular). Sunucuda: `docker exec -i <postgres_container> psql -U admin -d somine_db < prod_migration_fix.sql` sonra `docker restart somine-api`. SSH bu ortamdan hâlâ yetkisiz; çalıştırma kullanıcıda. (Prod PG 18, DB `somine_db`, user `admin`, `postgresql_default` network.)
 2. **Kalıcı düzeltme:** sunucu `.env`'ine `Database__ApplyMigrationsOnStartup=true` ekle (compose `env_file: .env` kullanıyor; tek instance, güvenli) → gelecek deploy'larda migration otomatik uygulanır.
 3. Doğrulama: geçersiz token'la `POST /api/auth/refresh` artık **401** dönmeli (500 değil). Sonra telefonda test: `flutter run --profile -d <iphone> --dart-define=SOMINE_API_KEY=a148c8a4a82faab8fb7743d5903fe7128fa405a17b8e257942d7ecbd3035b92a`. (Not: Firebase kotası aştıysa bir süre soğuması gerekebilir.)
 4. (Opsiyonel ama önerilir) App'te auth retry'ye exponential backoff + 429/quota'da devre kesici ekle ki geçici bir 500 kendini DoS'a çevirmesin.
@@ -402,11 +402,11 @@ Fiziksel telefonda prod'a karşı (profile build, prod key `a148c8a4…`) test e
 
 ### ✅ Bu oturumda biten
 - **Landing → SomineWeb birleştirme**: Next.js landing bire bir Razor'a taşındı (Index + privacy/terms/support/delete-account + navbar/footer + Tailwind v4 + swiper + JS). SomineWeb artık hem landing hem `/s/{token}`. Lokal doğrulandı (5135). Detay: aşağıdaki 2026-07-05 günlüğü.
-- **Docker imajları (linux/amd64) hazır**: `gokmenkucuk/somineapi:prod_v11` (`somine-api-prod_v11.tar`, 98MB) + `gokmenkucuk/somine-share:v2` (`somine-share-v2.tar`, 138MB, landing dahil). Lokal store'da + tar olarak `somine_api/` kökünde. Docker Hub'a **push edilmedi** (tar+scp akışı). Eski `somine-web:latest_v5` ve eski tarlar temizlendi.
+- **Docker imajları (linux/amd64) hazır**: `gokmenkucuk/somineapi:prod_v11` (`somine-api-prod_v11.tar`, 98MB) + `gokmenkucuk/somine-share:v2` (`somine-share-v2.tar`, 138MB, landing dahil). Lokal store'da + tar olarak `api/` kökünde. Docker Hub'a **push edilmedi** (tar+scp akışı). Eski `somine-web:latest_v5` ve eski tarlar temizlendi.
 - **Lokal ortam çalışır durumda**: API `http://localhost:5280` (lokal DB'ye `AddUserPremiumSnapshot` elle uygulandı), SomineWeb `http://localhost:5135`. Lokalde Google login + kullanıcı oluşturma başarılı (simülatörde doğrulandı).
 
 ### ⚠️ Yerel commit durumu
-- `somine_api` working tree'de **26 dosya commit'siz** (landing taşıması + docker config). `somine_api` reposunun **remote'u yok** (yalnız bu makinede). Commit/push yapılmadı.
+- `api` working tree'de **26 dosya commit'siz** (landing taşıması + docker config). `api` reposunun **remote'u yok** (yalnız bu makinede). Commit/push yapılmadı.
 - `PLAN.md` / `CLAUDE.md` `SoMine/` kökünde, git dışı.
 
 ---
@@ -458,14 +458,14 @@ SoMine: link/not/görsel kaydetme ve koleksiyonlama uygulaması (Flutter, iOS-ö
 
 ## Değişiklik Günlüğü — 2026-07-05 (landing → SomineWeb birleştirme)
 
-**Karar değişikliği (Faz 4 hibrit mimarisi GEÇERSİZ):** Next.js `somine_web_landing` artık ayrı bir container'da tutulmuyor. Tüm landing (ana sayfa + privacy + terms + support + delete-account) `SomineWeb` (Razor Pages) içine **bire bir taşındı**; tek .NET servisi hem landing'i (`/`) hem public paylaşım sayfalarını (`/s/{token}`) sunuyor. Caddy `/s/*` ayrıştırması ARTIK GEREKMİYOR.
+**Karar değişikliği (Faz 4 hibrit mimarisi GEÇERSİZ):** Next.js `web` artık ayrı bir container'da tutulmuyor. Tüm landing (ana sayfa + privacy + terms + support + delete-account) `SomineWeb` (Razor Pages) içine **bire bir taşındı**; tek .NET servisi hem landing'i (`/`) hem public paylaşım sayfalarını (`/s/{token}`) sunuyor. Caddy `/s/*` ayrıştırması ARTIK GEREKMİYOR.
 
 Uygulama detayı:
 - Styling: Tailwind CSS v4 korundu (`SomineWeb/package.json` + `Styles/landing.input.css` → `wwwroot/css/landing.css`, çıktı commit'li; node yalnızca dev-time, Docker build node gerektirmez). Swiper `wwwroot/lib/swiper` altında vendor'landı. Fontlar Google Fonts `<link>` (Outfit/Poppins).
 - framer-motion animasyonları → CSS scroll-reveal (`IntersectionObserver`, `wwwroot/js/landing.js`); infinite/keyframe animasyonlar `landing.input.css`'te korundu. Swiper carousel, mobil menü, navbar scroll-state, hero platform-ikon rotasyonu, scroll-to-top hepsi vanilla JS.
 - Ayrı `_LandingLayout.cshtml` (font+GA+Tailwind+JS) + `_Navbar`/`_Footer` partial'ları. **Share (`/s/{token}`) sayfası dokunulmadı** — hâlâ eski `_Layout` + `site.css` dünyasında, izole.
 - Doğrulama: `dotnet build` 0 hata/0 uyarı · tüm rotalar 200 (`/`,`/privacy`,`/terms`,`/support`,`/delete-account`), `/s/{gecersiz}` 404 · headless ekran görüntüleriyle hero + alt sayfa görsel teyit (navbar home'da şeffaf, alt sayfada açık).
-- **Kalan:** `somine_web_landing` klasörü artık ölü (kullanıcı silme kararı bekliyor). SomineWeb Docker imajı `landing.css`+`lib/swiper` commit'li olduğundan node'suz derlenebilir; yeni imaj build+deploy edilmeli.
+- **Kalan:** `web` klasörü artık ölü (kullanıcı silme kararı bekliyor). SomineWeb Docker imajı `landing.css`+`lib/swiper` commit'li olduğundan node'suz derlenebilir; yeni imaj build+deploy edilmeli.
 
 ---
 
@@ -494,7 +494,7 @@ Tek oturumda Faz 0–5'in tamamı bitirildi. Aşağıda tüm commit'ler ve kapan
 | `096a489` | Outgoing ShareDto'ya PublicLinkToken (mobil rozet) |
 | `3c3deea` | SomineWeb Dockerfile |
 
-**somine_web_landing (git yalnızca bu makinede):** Docker imajından kurtarıldı (Next.js, mint tema), tasarımına dokunulmadı — hibrit mimaride kendi container'ında kalıyor.
+**web (git yalnızca bu makinede):** Docker imajından kurtarıldı (Next.js, mint tema), tasarımına dokunulmadı — hibrit mimaride kendi container'ında kalıyor.
 
 **Kapanış doğrulaması (2026-07-05):** API `dotnet build` 0 hata + `dotnet test` 36/36 · App `flutter analyze` 0 hata (48 baseline) + `flutter test` 8/8 + `flutter build ios --no-codesign` ✓ (126.9MB) · Deploy imajları: `somineapi:prod_v10` + `somine-share:v1` (tar'lar hazır, v9 silindi).
 
@@ -506,23 +506,23 @@ Tek oturumda Faz 0–5'in tamamı bitirildi. Aşağıda tüm commit'ler ve kapan
 
 Yapılanlar: somine_api git'e alındı (initial commit) · app working tree commit'lendi ve GitHub'a push'landı (`feature/api-auth-migration`) · 8 adet .tar silindi · API key default'u koddan çıkarıldı, yeni key üretilip `appsettings.Local.json` + `LOCAL_SECRETS.md`'ye yazıldı (prod rotasyonu mobil release ile birlikte — eski TestFlight build'leri eski key'i gömülü taşıyor!) · bozuk `DELETE /api/auth/account` kaldırıldı · rate limiting eklendi (300/dk kullanıcı-IP, auth uçları 10/dk) · CORS any-origin fallback kapatıldı.
 
-Ek kazanım: `somine_web_landing` kaynağı kurtarıldı — Docker imajı `somine-web:latest_v5` ile doğrulanıp `~/Downloads/somine-landing`'den projeye taşındı (Next.js + Tailwind + shadcn; kendi git geçmişiyle). Sayfalar: ana + privacy + terms + support + delete-account.
+Ek kazanım: `web` kaynağı kurtarıldı — Docker imajı `somine-web:latest_v5` ile doğrulanıp `~/Downloads/somine-landing`'den projeye taşındı (Next.js + Tailwind + shadcn; kendi git geçmişiyle). Sayfalar: ana + privacy + terms + support + delete-account.
 
 Not: Hetzner'a SSH bu ortamdan yetkisiz (publickey denied) — sunucu deploy adımları kullanıcıya kalır; imaj lokalde hazırlanacak.
 
-⚠️ Yedekleme boşluğu: `somine_app` GitHub'da (`gokmenkucuk/somine`, dal `feature/api-auth-migration`) ✓ ama **somine_api ve somine_web_landing commit'leri yalnızca bu makinede** (remote yok, gh CLI kurulu değil). İlk fırsatta GitHub'da iki private repo aç ve push'la:
+⚠️ Yedekleme boşluğu: `mobile` GitHub'da (`gokmenkucuk/somine`, dal `feature/api-auth-migration`) ✓ ama **somine_api ve web commit'leri yalnızca bu makinede** (remote yok, gh CLI kurulu değil). İlk fırsatta GitHub'da iki private repo aç ve push'la:
 ```bash
 # github.com/new'dan somine-api ve somine-web-landing (private) oluşturduktan sonra:
 cd somine_api && git remote add origin https://github.com/gokmenkucuk/somine-api.git && git push -u origin master
-cd ../somine_web_landing && git remote add origin https://github.com/gokmenkucuk/somine-web-landing.git && git push -u origin master
+cd ../web && git remote add origin https://github.com/gokmenkucuk/somine-web-landing.git && git push -u origin master
 ```
 
 ## FAZ 0 (orijinal madde listesi — arşiv)
 
-1. `somine_api`'yi git'e al (hiç versiyon kontrolü yok)
-2. `somine_app`'te `feature/api-auth-migration` working tree'sini commit'le (73 dosya / ~8.900 satır commit'siz)
+1. `api`'yi git'e al (hiç versiyon kontrolü yok)
+2. `mobile`'te `feature/api-auth-migration` working tree'sini commit'le (73 dosya / ~8.900 satır commit'siz)
 3. API key rotasyonu: `api_config.dart:11` default'unu boşalt, `--dart-define=SOMINE_API_KEY=...` ile ver, sunucuda eski key'i geçersiz kıl
-4. `somine_api` kökündeki 8 adet `somine-api-prod*.tar` dosyasını sil, `.gitignore`'a ekle
+4. `api` kökündeki 8 adet `somine-api-prod*.tar` dosyasını sil, `.gitignore`'a ekle
 5. `DELETE /api/auth/account` endpoint'ini kaldır (çağıranı yok; `collection_shares` Restrict FK'sında patlıyor)
 6. Rate limiting ekle (yok) + CORS any-origin fallback'ini kapat
 
@@ -584,7 +584,7 @@ Uygulanan: backend token entity + migration + create/delete/get public-link endp
 ### Orijinal Faz 4 tanımı (arşiv)
 
 - Backend: `GET /public/shares/{slug}` (tahmin edilemez token'lı slug, rate limit'li; paylaşım kapanınca link ölür)
-- `somine_web_landing` (şu an boş): landing ana sayfa (değer önerisi + App Store butonu; privacy/terms zaten canlı) + salt-okunur koleksiyon görünümü + "SoMine'de aç"
+- `web` (şu an boş): landing ana sayfa (değer önerisi + App Store butonu; privacy/terms zaten canlı) + salt-okunur koleksiyon görünümü + "SoMine'de aç"
 - Orta vadede: shares için SignalR hub'ı (şu an mobilde 2 sn'lik polling var — yük ve pil maliyeti)
 
 ## FAZ 5 — İngilizce Lokalizasyon ✅ TAMAMLANDI (2026-07-05)
@@ -608,8 +608,8 @@ Uygulanan: backend token entity + migration + create/delete/get public-link endp
 Kod tarafındaki fazların tamamı (Faz 0–5) bitti ve doğrulandı. Aşağıdakiler yalnızca kullanıcı kararı / makine-dışı erişim gerektirdiği için sende:
 
 1. **Fiyatlandırma kararı** — Paywall plan/fiyat yapısı (haftalık planın kaldırılması + trial önerisi) hâlâ senin kararında. Kod bu karara hazır; yalnızca metin/RevenueCat ürün yapılandırması gerekir. (Ben paywall/fiyat metinlerine hiç dokunmadım.)
-2. **Deploy (prod_v11 + somine-share:v2)** — `somine-api-prod_v11.tar` (98MB, linux/amd64) ve `somine-share-v2.tar` (138MB, linux/amd64, landing DAHİL) hazır (`somine_api/` kökünde). Ek C'deki adımlarla Hetzner'a yükle. **Caddy `/s/*` ayrıştırması ARTIK GEREKMİYOR** — somine-share:v2 hem landing'i hem `/s/{token}`'i sunuyor; Caddy her şeyi somine-share'e proxy'ler, Next.js landing container'ı emekliye ayrılır. (Hetzner'a SSH bu ortamdan yetkisiz olduğu için deploy sende.)
-3. **GitHub yedeği** — `somine-api` ve `somine-web-landing` private repolarını GitHub'da aç ve push'la (bkz. Faz 0'daki komutlar). Şu an bu iki repo yalnızca bu makinede; `somine_app` zaten GitHub'da.
+2. **Deploy (prod_v11 + somine-share:v2)** — `somine-api-prod_v11.tar` (98MB, linux/amd64) ve `somine-share-v2.tar` (138MB, linux/amd64, landing DAHİL) hazır (`api/` kökünde). Ek C'deki adımlarla Hetzner'a yükle. **Caddy `/s/*` ayrıştırması ARTIK GEREKMİYOR** — somine-share:v2 hem landing'i hem `/s/{token}`'i sunuyor; Caddy her şeyi somine-share'e proxy'ler, Next.js landing container'ı emekliye ayrılır. (Hetzner'a SSH bu ortamdan yetkisiz olduğu için deploy sende.)
+3. **GitHub yedeği** — `somine-api` ve `somine-web-landing` private repolarını GitHub'da aç ve push'la (bkz. Faz 0'daki komutlar). Şu an bu iki repo yalnızca bu makinede; `mobile` zaten GitHub'da.
 4. **Cihazda smoke test** — Yeni imaj deploy edildikten sonra Ek B checklist'ini gerçek cihazda koştur (özellikle paylaşım + public link akışı + hatırlatıcı).
 5. **API key rotasyonu** — Yeni mobil sürüm TestFlight'a çıkarken yap: sunucu env `ApiKey__Key=<yeni key>` + mobil build `--dart-define=SOMINE_API_KEY=<aynı key>`. Deploy tek başına key'i değiştirmez (mevcut TestFlight build'leri eski key'i gömülü taşıyor).
 
@@ -631,7 +631,7 @@ Kod tarafındaki fazların tamamı (Faz 0–5) bitti ve doğrulandı. Aşağıda
 # API (lokal)
 cd somine_api && dotnet run --project src/SomineApi.WebApi   # LOCAL_SECRETS.md'ye göre appsettings.Local.json gerekir
 
-# Mobil, lokal API'ye karşı (key: somine_api/LOCAL_SECRETS.md → "API Key Rotasyonu")
+# Mobil, lokal API'ye karşı (key: api/LOCAL_SECRETS.md → "API Key Rotasyonu")
 cd somine_app && flutter run \
   --dart-define=SOMINE_API_BASE_URL=http://127.0.0.1:5181 \
   --dart-define=SOMINE_API_KEY=<LOCAL_SECRETS.md'deki yeni key>
@@ -657,14 +657,14 @@ flutter run --dart-define=SOMINE_API_KEY=<prod key>
 
 ## Ek C — Deploy: prod_v11 + somine-share:v2 HAZIR (2026-07-06) — tek adım sende
 
-İki imaj `somine_api/` kökünde hazır (ikisi de **linux/amd64**, `--load` ile lokal Docker store'da da mevcut):
+İki imaj `api/` kökünde hazır (ikisi de **linux/amd64**, `--load` ile lokal Docker store'da da mevcut):
 - `somine-api-prod_v11.tar` (98MB) → `gokmenkucuk/somineapi:prod_v11`. İçerik: Firestore-sonrası tüm endpoint'ler + rate limiting + limit enforcement + public paylaşım linki endpoint'leri (`GET /public/shares/{token}`, share `public-link` create/delete) + outgoing ShareDto'da PublicLinkToken + AddUserPremiumSnapshot migration'ı (açılışta otomatik uygulanır). (Kod prod_v10 ile aynı; sürüm artışı için temiz yeniden derleme.)
 - `somine-share-v2.tar` (138MB) → `gokmenkucuk/somine-share:v2`. İçerik: SomineWeb (Razor Pages) — artık **hem landing (`/`, `/privacy`, `/terms`, `/support`, `/delete-account`) HEM public paylaşım sayfası (`/s/{token}`)**, port 8080. Tailwind CSS `wwwroot/css/landing.css` olarak commit'li (imaj node gerektirmez). `Api:BaseUrl` env'i API container'ına işaret etmeli.
 
 ```bash
 # 1. İki tar'ı da sunucuya taşı
-scp /Users/gokmenkucuk/Desktop/App/SoMine/somine_api/somine-api-prod_v11.tar root@46.224.146.102:/opt/somine/
-scp /Users/gokmenkucuk/Desktop/App/SoMine/somine_api/somine-share-v2.tar root@46.224.146.102:/opt/somine/
+scp /Users/gokmenkucuk/Desktop/App/SoMine/api/somine-api-prod_v11.tar root@46.224.146.102:/opt/somine/
+scp /Users/gokmenkucuk/Desktop/App/SoMine/api/somine-share-v2.tar root@46.224.146.102:/opt/somine/
 
 # 2. Sunucuda yükle ve geçir
 ssh root@46.224.146.102
