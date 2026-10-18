@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    ÜRETİLMİŞ DEĞİL, ELLE DÜZENLENEBİLİR.
+    Bu dosya sitenin kısa arayüz metinlerini tutar. Uzun hukuki metinler burada DEĞİL,
+    Pages/Shared/_PrivacyBody.{tr,en}.cshtml ve _TermsBody.{tr,en}.cshtml içindedir.
+    KURAL: SharedResource.resx (Türkçe, nötr) ve SharedResource.en.resx aynı anahtar
+    kümesine sahip olmalıdır.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="common.backHome" xml:space="preserve">
+    <value>Ana Sayfaya Dön</value>
+  </data>
+  <data name="common.legal" xml:space="preserve">
+    <value>Yasal</value>
+  </data>
+  <data name="common.brand" xml:space="preserve">
+    <value>Somine</value>
+  </data>
+  <data name="layout.defaultTitle" xml:space="preserve">
+    <value>Somine — Beğendiklerini Tek Bir Yerde Topla</value>
+  </data>
+  <data name="layout.titleSuffix" xml:space="preserve">
+    <value>Somine</value>
+  </data>
+  <data name="layout.defaultDescription" xml:space="preserve">
+    <value>Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.</value>
+  </data>
+  <data name="layout.scrollToTop" xml:space="preserve">
+    <value>Yukarı çık</value>
+  </data>
+  <data name="nav.features" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="nav.screens" xml:space="preserve">
+    <value>Ekranlar</value>
+  </data>
+  <data name="nav.themes" xml:space="preserve">
+    <value>Temalar</value>
+  </data>
+  <data name="nav.premium" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="nav.support" xml:space="preserve">
+    <value>Destek</value>
+  </data>
+  <data name="nav.download" xml:space="preserve">
+    <value>İndir</value>
+  </data>
+  <data name="nav.downloadAppStore" xml:space="preserve">
+    <value>App Store'dan İndir</value>
+  </data>
+  <data name="nav.menu" xml:space="preserve">
+    <value>Menü</value>
+  </data>
+  <data name="nav.close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="nav.privacy" xml:space="preserve">
+    <value>Gizlilik Politikası</value>
+  </data>
+  <data name="nav.terms" xml:space="preserve">
+    <value>Kullanım Şartları</value>
+  </data>
+  <data name="nav.languageLabel" xml:space="preserve">
+    <value>Dil seçimi</value>
+  </data>
+  <data name="nav.switchToTurkish" xml:space="preserve">
+    <value>Türkçe</value>
+  </data>
+  <data name="nav.switchToEnglish" xml:space="preserve">
+    <value>İngilizce</value>
+  </data>
+  <data name="footer.tagline" xml:space="preserve">
+    <value>Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — Somine hepsini bir araya getirir.</value>
+  </data>
+  <data name="footer.appHeading" xml:space="preserve">
+    <value>Uygulama</value>
+  </data>
+  <data name="footer.legalHeading" xml:space="preserve">
+    <value>Yasal</value>
+  </data>
+  <data name="footer.supportHeading" xml:space="preserve">
+    <value>Destek</value>
+  </data>
+  <data name="footer.howItWorks" xml:space="preserve">
+    <value>Nasıl Çalışır</value>
+  </data>
+  <data name="footer.deleteAccount" xml:space="preserve">
+    <value>Hesap Silme</value>
+  </data>
+  <data name="footer.faq" xml:space="preserve">
+    <value>Sıkça Sorulan Sorular</value>
+  </data>
+  <data name="footer.contact" xml:space="preserve">
+    <value>Bize Ulaşın</value>
+  </data>
+  <data name="footer.rights" xml:space="preserve">
+    <value>Tüm hakları saklıdır.</value>
+  </data>
+  <data name="footer.privacyShort" xml:space="preserve">
+    <value>Gizlilik</value>
+  </data>
+  <data name="footer.termsShort" xml:space="preserve">
+    <value>Şartlar</value>
+  </data>
+  <data name="index.description" xml:space="preserve">
+    <value>Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.</value>
+  </data>
+  <data name="index.jsonLdDescription" xml:space="preserve">
+    <value>Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize et.</value>
+  </data>
+  <data name="index.heroTitleLine1" xml:space="preserve">
+    <value>Beğendiklerini</value>
+  </data>
+  <data name="index.heroTitleLine2" xml:space="preserve">
+    <value>Tek Bir Yerde Topla</value>
+  </data>
+  <data name="index.heroSubtitle" xml:space="preserve">
+    <value>Instagram'dan, Pinterest'ten, YouTube'dan — beğendiğin her şey artık bir arada.</value>
+  </data>
+  <data name="index.ctaDownload" xml:space="preserve">
+    <value>İndir</value>
+  </data>
+  <data name="index.ctaDownloadFree" xml:space="preserve">
+    <value>Ücretsiz İndir</value>
+  </data>
+  <data name="index.exploreFeatures" xml:space="preserve">
+    <value>Özellikleri Keşfet</value>
+  </data>
+  <data name="index.scrollHint" xml:space="preserve">
+    <value>Keşfet</value>
+  </data>
+  <data name="index.heroPhoneAlt" xml:space="preserve">
+    <value>Somine Ana Sayfa</value>
+  </data>
+  <data name="index.featuresEyebrow" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="index.featuresTitle" xml:space="preserve">
+    <value>Her Şeyi Tek Bir Yerde Topla</value>
+  </data>
+  <data name="index.featuresSubtitle" xml:space="preserve">
+    <value>Sadece kaydetmekle kalmaz — kategorize eder, not alır, güvende tutar ve paylaşırsın.</value>
+  </data>
+  <data name="index.feature1Title" xml:space="preserve">
+    <value>Her Platformdan İçerik</value>
+  </data>
+  <data name="index.feature1Desc" xml:space="preserve">
+    <value>Instagram, YouTube, Pinterest ve daha fazlası — beğendiğin içerikleri hangi platformda olursa olsun koleksiyonuna ekle.</value>
+  </data>
+  <data name="index.feature2Title" xml:space="preserve">
+    <value>Akıllı Kategoriler</value>
+  </data>
+  <data name="index.feature2Desc" xml:space="preserve">
+    <value>Beğendiğin içerikleri düzenli ve bulunması kolay hale getir. İstediğin kadar kategori oluştur, istediğin gibi düzenle.</value>
+  </data>
+  <data name="index.feature3Title" xml:space="preserve">
+    <value>Kişisel Notlar</value>
+  </data>
+  <data name="index.feature3Desc" xml:space="preserve">
+    <value>Her içeriğe kendi notunu ekle. Neden beğendiğini, ne yapmak istediğini kaybetme.</value>
+  </data>
+  <data name="index.feature4Title" xml:space="preserve">
+    <value>Gizli Kasa</value>
+  </data>
+  <data name="index.feature4Desc" xml:space="preserve">
+    <value>Sadece senin görmeni istediğin içerikler için. Face ID ile korunan özel koleksiyonlar — Premium ile gelir.</value>
+  </data>
+  <data name="index.feature5Title" xml:space="preserve">
+    <value>Kolay Paylaşım</value>
+  </data>
+  <data name="index.feature5Desc" xml:space="preserve">
+    <value>Kullanıcı adı veya e-posta ile arkadaşını bul ve koleksiyonunu gönder. Kabul ettiği anda içerikler onun kütüphanesinde. Premium ile gelir.</value>
+  </data>
+  <data name="index.feature6Title" xml:space="preserve">
+    <value>Premium Temalar</value>
+  </data>
+  <data name="index.feature6Desc" xml:space="preserve">
+    <value>Air ücretsiz; Midnight ve Vibe temaları, ana ekran uygulama ikonları ve özel koleksiyon ikonları Premium ile açılır.</value>
+  </data>
+  <data name="index.screensEyebrow" xml:space="preserve">
+    <value>Uygulama Ekranları</value>
+  </data>
+  <data name="index.screensTitle" xml:space="preserve">
+    <value>Basit. Güçlü. Güzel.</value>
+  </data>
+  <data name="index.screensSubtitle" xml:space="preserve">
+    <value>Beğendiğin içeriklere her zaman tek dokunuşla ulaş. Temiz, sade ve göze zevk veren bir deneyim.</value>
+  </data>
+  <data name="index.screenAltFormat" xml:space="preserve">
+    <value>Somine ekran {0}</value>
+  </data>
+  <data name="index.howEyebrow" xml:space="preserve">
+    <value>Nasıl Çalışır</value>
+  </data>
+  <data name="index.howTitle" xml:space="preserve">
+    <value>Tek Tıkla Koleksiyonuna Ekle</value>
+  </data>
+  <data name="index.howSubtitle" xml:space="preserve">
+    <value>Herhangi bir uygulamadan içeriklerini Somine koleksiyonlarına kaydetmek sadece 3 adım. İçerik kopyalanmaz — orijinal haliyle platforma bağlı kalır.</value>
+  </data>
+  <data name="index.step1Title" xml:space="preserve">
+    <value>Platformdan Paylaş</value>
+  </data>
+  <data name="index.step1Desc" xml:space="preserve">
+    <value>Desteklediğimiz platformlardan paylaş (share) seçimi yap.</value>
+  </data>
+  <data name="index.step2Title" xml:space="preserve">
+    <value>Somine'ye Tıkla</value>
+  </data>
+  <data name="index.step2Desc" xml:space="preserve">
+    <value>Çıkan uygulama listesinden Somine logosuna tıkla.</value>
+  </data>
+  <data name="index.step3Title" xml:space="preserve">
+    <value>Koleksiyona Ekle</value>
+  </data>
+  <data name="index.step3Desc" xml:space="preserve">
+    <value>"Koleksiyona Ekle" ile içeriğini kaydet — işte bu kadar kolay!</value>
+  </data>
+  <data name="index.platformsEyebrow" xml:space="preserve">
+    <value>Platform Desteği</value>
+  </data>
+  <data name="index.platformsTitlePart1" xml:space="preserve">
+    <value>Her Yerden</value>
+  </data>
+  <data name="index.platformsTitleHighlight" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="index.platformsSubtitle" xml:space="preserve">
+    <value>Instagram, YouTube, Pinterest ve daha fazlası — 15+ popüler platformun yanı sıra tüm web linklerini tek bir yerde topla.</value>
+  </data>
+  <data name="index.platformWebLinks" xml:space="preserve">
+    <value>Web Linkleri</value>
+  </data>
+  <data name="index.themesEyebrow" xml:space="preserve">
+    <value>Temalar</value>
+  </data>
+  <data name="index.themesTitle" xml:space="preserve">
+    <value>Kendi Tarzını Yansıt</value>
+  </data>
+  <data name="index.themesSubtitle" xml:space="preserve">
+    <value>Air ücretsiz, Midnight ve Vibe ise Premium ile açılır. Hangisi sana uygunsa onu seç, uygulamanı istediğin gibi hissettir.</value>
+  </data>
+  <data name="index.themeAirTag" xml:space="preserve">
+    <value>Minimalist &amp; Ferah</value>
+  </data>
+  <data name="index.themeAirFootTitle" xml:space="preserve">
+    <value>Air Teması</value>
+  </data>
+  <data name="index.themeAirFootSub" xml:space="preserve">
+    <value>Açık renkler, sade tasarım</value>
+  </data>
+  <data name="index.themeMidnightTag" xml:space="preserve">
+    <value>Karanlık &amp; Şık</value>
+  </data>
+  <data name="index.themeMidnightFootTitle" xml:space="preserve">
+    <value>Midnight Teması</value>
+  </data>
+  <data name="index.themeMidnightFootSub" xml:space="preserve">
+    <value>Koyu tonlar, göz dostu</value>
+  </data>
+  <data name="index.themeVibeTag" xml:space="preserve">
+    <value>Enerjik &amp; Cesur</value>
+  </data>
+  <data name="index.themeVibeFootTitle" xml:space="preserve">
+    <value>Vibe Teması</value>
+  </data>
+  <data name="index.themeVibeFootSub" xml:space="preserve">
+    <value>Pembe-mavi gradient, enerjik</value>
+  </data>
+  <data name="index.themesFootnote" xml:space="preserve">
+    <value>Premium'a geçerek tüm temalara ve özel uygulama ikonlarına eriş</value>
+  </data>
+  <data name="index.premiumEyebrow" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="index.premiumTitlePart1" xml:space="preserve">
+    <value>Sınırları</value>
+  </data>
+  <data name="index.premiumTitleHighlight" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="index.premiumSubtitle" xml:space="preserve">
+    <value>Sınırları kaldır, koleksiyonlarını ve içeriklerini sınırsız büyüt. Uygulamanı tamamen kendine göre özelleştir.</value>
+  </data>
+  <data name="index.planFreeLabel" xml:space="preserve">
+    <value>Ücretsiz</value>
+  </data>
+  <data name="index.planStarterName" xml:space="preserve">
+    <value>Starter</value>
+  </data>
+  <data name="index.planStarterDesc" xml:space="preserve">
+    <value>Temel ihtiyaçlar için tamamen ücretsiz</value>
+  </data>
+  <data name="index.planPaidLabel" xml:space="preserve">
+    <value>Ücretli</value>
+  </data>
+  <data name="index.planPremiumName" xml:space="preserve">
+    <value>Premium</value>
+  </data>
+  <data name="index.planPremiumDesc" xml:space="preserve">
+    <value>Sınırsız özgürlük, tam özelleştirme</value>
+  </data>
+  <data name="plan.collections10" xml:space="preserve">
+    <value>10 koleksiyon</value>
+  </data>
+  <data name="plan.items500" xml:space="preserve">
+    <value>Toplam 500 içerik</value>
+  </data>
+  <data name="plan.reminders3" xml:space="preserve">
+    <value>3 aktif hatırlatıcı</value>
+  </data>
+  <data name="plan.vault" xml:space="preserve">
+    <value>Gizli Kasa (Face ID / Touch ID)</value>
+  </data>
+  <data name="plan.cloudSync" xml:space="preserve">
+    <value>Bulut senkronizasyonu</value>
+  </data>
+  <data name="plan.collectionSharing" xml:space="preserve">
+    <value>Koleksiyon paylaşımı</value>
+  </data>
+  <data name="plan.smartPreview" xml:space="preserve">
+    <value>Akıllı link önizleme</value>
+  </data>
+  <data name="plan.themeAir" xml:space="preserve">
+    <value>Air teması</value>
+  </data>
+  <data name="plan.themesAll" xml:space="preserve">
+    <value>Air, Midnight ve Vibe temaları</value>
+  </data>
+  <data name="plan.platforms" xml:space="preserve">
+    <value>15+ platform desteği</value>
+  </data>
+  <data name="plan.export" xml:space="preserve">
+    <value>Verilerini dışa aktarma (JSON / CSV)</value>
+  </data>
+  <data name="plan.customIcons" xml:space="preserve">
+    <value>Özel uygulama ikonları</value>
+  </data>
+  <data name="plan.customIcons5" xml:space="preserve">
+    <value>5 özel uygulama ikonu</value>
+  </data>
+  <data name="plan.unlimitedCollections" xml:space="preserve">
+    <value>Sınırsız koleksiyon</value>
+  </data>
+  <data name="plan.unlimitedItems" xml:space="preserve">
+    <value>Sınırsız içerik</value>
+  </data>
+  <data name="plan.unlimitedReminders" xml:space="preserve">
+    <value>Sınırsız hatırlatıcı</value>
+  </data>
+  <data name="index.ctaEyebrow" xml:space="preserve">
+    <value>Ücretsiz başla</value>
+  </data>
+  <data name="index.ctaTitlePart1" xml:space="preserve">
+    <value>Beğendiklerini</value>
+  </data>
+  <data name="index.ctaTitleHighlight" xml:space="preserve">
+    <value>tek bir yerde topla</value>
+  </data>
+  <data name="index.ctaSubtitle" xml:space="preserve">
+    <value>Artık her şeyin bir yeri var.</value>
+  </data>
+  <data name="share.notFoundPageTitle" xml:space="preserve">
+    <value>Bağlantı bulunamadı</value>
+  </data>
+  <data name="share.notFoundTitle" xml:space="preserve">
+    <value>Bu bağlantı artık geçerli değil</value>
+  </data>
+  <data name="share.notFoundBody" xml:space="preserve">
+    <value>Paylaşım kaldırılmış ya da bağlantı hatalı olabilir. Bağlantıyı sana gönderen kişiden yenisini isteyebilirsin.</value>
+  </data>
+  <data name="share.backHome" xml:space="preserve">
+    <value>Ana sayfaya dön</value>
+  </data>
+  <data name="share.eyebrow" xml:space="preserve">
+    <value>Paylaşılan Koleksiyon</value>
+  </data>
+  <data name="share.sharedByFormat" xml:space="preserve">
+    <value>{0} tarafından paylaşıldı</value>
+  </data>
+  <data name="share.itemCountOne" xml:space="preserve">
+    <value>{0} içerik</value>
+  </data>
+  <data name="share.itemCountOther" xml:space="preserve">
+    <value>{0} içerik</value>
+  </data>
+  <data name="share.emptyTitle" xml:space="preserve">
+    <value>Bu koleksiyonda henüz içerik yok</value>
+  </data>
+  <data name="share.emptyBody" xml:space="preserve">
+    <value>Sahibi içerik ekledikçe burada görünecek.</value>
+  </data>
+  <data name="share.openLink" xml:space="preserve">
+    <value>Bağlantıyı aç</value>
+  </data>
+  <data name="share.ctaTitle" xml:space="preserve">
+    <value>Bu koleksiyonu Somine'de aç</value>
+  </data>
+  <data name="share.ctaBody" xml:space="preserve">
+    <value>Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — Somine hepsini bir araya getirir.</value>
+  </data>
+  <data name="share.reportLink" xml:space="preserve">
+    <value>Bu içeriği bildir</value>
+  </data>
+  <data name="share.reportNote" xml:space="preserve">
+    <value>Uygunsuz içerik bildirimlerini 24 saat içinde değerlendiriyoruz.</value>
+  </data>
+  <data name="share.reportDetails" xml:space="preserve">
+    <value>Ayrıntılar</value>
+  </data>
+  <data name="share.reportMailSubject" xml:space="preserve">
+    <value>İçerik bildirimi — Somine</value>
+  </data>
+  <data name="share.reportMailBodyFormat" xml:space="preserve">
+    <value>Bildirilen sayfa: {0}
+
+Sorun nedir?
+</value>
+  </data>
+  <data name="share.ogTitleFormat" xml:space="preserve">
+    <value>{0} — Somine</value>
+  </data>
+  <data name="share.ogDescriptionWithCountFormat" xml:space="preserve">
+    <value>{0} içerik içeren bir Somine koleksiyonu.</value>
+  </data>
+  <data name="share.ogDescriptionEmpty" xml:space="preserve">
+    <value>Somine'de paylaşılan bir koleksiyon.</value>
+  </data>
+  <data name="share.ogDescriptionNotFound" xml:space="preserve">
+    <value>Beğendiğin içerikleri Somine ile tek bir yerde topla.</value>
+  </data>
+  <data name="support.title" xml:space="preserve">
+    <value>Destek</value>
+  </data>
+  <data name="support.description" xml:space="preserve">
+    <value>Somine uygulaması hakkında sık sorulan sorular ve destek talebi için bizimle iletişime geçin.</value>
+  </data>
+  <data name="support.eyebrow" xml:space="preserve">
+    <value>Destek</value>
+  </data>
+  <data name="support.heading" xml:space="preserve">
+    <value>Nasıl yardımcı olabiliriz?</value>
+  </data>
+  <data name="support.subheading" xml:space="preserve">
+    <value>Somine hakkında aklına takılan her şeyi sor.</value>
+  </data>
+  <data name="support.emailLabel" xml:space="preserve">
+    <value>E-posta</value>
+  </data>
+  <data name="support.responseTimeLabel" xml:space="preserve">
+    <value>Yanıt Süresi</value>
+  </data>
+  <data name="support.responseTimeValue" xml:space="preserve">
+    <value>Genellikle 24 saat içinde</value>
+  </data>
+  <data name="support.reportHeading" xml:space="preserve">
+    <value>İçerik bildirimi</value>
+  </data>
+  <data name="support.reportSubtitle" xml:space="preserve">
+    <value>Uygunsuz veya rahatsız edici bir içerikle karşılaştıysan bize bildir.</value>
+  </data>
+  <data name="support.faqHeading" xml:space="preserve">
+    <value>Sıkça Sorulan Sorular</value>
+  </data>
+  <data name="support.faq1Q" xml:space="preserve">
+    <value>Somine nasıl çalışır?</value>
+  </data>
+  <data name="support.faq1A" xml:space="preserve">
+    <value>Somine, Instagram, YouTube, Pinterest ve diğer platformlardaki beğendiğin içerikleri tek bir yerde toplamanı sağlar. Herhangi bir uygulamada paylaş butonuna basıp Somine'yi seçmen yeterli — içerik orijinal haliyle platforma bağlı kalır, kopyalanmaz.</value>
+  </data>
+  <data name="support.faq2Q" xml:space="preserve">
+    <value>Koleksiyonlar nasıl oluşturulur?</value>
+  </data>
+  <data name="support.faq2A" xml:space="preserve">
+    <value>Koleksiyonlar sekmesinde sağ üstteki + butonuna basarak yeni koleksiyon oluşturabilirsiniz. Koleksiyonlarınıza isim ve ikon atayabilirsiniz.</value>
+  </data>
+  <data name="support.faq3Q" xml:space="preserve">
+    <value>Ücretsiz sürümde neler var?</value>
+  </data>
+  <data name="support.faq3A" xml:space="preserve">
+    <value>Ücretsiz planda 10 koleksiyon, toplam 500 içerik ve 3 aktif hatırlatıcı hakkın var. Bulut senkronizasyonu, arama, ana ekran widget'ı, haftalık özet bildirimi, Air teması ve verilerini dışa aktarma ücretsizdir.</value>
+  </data>
+  <data name="support.faq4Q" xml:space="preserve">
+    <value>Premium ile ne değişiyor?</value>
+  </data>
+  <data name="support.faq4A" xml:space="preserve">
+    <value>Premium ile koleksiyon ve içerik sınırı kalkar, sınırsız ekleyebilirsin. Ayrıca Gizli Kasa (Face ID/Touch ID), koleksiyon paylaşımı, Midnight ve Vibe temaları ile 5 özel ana ekran uygulama ikonu Premium'a özeldir.</value>
+  </data>
+  <data name="support.faq5Q" xml:space="preserve">
+    <value>Gizli Kasa nasıl çalışır?</value>
+  </data>
+  <data name="support.faq5A" xml:space="preserve">
+    <value>Gizli Kasa bir Premium özelliğidir. Seçtiğin koleksiyonu Face ID veya Touch ID ile kilitler; kilidi açmadığın sürece o koleksiyonun içerikleri cihazına indirilmez, ana ekran widget'ında ve bildirimlerde de görünmez.</value>
+  </data>
+  <data name="support.faq6Q" xml:space="preserve">
+    <value>Koleksiyonumu arkadaşımla nasıl paylaşırım?</value>
+  </data>
+  <data name="support.faq6A" xml:space="preserve">
+    <value>Koleksiyon paylaşımı bir Premium özelliğidir. İki yolu var: kişiyle paylaşabilir (arkadaşının kullanıcı adını girersin, o kabul edince koleksiyon kütüphanesine eklenir) veya herkese açık bir bağlantı oluşturabilirsin. Bağlantıyı istediğin an iptal edebilirsin; iptal ettiğin anda sayfa erişilemez olur.</value>
+  </data>
+  <data name="support.faq7Q" xml:space="preserve">
+    <value>Hatırlatıcılar nasıl çalışır?</value>
+  </data>
+  <data name="support.faq7A" xml:space="preserve">
+    <value>Kaydettiğin bir içeriğe tarih ve saat verirsin; vakti gelince telefonunda bildirim çıkar ve hatırlatıcı uygulama içindeki Bildirimler listesinde de görünür. Tekrarlayan hatırlatıcı kurabilirsin. Ayrıca haftalık özet, hiç açmadığın kayıtları Pazar akşamı hatırlatır — bunu Ayarlar'dan kapatabilirsin.</value>
+  </data>
+  <data name="support.faq8Q" xml:space="preserve">
+    <value>Paylaşılan bir koleksiyonda uygunsuz içerik görürsem ne yapmalıyım?</value>
+  </data>
+  <data name="support.faq8A" xml:space="preserve">
+    <value>Bize bildir. Bu sayfadaki "İçerik bildirimi" bölümünde nereye ve neleri yazman gerektiği anlatılıyor; bildirimleri 24 saat içinde değerlendiriyoruz. Ayrıca istemediğin bir paylaşım isteğini reddedebilir, kabul ettiğin bir paylaşımı kütüphanenden kaldırabilirsin.</value>
+  </data>
+  <data name="support.faq9Q" xml:space="preserve">
+    <value>Hesabımı nasıl silerim?</value>
+  </data>
+  <data name="support.faq9A" xml:space="preserve">
+    <value>Uygulama içinden Profil &gt; Ayarlar &gt; Hesabı Sil adımlarıyla hesabını ve tüm içeriğini kalıcı olarak silebilirsin. Silmeden önce Profil ekranındaki "Verilerini dışa aktar" seçeneğiyle kayıtlarını JSON veya CSV olarak indirebilirsin.</value>
+  </data>
+  <data name="support.contactHeading" xml:space="preserve">
+    <value>Bize Ulaşın</value>
+  </data>
+  <data name="support.contactIntroFormat" xml:space="preserve">
+    <value>Formu doldur, "Mesaj Gönder"e bastığında mail uygulaman hazır bir taslakla açılır. Dilersen doğrudan {0} adresine de yazabilirsin.</value>
+  </data>
+  <data name="support.formName" xml:space="preserve">
+    <value>Adınız</value>
+  </data>
+  <data name="support.formNamePlaceholder" xml:space="preserve">
+    <value>Adınızı giriniz</value>
+  </data>
+  <data name="support.formEmail" xml:space="preserve">
+    <value>E-posta</value>
+  </data>
+  <data name="support.formMessage" xml:space="preserve">
+    <value>Mesajınız</value>
+  </data>
+  <data name="support.formMessagePlaceholder" xml:space="preserve">
+    <value>Mesajınızı buraya yazabilirsiniz...</value>
+  </data>
+  <data name="support.formSubmit" xml:space="preserve">
+    <value>Mesaj Gönder</value>
+  </data>
+  <data name="support.mailSubject" xml:space="preserve">
+    <value>Somine Destek</value>
+  </data>
+  <data name="support.mailFieldName" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="support.mailFieldEmail" xml:space="preserve">
+    <value>E-posta</value>
+  </data>
+  <data name="privacy.title" xml:space="preserve">
+    <value>Gizlilik Politikası</value>
+  </data>
+  <data name="privacy.description" xml:space="preserve">
+    <value>Somine uygulamasının gizlilik politikası ve veri işleme uygulamaları hakkında bilgi edinin.</value>
+  </data>
+  <data name="privacy.lastUpdated" xml:space="preserve">
+    <value>Son güncelleme: 2 Ağustos 2026</value>
+  </data>
+  <data name="terms.title" xml:space="preserve">
+    <value>Kullanım Şartları</value>
+  </data>
+  <data name="terms.description" xml:space="preserve">
+    <value>Somine uygulamasının kullanım şartları ve koşulları hakkında bilgi edinin.</value>
+  </data>
+  <data name="terms.lastUpdated" xml:space="preserve">
+    <value>Son güncelleme: 1 Ocak 2026</value>
+  </data>
+  <data name="delete.title" xml:space="preserve">
+    <value>Hesap Silme</value>
+  </data>
+  <data name="delete.description" xml:space="preserve">
+    <value>Somine uygulamasında hesap silme işlemi hakkında detaylı bilgi edinin.</value>
+  </data>
+  <data name="delete.eyebrow" xml:space="preserve">
+    <value>Hesap</value>
+  </data>
+  <data name="delete.subheading" xml:space="preserve">
+    <value>Hesabınızı kalıcı olarak silme hakkında bilgi.</value>
+  </data>
+  <data name="delete.howHeading" xml:space="preserve">
+    <value>Hesabınızı Nasıl Silebilirsiniz?</value>
+  </data>
+  <data name="delete.stepsIntro" xml:space="preserve">
+    <value>Adımlar:</value>
+  </data>
+  <data name="delete.step1" xml:space="preserve">
+    <value>Somine uygulamasını açın</value>
+  </data>
+  <data name="delete.step2" xml:space="preserve">
+    <value>Alt menüden Profil sekmesine gidin</value>
+  </data>
+  <data name="delete.step3" xml:space="preserve">
+    <value>Hesap Bilgileri bölümüne tıklayın</value>
+  </data>
+  <data name="delete.step4" xml:space="preserve">
+    <value>En altta "Hesabımı Sil" seçeneğine dokunun</value>
+  </data>
+  <data name="delete.step5" xml:space="preserve">
+    <value>Onay diyalogunda "Sil" butonuna basın</value>
+  </data>
+  <data name="delete.removedHeading" xml:space="preserve">
+    <value>Silme İşleminde Neler Kaldırılır?</value>
+  </data>
+  <data name="delete.removedIntro" xml:space="preserve">
+    <value>Hesabınız silindiğinde aşağıdaki tüm veriler kalıcı olarak kaldırılır:</value>
+  </data>
+  <data name="delete.tableData" xml:space="preserve">
+    <value>Veri</value>
+  </data>
+  <data name="delete.tableStatus" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="delete.statusDeleted" xml:space="preserve">
+    <value>Kalıcı olarak silinir</value>
+  </data>
+  <data name="delete.statusRemoved" xml:space="preserve">
+    <value>Kaldırılır</value>
+  </data>
+  <data name="delete.data1" xml:space="preserve">
+    <value>Kaydettiğiniz tüm içerikler (linkler, notlar)</value>
+  </data>
+  <data name="delete.data2" xml:space="preserve">
+    <value>Oluşturduğunuz koleksiyonlar ve kategoriler</value>
+  </data>
+  <data name="delete.data3" xml:space="preserve">
+    <value>Profil bilgileriniz (ad, kullanıcı adı, fotoğraf)</value>
+  </data>
+  <data name="delete.data4" xml:space="preserve">
+    <value>Firebase Authentication hesabınız</value>
+  </data>
+  <data name="delete.data5" xml:space="preserve">
+    <value>Google/Apple oturum bağlantıları</value>
+  </data>
+  <data name="delete.importantHeading" xml:space="preserve">
+    <value>Önemli Bilgiler</value>
+  </data>
+  <data name="delete.important1" xml:space="preserve">
+    <value>Bu işlem geri alınamaz.</value>
+  </data>
+  <data name="delete.important2" xml:space="preserve">
+    <value>Aktif bir aboneliğiniz varsa, hesabınızı silmeden önce aboneliğinizi Ayarlar &gt; Apple Kimliği &gt; Abonelikler bölümünden iptal etmeniz önerilir. Aksi takdirde abonelik otomatik yenilenmeye devam edebilir.</value>
+  </data>
+  <data name="delete.important3" xml:space="preserve">
+    <value>Silme işlemi anında gerçekleşir; ek bir bekleme süresi yoktur.</value>
+  </data>
+  <data name="delete.helpHeading" xml:space="preserve">
+    <value>Yardıma mı İhtiyacınız Var?</value>
+  </data>
+  <data name="delete.helpBody" xml:space="preserve">
+    <value>Hesap silme süreciyle ilgili herhangi bir sorunuz veya yardıma ihtiyacınız varsa, bizimle iletişime geçmekten çekinmeyin.</value>
+  </data>
+  <data name="delete.mailSubject" xml:space="preserve">
+    <value>Hesap Silme Talebi</value>
+  </data>
+  <data name="delete.goSupport" xml:space="preserve">
+    <value>Destek Sayfasına Git</value>
+  </data>
+</root>

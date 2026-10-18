@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Tailwind çıktısı wwwroot'a commit'leniyor; node yalnızca dev-time araç. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);node_modules\**;Styles\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="node_modules\**" />
+    <Content Remove="package.json" />
+    <Content Remove="package-lock.json" />
+    <None Remove="node_modules\**" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="@SiteLanguages.HtmlLang(SiteLanguages.Current)">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* Marka yazımı her yerde "Somine" — "SoMine"/"So Mine" kullanılmaz. *@
+    <title>@ViewData["Title"] - Somine</title>
+    @RenderSection("Head", required: false)
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <main class="page">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <span>&copy; @DateTime.UtcNow.Year Somine</span>
+        </div>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

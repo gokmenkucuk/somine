@@ -1,0 +1,184 @@
+@page "/support"
+@model SupportModel
+@{
+    Layout = "_LandingLayout";
+    ViewData["Title"] = L["support.title"].Value;
+    ViewData["Description"] = L["support.description"].Value;
+
+    // FAQ iki dilde de uygulamanın gerçeğiyle uyumlu: 10 koleksiyon / toplam 500 içerik /
+    // 3 aktif hatırlatıcı; Gizli Kasa ve koleksiyon paylaşımı Premium.
+    var faqItems = Enumerable.Range(1, 9)
+        .Select(i => new
+        {
+            Question = L[$"support.faq{i}Q"].Value,
+            Answer = L[$"support.faq{i}A"].Value,
+        })
+        .ToArray();
+
+    // Uzun uyum metni dile göre ayrı parçada; kısa arayüz metinleri resx'te.
+    var reportPartial = SiteLanguages.Current == SiteLanguages.English
+        ? "_SupportReport.en"
+        : "_SupportReport.tr";
+
+    var contactLink = "<a href=\"mailto:support@somineapp.com?subject=Somine%20Destek\" class=\"text-[#688E8B] hover:underline\">support@somineapp.com</a>";
+}
+
+<main class="min-h-screen flex flex-col bg-white">
+
+    <section class="pt-32 pb-16 bg-[#E8F1EF]">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8">
+            <a href="/" class="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
+                ← @L["common.backHome"]
+            </a>
+            <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-3">@L["support.eyebrow"]</p>
+            <h1 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-3">
+                @L["support.heading"]
+            </h1>
+            <p class="text-gray-500 text-lg">
+                @L["support.subheading"]
+            </p>
+        </div>
+    </section>
+
+    <section class="flex-1 bg-white">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 py-16">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
+                <div class="flex items-center gap-4 bg-[#F4F9F8] rounded-2xl p-5 border border-[#E8F1EF]">
+                    <div class="w-11 h-11 rounded-xl bg-[#688E8B]/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#688E8B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800 text-sm mb-0.5">@L["support.emailLabel"]</p>
+                        <a href="mailto:support@somineapp.com" class="text-[#688E8B] text-sm hover:underline">
+                            support@somineapp.com
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 bg-[#F4F9F8] rounded-2xl p-5 border border-[#E8F1EF]">
+                    <div class="w-11 h-11 rounded-xl bg-[#688E8B]/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#688E8B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800 text-sm mb-0.5">@L["support.responseTimeLabel"]</p>
+                        <p class="text-gray-500 text-sm">@L["support.responseTimeValue"]</p>
+                    </div>
+                </div>
+            </div>
+
+            @* Çapa (#icerik-bildirimi) iki dilde de AYNI kalmalı: paylaşım sayfasındaki
+               "Ayrıntılar" bağlantısı ve dışarıdan verilmiş adresler buna işaret ediyor. *@
+            <div id="icerik-bildirimi" class="scroll-mt-28 mb-16 rounded-2xl border border-[#E8F1EF] bg-[#F4F9F8] p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-5">
+                    <div class="w-11 h-11 rounded-xl bg-[#688E8B]/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#688E8B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 9v4" />
+                            <path d="M10.363 3.591 2.257 17.125a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.871L13.637 3.591a1.914 1.914 0 0 0-3.274 0z" />
+                            <path d="M12 16h.01" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-900 tracking-tight mb-1">@L["support.reportHeading"]</h2>
+                        <p class="text-gray-500">@L["support.reportSubtitle"]</p>
+                    </div>
+                </div>
+
+                <partial name="@reportPartial" />
+            </div>
+
+            <div class="mb-20">
+                <h2 class="text-2xl font-semibold text-gray-900 tracking-tight mb-8">
+                    @L["support.faqHeading"]
+                </h2>
+                <div class="space-y-3">
+                    @foreach (var item in faqItems)
+                    {
+                        <details class="group bg-white rounded-2xl border border-gray-100 px-6 open:border-[#688E8B]/20 open:shadow-sm transition-all">
+                            <summary class="flex items-center justify-between gap-4 cursor-pointer list-none text-left text-gray-800 font-medium hover:text-[#688E8B] py-5">
+                                <span>@item.Question</span>
+                                <svg class="w-4 h-4 shrink-0 transition-transform duration-300 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
+                            </summary>
+                            <div class="text-gray-500 leading-relaxed pb-5">@item.Answer</div>
+                        </details>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
+                    @L["support.contactHeading"]
+                </h2>
+                <p class="text-gray-500 mb-8">
+                    @Html.Raw(L["support.contactIntroFormat", contactLink].Value)
+                </p>
+
+                <form id="contact-form" class="space-y-5"
+                      data-subject="@L["support.mailSubject"]"
+                      data-label-name="@L["support.mailFieldName"]"
+                      data-label-email="@L["support.mailFieldEmail"]">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="space-y-2">
+                            <label for="name" class="text-sm font-medium text-gray-700">@L["support.formName"]</label>
+                            <input id="name" name="name" placeholder="@L["support.formNamePlaceholder"]" required
+                                   class="w-full rounded-xl border border-gray-200 focus:border-[#688E8B] focus:ring-2 focus:ring-[#688E8B]/20 focus:outline-none h-11 px-3" />
+                        </div>
+                        <div class="space-y-2">
+                            <label for="email" class="text-sm font-medium text-gray-700">@L["support.formEmail"]</label>
+                            <input id="email" name="email" type="email" placeholder="ornek@email.com" required
+                                   class="w-full rounded-xl border border-gray-200 focus:border-[#688E8B] focus:ring-2 focus:ring-[#688E8B]/20 focus:outline-none h-11 px-3" />
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="message" class="text-sm font-medium text-gray-700">@L["support.formMessage"]</label>
+                        <textarea id="message" name="message" placeholder="@L["support.formMessagePlaceholder"]" required rows="6"
+                                  class="w-full rounded-xl border border-gray-200 focus:border-[#688E8B] focus:ring-2 focus:ring-[#688E8B]/20 focus:outline-none resize-none px-3 py-2"></textarea>
+                    </div>
+                    <button type="submit" class="inline-flex items-center gap-2 bg-[#688E8B] hover:bg-[#5a7e7b] text-white text-sm font-medium px-7 py-3 rounded-full transition-colors duration-300">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+                            <path d="m21.854 2.147-10.94 10.939" />
+                        </svg>
+                        @L["support.formSubmit"]
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<script>
+    // mailto: hedefli form gönderimini tarayıcılar güvenilir biçimde desteklemiyor
+    // (Chrome sessizce yutuyor). Bu yüzden taslağı elle kuruyoruz.
+    // Konu ve alan etiketleri sunucudan data-* ile geliyor; taslak da sayfanın dilinde olur.
+    (function () {
+        var form = document.getElementById('contact-form');
+        if (!form) return;
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            var name = (form.querySelector('#name') || {}).value || '';
+            var email = (form.querySelector('#email') || {}).value || '';
+            var message = (form.querySelector('#message') || {}).value || '';
+
+            var subject = form.getAttribute('data-subject') || 'Somine';
+            var labelName = form.getAttribute('data-label-name') || 'Name';
+            var labelEmail = form.getAttribute('data-label-email') || 'Email';
+
+            var body = labelName + ': ' + name + '\n' + labelEmail + ': ' + email + '\n\n' + message;
+
+            window.location.href = 'mailto:support@somineapp.com'
+                + '?subject=' + encodeURIComponent(subject + ' — ' + name)
+                + '&body=' + encodeURIComponent(body);
+        });
+    })();
+</script>

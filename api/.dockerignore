@@ -1,0 +1,15 @@
+.git
+.gitignore
+.DS_Store
+**/bin
+**/obj
+**/node_modules
+**/.vs
+**/.idea
+**/uploads
+**/appsettings.Local.json
+LOCAL_SECRETS.md
+.env
+.env.*
+secrets/
+postgres/

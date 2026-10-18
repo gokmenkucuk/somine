@@ -1,0 +1,155 @@
+@page "/delete-account"
+@model DeleteAccountModel
+@{
+    Layout = "_LandingLayout";
+    ViewData["Title"] = L["delete.title"].Value;
+    ViewData["Description"] = L["delete.description"].Value;
+
+    var deleteSteps = Enumerable.Range(1, 5).Select(i => L[$"delete.step{i}"].Value).ToArray();
+
+    var deletedData = new[]
+    {
+        new { Label = L["delete.data1"].Value, Status = L["delete.statusDeleted"].Value },
+        new { Label = L["delete.data2"].Value, Status = L["delete.statusDeleted"].Value },
+        new { Label = L["delete.data3"].Value, Status = L["delete.statusDeleted"].Value },
+        new { Label = L["delete.data4"].Value, Status = L["delete.statusDeleted"].Value },
+        new { Label = L["delete.data5"].Value, Status = L["delete.statusRemoved"].Value },
+    };
+
+    var importantNotes = Enumerable.Range(1, 3).Select(i => L[$"delete.important{i}"].Value).ToArray();
+
+    var mailSubject = Uri.EscapeDataString(L["delete.mailSubject"].Value);
+}
+
+<main class="min-h-screen flex flex-col">
+
+    <section class="pt-32 pb-16 bg-[#E8F1EF]">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8">
+            <a href="/" class="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
+                ← @L["common.backHome"]
+            </a>
+            <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-3">@L["delete.eyebrow"]</p>
+            <h1 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-3">@L["delete.title"]</h1>
+            <p class="text-gray-500 text-lg">@L["delete.subheading"]</p>
+        </div>
+    </section>
+
+    <section class="flex-1 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="prose prose-slate max-w-none space-y-8">
+
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+                                <path d="M12 18h.01" />
+                            </svg>
+                        </span>
+                        @L["delete.howHeading"]
+                    </h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">@L["delete.stepsIntro"]</p>
+                    <div class="space-y-3">
+                        @for (var i = 0; i < deleteSteps.Length; i++)
+                        {
+                            <div class="flex items-start gap-4 bg-[#E8F1EF] rounded-xl p-4 border border-gray-100">
+                                <span class="w-8 h-8 rounded-full bg-gradient-to-br from-[#688E8B] to-[#688E8B] text-white text-sm font-bold flex items-center justify-center shrink-0">@(i + 1)</span>
+                                <p class="text-gray-500 text-sm pt-1">@deleteSteps[i]</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                <line x1="10" x2="10" y1="11" y2="17" />
+                                <line x1="14" x2="14" y1="11" y2="17" />
+                            </svg>
+                        </span>
+                        @L["delete.removedHeading"]
+                    </h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        @L["delete.removedIntro"]
+                    </p>
+                    <div class="bg-red-50/50 rounded-2xl border border-red-100 overflow-hidden">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-red-100">
+                                    <th class="text-left text-sm font-semibold text-gray-900 px-5 py-3">@L["delete.tableData"]</th>
+                                    <th class="text-left text-sm font-semibold text-gray-900 px-5 py-3">@L["delete.tableStatus"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in deletedData)
+                                {
+                                    <tr class="border-b border-red-100/50 last:border-0">
+                                        <td class="text-sm text-gray-500 px-5 py-3">@item.Label</td>
+                                        <td class="text-sm px-5 py-3">
+                                            <span class="inline-flex items-center gap-1.5 text-red-500">
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M18 6 6 18" />
+                                                    <path d="m6 6 12 12" />
+                                                </svg>
+                                                @item.Status
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 rounded-2xl p-6 border border-amber-200">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-amber-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                            <path d="M12 9v4" />
+                            <path d="M12 17h.01" />
+                        </svg>
+                        <div>
+                            <h3 class="text-lg font-semibold text-amber-800 mb-2">
+                                @L["delete.importantHeading"]
+                            </h3>
+                            <ul class="space-y-3 text-amber-700 text-sm leading-relaxed">
+                                @foreach (var note in importantNotes)
+                                {
+                                    <li class="flex items-start gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span>
+                                        @note
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-[#688E8B]/5 to-[#688E8B]/5 rounded-2xl p-6 border border-[#688E8B]/10">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                        @L["delete.helpHeading"]
+                    </h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">
+                        @L["delete.helpBody"]
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                        <a href="mailto:support@somineapp.com?subject=@mailSubject" class="inline-flex items-center gap-2 bg-[#688E8B] text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                            </svg>
+                            support@somineapp.com
+                        </a>
+                        <a href="/support" class="inline-flex items-center gap-2 bg-white rounded-xl px-5 py-2.5 text-sm font-medium text-[#688E8B] border border-[#688E8B]/20 hover:bg-[#688E8B]/5 transition-colors">
+                            @L["delete.goSupport"]
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>

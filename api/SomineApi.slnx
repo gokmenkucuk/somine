@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SomineApi.Application/SomineApi.Application.csproj" />
+    <Project Path="src/SomineApi.Domain/SomineApi.Domain.csproj" />
+    <Project Path="src/SomineApi.Infrastructure/SomineApi.Infrastructure.csproj" />
+    <Project Path="src/SomineApi.Migrator/SomineApi.Migrator.csproj" />
+    <Project Path="src/SomineApi.WebApi/SomineApi.WebApi.csproj" />
+    <Project Path="src/SomineWeb/SomineWeb.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SomineApi.Tests/SomineApi.Tests.csproj" />
+  </Folder>
+</Solution>

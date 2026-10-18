@@ -1,0 +1,318 @@
+@page "/s/{token}"
+@model ShareModel
+@{
+    Layout = "_LandingLayout";
+
+    var found = Model.Found && Model.Share != null;
+
+    ViewData["Title"] = found ? Model.Share!.CategoryName : L["share.notFoundPageTitle"].Value;
+    ViewData["Description"] = Model.OgDescription;
+    // OG/Twitter etiketleri asagidaki @section Head icinde veriliyor; layout'un genel
+    // etiketleri once render edilip scraper'lari yanlis yonlendirmesin diye bastiriliyor.
+    ViewData["SuppressDefaultOg"] = true;
+    // Bu sayfa her kosulda noindex; canonical/hreflang yayinlamiyoruz.
+    ViewData["SuppressAlternates"] = true;
+
+    var language = SiteLanguages.Current;
+    var alternateLanguage = language == SiteLanguages.English ? SiteLanguages.Default : SiteLanguages.English;
+
+    var appleGlyph = new Microsoft.AspNetCore.Html.HtmlString("<path d=\"M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z\" />");
+
+    var heroGradient = "background: linear-gradient(135deg, #688E8B 0%, #7AA39F 30%, #6FBFAC 60%, #8DD0C0 80%, #A8DDD0 100%)";
+
+    // Bildiren kisinin hangi sayfayi sikayet ettigini elle yazmasi gerekmesin diye adres onceden dolduruluyor.
+    var reportSubject = Uri.EscapeDataString(L["share.reportMailSubject"].Value);
+    var reportBody = Uri.EscapeDataString(
+        L["share.reportMailBodyFormat", $"https://somineapp.com/s/{Model.Token}"].Value);
+    var reportMailto = $"mailto:abuse@somineapp.com?subject={reportSubject}&body={reportBody}";
+}
+
+@section Head {
+    <meta name="robots" content="noindex" />
+    <meta property="og:title" content="@Model.OgTitle" />
+    <meta property="og:description" content="@Model.OgDescription" />
+    <meta property="og:image" content="@Model.OgImage" />
+    <meta property="og:url" content="https://somineapp.com/s/@Model.Token" />
+    <meta property="og:type" content="website" />
+    @* OG dili sayfanin gercekten render edildigi dille birebir ayni; belirsizlikte tr. *@
+    <meta property="og:locale" content="@SiteLanguages.OpenGraphLocale(language)" />
+    <meta property="og:locale:alternate" content="@SiteLanguages.OpenGraphLocale(alternateLanguage)" />
+    <meta name="twitter:card" content="summary_large_image" />
+    @if (!string.IsNullOrWhiteSpace(Model.AppStoreId))
+    {
+        <meta name="apple-itunes-app" content="app-id=@Model.AppStoreId" />
+    }
+}
+
+@if (!found)
+{
+    <main class="min-h-screen flex flex-col bg-white">
+        <section class="flex-1 flex items-center justify-center pt-32 pb-24 bg-[#E8F1EF] relative overflow-hidden">
+            <div class="absolute -top-32 -right-24 w-[460px] h-[460px] rounded-full bg-gradient-to-br from-white/60 to-transparent blur-[90px] pointer-events-none"></div>
+            <div class="absolute -bottom-32 -left-24 w-[380px] h-[380px] rounded-full bg-gradient-to-tr from-white/40 to-transparent blur-[90px] pointer-events-none"></div>
+
+            <div class="max-w-lg mx-auto px-6 sm:px-8 text-center relative">
+                <div class="hero-fade inline-flex items-center justify-center rounded-2xl bg-white px-7 py-5 shadow-[0_8px_30px_rgba(104,142,139,0.15)] mb-8" style="--hero-delay: 0.1s">
+                    <img src="/images/logo.png" alt="Somine" width="110" height="34" class="object-contain" />
+                </div>
+
+                <h1 class="hero-fade text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight leading-tight mb-4" style="--hero-delay: 0.25s">
+                    @L["share.notFoundTitle"]
+                </h1>
+                <p class="hero-fade text-gray-500 leading-relaxed mb-10" style="--hero-delay: 0.4s">
+                    @L["share.notFoundBody"]
+                </p>
+
+                <div class="hero-fade flex flex-col sm:flex-row items-center justify-center gap-3" style="--hero-delay: 0.55s">
+                    <a href="@Model.AppStoreUrl" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-3 bg-[#688E8B] hover:bg-[#5a7e7b] text-white px-7 py-3.5 rounded-full transition-all duration-300 hover:scale-[1.03] shadow-[0_8px_30px_rgba(104,142,139,0.25)]">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">@appleGlyph</svg>
+                        <span class="text-left">
+                            <span class="block text-[10px] opacity-60 leading-none font-normal">@L["index.ctaDownload"]</span>
+                            <span class="block font-semibold leading-tight text-sm">App Store</span>
+                        </span>
+                    </a>
+                    <a href="/" class="inline-flex items-center gap-2 text-sm font-medium text-[#688E8B] hover:text-[#4a6e6b] px-5 py-3 rounded-full hover:bg-white/60 transition-colors">
+                        @L["share.backHome"]
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+}
+else
+{
+    var share = Model.Share!;
+    var itemCount = share.Items.Count;
+    var sharerName = share.FromUserName?.Trim();
+    var initial = !string.IsNullOrWhiteSpace(sharerName)
+        ? char.ToUpperInvariant(sharerName![0]).ToString()
+        : "S";
+
+    // "{ad} tarafından paylaşıldı" / "Shared by {ad}" — ad iki dilde farklı yerde durduğu için
+    // biçim dizesine vurgulu <span> olarak enjekte ediliyor; ad önce HTML olarak kaçırılıyor.
+    var sharerHtml = !string.IsNullOrWhiteSpace(sharerName)
+        ? $"<span class=\"font-medium text-gray-800\">{System.Net.WebUtility.HtmlEncode(sharerName)}</span>"
+        : string.Empty;
+
+    var itemCountText = itemCount == 1
+        ? L["share.itemCountOne", itemCount].Value
+        : L["share.itemCountOther", itemCount].Value;
+
+    <main class="min-h-screen flex flex-col bg-white">
+
+        <!-- ─── BAŞLIK ─── -->
+        <section class="pt-32 pb-14 bg-[#E8F1EF] relative overflow-hidden">
+            <div class="absolute -top-32 -right-20 w-[460px] h-[460px] rounded-full bg-gradient-to-br from-white/60 to-transparent blur-[90px] pointer-events-none"></div>
+            <div class="absolute inset-0 opacity-[0.04] pointer-events-none" style="background-image: radial-gradient(circle, #688E8B 1px, transparent 1px); background-size: 32px 32px"></div>
+
+            <div class="max-w-6xl mx-auto px-6 sm:px-8 relative">
+                <p class="hero-fade text-[11px] font-semibold text-[#688E8B] uppercase tracking-[0.18em] mb-4" style="--hero-delay: 0.1s">
+                    @L["share.eyebrow"]
+                </p>
+
+                <h1 class="hero-fade text-4xl sm:text-5xl lg:text-6xl font-semibold text-gray-900 tracking-tight leading-[1.08] mb-6 break-words" style="--hero-delay: 0.25s">
+                    @share.CategoryName
+                </h1>
+
+                <div class="hero-fade flex flex-wrap items-center gap-x-3 gap-y-3" style="--hero-delay: 0.4s">
+                    @if (!string.IsNullOrWhiteSpace(sharerName))
+                    {
+                        <div class="inline-flex items-center gap-2.5">
+                            <span class="w-9 h-9 rounded-full bg-[#688E8B] text-white flex items-center justify-center text-sm font-semibold shrink-0">@initial</span>
+                            <span class="text-sm text-gray-600">
+                                @Html.Raw(L["share.sharedByFormat", sharerHtml].Value)
+                            </span>
+                        </div>
+                        <span class="hidden sm:block w-px h-5 bg-[#688E8B]/20"></span>
+                    }
+
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/70 border border-[#688E8B]/15 px-3.5 py-1.5 text-xs font-medium text-[#4a6e6b]">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        @itemCountText
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── İÇERİKLER ─── -->
+        <section class="flex-1 bg-white">
+            <div class="max-w-6xl mx-auto px-6 sm:px-8 py-14 sm:py-16">
+
+                @if (itemCount == 0)
+                {
+                    <div class="max-w-md mx-auto text-center rounded-3xl border border-dashed border-[#688E8B]/25 bg-[#F4F9F8] px-8 py-14">
+                        <div class="w-12 h-12 rounded-2xl bg-[#688E8B]/10 flex items-center justify-center mx-auto mb-5">
+                            <svg class="w-5 h-5 text-[#688E8B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" /><path d="M15 3v4a2 2 0 0 0 2 2h4" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-800 font-medium mb-1">@L["share.emptyTitle"]</p>
+                        <p class="text-sm text-gray-500">@L["share.emptyBody"]</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                        @foreach (var item in share.Items)
+                        {
+                            var image = Model.ResolveImageUrl(item.ImageUrl) ?? Model.ResolveImageUrl(item.OgImageUrl);
+                            var favicon = Model.ResolveImageUrl(item.OgFaviconUrl);
+                            var title = !string.IsNullOrWhiteSpace(item.OgTitle) ? item.OgTitle : item.Url;
+                            var hasImage = !string.IsNullOrWhiteSpace(image);
+
+                            // ogDescription bazen site adinin ya da basligin aynisi geliyor (orn. Spotify) — tekrari gosterme.
+                            var description = item.OgDescription?.Trim();
+                            var showDescription = !string.IsNullOrWhiteSpace(description)
+                                && !string.Equals(description, item.OgSiteName?.Trim(), StringComparison.OrdinalIgnoreCase)
+                                && !string.Equals(description, title?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                            if (item.Type == 1) // Not
+                            {
+                                <div class="min-w-0 rounded-2xl border border-[#688E8B]/15 bg-[#F4F9F8] p-6 flex flex-col">
+                                    <svg class="w-6 h-6 text-[#688E8B]/40 mb-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9.5 5C6.46 5 4 7.46 4 10.5c0 2.76 2.02 5.05 4.66 5.44L7 19h3.2l2.1-4.2c.46-.92.7-1.94.7-2.97V10.5C13 7.46 10.54 5 9.5 5zm9 0C15.46 5 13 7.46 13 10.5c0 2.76 2.02 5.05 4.66 5.44L16 19h3.2l2.1-4.2c.46-.92.7-1.94.7-2.97V10.5C22 7.46 19.54 5 18.5 5z" />
+                                    </svg>
+                                    <p class="text-gray-700 leading-relaxed break-words whitespace-pre-line">@item.Note</p>
+                                </div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(item.Url))
+                            {
+                                <a href="@item.Url" target="_blank" rel="noopener noreferrer nofollow"
+                                   class="group min-w-0 flex flex-col rounded-2xl border border-gray-100 bg-white overflow-hidden transition-all duration-300 hover:border-[#688E8B]/25 hover:shadow-[0_12px_36px_rgba(104,142,139,0.14)] hover:-translate-y-1">
+
+                                    <div class="relative aspect-[16/10] bg-[#F4F9F8] overflow-hidden shrink-0">
+                                        @* Yer tutucu HER ZAMAN altta durur. Dış kaynaklı görseller
+                                           (Instagram CDN gibi) hotlink engeli veya süresi dolmuş adres
+                                           yüzünden yüklenemeyebilir; o durumda <img> kendini kaldırır
+                                           ve altındaki yer tutucu görünür — kırık resim ikonu çıkmaz. *@
+                                        @* Görsel yoksa VEYA yüklenemezse görünen yer tutucu.
+                                           Tek renk, tipografik — renkli platform logoları sayfanın
+                                           sade dilini bozduğu için bilinçli olarak kullanılmıyor. *@
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 bg-gradient-to-br from-[#E8F1EF] to-[#D4EDE9]">
+                                            <svg class="w-7 h-7 text-[#688E8B]/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                            </svg>
+                                            @if (!string.IsNullOrWhiteSpace(item.OgSiteName))
+                                            {
+                                                <span class="text-xs font-semibold uppercase tracking-[0.14em] text-[#688E8B]/70 truncate max-w-full">@item.OgSiteName</span>
+                                            }
+                                        </div>
+                                        @if (hasImage)
+                                        {
+                                            <img src="@image" alt="" loading="lazy" onerror="this.remove()"
+                                                 class="relative w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
+                                        }
+                                        <span class="absolute inset-0 bg-[#688E8B]/0 group-hover:bg-[#688E8B]/[0.06] transition-colors duration-300"></span>
+                                    </div>
+
+                                    <div class="flex flex-col flex-1 min-w-0 p-5">
+                                        @if (!string.IsNullOrWhiteSpace(item.OgSiteName))
+                                        {
+                                            <div class="flex items-center gap-1.5 mb-2.5 min-w-0">
+                                                @if (!string.IsNullOrWhiteSpace(favicon))
+                                                {
+                                                    <img src="@favicon" alt="" loading="lazy" class="w-4 h-4 rounded-sm object-contain shrink-0" />
+                                                }
+                                                <span class="text-[11px] font-semibold uppercase tracking-wider text-[#688E8B] truncate">@item.OgSiteName</span>
+                                            </div>
+                                        }
+
+                                        <p class="font-medium text-gray-900 leading-snug line-clamp-2 break-words group-hover:text-[#4a6e6b] transition-colors">@title</p>
+
+                                        @if (showDescription)
+                                        {
+                                            <p class="mt-2 text-sm text-gray-500 leading-relaxed line-clamp-2 break-words">@description</p>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(item.Note))
+                                        {
+                                            <p class="mt-3 text-sm text-gray-600 bg-[#F4F9F8] border border-[#688E8B]/10 rounded-xl px-3 py-2 leading-relaxed line-clamp-3 break-words whitespace-pre-line">@item.Note</p>
+                                        }
+
+                                        <span class="flex-1"></span>
+
+                                        <span class="mt-4 pt-4 border-t border-gray-100 inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 group-hover:text-[#688E8B] transition-colors">
+                                            @L["share.openLink"]
+                                            <svg class="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </a>
+                            }
+                            else if (hasImage)
+                            {
+                                <div class="min-w-0 flex flex-col rounded-2xl border border-gray-100 bg-white overflow-hidden">
+                                    <div class="relative aspect-[16/10] bg-[#F4F9F8] overflow-hidden shrink-0">
+                                        <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#E8F1EF] to-[#D4EDE9]">
+                                            <svg class="w-7 h-7 text-[#688E8B]/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                                <circle cx="9" cy="9" r="2" />
+                                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                            </svg>
+                                        </div>
+                                        <img src="@image" alt="" loading="lazy" onerror="this.remove()" class="relative w-full h-full object-cover" />
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(item.Note))
+                                    {
+                                        <div class="p-5 min-w-0">
+                                            <p class="text-sm text-gray-600 leading-relaxed break-words whitespace-pre-line">@item.Note</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+
+                <!-- ─── CTA ─── -->
+                <div class="mt-14 sm:mt-16 rounded-3xl overflow-hidden relative" style="@heroGradient">
+                    <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 32px 32px"></div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-white/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+                    <div class="relative px-8 sm:px-12 py-12 sm:py-14 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 text-center lg:text-left">
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-3">
+                                @L["share.ctaTitle"]
+                            </h2>
+                            <p class="text-white/75 leading-relaxed max-w-md mx-auto lg:mx-0">
+                                @L["share.ctaBody"]
+                            </p>
+                        </div>
+
+                        <a href="@Model.AppStoreUrl" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-3 bg-white text-[#1a3b38] px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.3)] hover:scale-[1.04] hover:-translate-y-0.5 transition-all shrink-0 mx-auto lg:mx-0">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">@appleGlyph</svg>
+                            <span class="text-left">
+                                <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownload"]</span>
+                                <span class="block font-semibold leading-tight text-sm">App Store</span>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ─── İçerik bildirimi ─── -->
+                <div class="mt-10 text-center">
+                    <a href="@reportMailto" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#688E8B] transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 9v4" />
+                            <path d="M10.363 3.591 2.257 17.125a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.871L13.637 3.591a1.914 1.914 0 0 0-3.274 0z" />
+                            <path d="M12 16h.01" />
+                        </svg>
+                        @L["share.reportLink"]
+                    </a>
+                    <p class="text-xs text-gray-400 mt-2">
+                        @L["share.reportNote"]
+                        <a href="/support#icerik-bildirimi" class="underline hover:text-[#688E8B]">@L["share.reportDetails"]</a>
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+}

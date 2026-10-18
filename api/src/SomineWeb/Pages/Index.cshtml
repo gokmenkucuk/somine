@@ -1,0 +1,510 @@
+@page
+@model IndexModel
+@{
+    Layout = "_LandingLayout";
+    ViewData["TransparentNav"] = true;
+    ViewData["Description"] = L["index.description"].Value;
+
+    var lucide = new Dictionary<string, string>
+    {
+        ["play"] = "<polygon points=\"6 3 20 12 6 21 6 3\" />",
+        ["folder-open"] = "<path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\" />",
+        ["sticky-note"] = "<path d=\"M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z\" /><path d=\"M15 3v4a2 2 0 0 0 2 2h4\" />",
+        ["shield-check"] = "<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\" /><path d=\"m9 12 2 2 4-4\" />",
+        ["share-2"] = "<circle cx=\"18\" cy=\"5\" r=\"3\" /><circle cx=\"6\" cy=\"12\" r=\"3\" /><circle cx=\"18\" cy=\"19\" r=\"3\" /><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\" /><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\" />",
+        ["palette"] = "<path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\" /><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\" /><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\" /><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\" /><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\" />",
+        ["bookmark-plus"] = "<path d=\"m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z\" /><line x1=\"12\" x2=\"12\" y1=\"7\" y2=\"13\" /><line x1=\"15\" x2=\"9\" y1=\"10\" y2=\"10\" />",
+        ["mouse-pointer-click"] = "<path d=\"M14 4.1 12 6\" /><path d=\"m5.1 8-2.9-.8\" /><path d=\"m6 12-1.9 2\" /><path d=\"M7.2 2.2 8 5.1\" /><path d=\"M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z\" />",
+        ["arrow-right"] = "<path d=\"M5 12h14\" /><path d=\"m12 5 7 7-7 7\" />",
+        ["check"] = "<path d=\"M20 6 9 17l-5-5\" />",
+        ["x"] = "<path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" />",
+    };
+    Func<string, string, Microsoft.AspNetCore.Html.IHtmlContent> Icon = (name, cls) =>
+        new Microsoft.AspNetCore.Html.HtmlString(
+            $"<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"{cls}\">{lucide[name]}</svg>");
+
+    var appStore = "https://apps.apple.com";
+
+    // NOT: 4. ve 6. maddenin metni düzeltildi — Gizli Kasa ve koleksiyon paylaşımı Premium'a
+    // özel, temaların hepsi ücretsiz değil (bkz. subscription_service.dart / appearance_screen.dart).
+    var features = new[]
+    {
+        new { Icon = "play", Title = L["index.feature1Title"].Value, Desc = L["index.feature1Desc"].Value, Accent = "#6FBFAC" },
+        new { Icon = "folder-open", Title = L["index.feature2Title"].Value, Desc = L["index.feature2Desc"].Value, Accent = "#95C5C1" },
+        new { Icon = "sticky-note", Title = L["index.feature3Title"].Value, Desc = L["index.feature3Desc"].Value, Accent = "#B8DDD9" },
+        new { Icon = "shield-check", Title = L["index.feature4Title"].Value, Desc = L["index.feature4Desc"].Value, Accent = "#688E8B" },
+        new { Icon = "share-2", Title = L["index.feature5Title"].Value, Desc = L["index.feature5Desc"].Value, Accent = "#6FBFAC" },
+        new { Icon = "palette", Title = L["index.feature6Title"].Value, Desc = L["index.feature6Desc"].Value, Accent = "#95C5C1" },
+    };
+
+    var steps = new[]
+    {
+        new { Icon = "share-2", Title = L["index.step1Title"].Value, Desc = L["index.step1Desc"].Value, Num = "01" },
+        new { Icon = "mouse-pointer-click", Title = L["index.step2Title"].Value, Desc = L["index.step2Desc"].Value, Num = "02" },
+        new { Icon = "bookmark-plus", Title = L["index.step3Title"].Value, Desc = L["index.step3Desc"].Value, Num = "03" },
+    };
+
+    var carousel = new[]
+    {
+        "/images/mockups/air/karsilama.png","/images/mockups/air/login.png","/images/mockups/air/home.png",
+        "/images/mockups/air/home_feed.png","/images/mockups/air/home_masonary.png","/images/mockups/air/koleksiyon.png",
+        "/images/mockups/air/search.png","/images/mockups/air/profil.png","/images/mockups/air/login_sonrasi_icerikhazirlanma.png",
+        "/images/mockups/vibe/home.png","/images/mockups/vibe/home_feed.png","/images/mockups/vibe/koleksiyon.png",
+        "/images/mockups/vibe/koleksiyon_duzenle.png","/images/mockups/vibe/tema.png",
+    };
+
+    var heroBlocks = new[]
+    {
+        new[]
+        {
+            new { Name = "YouTube", Path = "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" },
+            new { Name = "Instagram", Path = "M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" },
+            new { Name = "X", Path = "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" },
+            new { Name = "TikTok", Path = "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" },
+            new { Name = "Pinterest", Path = "M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z" },
+        },
+        new[]
+        {
+            new { Name = "Reddit", Path = "M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" },
+            new { Name = "LinkedIn", Path = "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" },
+            new { Name = "Spotify", Path = "M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" },
+            new { Name = "Medium", Path = "M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" },
+            new { Name = "Dribbble", Path = "M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm10.12-10.358c-.35-.11-3.17-.953-6.384-.438 1.34 3.684 1.887 6.684 1.992 7.308 2.3-1.555 3.936-4.02 4.395-6.87zm-6.115 7.808c-.153-.9-.75-4.032-2.19-7.77l-.066.02c-5.79 2.015-7.86 6.025-8.04 6.4 1.73 1.358 3.92 2.166 6.29 2.166 1.42 0 2.77-.29 4-.81zm-11.62-2.58c.232-.4 3.045-5.055 8.332-6.765.135-.045.27-.084.405-.12-.26-.585-.54-1.167-.832-1.74C7.17 11.775 2.206 11.71 1.756 11.7l-.004.312c0 2.633.998 5.037 2.634 6.855zm-2.42-8.955c.46.008 4.683.026 9.477-1.248-1.698-3.018-3.53-5.558-3.8-5.928-2.868 1.35-5.01 3.99-5.676 7.17zM9.6 2.052c.282.38 2.145 2.914 3.822 6 3.645-1.365 5.19-3.44 5.373-3.702C16.86 2.61 14.545 1.62 12 1.62c-.8 0-1.6.1-2.4.285v.15zm10.335 3.483c-.218.29-1.91 2.493-5.724 4.04.24.49.47.985.68 1.486.08.18.15.36.22.53 3.41-.43 6.8.26 7.14.33-.02-2.42-.88-4.64-2.31-6.38z" },
+        },
+        new[]
+        {
+            new { Name = "GitHub", Path = "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" },
+            new { Name = "Twitch", Path = "M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" },
+            new { Name = "Vimeo", Path = "M23.977 6.416c-.105 2.338-1.739 5.543-4.894 9.609-3.268 4.247-6.026 6.37-8.29 6.37-1.409 0-2.578-1.294-3.553-3.881L5.322 11.4C4.603 8.816 3.834 7.522 3.01 7.522c-.179 0-.806.378-1.881 1.132L0 7.197c1.185-1.044 2.351-2.084 3.501-3.128C5.08 2.701 6.266 1.984 7.055 1.91c1.867-.18 3.016 1.1 3.447 3.838.465 2.953.789 4.789.971 5.507.539 2.45 1.131 3.674 1.776 3.674.502 0 1.256-.796 2.265-2.385 1.004-1.589 1.54-2.797 1.612-3.628.144-1.371-.395-2.061-1.614-2.061-.574 0-1.167.121-1.777.391 1.186-3.868 3.434-5.757 6.762-5.637 2.473.06 3.628 1.664 3.493 4.797l-.013.01z" },
+            new { Name = "Behance", Path = "M22 7h-7V5h7zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14H15.97c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zm-9.574 6.988H0V5.021h6.953c5.476.081 5.58 5.444 2.72 6.906 3.461 1.26 3.577 8.061-3.207 8.061zM3 11h3.584c2.508 0 2.906-3-.312-3H3v3zm3.391 3H3v3.016h3.341c3.055 0 2.868-3.016.05-3.016z" },
+            new { Name = "Product Hunt", Path = "M14.751 12H11.5v3.25h3.251a1.625 1.625 0 0 0 0-3.25zm0-4.75H11.5v3.25h3.251a1.625 1.625 0 0 0 0-3.25zM24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.375 2.25a4.875 4.875 0 0 0-4.874-4.875H8.625v8.25h4.126a4.875 4.875 0 0 0 4.874-4.875z" },
+        },
+    };
+    var blockOpacities = new[] { "1", "0.7", "0.5", "0.35", "0.2" };
+
+    var platformGrid = new[]
+    {
+        new { Name = "Instagram", ViewBox = "0 0 24 24", Path = "M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" },
+        new { Name = "YouTube", ViewBox = "0 0 24 24", Path = "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" },
+        new { Name = "Pinterest", ViewBox = "0 0 24 24", Path = "M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z" },
+        new { Name = "Spotify", ViewBox = "0 0 24 24", Path = "M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" },
+        new { Name = "Facebook", ViewBox = "0 0 24 24", Path = "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" },
+        new { Name = "Reddit", ViewBox = "0 0 24 24", Path = "M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" },
+        new { Name = "Snapchat", ViewBox = "0 0 24 24", Path = "M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12.922-.214.12-.042.239-.075.344-.1a.88.88 0 0 1 .223-.034c.239 0 .384.12.444.233a.65.65 0 0 1 .054.508c-.12.359-.509.778-1.383 1.157-.06.03-.149.069-.27.12-.418.165-1.283.509-1.498 1.158-.12.359-.075.778.15 1.197l.03.045c.015.03.18.314.474.808.674 1.122 1.828 3.042 1.932 3.536.12.554-.045.913-.239 1.122-.27.27-.704.404-1.048.404-.12 0-.239-.015-.344-.045l-.075-.015c-.149-.045-.344-.09-.644-.09-.18 0-.359.015-.539.045-.314.045-.599.195-.913.36-.434.224-.928.479-1.708.584-.12.015-.24.03-.359.03-.509 0-.868-.195-1.138-.359-.239-.15-.418-.27-.674-.27h-.03c-.254.016-.464.12-.704.27-.269.15-.614.314-1.093.314l-.09-.004c-.749-.045-1.258-.33-1.723-.584a2.814 2.814 0 0 0-.853-.33 3.677 3.677 0 0 0-.524-.03c-.284 0-.509.03-.689.075l-.06.015c-.12.03-.239.045-.359.045-.344 0-.779-.135-1.048-.404-.21-.21-.359-.568-.24-1.122.12-.509 1.272-2.413 1.932-3.521.27-.449.449-.764.474-.808.224-.419.27-.838.15-1.197-.224-.654-1.078-.993-1.498-1.157a3.89 3.89 0 0 1-.27-.12C3.04 11.59 2.65 11.171 2.53 10.812a.65.65 0 0 1 .054-.508c.06-.12.21-.233.449-.233.075 0 .149.015.224.034.12.03.224.06.344.1.27.09.629.195.928.195.18 0 .314-.03.389-.075-.015-.149-.03-.314-.045-.494l-.003-.06c-.104-1.642-.229-3.654.299-4.847C7.35 1.069 10.707.793 11.697.793h.509z" },
+        new { Name = "X", ViewBox = "0 0 24 24", Path = "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" },
+        new { Name = "TikTok", ViewBox = "0 0 24 24", Path = "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" },
+        new { Name = "LinkedIn", ViewBox = "0 0 24 24", Path = "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" },
+        new { Name = "Medium", ViewBox = "0 0 24 24", Path = "M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" },
+        new { Name = "Behance", ViewBox = "0 0 24 24", Path = "M22 7h-7V5h7zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14H15.97c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zm-9.574 6.988H0V5.021h6.953c5.476.081 5.58 5.444 2.72 6.906 3.461 1.26 3.577 8.061-3.207 8.061zM3 11h3.584c2.508 0 2.906-3-.312-3H3v3zm3.391 3H3v3.016h3.341c3.055 0 2.868-3.016.05-3.016z" },
+        new { Name = "Dribbble", ViewBox = "0 0 24 24", Path = "M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm10.12-10.358c-.35-.11-3.17-.953-6.384-.438 1.34 3.684 1.887 6.684 1.992 7.308 2.3-1.555 3.936-4.02 4.395-6.87zm-6.115 7.808c-.153-.9-.75-4.032-2.19-7.77l-.066.02c-5.79 2.015-7.86 6.025-8.04 6.4 1.73 1.358 3.92 2.166 6.29 2.166 1.42 0 2.77-.29 4-.81zm-11.62-2.58c.232-.4 3.045-5.055 8.332-6.765.135-.045.27-.084.405-.12-.26-.585-.54-1.167-.832-1.74C7.17 11.775 2.206 11.71 1.756 11.7l-.004.312c0 2.633.998 5.037 2.634 6.855zm-2.42-8.955c.46.008 4.683.026 9.477-1.248-1.698-3.018-3.53-5.558-3.8-5.928-2.868 1.35-5.01 3.99-5.676 7.17zM9.6 2.052c.282.38 2.145 2.914 3.822 6 3.645-1.365 5.19-3.44 5.373-3.702C16.86 2.61 14.545 1.62 12 1.62c-.8 0-1.6.1-2.4.285v.15zm10.335 3.483c-.218.29-1.91 2.493-5.724 4.04.24.49.47.985.68 1.486.08.18.15.36.22.53 3.41-.43 6.8.26 7.14.33-.02-2.42-.88-4.64-2.31-6.38z" },
+        new { Name = L["index.platformWebLinks"].Value, ViewBox = "0 0 24 24", Path = "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" },
+    };
+
+    // Bu tablo SubscriptionLimits (API) ve subscription_service.dart (mobil) ile birebir
+    // tutulmalı. Önceki hâlinde üç yanlış vardı: "koleksiyon başına 5 içerik" (gerçekte
+    // TOPLAM 500), Gizli Kasa ücretsiz görünüyordu (Premium) ve hatırlatıcı limiti hiç yoktu.
+    var starter = new[]
+    {
+        new { Label = L["plan.collections10"].Value, Ok = true },
+        new { Label = L["plan.items500"].Value, Ok = true },
+        new { Label = L["plan.reminders3"].Value, Ok = true },
+        new { Label = L["plan.cloudSync"].Value, Ok = true },
+        new { Label = L["plan.smartPreview"].Value, Ok = true },
+        new { Label = L["plan.themeAir"].Value, Ok = true },
+        new { Label = L["plan.platforms"].Value, Ok = true },
+        new { Label = L["plan.export"].Value, Ok = true },
+        new { Label = L["plan.vault"].Value, Ok = false },
+        new { Label = L["plan.collectionSharing"].Value, Ok = false },
+        new { Label = L["plan.customIcons"].Value, Ok = false },
+    };
+    var premium = new[]
+    {
+        L["plan.unlimitedCollections"].Value,
+        L["plan.unlimitedItems"].Value,
+        L["plan.unlimitedReminders"].Value,
+        L["plan.vault"].Value,
+        L["plan.collectionSharing"].Value,
+        L["plan.cloudSync"].Value,
+        L["plan.smartPreview"].Value,
+        L["plan.themesAll"].Value,
+        L["plan.platforms"].Value,
+        L["plan.export"].Value,
+        L["plan.customIcons5"].Value,
+    };
+
+    var appStoreSvg = new Microsoft.AspNetCore.Html.HtmlString("<path d=\"M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z\" />");
+}
+
+@section Head {
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "SoftwareApplication",
+        "name": "Somine",
+        "operatingSystem": "iOS",
+        "applicationCategory": "ProductivityApplication",
+        "description": "@L["index.jsonLdDescription"]",
+        "inLanguage": "@SiteLanguages.Current",
+        "url": "https://somineapp.com",
+        "offers": { "@@type": "Offer", "price": "0", "priceCurrency": "TRY" }
+    }
+    </script>
+}
+
+<main class="min-h-screen">
+
+    <!-- ─── HERO ─── -->
+    <section class="relative min-h-screen flex items-center overflow-hidden" style="background: linear-gradient(135deg, #688E8B 0%, #7AA39F 30%, #6FBFAC 60%, #8DD0C0 80%, #A8DDD0 100%)">
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-[#95C5C1]/25 via-[#B8DDD9]/15 to-[#D4EDE9]/25 rounded-full blur-[120px]" style="animation: pulse-glow 6s ease-in-out infinite"></div>
+            <div class="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-gradient-to-br from-[#95C5C1]/15 to-transparent rounded-full blur-[80px]"></div>
+        </div>
+        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 40px 40px"></div>
+
+        <div class="absolute top-[18%] left-[12%] w-1.5 h-1.5 rounded-full bg-white/40 hidden lg:block animate-float"></div>
+        <div class="absolute top-[35%] right-[18%] w-1 h-1 rounded-full bg-white/30 hidden lg:block animate-float" style="animation-delay: 1s"></div>
+        <div class="absolute bottom-[30%] left-[25%] w-2 h-2 rounded-full bg-white/20 hidden lg:block animate-float" style="animation-delay: 2s"></div>
+        <div class="absolute top-[50%] right-[10%] w-1.5 h-1.5 rounded-full bg-white/30 hidden lg:block animate-float" style="animation-delay: 3s"></div>
+
+        <div class="max-w-6xl mx-auto px-6 sm:px-8 w-full pt-8 pb-8 md:py-20 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-4 lg:gap-12 items-center">
+                <div class="text-center lg:text-left order-2 lg:order-1">
+                    <h1 class="hero-fade text-4xl sm:text-6xl lg:text-7xl font-semibold text-white leading-[1.08] mb-3 sm:mb-8 tracking-tight" style="--hero-delay: 0.3s">
+                        @L["index.heroTitleLine1"]
+                        <span class="bg-gradient-to-r from-white to-[#D4EDE9] bg-clip-text text-transparent">@L["index.heroTitleLine2"]</span>
+                    </h1>
+                    <p class="hero-fade text-sm sm:text-lg md:text-xl text-white max-w-lg mx-auto lg:mx-0 mb-6 sm:mb-10 leading-relaxed font-light" style="--hero-delay: 0.5s">
+                        @L["index.heroSubtitle"]
+                    </p>
+                    <div class="hero-fade flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start" style="--hero-delay: 0.7s">
+                        <a href="@appStore" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] hover:scale-[1.04] hover:-translate-y-0.5 transition-all">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">@appStoreSvg</svg>
+                            <span class="text-left">
+                                <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownload"]</span>
+                                <span class="block font-semibold leading-tight text-sm">App Store</span>
+                            </span>
+                        </a>
+                        <a href="/#ozellikler" class="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.15] text-white/80 hover:bg-white/[0.15] hover:text-white hover:border-white/[0.25] backdrop-blur-sm font-medium px-6 py-2.5 text-sm transition-colors">
+                            @L["index.exploreFeatures"]
+                            @Icon("arrow-right", "w-4 h-4")
+                        </a>
+                    </div>
+                    <a href="@appStore" target="_blank" rel="noopener noreferrer" class="hero-fade sm:hidden inline-flex items-center gap-3 bg-white text-[#1a3b38] text-base font-medium px-7 py-3.5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] mb-6" style="--hero-delay: 0.8s">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">@appStoreSvg</svg>
+                        <span class="text-left">
+                            <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownload"]</span>
+                            <span class="block font-semibold leading-tight text-sm">App Store</span>
+                        </span>
+                    </a>
+
+                    <div id="heroIcons" class="hero-fade relative h-10 mt-4 sm:mt-12" style="--hero-delay: 0.9s">
+                        @for (var b = 0; b < heroBlocks.Length; b++)
+                        {
+                            <div class="hero-icon-block absolute top-0 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 flex items-center gap-3 transition-opacity duration-500 @(b == 0 ? "opacity-100" : "opacity-0")">
+                                @for (var j = 0; j < heroBlocks[b].Length; j++)
+                                {
+                                    <div class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center" style="opacity: @blockOpacities[j]">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white" class="w-[18px] h-[18px]"><path d="@heroBlocks[b][j].Path" /></svg>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="flex justify-center lg:justify-end order-1 lg:order-2">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-b from-[#95C5C1]/25 via-[#B8DDD9]/10 to-transparent rounded-[3rem] blur-3xl scale-110"></div>
+                        <div class="absolute -inset-10 rounded-full border border-white/[0.08] animate-[spin_25s_linear_infinite]"></div>
+                        <div class="relative animate-float">
+                            <div class="w-40 sm:w-52 md:w-72 mx-auto">
+                                <div class="phone-frame-apple">
+                                    <img src="@Assets.Resolve("/images/mockups/vibe/home.png")" alt="@L["index.heroPhoneAlt"]" width="300" height="650" class="w-full" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 hidden sm:block">
+            <div class="flex flex-col items-center gap-2">
+                <span class="text-[11px] text-white/30 uppercase tracking-widest">@L["index.scrollHint"]</span>
+                <div class="w-5 h-8 rounded-full border border-white/15 flex items-start justify-center pt-1.5">
+                    <div class="w-1 h-1 rounded-full bg-white/50 animate-float"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── ÖZELLİKLER ─── -->
+    <section id="ozellikler" class="py-32 bg-[#E8F1EF]">
+        <div class="max-w-6xl mx-auto px-6 sm:px-8">
+            <div class="reveal text-center mb-20">
+                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">@L["index.featuresEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">@L["index.featuresTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.featuresSubtitle"]</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                @for (var i = 0; i < features.Length; i++)
+                {
+                    var f = features[i];
+                    <div class="reveal group relative rounded-2xl border border-gray-100 bg-white p-8 hover:border-[#D4EDE9] hover:shadow-[0_8px_40px_rgba(104,142,139,0.08)] hover:-translate-y-1 transition-all duration-500" style="--reveal-delay: @(i * 100)ms">
+                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style="background: linear-gradient(135deg, @f.Accent, #B8DDD9)">
+                            @Icon(f.Icon, "w-7 h-7 text-white")
+                        </div>
+                        <h3 class="text-base font-semibold text-gray-900 mb-2">@f.Title</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">@f.Desc</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── EKRANLAR (carousel) ─── -->
+    <section id="ekranlar" class="py-32 bg-white overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 sm:px-8">
+            <div class="reveal text-center mb-16">
+                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">@L["index.screensEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">@L["index.screensTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.screensSubtitle"]</p>
+            </div>
+        </div>
+        <div class="reveal relative py-4">
+            <div class="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+            <div class="swiper showcase-swiper !overflow-x-hidden !overflow-y-visible py-10">
+                <div class="swiper-wrapper">
+                    @for (var i = 0; i < carousel.Length; i++)
+                    {
+                        <div class="swiper-slide">
+                            <div class="carousel-card relative rounded-[1.5rem] overflow-hidden">
+                                <img src="@Assets.Resolve(carousel[i])" alt="@L["index.screenAltFormat", i + 1]" width="220" height="476" class="w-full h-auto" loading="lazy" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── NASIL ÇALIŞIR ─── -->
+    <section id="nasil-calisir" class="py-32 bg-[#E8F1EF]">
+        <div class="max-w-6xl mx-auto px-6 sm:px-8">
+            <div class="reveal text-center mb-20">
+                <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-4">@L["index.howEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-4">@L["index.howTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.howSubtitle"]</p>
+            </div>
+            <div class="relative">
+                <div class="hidden md:block absolute top-[4.5rem] left-[22%] w-[23%] h-[2px] overflow-hidden">
+                    <div class="absolute inset-0 bg-[#D4EDE9]"></div>
+                    <div class="absolute inset-y-[-5px] w-[35%] animate-glow-seg1" style="background: linear-gradient(90deg, transparent, rgba(111,191,172,0.5), transparent); filter: blur(4px)"></div>
+                    <div class="absolute inset-y-0 w-[25%] animate-pulse-seg1" style="background: linear-gradient(90deg, transparent, #6FBFAC, #6FBFAC, transparent)"></div>
+                </div>
+                <div class="hidden md:block absolute top-[4.5rem] left-[55%] w-[23%] h-[2px] overflow-hidden">
+                    <div class="absolute inset-0 bg-[#D4EDE9]"></div>
+                    <div class="absolute inset-y-[-5px] w-[35%] animate-glow-seg2" style="background: linear-gradient(90deg, transparent, rgba(111,191,172,0.5), transparent); filter: blur(4px)"></div>
+                    <div class="absolute inset-y-0 w-[25%] animate-pulse-seg2" style="background: linear-gradient(90deg, transparent, #6FBFAC, #6FBFAC, transparent)"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
+                    @for (var idx = 0; idx < steps.Length; idx++)
+                    {
+                        var step = steps[idx];
+                        <div class="reveal relative text-center group" style="--reveal-delay: @(idx * 100)ms">
+                            <div class="relative inline-flex items-center justify-center mb-8 animate-step-bounce" style="animation-delay: @(idx * 1500)ms">
+                                <span class="absolute -top-3 -right-3 w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center z-10 shadow-md" style="background: linear-gradient(135deg, #688E8B, #6FBFAC)">@step.Num</span>
+                                <div class="w-[7.5rem] h-[7.5rem] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-lg" style="background: linear-gradient(135deg, #688E8B, #6FBFAC)">
+                                    @Icon(step.Icon, "w-10 h-10 text-white")
+                                </div>
+                            </div>
+                            <h3 class="text-lg font-semibold text-[#688E8B] mb-2">@step.Title</h3>
+                            <p class="text-gray-500 text-sm leading-relaxed max-w-[250px] mx-auto">@step.Desc</p>
+                            @if (idx < 2)
+                            {
+                                <div class="md:hidden flex justify-center my-4">
+                                    <div class="relative w-[2px] h-8 overflow-hidden">
+                                        <div class="absolute inset-0 bg-gradient-to-b from-[#B8DDD9] to-transparent"></div>
+                                        <div class="absolute inset-x-0 h-[40%] animate-electric-pulse-v" style="background: linear-gradient(180deg, transparent, #6FBFAC, transparent)"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── PLATFORMLAR ─── -->
+    <section id="platformlar" class="py-32 bg-[#0A0A0A] relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#95C5C1]/8 to-[#D4EDE9]/5 rounded-full blur-[100px]"></div>
+        </div>
+        <div class="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
+            <div class="reveal text-center mb-20">
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">@L["index.platformsEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">@L["index.platformsTitlePart1"] <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">@L["index.platformsTitleHighlight"]</span></h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.platformsSubtitle"]</p>
+            </div>
+        </div>
+        <div class="max-w-4xl mx-auto px-6 sm:px-8 relative z-10">
+            <div class="grid grid-cols-4 sm:grid-cols-7 gap-4">
+                @for (var i = 0; i < platformGrid.Length; i++)
+                {
+                    var p = platformGrid[i];
+                    <div class="reveal flex flex-col items-center gap-2 group" style="--reveal-delay: @(i * 40)ms">
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] hover:border-white/[0.2] hover:scale-105 transition-all duration-300">
+                            <svg viewBox="@p.ViewBox" class="w-6 h-6 sm:w-7 sm:h-7 fill-gray-500 group-hover:fill-white transition-colors duration-300"><path d="@p.Path" /></svg>
+                        </div>
+                        <span class="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors duration-300 text-center leading-tight">@p.Name</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── TEMALAR ─── -->
+    <section id="temalar" class="py-32 bg-[#FAFAFA] overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 sm:px-8">
+            <div class="reveal text-center mb-20">
+                <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">@L["index.themesEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl font-semibold tracking-tight mb-4 animate-theme-gradient">@L["index.themesTitle"]</h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.themesSubtitle"]</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @{
+                    var themes = new[]
+                    {
+                        new { Grad = "from-[#688E8B] to-[#E8F1EF]", Name = "Air", Tag = L["index.themeAirTag"].Value, FootBg = "bg-[#E8F1EF]", FootBorder = "border-[#D4E8E4]", TitleCol = "text-[#2D312F]", SubCol = "text-[#636E72]", FootTitle = L["index.themeAirFootTitle"].Value, FootSub = L["index.themeAirFootSub"].Value, Dark = false },
+                        new { Grad = "from-[#2DD4BF] to-[#1E1E1E]", Name = "Midnight", Tag = L["index.themeMidnightTag"].Value, FootBg = "bg-[#1E1E1E]", FootBorder = "border-white/5", TitleCol = "text-[#F1F5F9]", SubCol = "text-[#94A3B8]", FootTitle = L["index.themeMidnightFootTitle"].Value, FootSub = L["index.themeMidnightFootSub"].Value, Dark = true },
+                        new { Grad = "from-[#E86B8A] to-[#1A2A3A]", Name = "Vibe", Tag = L["index.themeVibeTag"].Value, FootBg = "bg-[#1A2A3A]", FootBorder = "border-[#E86B8A]/10", TitleCol = "text-[#F5F5F5]", SubCol = "text-[#B0C0C8]", FootTitle = L["index.themeVibeFootTitle"].Value, FootSub = L["index.themeVibeFootSub"].Value, Dark = true },
+                    };
+                }
+                @for (var t = 0; t < themes.Length; t++)
+                {
+                    var th = themes[t];
+                    var shim = th.Dark ? "skeleton-shimmer-dark" : "skeleton-shimmer";
+                    <div class="reveal group rounded-2xl overflow-hidden bg-white border border-gray-100 hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-all duration-500" style="--reveal-delay: @(t * 100)ms">
+                        <div class="aspect-[9/16] relative">
+                            <div class="absolute inset-0 bg-gradient-to-b @th.Grad"></div>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center p-8 gap-4">
+                                <div class="w-full flex flex-col items-center gap-3 rounded-2xl py-5 px-4">
+                                    <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                        @if (th.Name == "Air")
+                                        {
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                                        }
+                                        else if (th.Name == "Midnight")
+                                        {
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                                        }
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-lg font-semibold text-white">@th.Name</p>
+                                        <p class="text-xs text-white/70">@th.Tag</p>
+                                    </div>
+                                </div>
+                                <div class="w-full space-y-2.5 mt-2">
+                                    <div class="h-3 rounded-md @(th.Dark ? "bg-white/5" : "bg-[#688E8B]/20") relative overflow-hidden"><div class="absolute inset-0 @shim rounded-md"></div></div>
+                                    <div class="h-3 rounded-md @(th.Dark ? "bg-white/5" : "bg-[#688E8B]/20") w-4/5 relative overflow-hidden"><div class="absolute inset-0 @shim rounded-md" style="animation-delay: 0.3s"></div></div>
+                                    <div class="h-3 rounded-md @(th.Dark ? "bg-white/5" : "bg-[#95C5C1]/25") w-3/5 relative overflow-hidden"><div class="absolute inset-0 @shim rounded-md" style="animation-delay: 0.6s"></div></div>
+                                    <div class="h-8 rounded-md @(th.Dark ? "bg-white/3" : "bg-[#688E8B]/15") w-2/5 mt-3 relative overflow-hidden"><div class="absolute inset-0 @shim rounded-md" style="animation-delay: 0.9s"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 border-t @th.FootBorder @th.FootBg">
+                            <p class="font-semibold @th.TitleCol text-sm">@th.FootTitle</p>
+                            <p class="text-xs @th.SubCol mt-0.5">@th.FootSub</p>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="reveal text-center mt-14">
+                <p class="text-sm text-gray-400">@L["index.themesFootnote"]</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── PREMIUM ─── -->
+    <section id="premium" class="py-20 sm:py-28 bg-[#0A0A0A] relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#95C5C1]/8 to-[#D4EDE9]/5 rounded-full blur-[100px]"></div>
+        </div>
+        <div class="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
+            <div class="reveal text-center mb-20">
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-4">@L["index.premiumEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white tracking-tight mb-4">@L["index.premiumTitlePart1"] <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">@L["index.premiumTitleHighlight"]</span></h2>
+                <p class="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">@L["index.premiumSubtitle"]</p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <div class="reveal bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-2">@L["index.planFreeLabel"]</p>
+                        <h3 class="text-2xl font-semibold text-white mb-1">@L["index.planStarterName"]</h3>
+                        <p class="text-sm text-gray-500 mb-6">@L["index.planStarterDesc"]</p>
+                        <div class="space-y-3">
+                            @foreach (var f in starter)
+                            {
+                                <div class="flex items-center gap-3">
+                                    @if (f.Ok)
+                                    {
+                                        @Icon("check", "w-4 h-4 text-[#95C5C1] shrink-0")
+                                    }
+                                    else
+                                    {
+                                        @Icon("x", "w-4 h-4 text-white/15 shrink-0")
+                                    }
+                                    <span class="text-sm @(f.Ok ? "text-gray-300" : "text-gray-600")">@f.Label</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="reveal relative bg-gradient-to-b from-[#95C5C1]/10 to-white/[0.02] border border-[#95C5C1]/25 rounded-2xl p-7" style="--reveal-delay: 100ms">
+                        <div class="absolute top-4 right-4 text-[11px] font-medium bg-[#95C5C1]/15 text-[#95C5C1] px-3 py-1 rounded-full border border-[#95C5C1]/20">👑 Premium</div>
+                        <p class="text-xs font-medium text-[#95C5C1]/60 uppercase tracking-widest mb-2">@L["index.planPaidLabel"]</p>
+                        <h3 class="text-2xl font-semibold text-white mb-1">@L["index.planPremiumName"]</h3>
+                        <p class="text-sm text-gray-500 mb-6">@L["index.planPremiumDesc"]</p>
+                        <div class="space-y-3">
+                            @foreach (var f in premium)
+                            {
+                                <div class="flex items-center gap-3">
+                                    @Icon("check", "w-4 h-4 text-[#95C5C1] shrink-0")
+                                    <span class="text-sm text-gray-300">@f</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── CTA ─── -->
+    <section class="py-24 sm:py-32 bg-[#0A0A0A] relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-[#688E8B]/20 via-[#95C5C1]/10 to-[#D4EDE9]/10 rounded-full blur-[100px]"></div>
+        </div>
+        <div class="max-w-2xl mx-auto px-6 sm:px-8 text-center relative z-10">
+            <div class="reveal">
+                <p class="text-sm font-medium text-[#95C5C1]/70 uppercase tracking-widest mb-4">@L["index.ctaEyebrow"]</p>
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 text-white">@L["index.ctaTitlePart1"] <span class="bg-gradient-to-r from-[#95C5C1] to-[#D4EDE9] bg-clip-text text-transparent">@L["index.ctaTitleHighlight"]</span></h2>
+                <p class="text-white/40 text-lg max-w-md mx-auto mb-10 leading-relaxed">@L["index.ctaSubtitle"]</p>
+                <a href="@appStore" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 bg-white text-[#1a3b38] text-sm font-medium px-7 py-3.5 rounded-full shadow-[0_0_50px_rgba(149,197,193,0.2)] hover:shadow-[0_0_70px_rgba(149,197,193,0.35)] hover:scale-[1.04] hover:-translate-y-0.5 transition-all">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">@appStoreSvg</svg>
+                    <span class="text-left">
+                        <span class="block text-[10px] opacity-50 leading-none font-normal">@L["index.ctaDownloadFree"]</span>
+                        <span class="block font-semibold leading-tight text-[13px]">App Store</span>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+</main>

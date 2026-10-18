@@ -1,0 +1,35 @@
+@page "/terms"
+@model TermsModel
+@{
+    Layout = "_LandingLayout";
+    ViewData["Title"] = L["terms.title"].Value;
+    ViewData["Description"] = L["terms.description"].Value;
+
+    // Uzun hukuki metin dile göre ayrı parçada; kabuk (başlık, tarih) resx'ten.
+    var bodyPartial = SiteLanguages.Current == SiteLanguages.English
+        ? "_TermsBody.en"
+        : "_TermsBody.tr";
+}
+
+<main class="min-h-screen flex flex-col">
+
+    <section class="pt-32 pb-16 bg-[#E8F1EF]">
+        <div class="max-w-4xl mx-auto px-6 sm:px-8">
+            <a href="/" class="inline-flex items-center gap-2 text-sm text-[#688E8B] hover:text-[#4a6e6b] transition-colors mb-8">
+                ← @L["common.backHome"]
+            </a>
+            <p class="text-sm font-medium text-[#688E8B] uppercase tracking-widest mb-3">@L["common.legal"]</p>
+            <h1 class="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-3">@L["terms.title"]</h1>
+            <p class="text-gray-500 text-lg">@L["terms.lastUpdated"]</p>
+        </div>
+    </section>
+
+    <section class="flex-1 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="prose prose-slate max-w-none space-y-8">
+                <partial name="@bodyPartial" />
+            </div>
+        </div>
+    </section>
+
+</main>

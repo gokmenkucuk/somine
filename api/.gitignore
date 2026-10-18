@@ -1,0 +1,21 @@
+.DS_Store
+bin/
+obj/
+.vs/
+.idea/
+
+# Local secrets and machine-specific config
+LOCAL_SECRETS.md
+src/SomineApi.WebApi/appsettings.Local.json
+.env
+.env.*
+secrets/
+
+# Runtime data
+src/SomineApi.WebApi/uploads/
+uploads/
+postgres/
+
+# İmaj arşivleri
+*.tar
+src/SomineWeb/node_modules/
