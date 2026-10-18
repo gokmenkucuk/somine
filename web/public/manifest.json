@@ -1,0 +1,21 @@
+{
+  "name": "Somine",
+  "short_name": "Somine",
+  "description": "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize et.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E8F1EF",
+  "theme_color": "#688E8B",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/logo-gradient.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
