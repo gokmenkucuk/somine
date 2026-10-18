@@ -1,0 +1,39 @@
+Thank you for reviewing somine.
+
+WHAT THE APP DOES
+somine lets people save links, notes and photos from anywhere (via the iOS Share Sheet or inside the app), organize them into collections, and get them back through reminders, an optional weekly "It came back to you" notification and a home screen widget. Users can share a collection with a friend by username (the friend must accept) or create a read-only public web link. The app is free with limits; somine Premium is an auto-renewable subscription (weekly, monthly, yearly) sold through In-App Purchase.
+
+SIGN IN
+The app only offers Sign in with Apple and Sign in with Google; there is no email/password account. You can sign in with your own Apple ID using Sign in with Apple: an account is created instantly and you only choose a display name and username.
+We also provide a prepared Google demo account in the Sign-In Information fields (use "Continue with Google"). It already contains collections and saved items. If Google asks for extra verification, please use Sign in with Apple instead.
+
+HOW TO TEST THE MAIN FLOW
+1. Tap the + button on the Feed tab to add a link, note or photo and pick a collection.
+2. Share extension: in Safari, open any page, tap Share > somine (you may need to tap "More" once to enable it). somine opens with the link prefilled; choose a collection and save.
+3. After saving, the success sheet offers a quick reminder (Tomorrow / Weekend). Reminders are also under Profile > My Reminders.
+4. Widget: long-press the Home Screen > + > somine > "Günün Kaydı / Today's Pick".
+
+USER-GENERATED CONTENT (Guideline 1.2)
+Content from other users only appears after the user accepts a share request.
+- Report / block / leave: Profile > Shared With Me > open a shared collection > "..." (top right) > Report collection (4 reasons), Block [name], or Remove from my library. The same "..." menu is on each row of Shared With Me.
+- Decline and block an incoming request: Profile > Shared With Me (requests list) > Decline > Decline and block.
+- Blocked users list and unblock: Profile > Shared With Me > block icon (top right).
+- Reports are emailed to our moderator and reviewed within 24 hours; abusive collections and public links are removed and repeat offenders are suspended. Public web pages (somineapp.com/s/...) have a "Report this content" link.
+
+ACCOUNT DELETION (Guideline 5.1.1(v))
+Profile > Account Info > Delete Account (also at the bottom of the Profile screen). Deletion is immediate and removes all items, collections, shares and files; Sign in with Apple tokens are revoked. Users can also export their data first: Profile > Export your data (JSON or CSV).
+
+SUBSCRIPTION (Guideline 3.1.2)
+Paywall: Profile > Membership Plan card, or any Premium feature (Hidden Vault, Midnight/Vibe themes, custom icons) or hitting a free limit (500 items, 10 collections, 3 active reminders, 5 collection shares per month). Products: somine.pro.haftalik (weekly), somine.pro.aylik (monthly), somine.pro.yillik (yearly). No free trial. The paywall shows auto-renewal terms, Restore Purchases, Terms of Use and Privacy Policy links. Purchases work with a Sandbox account; premium status is verified on our server through RevenueCat.
+
+PERMISSIONS
+Notifications are requested only when the user saves their first item or sets a reminder. Camera and Photos are requested only when adding a photo. Face ID is used only for the Hidden Vault. The location purpose string exists because the map preview of a saved place link uses MapKit; the app never requests or stores the user's location.
+
+PUSH NOTIFICATIONS
+Remote notifications (via Firebase Cloud Messaging) are sent for share requests and accepted/declined shares. Reminders and the weekly digest are local notifications.
+
+APP PREVIEW
+The website shown in the app preview video (martivistanbul.com) belongs to the developer.
+
+CONTACT
+Gökmen Küçük, gso studio — support@somineapp.com
