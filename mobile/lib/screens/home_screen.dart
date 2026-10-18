@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart'; // Added for HapticFeedback
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/core/design/app_colors_extension.dart';
 import 'package:somine_app/core/providers/theme_provider.dart';
 import 'package:somine_app/core/providers/firestore_providers.dart';
@@ -176,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     // Check if Vibe theme is active
-    final isVibeTheme = ref.watch(themeProvider) == AppThemeEnum.vibe;
+    final isVibeTheme = ref.watch(effectiveThemeProvider) == AppThemeEnum.vibe;
 
     return Scaffold(
       backgroundColor:

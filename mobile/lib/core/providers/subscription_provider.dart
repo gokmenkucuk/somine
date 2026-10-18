@@ -1,3 +1,4 @@
+import 'package:somine_app/core/providers/theme_provider.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,10 @@ class SubscriptionState {
   /// (iptal edildiyse null). Arayüz bunu l10n metnine çevirir.
   final PurchaseFailureCode? purchaseError;
 
+  /// İlk abonelik sorgusu tamamlandı mı? Yüklenmeden "ücretsiz" sanılıp
+  /// Premium'a bağlı tercihler (tema) geri alınmasın diye ayrı tutulur.
+  final bool hasLoaded;
+
   const SubscriptionState({
     this.tier = SubscriptionTier.starter,
     this.activePackageName = "",
@@ -23,6 +28,7 @@ class SubscriptionState {
     this.availablePackages = const [],
     this.error,
     this.purchaseError,
+    this.hasLoaded = false,
   });
 
   SubscriptionState copyWith({
@@ -32,6 +38,7 @@ class SubscriptionState {
     List<Package>? availablePackages,
     String? error,
     PurchaseFailureCode? purchaseError,
+    bool? hasLoaded,
   }) {
     return SubscriptionState(
       tier: tier ?? this.tier,
@@ -40,6 +47,7 @@ class SubscriptionState {
       availablePackages: availablePackages ?? this.availablePackages,
       error: error,
       purchaseError: purchaseError,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
     );
   }
 
@@ -83,6 +91,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
       activePackageName: _service.activePackageName,
       isLoading: false,
       availablePackages: packages,
+      hasLoaded: true,
     );
   }
 
@@ -111,9 +120,9 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
       if (success) {
         state = state.copyWith(
-          tier: _service.currentTier, 
+          tier: _service.currentTier,
           activePackageName: _service.activePackageName,
-          isLoading: false
+          isLoading: false,
         );
       } else {
         state = state.copyWith(isLoading: false);
@@ -146,9 +155,9 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
       await _service.refreshStatus();
 
       state = state.copyWith(
-        tier: _service.currentTier, 
+        tier: _service.currentTier,
         activePackageName: _service.activePackageName,
-        isLoading: false
+        isLoading: false,
       );
 
       return success;
@@ -217,6 +226,30 @@ final isPremiumProvider = Provider<bool>((ref) {
   if (kDebugMode && _debugForcePremium) return true;
   return ref.watch(subscriptionProvider).isPremium;
 });
+
+/// Premium temalar (Midnight, Vibe) yalnız Premium'da görünür. Abonelik
+/// bilgisi yüklendikten sonra Premium yoksa otomatik temaya düşülür; kayıtlı
+/// tercih silinmez, Premium geri gelirse seçilen tema da geri gelir.
+final effectiveThemeProvider = Provider<AppThemeEnum>((ref) {
+  return resolveEffectiveTheme(
+    ref.watch(themeProvider),
+    subscriptionLoaded: ref.watch(
+      subscriptionProvider.select((s) => s.hasLoaded),
+    ),
+    isPremium: ref.watch(isPremiumProvider),
+  );
+});
+
+AppThemeEnum resolveEffectiveTheme(
+  AppThemeEnum theme, {
+  required bool subscriptionLoaded,
+  required bool isPremium,
+}) {
+  final isPremiumTheme =
+      theme == AppThemeEnum.midnight || theme == AppThemeEnum.vibe;
+  if (!isPremiumTheme || !subscriptionLoaded || isPremium) return theme;
+  return AppThemeEnum.system;
+}
 
 final subscriptionTierProvider = Provider<SubscriptionTier>((ref) {
   return ref.watch(subscriptionProvider).tier;

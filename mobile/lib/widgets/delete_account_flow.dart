@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
+import 'package:somine_app/core/providers/theme_provider.dart';
 import 'package:somine_app/core/repositories/auth_repository.dart';
 import 'package:somine_app/core/utils/auth_failure_l10n.dart';
 import 'package:somine_app/screens/login_screen.dart';
@@ -58,9 +59,8 @@ Future<void> runDeleteAccountFlow(BuildContext context) async {
     barrierDismissible: false,
     barrierColor: Colors.black,
     builder:
-        (_) => const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
+        (_) =>
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
   );
 
   try {
@@ -68,6 +68,8 @@ Future<void> runDeleteAccountFlow(BuildContext context) async {
     container.read(homeTabIndexProvider.notifier).state = 0;
 
     await AuthRepository().deleteAccount();
+    // Silinen hesabın kişiselleştirmesi sonraki hesaba taşınmasın.
+    await container.read(themeProvider.notifier).setTheme(AppThemeEnum.system);
 
     navigator.pop(); // loading
     navigator.pushAndRemoveUntil(

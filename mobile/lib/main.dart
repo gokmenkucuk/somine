@@ -1,3 +1,4 @@
+import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -170,29 +171,28 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
     ) {
       _refreshDerivedItemState();
     });
-    _categoriesRealtimeSubscription =
-        _backendRealtimeService.categoriesChanges.listen((_) {
+    _categoriesRealtimeSubscription = _backendRealtimeService.categoriesChanges
+        .listen((_) {
           _refreshDerivedCategoryState();
         });
-    _notificationsRealtimeSubscription =
-        _backendRealtimeService.notificationsChanges.listen((payload) {
+    _notificationsRealtimeSubscription = _backendRealtimeService
+        .notificationsChanges
+        .listen((payload) {
           unawaited(_handleNotificationRealtimeEvent(payload));
         });
-    _authStateSubscription = ref.listenManual<AsyncValue<User?>>(
-      authStateProvider,
-      (_, next) {
-        final user = next.valueOrNull;
-        if (user == null) {
-          unawaited(_backendRealtimeService.disconnect());
-          return;
-        }
+    _authStateSubscription = ref.listenManual<
+      AsyncValue<User?>
+    >(authStateProvider, (_, next) {
+      final user = next.valueOrNull;
+      if (user == null) {
+        unawaited(_backendRealtimeService.disconnect());
+        return;
+      }
 
-        unawaited(_backendRealtimeService.connectForCurrentUser());
-        // Push için cihaz token'ını API'ye bildir (hatalar servis içinde yutulur).
-        unawaited(PushNotificationService().registerForCurrentUser());
-      },
-      fireImmediately: true,
-    );
+      unawaited(_backendRealtimeService.connectForCurrentUser());
+      // Push için cihaz token'ını API'ye bildir (hatalar servis içinde yutulur).
+      unawaited(PushNotificationService().registerForCurrentUser());
+    }, fireImmediately: true);
   }
 
   @override
@@ -446,7 +446,7 @@ class _SoMineAppState extends ConsumerState<SoMineApp> {
 
   @override
   Widget build(BuildContext context) {
-    final currentTheme = ref.watch(themeProvider);
+    final currentTheme = ref.watch(effectiveThemeProvider);
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
