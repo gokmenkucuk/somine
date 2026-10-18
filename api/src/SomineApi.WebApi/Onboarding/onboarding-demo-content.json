@@ -1,10 +1,15 @@
 {
-  "version": "2026-10-18",
+  "version": "2026-10-18c",
   "items": [
     {
       "collection": "places",
-      "url": "https://www.youtube.com/watch?v=E7pt2Zwg79g",
-      "note": "Brugge — \"Bruges in 4K\", Around The World 4K (YouTube, yatay)"
+      "url": "https://www.youtube.com/watch?v=_xRUeJN-E8A",
+      "note": "Brugge — \"BRUGES, BELGIUM | 5 Things You SHOULD do in Bruges!\", World Wild Hearts (YouTube vlog; 622.717 izlenme, 4.985 beğeni; doğrulama 2026-10-18)"
+    },
+    {
+      "collection": "restaurants",
+      "url": "https://www.instagram.com/poulettecph/",
+      "note": "Poulette, Kopenhag (Nørrebro) — The Bear dizisinde de görünen, efsane acılı tavuk sandviçi yapan küçük dükkân (Instagram profili; doğrulama 2026-10-18)"
     },
     {
       "collection": "inspiration",
@@ -17,14 +22,14 @@
       "note": "Bon Iver — Holocene, resmi klip (Bon Iver resmi kanalı)"
     },
     {
-      "collection": "recipes",
-      "url": "https://www.youtube.com/watch?v=xaBo3BxKzp8",
-      "note": "Shakshuka With Feta — NYT Cooking (YouTube)"
-    },
-    {
       "collection": "music",
       "url": "https://www.youtube.com/watch?v=oD6fL4yyhDk",
       "note": "Can Ozan — Sar Bu Şehri (Can Ozan resmi kanalı)"
+    },
+    {
+      "collection": "restaurants",
+      "url": "https://www.instagram.com/bilokmarestaurant/",
+      "note": "Bi Lokma, Kaş — 25 yıllık \"anne mutfağı\", ev yemekleri ve mezeleriyle Kaşlıların da favorisi (Instagram profili; doğrulama 2026-10-18)"
     },
     {
       "collection": "inspiration",
@@ -33,8 +38,8 @@
     },
     {
       "collection": "places",
-      "url": "https://www.youtube.com/watch?v=MnKv22p_fmU",
-      "note": "Kaş — Kalkan, Patara, Kaputaş drone 4K, Erman Çatı (YouTube)"
+      "url": "https://www.youtube.com/watch?v=O7c_bXCF8BU",
+      "note": "Kaş — \"KAS, TURKEY | Best Things To Do In Beautiful Kaş\", World Wild Hearts (YouTube vlog; 319.304 izlenme, 4.054 beğeni; doğrulama 2026-10-18)"
     },
     {
       "collection": "music",
@@ -42,19 +47,24 @@
       "note": "Sezen Aksu — Firuze, orijinal plak kaydı (Sezen Aksu resmi kanalı)"
     },
     {
-      "collection": "places",
-      "url": "https://www.instagram.com/p/DeVt2tNseKn/",
-      "note": "Kopenhag — Nyhavn'da altın saat, @christopherraunleth_cph (Instagram fotoğrafı, kare). Not: Instagram CDN görsel adresi birkaç gün içinde sona eriyor; kayıttan sonra kart yer tutucuya düşebilir."
+      "collection": "restaurants",
+      "url": "https://www.winkel43.nl/",
+      "note": "Winkel 43, Amsterdam (Jordaan) — Noordermarkt'taki köşe kafe; şehrin en sevilen appeltaart'ı (resmi site, güçlü og:image; IG: @cafewinkel43amsterdam; doğrulama 2026-10-18)"
     },
     {
-      "collection": "recipes",
-      "url": "https://www.youtube.com/watch?v=R_YgXQHqWBg",
-      "note": "Zeytinyağlı Taze Fasulye — Refika'nın Mutfağı (YouTube)"
+      "collection": "places",
+      "url": "https://www.youtube.com/watch?v=bXaPOjfEKro",
+      "note": "Kopenhag — \"my first time in denmark: a week in copenhagen\", Breanna Quan (YouTube vlog; 757.244 izlenme, 20.955 beğeni; doğrulama 2026-10-18)"
     },
     {
       "collection": "music",
       "url": "https://www.youtube.com/watch?v=frspQ0XRico",
       "note": "Arlo Parks — Hurt, A COLORS SHOW (COLORS resmi kanalı)"
+    },
+    {
+      "collection": "restaurants",
+      "url": "https://www.instagram.com/ciyasofrasi/",
+      "note": "Çiya Sofrası, İstanbul (Kadıköy) — Musa Dağdeviren'in unutulmuş Anadolu tariflerini yaşattığı lokanta; Chef's Table bölümü (Instagram profili; doğrulama 2026-10-18)"
     },
     {
       "collection": "music",
@@ -67,19 +77,19 @@
       "note": "Pinterest — Modern Scandinavian Kitchen (dikey)"
     },
     {
+      "collection": "restaurants",
+      "url": "https://guide.michelin.com/gb/en/west-vlaanderen/brugge/restaurant/quatre-vins",
+      "note": "Quatre Vins, Brugge — doğal/biyodinamik şarap ve paylaşımlık tabaklar sunan küçük bistro, Michelin Bib Gourmand (Michelin sayfası, güçlü görsel; IG: @quatre.vins; doğrulama 2026-10-18)"
+    },
+    {
       "collection": "places",
-      "url": "https://www.youtube.com/watch?v=Oxv6IRcuNaI",
-      "note": "Amsterdam — \"by drone [4K]\", Drone Snap (YouTube)"
+      "url": "https://www.youtube.com/watch?v=YIUs1pagLnM",
+      "note": "Amsterdam — \"HOW TO TRAVEL AMSTERDAM in 2019\", Lost LeBlanc (YouTube vlog; 1.123.497 izlenme, 17.664 beğeni; doğrulama 2026-10-18)"
     },
     {
       "collection": "music",
       "url": "https://www.youtube.com/watch?v=qUsE49lUQUY",
       "note": "Mabel Matiz — Öyle Kolaysa, resmi klip (Zoom Music & Management)"
-    },
-    {
-      "collection": "recipes",
-      "url": "https://www.youtube.com/watch?v=tURcFOyD-Q4",
-      "note": "Braised halloumi with tomatoes and beans — Ottolenghi resmi kanalı"
     },
     {
       "collection": "inspiration",

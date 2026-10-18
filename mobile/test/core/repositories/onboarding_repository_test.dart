@@ -29,7 +29,7 @@ void main() {
     expect(keys, {
       DemoCollection.music,
       DemoCollection.places,
-      DemoCollection.recipes,
+      DemoCollection.restaurants,
       DemoCollection.inspiration,
     });
   });
