@@ -83,6 +83,9 @@ builder.Services.Configure<ModerationOptions>(
 builder.Services.Configure<OnboardingOptions>(
     builder.Configuration.GetSection(OnboardingOptions.SectionName));
 builder.Services.AddSingleton<OnboardingDemoContentProvider>();
+// GSO Studio yönetim paneli: /api/admin uçları X-Admin-Key ile (Admin__ApiKey boşsa 404).
+builder.Services.Configure<AdminApiOptions>(
+    builder.Configuration.GetSection(AdminApiOptions.SectionName));
 builder.Services.Configure<LogRetentionOptions>(
     builder.Configuration.GetSection(LogRetentionOptions.SectionName));
 builder.Services.AddSingleton<LogRetentionService>();
