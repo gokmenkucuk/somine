@@ -1534,7 +1534,12 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Kapak görseli dekoratif; kart başlığı aşağıda okunur.
-                      ExcludeSemantics(child: contentHeader),
+                      // Kare ızgarada hücre yüksekliği sabit: görsel kalan
+                      // alana sığacak kadar küçülür, başlık taşmaz.
+                      if (forceSquare)
+                        Flexible(child: ExcludeSemantics(child: contentHeader))
+                      else
+                        ExcludeSemantics(child: contentHeader),
                       // Thin grey line above text area
                       Container(
                         height: 1,

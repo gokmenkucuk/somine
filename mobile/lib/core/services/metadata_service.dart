@@ -4,6 +4,7 @@ import 'package:html/parser.dart' as parser;
 import 'package:somine_app/core/models/item_model.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:somine_app/core/utils/html_body_decoder.dart';
 
 /// Service to fetch Open Graph metadata from URLs
 class MetadataService {
@@ -28,7 +29,11 @@ class MetadataService {
 
       // First, resolve redirects using dart:io HttpClient
       String finalUrl = url;
-      if (_isMapUrl(url) || url.contains('vt.tiktok.com') || url.contains('pin.it') || url.contains('pinterest.com/pin/') || _isFacebookRedirect(url)) {
+      if (_isMapUrl(url) ||
+          url.contains('vt.tiktok.com') ||
+          url.contains('pin.it') ||
+          url.contains('pinterest.com/pin/') ||
+          _isFacebookRedirect(url)) {
         finalUrl = await _resolveRedirects(url) ?? url;
         debugPrint('🔗 [MetadataService] Original: $url -> Final: $finalUrl');
       }
@@ -125,7 +130,7 @@ class MetadataService {
       }
 
       if (response.statusCode == 200) {
-        final document = parser.parse(response.body);
+        final document = parser.parse(decodeHtmlBody(response));
         final metaTags = document.getElementsByTagName('meta');
 
         String? title, description, image, siteName;
@@ -144,8 +149,16 @@ class MetadataService {
           if (rawTitle != null &&
               !rawTitle.toLowerCase().contains("pine") &&
               rawTitle.toLowerCase() != "pinterest") {
-            title = rawTitle.replaceFirst('Pinterest', '').replaceAll('On ', '').trim();
-            title = title.split('|').first.trim(); // "Pin by X on Y | Category" -> "Pin by X on Y"
+            title =
+                rawTitle
+                    .replaceFirst('Pinterest', '')
+                    .replaceAll('On ', '')
+                    .trim();
+            title =
+                title
+                    .split('|')
+                    .first
+                    .trim(); // "Pin by X on Y | Category" -> "Pin by X on Y"
           }
         }
 
@@ -157,8 +170,10 @@ class MetadataService {
           if (content == null || content.isEmpty) continue;
 
           // Title
-          if (title == null && (property == 'og:title' ||
-              name == 'title' || name == 'twitter:title')) {
+          if (title == null &&
+              (property == 'og:title' ||
+                  name == 'title' ||
+                  name == 'twitter:title')) {
             title = content; // Keep first found
           }
 
@@ -330,52 +345,78 @@ class MetadataService {
 
         // Facebook: If we got a generic/redirect title, use fallback
         final isFbUrl = _isFacebookUrl(finalUrl) || _isFacebookUrl(url);
-        debugPrint('🔵 [MetadataService] Facebook check: isFbUrl=$isFbUrl, title=$title, finalUrl=$finalUrl');
+        debugPrint(
+          '🔵 [MetadataService] Facebook check: isFbUrl=$isFbUrl, title=$title, finalUrl=$finalUrl',
+        );
         if (isFbUrl) {
           final lowerTitle = title?.toLowerCase().trim() ?? '';
-          final isGenericTitle = lowerTitle.isEmpty ||
+          final isGenericTitle =
+              lowerTitle.isEmpty ||
               lowerTitle.contains('redirecting') ||
               lowerTitle == 'facebook' ||
               lowerTitle.contains('log in') ||
               lowerTitle.contains('giriş yap');
-          debugPrint('🔵 [MetadataService] Facebook generic check: lowerTitle=$lowerTitle, isGeneric=$isGenericTitle');
+          debugPrint(
+            '🔵 [MetadataService] Facebook generic check: lowerTitle=$lowerTitle, isGeneric=$isGenericTitle',
+          );
           if (isGenericTitle) {
-            debugPrint('⚠️ [MetadataService] Facebook generic title detected, using fallback');
+            debugPrint(
+              '⚠️ [MetadataService] Facebook generic title detected, using fallback',
+            );
             final fallback = _buildFacebookFallback(url);
             if (fallback != null) {
-              debugPrint('✅ [MetadataService] Facebook fallback: ${fallback.title}');
+              debugPrint(
+                '✅ [MetadataService] Facebook fallback: ${fallback.title}',
+              );
               return fallback;
             }
           }
         }
 
         // Amazon: Filter out tracking pixels and invalid images
-        if (url.toLowerCase().contains('amazon.') || finalUrl.toLowerCase().contains('amazon.')) {
+        if (url.toLowerCase().contains('amazon.') ||
+            finalUrl.toLowerCase().contains('amazon.')) {
           // Amazon returns tracking pixels instead of real images
-          if (image != null && (image.contains('fls-eu.amazon') || image.contains('/batch/') || image.contains('/uedata'))) {
-            debugPrint('⚠️ [MetadataService] Amazon tracking pixel filtered: $image');
+          if (image != null &&
+              (image.contains('fls-eu.amazon') ||
+                  image.contains('/batch/') ||
+                  image.contains('/uedata'))) {
+            debugPrint(
+              '⚠️ [MetadataService] Amazon tracking pixel filtered: $image',
+            );
             image = null;
           }
           // If title is generic, use fallback
           final lowerTitle = title?.toLowerCase().trim() ?? '';
-          if (lowerTitle.isEmpty || lowerTitle == 'amazon' || lowerTitle.contains('robot')) {
-            debugPrint('⚠️ [MetadataService] Amazon generic title detected, using fallback');
+          if (lowerTitle.isEmpty ||
+              lowerTitle == 'amazon' ||
+              lowerTitle.contains('robot')) {
+            debugPrint(
+              '⚠️ [MetadataService] Amazon generic title detected, using fallback',
+            );
             final fallback = _buildAmazonFallback(url);
             if (fallback != null) {
-              debugPrint('✅ [MetadataService] Amazon fallback: ${fallback.title}');
+              debugPrint(
+                '✅ [MetadataService] Amazon fallback: ${fallback.title}',
+              );
               return fallback;
             }
           }
         }
 
         // Hepsiburada: If we got empty/generic title, use fallback
-        if (url.toLowerCase().contains('hepsiburada.com') || finalUrl.toLowerCase().contains('hepsiburada.com')) {
+        if (url.toLowerCase().contains('hepsiburada.com') ||
+            finalUrl.toLowerCase().contains('hepsiburada.com')) {
           final lowerTitle = title?.toLowerCase().trim() ?? '';
           if (lowerTitle.isEmpty || lowerTitle == 'hepsiburada') {
-            debugPrint('⚠️ [MetadataService] Hepsiburada generic title detected, using fallback');
+            debugPrint(
+              '⚠️ [MetadataService] Hepsiburada generic title detected, using fallback',
+            );
             final fallback = _buildHepsiburadaFallback(url);
             if (fallback != null) {
-              debugPrint('✅ [MetadataService] Hepsiburada fallback: ${fallback.title}');
+              debugPrint(
+                '✅ [MetadataService] Hepsiburada fallback: ${fallback.title}',
+              );
               return fallback;
             }
           }
@@ -440,11 +481,12 @@ class MetadataService {
         final apiUrl = 'https://api.fxtwitter.com/$username/status/$tweetId';
         debugPrint('🐦 [MetadataService] Trying fxtwitter API: $apiUrl');
 
-        final fxResponse = await http.get(
-          Uri.parse(apiUrl),
-          headers: {'User-Agent': 'SomineApp/1.0'},
-        ).timeout(const Duration(seconds: 5));
-        debugPrint('🐦 [MetadataService] fxtwitter API status: ${fxResponse.statusCode}');
+        final fxResponse = await http
+            .get(Uri.parse(apiUrl), headers: {'User-Agent': 'SomineApp/1.0'})
+            .timeout(const Duration(seconds: 5));
+        debugPrint(
+          '🐦 [MetadataService] fxtwitter API status: ${fxResponse.statusCode}',
+        );
 
         if (fxResponse.statusCode == 200) {
           final json = jsonDecode(fxResponse.body);
@@ -456,11 +498,16 @@ class MetadataService {
             String? image;
 
             // Get first image from media
-            if (media != null && media['photos'] != null && (media['photos'] as List).isNotEmpty) {
+            if (media != null &&
+                media['photos'] != null &&
+                (media['photos'] as List).isNotEmpty) {
               image = media['photos'][0]['url'];
             }
             // Or video thumbnail
-            if (image == null && media != null && media['videos'] != null && (media['videos'] as List).isNotEmpty) {
+            if (image == null &&
+                media != null &&
+                media['videos'] != null &&
+                (media['videos'] as List).isNotEmpty) {
               image = media['videos'][0]['thumbnail_url'];
             }
 
@@ -471,7 +518,9 @@ class MetadataService {
             title ??= author != null ? '@$author\'in gönderisi' : null;
 
             if (title != null) {
-              debugPrint('🐦 [MetadataService] FxTwitter API Success: $title, image=$image');
+              debugPrint(
+                '🐦 [MetadataService] FxTwitter API Success: $title, image=$image',
+              );
               return {'title': title, 'image': image};
             }
           }
@@ -493,7 +542,8 @@ class MetadataService {
           final match = RegExp(r'<p[^>]*>([^<]+)</p>').firstMatch(html);
           if (match != null) {
             tweetText = match.group(1);
-            tweetText = tweetText?.replaceAll('&amp;', '&')
+            tweetText = tweetText
+                ?.replaceAll('&amp;', '&')
                 .replaceAll('&lt;', '<')
                 .replaceAll('&gt;', '>')
                 .replaceAll('&quot;', '"');
@@ -503,7 +553,9 @@ class MetadataService {
           }
         }
 
-        final title = tweetText ?? (authorName != null ? '@$authorName\'in gönderisi' : null);
+        final title =
+            tweetText ??
+            (authorName != null ? '@$authorName\'in gönderisi' : null);
         return {'title': title, 'image': null};
       }
     } catch (e) {
@@ -687,12 +739,19 @@ class MetadataService {
       for (int i = 0; i < segments.length; i++) {
         final seg = segments[i];
         // Skip common path segments
-        if (seg == 'dp' || seg == 'gp' || seg == 'product' || seg.length == 10) continue;
+        if (seg == 'dp' || seg == 'gp' || seg == 'product' || seg.length == 10)
+          continue;
         // If segment looks like a product name (has dashes, longer than ASIN)
         if (seg.contains('-') && seg.length > 10) {
           title = seg.replaceAll('-', ' ');
           // Capitalize first letter of each word
-          title = title.split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w).join(' ');
+          title = title
+              .split(' ')
+              .map(
+                (w) =>
+                    w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w,
+              )
+              .join(' ');
           break;
         }
       }
@@ -725,7 +784,13 @@ class MetadataService {
         String slug = path.substring(1, pIndex); // Remove leading /
         title = slug.replaceAll('-', ' ');
         // Capitalize first letter of each word
-        title = title.split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w).join(' ');
+        title = title
+            .split(' ')
+            .map(
+              (w) =>
+                  w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w,
+            )
+            .join(' ');
       }
     } catch (e) {
       debugPrint('⚠️ [MetadataService] Hepsiburada URL parse error: $e');
