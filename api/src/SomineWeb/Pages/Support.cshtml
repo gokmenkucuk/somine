@@ -5,9 +5,10 @@
     ViewData["Title"] = L["support.title"].Value;
     ViewData["Description"] = L["support.description"].Value;
 
-    // FAQ iki dilde de uygulamanın gerçeğiyle uyumlu: 10 koleksiyon / toplam 500 içerik /
-    // 3 aktif hatırlatıcı; Gizli Kasa ve koleksiyon paylaşımı Premium.
-    var faqItems = Enumerable.Range(1, 9)
+    // FAQ iki dilde de uygulamanın gerçeğiyle uyumlu (SubscriptionLimits.cs): ücretsiz plan
+    // 10 koleksiyon / toplam 500 içerik / 3 aktif hatırlatıcı / ayda 5 paylaşım isteği,
+    // herkese açık bağlantı ücretsiz; Gizli Kasa, Midnight/Vibe temaları ve ikonlar Premium.
+    var faqItems = Enumerable.Range(1, 10)
         .Select(i => new
         {
             Question = L[$"support.faq{i}Q"].Value,

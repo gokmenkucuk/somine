@@ -5,266 +5,432 @@
     section by section, sentences depend on one another, and the two language versions
     may legitimately diverge in structure over time.
 
-    Substantive parity with the Turkish version is REQUIRED. In particular these must
-    always appear in both: Firebase Analytics, Firebase Crashlytics, the statement that
-    no advertising identifier (IDFA) is used and no ad tracking takes place, the in-app
-    data export and account deletion rights, and the last-updated date (rendered by
-    Privacy.cshtml from the "privacy.lastUpdated" resource).
+    Substantive parity with the Turkish version is REQUIRED. Both must always state: the
+    data controller, where data is hosted (Hetzner, Germany; not Firebase), every
+    third-party SDK (Firebase Auth/Analytics/Crashlytics/Cloud Messaging, RevenueCat),
+    that no advertising identifier (IDFA) is used and no ad tracking takes place, the
+    30-day log retention, search history, sharing visibility, content reports, the
+    export/deletion rights, and the last-updated date (rendered by Privacy.cshtml from
+    the "privacy.lastUpdated" resource). Verified against the code on 2026-10-18.
 *@
 <p class="text-gray-500 leading-relaxed">
-    At Somine, the security of your personal data matters a great deal to us. This Privacy
-    Policy explains which data is collected when you use the Somine mobile application (the
-    &quot;App&quot;), how that data is used, and how it is protected. By using the App you are
-    deemed to have accepted this policy.
+    This policy explains what personal data we process when you use the Somine iPhone app (the
+    &quot;App&quot;) and the somineapp.com website, why we process it, where we keep it, and what
+    rights you have over it. We don&apos;t show ads, we don&apos;t sell your data, and we don&apos;t
+    track you across other apps.
 </p>
 
 <div class="bg-[#E8F1EF] rounded-2xl p-6 border border-[#688E8B]/10">
     <h3 class="text-lg font-semibold text-gray-900 mb-3">
-        Notice under Turkish data protection law (KVKK)
+        Data controller
     </h3>
     <p class="text-gray-500 text-sm leading-relaxed">
-        This privacy policy has been prepared in accordance with Turkish Law No. 6698 on the
-        Protection of Personal Data (KVKK) and its related legislation. Your personal data is
-        processed according to the principles and rules laid down by the KVKK.
+        For the purposes of the EU General Data Protection Regulation (GDPR) and Turkey&apos;s Personal
+        Data Protection Law No. 6698 (KVKK), the data controller is
+        <strong class="text-gray-900">Gökmen Küçük (GSO Studio)</strong>. Contact:
+        <a href="mailto:destek@somineapp.com" class="text-[#688E8B] hover:underline font-medium">destek@somineapp.com</a>
+        (support@somineapp.com and abuse@somineapp.com reach the same inbox).
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">1</span>
-        Data We Collect
+        What we collect
     </h2>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        We may collect the following data while you use the Somine app:
-    </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Account information:</strong> your name, email address, profile photo, and the information supplied through social sign-in accounts (Apple, Google).
+                <strong class="text-gray-900">Account details:</strong> You can only sign in with Apple or
+                Google. From them we receive your name, your email address (Apple&apos;s relay address if you
+                choose &quot;Hide My Email&quot;) and your profile photo, if you have one. Your account also
+                holds the username and display name you choose, any profile photo you upload, and your
+                device&apos;s time zone so reminders fire at the right time.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Usage data:</strong> your interactions inside the app, the collections you create, the items you add, and the categories you prefer.
+                <strong class="text-gray-900">What you save:</strong> Links, notes, images you upload,
+                collections, favorites and reminders. When you save a link we fetch the page&apos;s public
+                title, description and image to show a preview. To bring forgotten saves back to you, we
+                also record when you last opened an item and how many times.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Device information:</strong> device type, operating system version, app version, and unique device identifier.
+                <strong class="text-gray-900">Search history:</strong> Your last 10 searches are stored on
+                our server so they&apos;re available on all your devices. They are deleted with your account.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Log data:</strong> app usage statistics, crash reports, and performance data.
+                <strong class="text-gray-900">Sharing, blocking and reports:</strong> Which collections you
+                share and with whom, public links you create, users you block, and reports you submit
+                (reason, optional note, and the collection and user concerned).
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Notification token:</strong> So we can send you push
+                notifications, your device&apos;s push token, platform and language are stored on our server.
+                They are deleted when you sign out or delete your account.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Subscription status:</strong> Whether Premium is active, which
+                plan, and when it expires. Your payment details (card etc.) never reach us; Apple handles payment.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Usage and diagnostics:</strong> Statistics such as which
+                screens are opened and which features are used (Firebase Analytics), and, when the app
+                crashes, the crash log, device model and iOS version (Firebase Crashlytics). This data is
+                not linked to your account identity.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Security and error logs:</strong> For every request to our
+                server we log the IP address, device/browser information (user agent), request path, status
+                code, duration and, if you&apos;re signed in, your user ID. For your sign-in sessions we keep
+                the device name, IP address and user agent. These logs exist for security and debugging and
+                are deleted after <strong class="text-gray-900">30 days</strong>.
             </div>
         </li>
     </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        <strong class="text-gray-900">What we don&apos;t collect:</strong> your location (even when the app
+        shows a saved place on a map, your location isn&apos;t sent to us), your contacts, your advertising
+        identifier (IDFA), or Face ID data. Face ID checks happen entirely on your device; no biometric
+        data ever reaches us.
+    </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">2</span>
-        Why We Use Your Data
+        Why we use it
     </h2>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        The data we collect is used for the following purposes:
-    </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Providing the core functions of the app and managing your collections
+            <div>
+                <strong class="text-gray-900">To run the service:</strong> creating your account, syncing
+                your saves across devices, sharing, reminders and notifications, and recognising Premium.
+                (Legal basis: performance of our contract with you.)
+            </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Improving and personalising the user experience
+            <div>
+                <strong class="text-gray-900">Security and moderation:</strong> preventing abuse, reviewing
+                reports, and finding and fixing bugs. (Legal basis: legitimate interests.)
+            </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Diagnosing technical problems and keeping the app secure
+            <div>
+                <strong class="text-gray-900">Improving the product:</strong> seeing, in aggregate, which
+                features get used. (Legal basis: legitimate interests.)
+            </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Managing Premium subscriptions and handling billing
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Meeting our legal obligations
+            <div>
+                <strong class="text-gray-900">Legal obligations:</strong> responding to lawful requests from
+                the authorities. (Legal basis: legal obligation.)
+            </div>
         </li>
     </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        We never use your data for advertising, profiling or sale.
+    </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">3</span>
-        Cookies and Similar Technologies
+        Where your data is stored
     </h2>
+    <p class="text-gray-500 leading-relaxed mb-4">
+        Your account, your saves, the images you upload and the other data listed above are stored in a
+        PostgreSQL database on our own servers in Hetzner&apos;s data center in
+        <strong class="text-gray-900">Nuremberg, Germany (EU)</strong>. Your content is not stored in Firebase.
+    </p>
     <p class="text-gray-500 leading-relaxed">
-        The Somine app may use cookies and similar tracking technologies to improve the user
-        experience. These technologies are used to remember your session, store your preferences
-        and gather usage statistics. You can manage your cookie preferences from the app settings.
-        On somineapp.com we additionally set one strictly necessary cookie that remembers your
-        language choice; it is never used for advertising or tracking.
+        The service providers listed below (Google/Firebase, RevenueCat, Apple) may process the data
+        they handle in countries outside the EU and Turkey, including the United States. This is necessary
+        for the service to work, and we only share with each provider what it needs for its own function.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">4</span>
-        Third-Party Services
+        What others see when you share
     </h2>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        Somine uses the following third-party services:
-    </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Firebase:</strong> user authentication, data storage and app infrastructure. Firebase is provided by Google LLC and processes data on secure servers.
+                <strong class="text-gray-900">Sharing with a person:</strong> when you send someone a
+                collection, they see your display name, your username and the collection&apos;s contents.
+                Other users can send you shares using your username.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Firebase Analytics:</strong> collects usage data so we can understand how the app is used (which screens are opened, which features are used, how often sessions occur). This data is reviewed in aggregate to improve the product. <strong class="text-gray-900">No advertising identifier (IDFA) is used, and no tracking for advertising purposes takes place.</strong>
+                <strong class="text-gray-900">Public links:</strong> anyone who has the link can see the
+                collection and your display name, even without an account. You can revoke a link at any
+                time and it stops working immediately. Collections in the Hidden Vault can&apos;t have a
+                public link.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Firebase Crashlytics:</strong> collects diagnostic data when the app closes unexpectedly (the error record, device model, operating system version). Its sole purpose is to identify and fix faults.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">RevenueCat:</strong> Premium subscription management, purchase validation and billing. RevenueCat manages your subscription status securely.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Apple Sign-In:</strong> Apple's authentication service for signing in. Apple shares only your name and email address.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Google Sign-In:</strong> Google's authentication service for signing in. Your basic profile information is verified through Google.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Apple App Store / Google Play:</strong> Premium subscription purchases. Payments are processed directly by Apple or Google.
+                <strong class="text-gray-900">When you report something:</strong> the report is stored on
+                our server and emailed to our moderator, who reviews it within 24 hours. The person you
+                report never sees who reported them. Blocking someone doesn&apos;t notify them either.
             </div>
         </li>
     </ul>
-    <p class="text-gray-500 leading-relaxed mt-4">
-        Each of these services is governed by its own privacy policy, and Somine is not
-        responsible for the data-processing practices of third-party services.
-    </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">5</span>
-        Data Security
+        Service providers we use
     </h2>
-    <p class="text-gray-500 leading-relaxed">
-        We apply industry-standard security measures to protect your personal data. Your data is
-        transmitted with SSL/TLS encryption and stored on secure servers. The Hidden Vault feature
-        is protected by Face ID and Touch ID biometric authentication; only you can access those
-        collections. That said, no transmission of data over the internet can be guaranteed to be
-        100% secure.
+    <ul class="space-y-3 text-gray-500">
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Authentication (Google):</strong> verifies Sign in
+                with Apple and Google. Your name, email address and a user ID are held here.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Analytics (Google):</strong> shows us, in aggregate,
+                how the app is used. <strong class="text-gray-900">No advertising identifier (IDFA) is used
+                and no tracking for advertising purposes takes place</strong>, which is why the app never asks
+                for tracking permission (App Tracking Transparency).
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Crashlytics (Google):</strong> collects the crash
+                log, device model and iOS version when the app crashes, purely so we can fix bugs.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Cloud Messaging (Google):</strong> delivers
+                notifications such as share requests and reminders to your device, using your device&apos;s
+                push token.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">RevenueCat:</strong> verifies your App Store subscription and
+                tells us whether Premium is active. RevenueCat receives your user ID and purchase history,
+                not your payment details.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Apple (App Store, Sign in with Apple) and Google (Sign in with
+                Google):</strong> sign-in and payment are handled by these companies under their own privacy
+                policies.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Hetzner:</strong> the German data center that hosts our
+                servers. It provides the infrastructure and does not access your data.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Error monitoring:</strong> we may use Sentry to monitor server
+                errors. If so, Sentry receives error details only; sending personal data is switched off.
+            </div>
+        </li>
+    </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        We don&apos;t share data with anyone else. If the law requires it, we disclose only what a lawful
+        request from the authorities covers.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">6</span>
-        Your Rights (KVKK)
+        Cookies
     </h2>
     <p class="text-gray-500 leading-relaxed mb-4">
-        Under the KVKK you have the following rights:
+        <strong class="text-gray-900">The app doesn&apos;t use cookies</strong>, so it has no cookie settings either.
     </p>
-    <ul class="space-y-3 text-gray-500">
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            To learn whether your personal data is being processed
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            To request information about that processing, if your personal data has been processed
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            To request correction where your personal data has been processed incompletely or incorrectly
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            To request deletion of your personal data, within the conditions set out in Article 7 of the KVKK
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            To request that any processing be notified to third parties
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            To object where processing produces a result to your detriment
-        </li>
-    </ul>
-    <p class="text-gray-500 leading-relaxed mt-4">
-        <strong class="text-gray-900">You can manage your data from inside the app:</strong>
-        the <em>&quot;Export your data&quot;</em> option on the Profile screen lets you download
-        all of your items and collections as JSON or CSV. The <em>&quot;Delete Account&quot;</em>
-        option on the same screen permanently erases your account and all of your data — this
-        cannot be undone, and you do not need to send us a request to do it.
-    </p>
-    <p class="text-gray-500 leading-relaxed mt-4">
-        To exercise these rights, you can email us at
-        <a href="mailto:support@somineapp.com" class="text-[#688E8B] hover:underline font-medium">
-            support@somineapp.com
-        </a>.
+    <p class="text-gray-500 leading-relaxed">
+        <strong class="text-gray-900">somineapp.com</strong> uses two kinds of cookie: a strictly necessary
+        one that remembers your language choice for a year, and Google Analytics cookies (names starting
+        with <span class="font-mono text-xs">_ga</span>) for visitor statistics. You can delete or block the
+        Google Analytics cookies in your browser settings; the site works fine without them.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">7</span>
-        How Long We Keep Your Data
+        How long we keep it
     </h2>
-    <p class="text-gray-500 leading-relaxed">
-        Your personal data is retained for as long as your account is active. When you delete your
-        account, or if you do not use it for an extended period, your data will be deleted except
-        where we are legally obliged to keep it. Some data may be retained for longer where the law
-        requires it.
-    </p>
+    <ul class="space-y-3 text-gray-500">
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Account details, saves, collections, shares, reminders, notifications, search history, blocks
+            and reports: for as long as your account exists. They are deleted immediately when you delete
+            your account.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            An item you delete first moves to <em>Recently Deleted</em>; it is erased for good when you delete
+            it from there or delete your account.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Notification token: deleted when you sign out or delete your account.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Security and error logs (IP address, user agent): 30 days.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Data held by Firebase Analytics, Crashlytics and RevenueCat follows those providers&apos;
+            retention periods.
+        </li>
+    </ul>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">8</span>
-        Children's Privacy
+        Security
     </h2>
     <p class="text-gray-500 leading-relaxed">
-        Somine does not knowingly collect personal data from children under the age of 13. If you
-        become aware that personal data of a child under 13 has been collected, please contact us.
+        All traffic between the app and our server is encrypted with HTTPS (TLS). Your session keys are
+        kept in the iOS Keychain on your device. Collections in the Hidden Vault aren&apos;t downloaded to
+        your device until you unlock them with Face ID, and they never appear in the widget or in
+        notifications. Even so, no transmission over the internet can be guaranteed 100% secure.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">9</span>
-        Changes to This Policy
+        Your rights
+    </h2>
+    <p class="text-gray-500 leading-relaxed mb-4">
+        Under the GDPR and Article 11 of the KVKK you have the right to:
+    </p>
+    <ul class="space-y-3 text-gray-500">
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Access:</strong> find out what data we hold about you and get a copy.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Export:</strong> download all your saves and collections as
+                JSON or CSV from Profile &gt; <em>Export your data</em> (free).
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Correction:</strong> change your name, username and profile
+                photo in Profile &gt; <em>Account Info</em>.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Deletion:</strong> delete your account and all your data
+                permanently and immediately from Profile &gt; <em>Account Info</em> &gt; <em>Delete
+                Account</em>. This erases your data on our server, your Firebase sign-in account and your
+                notification token, and, if you signed in with Apple, revokes Somine&apos;s Apple sign-in
+                authorization. See the
+                <a href="/delete-account" class="text-[#688E8B] hover:underline font-medium">Account Deletion</a>
+                page for details. Deleting your account does not cancel an App Store subscription; cancel
+                that separately in your iPhone&apos;s Settings &gt; [your name] &gt; Subscriptions.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Object and restrict:</strong> object to processing based on
+                legitimate interests, ask which third parties received your data, and challenge outcomes
+                that work against you.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Complain:</strong> if you&apos;re not satisfied with our answer,
+                you can lodge a complaint with the data protection authority in your EU country or, in
+                Turkey, with the Personal Data Protection Board (kvkk.gov.tr).
+            </div>
+        </li>
+    </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        Send requests to
+        <a href="mailto:destek@somineapp.com" class="text-[#688E8B] hover:underline font-medium">destek@somineapp.com</a>.
+        We reply within 30 days at the latest.
+    </p>
+</div>
+
+<div>
+    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">10</span>
+        Age requirement
     </h2>
     <p class="text-gray-500 leading-relaxed">
-        We may update this privacy policy from time to time. Where changes are significant, we will
-        notify you inside the app. You can check the &quot;Last updated&quot; date at the top of this
-        page to see when the policy was last revised.
+        Somine is for people aged 13 and over. It is not directed at children under 13, and we don&apos;t
+        knowingly collect data from them. If you learn that a child under 13 has created an account, let
+        us know and we&apos;ll delete the account and its data.
+    </p>
+</div>
+
+<div>
+    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">11</span>
+        Changes to this policy
+    </h2>
+    <p class="text-gray-500 leading-relaxed">
+        We update this policy as the app changes. If a change is significant, we&apos;ll tell you in the
+        app. The date of the current version is shown in the &quot;Last updated&quot; line at the top of
+        this page.
     </p>
 </div>
 
@@ -273,12 +439,12 @@
         Contact
     </h3>
     <p class="text-gray-500 text-sm leading-relaxed">
-        If you have questions or requests about our privacy policy, you can get in touch with us:
+        For any privacy question or request, write to the data controller, Gökmen Küçük (GSO Studio):
     </p>
-    <a href="mailto:support@somineapp.com" class="inline-flex items-center gap-2 mt-3 text-[#688E8B] hover:underline font-medium text-sm">
+    <a href="mailto:destek@somineapp.com" class="inline-flex items-center gap-2 mt-3 text-[#688E8B] hover:underline font-medium text-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
         </svg>
-        support@somineapp.com
+        destek@somineapp.com
     </a>
 </div>

@@ -525,7 +525,7 @@ What is the problem?
     <value>How does Somine work?</value>
   </data>
   <data name="support.faq1A" xml:space="preserve">
-    <value>Somine lets you gather everything you like on Instagram, YouTube, Pinterest and other platforms into one place. Just tap the share button in any app and choose Somine. Nothing is copied: the content stays on its original platform and Somine keeps the link to it.</value>
+    <value>Somine lets you gather everything you like on Instagram, YouTube, Pinterest and other platforms into one place. Just tap the share button in any app and choose Somine. You can save links, notes or images; links point back to the original platform, so nothing is copied.</value>
   </data>
   <data name="support.faq2Q" xml:space="preserve">
     <value>How do I create a collection?</value>
@@ -537,25 +537,25 @@ What is the problem?
     <value>What do I get on the free plan?</value>
   </data>
   <data name="support.faq3A" xml:space="preserve">
-    <value>The free plan gives you 10 collections, 500 items in total and 3 active reminders. Cloud sync, search, the home-screen widget, the weekly digest notification, the Air theme and data export are all free.</value>
+    <value>The free plan gives you 10 collections, 500 items in total, 3 active reminders and 5 collection shares a month. Public share links, cloud sync, search, the home-screen widget, the weekly digest notification, automatic dark mode and data export are free too.</value>
   </data>
   <data name="support.faq4Q" xml:space="preserve">
     <value>What changes with Premium?</value>
   </data>
   <data name="support.faq4A" xml:space="preserve">
-    <value>Premium removes the limits on collections and items, so you can add as much as you like. It also unlocks the Hidden Vault (Face ID/Touch ID), collection sharing, the Midnight and Vibe themes, and 5 custom home-screen app icons.</value>
+    <value>Premium removes the limits on collections, items, reminders and shares. It also unlocks the Hidden Vault (Face ID), the Midnight and Vibe themes, and 5 custom app icons. Premium is an auto-renewing App Store subscription, billed weekly, monthly or yearly; you see the current price in the app before you buy.</value>
   </data>
   <data name="support.faq5Q" xml:space="preserve">
     <value>How does the Hidden Vault work?</value>
   </data>
   <data name="support.faq5A" xml:space="preserve">
-    <value>The Hidden Vault is a Premium feature. It locks a collection behind Face ID or Touch ID: until you unlock it, that collection's items are not downloaded to your device and never appear in the home-screen widget or in notifications.</value>
+    <value>The Hidden Vault is a Premium feature. It locks the collections you choose behind Face ID: until you unlock it, their items aren't downloaded to your device and never appear in the home-screen widget or in notifications. Collections in the Vault can't have a public link.</value>
   </data>
   <data name="support.faq6Q" xml:space="preserve">
     <value>How do I share a collection with a friend?</value>
   </data>
   <data name="support.faq6A" xml:space="preserve">
-    <value>Collection sharing is a Premium feature. There are two ways to do it: share with a person (you enter your friend's username, and once they accept, the collection appears in their library), or create a public link. You can revoke the link at any time, and the page becomes inaccessible the moment you do.</value>
+    <value>There are two ways. Share with a person: enter your friend's username, and once they accept, the collection appears in their library and they see your display name and username. On the free plan you can send 5 share requests a month (declined ones count too); Premium has no limit. Public link: anyone with the link can see the collection and your display name. You can revoke the link at any time, and the page stops working the moment you do.</value>
   </data>
   <data name="support.faq7Q" xml:space="preserve">
     <value>How do reminders work?</value>
@@ -567,13 +567,19 @@ What is the problem?
     <value>What should I do if I see objectionable content in a shared collection?</value>
   </data>
   <data name="support.faq8A" xml:space="preserve">
-    <value>Report it to us. The "Reporting content" section on this page explains where to write and what to include; we review every report within 24 hours. You can also reject a share request you did not want, and remove a share you already accepted from your library.</value>
+    <value>Open the collection, tap the "…" button in the top right and choose "Report collection". The same menu lets you block the person or remove the collection from your library. Reports are reviewed within 24 hours, and the person you report never sees who reported them. To report a public link, write to abuse@somineapp.com; the "Reporting content" section on this page has the details.</value>
   </data>
   <data name="support.faq9Q" xml:space="preserve">
     <value>How do I delete my account?</value>
   </data>
   <data name="support.faq9A" xml:space="preserve">
-    <value>In the app, go to Profile &gt; Settings &gt; Delete Account to permanently erase your account and everything in it. Before you do, you can use "Export your data" on the Profile screen to download your records as JSON or CSV.</value>
+    <value>In the app, go to Profile &gt; Account Info &gt; Delete Account to erase your account and all your data permanently and immediately. Before you do, you can use Profile &gt; "Export your data" to download your saves as JSON or CSV. Deleting your account doesn't cancel your App Store subscription; cancel that separately.</value>
+  </data>
+  <data name="support.faq10Q" xml:space="preserve">
+    <value>How do I manage or cancel my subscription?</value>
+  </data>
+  <data name="support.faq10A" xml:space="preserve">
+    <value>Subscriptions are managed by Apple: on your iPhone go to Settings &gt; [your name] &gt; Subscriptions &gt; Somine. When you cancel, Premium stays on until the end of the period you paid for. To avoid renewal, cancel at least 24 hours before the period ends. Only Apple can issue refunds.</value>
   </data>
   <data name="support.contactHeading" xml:space="preserve">
     <value>Contact Us</value>
@@ -615,7 +621,7 @@ What is the problem?
     <value>Read the Somine privacy policy and learn how we handle your data.</value>
   </data>
   <data name="privacy.lastUpdated" xml:space="preserve">
-    <value>Last updated: 2 August 2026</value>
+    <value>Last updated: 18 October 2026</value>
   </data>
   <data name="terms.title" xml:space="preserve">
     <value>Terms of Use</value>
@@ -624,7 +630,7 @@ What is the problem?
     <value>Read the terms and conditions that govern your use of the Somine app.</value>
   </data>
   <data name="terms.lastUpdated" xml:space="preserve">
-    <value>Last updated: 1 January 2026</value>
+    <value>Last updated: 18 October 2026</value>
   </data>
   <data name="delete.title" xml:space="preserve">
     <value>Delete Account</value>

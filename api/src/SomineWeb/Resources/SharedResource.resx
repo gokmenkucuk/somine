@@ -525,7 +525,7 @@ Sorun nedir?
     <value>Somine nasıl çalışır?</value>
   </data>
   <data name="support.faq1A" xml:space="preserve">
-    <value>Somine, Instagram, YouTube, Pinterest ve diğer platformlardaki beğendiğin içerikleri tek bir yerde toplamanı sağlar. Herhangi bir uygulamada paylaş butonuna basıp Somine'yi seçmen yeterli — içerik orijinal haliyle platforma bağlı kalır, kopyalanmaz.</value>
+    <value>Somine, Instagram, YouTube, Pinterest ve diğer platformlarda beğendiğin içerikleri tek bir yerde toplamanı sağlar. Herhangi bir uygulamada paylaş düğmesine basıp Somine'yi seçmen yeterli. Link, not veya görsel kaydedebilirsin; linkler orijinal platformdaki içeriğe bağlı kalır, içerik kopyalanmaz.</value>
   </data>
   <data name="support.faq2Q" xml:space="preserve">
     <value>Koleksiyonlar nasıl oluşturulur?</value>
@@ -537,25 +537,25 @@ Sorun nedir?
     <value>Ücretsiz sürümde neler var?</value>
   </data>
   <data name="support.faq3A" xml:space="preserve">
-    <value>Ücretsiz planda 10 koleksiyon, toplam 500 içerik ve 3 aktif hatırlatıcı hakkın var. Bulut senkronizasyonu, arama, ana ekran widget'ı, haftalık özet bildirimi, Air teması ve verilerini dışa aktarma ücretsizdir.</value>
+    <value>Ücretsiz planda 10 koleksiyon, toplam 500 içerik, 3 aktif hatırlatıcı ve ayda 5 koleksiyon paylaşımı hakkın var. Herkese açık paylaşım bağlantısı, bulut eşitleme, arama, ana ekran widget'ı, haftalık özet bildirimi, otomatik karanlık mod ve verilerini dışa aktarma da ücretsiz.</value>
   </data>
   <data name="support.faq4Q" xml:space="preserve">
     <value>Premium ile ne değişiyor?</value>
   </data>
   <data name="support.faq4A" xml:space="preserve">
-    <value>Premium ile koleksiyon ve içerik sınırı kalkar, sınırsız ekleyebilirsin. Ayrıca Gizli Kasa (Face ID/Touch ID), koleksiyon paylaşımı, Midnight ve Vibe temaları ile 5 özel ana ekran uygulama ikonu Premium'a özeldir.</value>
+    <value>Premium ile koleksiyon, içerik, hatırlatıcı ve paylaşım sınırları kalkar. Ayrıca Gizli Kasa (Face ID), Midnight ve Vibe temaları ve 5 özel uygulama ikonu yalnızca Premium'da. Premium haftalık, aylık veya yıllık otomatik yenilenen bir App Store aboneliğidir; güncel fiyatı satın almadan önce uygulamada görürsün.</value>
   </data>
   <data name="support.faq5Q" xml:space="preserve">
     <value>Gizli Kasa nasıl çalışır?</value>
   </data>
   <data name="support.faq5A" xml:space="preserve">
-    <value>Gizli Kasa bir Premium özelliğidir. Seçtiğin koleksiyonu Face ID veya Touch ID ile kilitler; kilidi açmadığın sürece o koleksiyonun içerikleri cihazına indirilmez, ana ekran widget'ında ve bildirimlerde de görünmez.</value>
+    <value>Gizli Kasa bir Premium özelliğidir. Seçtiğin koleksiyonları Face ID ile kilitler; kilidi açmadığın sürece o koleksiyonların içerikleri cihazına indirilmez, ana ekran widget'ında ve bildirimlerde de görünmez. Kasadaki koleksiyonlar için herkese açık bağlantı oluşturulamaz.</value>
   </data>
   <data name="support.faq6Q" xml:space="preserve">
     <value>Koleksiyonumu arkadaşımla nasıl paylaşırım?</value>
   </data>
   <data name="support.faq6A" xml:space="preserve">
-    <value>Koleksiyon paylaşımı bir Premium özelliğidir. İki yolu var: kişiyle paylaşabilir (arkadaşının kullanıcı adını girersin, o kabul edince koleksiyon kütüphanesine eklenir) veya herkese açık bir bağlantı oluşturabilirsin. Bağlantıyı istediğin an iptal edebilirsin; iptal ettiğin anda sayfa erişilemez olur.</value>
+    <value>İki yolu var. Kişiyle paylaşım: arkadaşının kullanıcı adını girersin, o kabul edince koleksiyon onun kütüphanesine eklenir ve senin görünen adın ile kullanıcı adını görür. Ücretsiz planda ayda 5 paylaşım isteği gönderebilirsin (reddedilenler de sayılır), Premium'da sınır yok. Herkese açık bağlantı: bağlantıya sahip herkes koleksiyonu ve görünen adını görür. Bağlantıyı istediğin an iptal edebilirsin; iptal ettiğin anda sayfa açılmaz.</value>
   </data>
   <data name="support.faq7Q" xml:space="preserve">
     <value>Hatırlatıcılar nasıl çalışır?</value>
@@ -567,13 +567,19 @@ Sorun nedir?
     <value>Paylaşılan bir koleksiyonda uygunsuz içerik görürsem ne yapmalıyım?</value>
   </data>
   <data name="support.faq8A" xml:space="preserve">
-    <value>Bize bildir. Bu sayfadaki "İçerik bildirimi" bölümünde nereye ve neleri yazman gerektiği anlatılıyor; bildirimleri 24 saat içinde değerlendiriyoruz. Ayrıca istemediğin bir paylaşım isteğini reddedebilir, kabul ettiğin bir paylaşımı kütüphanenden kaldırabilirsin.</value>
+    <value>Koleksiyonu aç, sağ üstteki "…" düğmesine dokun ve "Koleksiyonu şikâyet et"i seç. Aynı menüden kişiyi engelleyebilir ya da koleksiyonu kütüphanenden kaldırabilirsin. Şikâyetler 24 saat içinde incelenir ve şikâyet ettiğin kişi kimin şikâyet ettiğini görmez. Herkese açık bir bağlantıyı bildirmek için abuse@somineapp.com adresine yaz; ayrıntılar bu sayfadaki "İçerik bildirimi" bölümünde.</value>
   </data>
   <data name="support.faq9Q" xml:space="preserve">
     <value>Hesabımı nasıl silerim?</value>
   </data>
   <data name="support.faq9A" xml:space="preserve">
-    <value>Uygulama içinden Profil &gt; Ayarlar &gt; Hesabı Sil adımlarıyla hesabını ve tüm içeriğini kalıcı olarak silebilirsin. Silmeden önce Profil ekranındaki "Verilerini dışa aktar" seçeneğiyle kayıtlarını JSON veya CSV olarak indirebilirsin.</value>
+    <value>Uygulamada Profil &gt; Hesap Bilgileri &gt; Hesabı Sil adımlarıyla hesabını ve tüm verilerini anında, kalıcı olarak silebilirsin. Silmeden önce Profil &gt; "Verilerini dışa aktar" ile kayıtlarını JSON veya CSV olarak indirebilirsin. Hesap silmek App Store aboneliğini iptal etmez; onu ayrıca iptal etmelisin.</value>
+  </data>
+  <data name="support.faq10Q" xml:space="preserve">
+    <value>Aboneliğimi nasıl yönetir veya iptal ederim?</value>
+  </data>
+  <data name="support.faq10A" xml:space="preserve">
+    <value>Abonelikler Apple üzerinden yönetilir: iPhone'da Ayarlar &gt; [adın] &gt; Abonelikler &gt; Somine. İptal ettiğinde Premium, ödediğin dönemin sonuna kadar açık kalır. Yenilemeyi önlemek için dönem bitmeden en az 24 saat önce iptal etmelisin. İadeleri yalnızca Apple yapabilir.</value>
   </data>
   <data name="support.contactHeading" xml:space="preserve">
     <value>Bize Ulaşın</value>
@@ -615,7 +621,7 @@ Sorun nedir?
     <value>Somine uygulamasının gizlilik politikası ve veri işleme uygulamaları hakkında bilgi edinin.</value>
   </data>
   <data name="privacy.lastUpdated" xml:space="preserve">
-    <value>Son güncelleme: 2 Ağustos 2026</value>
+    <value>Son güncelleme: 18 Ekim 2026</value>
   </data>
   <data name="terms.title" xml:space="preserve">
     <value>Kullanım Şartları</value>
@@ -624,7 +630,7 @@ Sorun nedir?
     <value>Somine uygulamasının kullanım şartları ve koşulları hakkında bilgi edinin.</value>
   </data>
   <data name="terms.lastUpdated" xml:space="preserve">
-    <value>Son güncelleme: 1 Ocak 2026</value>
+    <value>Son güncelleme: 18 Ekim 2026</value>
   </data>
   <data name="delete.title" xml:space="preserve">
     <value>Hesap Silme</value>

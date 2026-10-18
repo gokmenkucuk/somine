@@ -4,266 +4,434 @@
     Bilinçli olarak resx'e taşınmadı: hukuki metinler bölüm bölüm okunur ve revize edilir,
     cümleler birbirine bağımlıdır ve iki dilin madde yapısı zamanla ayrışabilir. Anahtar
     anahtar bölmek çeviriyi de bakımı da bozar. İngilizcesi: _PrivacyBody.en.cshtml
+
+    Metin koddan doğrulandı (2026-10-18; docs/app-store/app-privacy.md). Kodda veri
+    toplama/saklama değişirse bu metin de değişmeli: özellikle sunucu tabloları
+    (users, items, categories, collection_shares, notifications, reminders, device_tokens,
+    content_reports, user_blocks, auth_sessions, request_logs), arama geçmişi (son 10),
+    log saklama süresi (LogRetention:RetentionDays = 30) ve üçüncü taraf SDK listesi.
 *@
 <p class="text-gray-500 leading-relaxed">
-    Somine olarak kişisel verilerinizin güvenliği bizim için çok önemlidir.
-    Bu Gizlilik Politikası, Somine mobil uygulamasını (&quot;Uygulama&quot;) kullanırken
-    hangi verilerin toplandığını, nasıl kullanıldığını ve korunduğunu açıklamaktadır.
-    Uygulamayı kullanarak bu politikayı kabul etmiş sayılırsınız.
+    Bu politika, Somine iPhone uygulamasını (&quot;Uygulama&quot;) ve somineapp.com sitesini
+    kullanırken hangi verilerinizi işlediğimizi, neden işlediğimizi, nerede sakladığımızı ve
+    verileriniz üzerindeki haklarınızı anlatır. Reklam göstermiyoruz, verilerinizi satmıyoruz
+    ve sizi başka uygulamalarda takip etmiyoruz.
 </p>
 
 <div class="bg-[#E8F1EF] rounded-2xl p-6 border border-[#688E8B]/10">
     <h3 class="text-lg font-semibold text-gray-900 mb-3">
-        KVKK Uyarısı
+        Veri sorumlusu
     </h3>
     <p class="text-gray-500 text-sm leading-relaxed">
-        Bu gizlilik politikası, 6698 sayılı Kişisel Verilerin Korunması Kanunu
-        (KVKK) ve ilgili mevzuata uygun olarak hazırlanmıştır. Kişisel verileriniz,
-        KVKK&apos;nın belirlediği ilkelere ve kurallara göre işlenmektedir.
+        6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve AB Genel Veri Koruma Tüzüğü
+        (GDPR) bakımından veri sorumlusu <strong class="text-gray-900">Gökmen Küçük (GSO Studio)</strong>&apos;tur.
+        Her türlü soru ve talep için:
+        <a href="mailto:destek@somineapp.com" class="text-[#688E8B] hover:underline font-medium">destek@somineapp.com</a>
+        (support@somineapp.com ve abuse@somineapp.com da aynı kutuya ulaşır).
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">1</span>
-        Toplanan Veriler
+        Hangi verileri işliyoruz?
     </h2>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        Somine uygulamasını kullanırken aşağıdaki verileri toplayabiliriz:
-    </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Hesap Bilgileri:</strong> Ad, e-posta adresi, profil fotoğrafı ve sosyal medya hesapları (Apple, Google) aracılığıyla sağlanan bilgiler.
+                <strong class="text-gray-900">Hesap bilgileri:</strong> Yalnızca Apple veya Google ile giriş yapabilirsiniz.
+                Bu hizmetlerden adınızı, e-posta adresinizi (Apple&apos;da &quot;E-postamı gizle&quot;
+                seçerseniz Apple&apos;ın yönlendirme adresini) ve varsa profil fotoğrafınızı alırız.
+                Sizin seçtiğiniz kullanıcı adı, görünen ad, yüklediğiniz profil fotoğrafı ve
+                hatırlatıcıların doğru saatte çalışması için cihazınızın saat dilimi de hesabınızda tutulur.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Kullanım Verileri:</strong> Uygulama içindeki etkileşimler, oluşturulan koleksiyonlar, eklenen içerikler, tercih edilen kategoriler.
+                <strong class="text-gray-900">Kaydettiğiniz içerikler:</strong> Linkler, notlar, yüklediğiniz
+                görseller, koleksiyonlar, favoriler ve hatırlatıcılar. Link kaydettiğinizde önizleme
+                göstermek için sayfanın herkese açık başlığını, açıklamasını ve görselini alırız. Unuttuğunuz
+                kayıtları size geri getirebilmek için bir kaydı en son ne zaman ve kaç kez açtığınızı da tutarız.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Cihaz Bilgileri:</strong> Cihaz türü, işletim sistemi sürümü, uygulama sürümü, benzersiz cihaz tanımlayıcısı.
+                <strong class="text-gray-900">Arama geçmişi:</strong> Son 10 aramanız, farklı cihazlarda da
+                önünüze gelsin diye sunucumuzda saklanır. Hesabınızla birlikte silinir.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Log Verileri:</strong> Uygulama kullanım istatistikleri, çökme raporları, performans verileri.
+                <strong class="text-gray-900">Paylaşım, engelleme ve şikâyet kayıtları:</strong> Kimle hangi
+                koleksiyonu paylaştığınız, oluşturduğunuz herkese açık bağlantılar, engellediğiniz kullanıcılar
+                ve gönderdiğiniz şikâyetler (sebep, isteğe bağlı not, ilgili koleksiyon ve kullanıcı).
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Bildirim belirteci:</strong> Bildirim gönderebilmemiz için
+                cihazınızın push bildirim belirteci (token), platformu ve dili sunucumuzda saklanır.
+                Çıkış yaptığınızda veya hesabınızı sildiğinizde silinir.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Abonelik bilgisi:</strong> Premium&apos;un açık olup olmadığı,
+                hangi plan ve bitiş tarihi. Ödeme bilgileriniz (kart vb.) bize hiç ulaşmaz; ödemeyi Apple alır.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Kullanım ve tanılama verileri:</strong> Hangi ekranların
+                açıldığı ve hangi özelliklerin kullanıldığı gibi istatistikler (Firebase Analytics) ile
+                uygulama çöktüğünde hata kaydı, cihaz modeli ve iOS sürümü (Firebase Crashlytics).
+                Bu veriler hesabınızın kimliğiyle eşleştirilmez.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Güvenlik ve hata kayıtları:</strong> Sunucumuza gelen her istek
+                için IP adresi, cihaz/tarayıcı bilgisi (user-agent), istek yolu, sonuç kodu, süre ve
+                giriş yapmışsanız kullanıcı kimliğiniz kaydedilir. Oturumlarınız için cihaz adı, IP adresi
+                ve user-agent tutulur. Bu kayıtlar güvenlik ve hata ayıklama içindir ve
+                <strong class="text-gray-900">30 gün</strong> sonra silinir.
             </div>
         </li>
     </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        <strong class="text-gray-900">Toplamadıklarımız:</strong> Konumunuz (kayıtlı bir yerin haritası
+        gösterilirken bile konumunuz bize gönderilmez), rehberiniz, reklam kimliğiniz (IDFA) ve Face ID
+        verileriniz. Face ID doğrulaması tamamen cihazınızda yapılır; biyometrik veri bize ulaşmaz.
+    </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">2</span>
-        Verilerin Kullanım Amacı
+        Verileri ne için kullanıyoruz?
     </h2>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        Toplanan veriler aşağıdaki amaçlarla kullanılmaktadır:
-    </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Uygulamanın temel işlevlerinin sağlanması ve koleksiyon yönetimi
+            <div>
+                <strong class="text-gray-900">Hizmeti sunmak:</strong> Hesabınızı açmak, kayıtlarınızı
+                cihazlarınız arasında eşitlemek, paylaşım, hatırlatıcı ve bildirimleri çalıştırmak,
+                Premium&apos;u tanımak. (Hukuki sebep: sözleşmenin kurulması ve ifası.)
+            </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Kullanıcı deneyiminin iyileştirilmesi ve kişiselleştirilmesi
+            <div>
+                <strong class="text-gray-900">Güvenlik ve moderasyon:</strong> Kötüye kullanımı önlemek,
+                şikâyetleri incelemek, hataları bulup düzeltmek. (Hukuki sebep: meşru menfaat.)
+            </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Teknik sorunların giderilmesi ve uygulama güvenliğinin sağlanması
+            <div>
+                <strong class="text-gray-900">Ürünü geliştirmek:</strong> Hangi özelliklerin kullanıldığını
+                toplu istatistiklerle görmek. (Hukuki sebep: meşru menfaat.)
+            </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Premium üyelik yönetimi ve faturalandırma işlemleri
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Yasal yükümlülüklerin yerine getirilmesi
+            <div>
+                <strong class="text-gray-900">Yasal yükümlülükler:</strong> Yetkili makamların hukuka uygun
+                taleplerini karşılamak. (Hukuki sebep: kanuni yükümlülük.)
+            </div>
         </li>
     </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        Verilerinizi reklam, profilleme veya satış için kullanmayız.
+    </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">3</span>
-        Çerezler ve Benzeri Teknolojiler
+        Verileriniz nerede saklanıyor?
     </h2>
+    <p class="text-gray-500 leading-relaxed mb-4">
+        Hesabınız, kayıtlarınız, yüklediğiniz görseller ve yukarıda saydığımız diğer veriler,
+        Hetzner&apos;in <strong class="text-gray-900">Almanya&apos;daki (Nürnberg, AB)</strong> veri
+        merkezinde çalışan kendi sunucularımızda, PostgreSQL veritabanında saklanır.
+        İçerikleriniz Firebase&apos;de saklanmaz.
+    </p>
     <p class="text-gray-500 leading-relaxed">
-        Somine uygulaması, kullanıcı deneyimini iyileştirmek amacıyla çerezler ve benzeri
-        takip teknolojilerini kullanabilir. Bu teknolojiler, oturum bilgilerinizi hatırlamak,
-        tercihlerinizi saklamak ve kullanım istatistikleri toplamak için kullanılır.
-        Uygulama ayarlarınızdan çerez tercihlerinizi yönetebilirsiniz.
-        somineapp.com üzerinde ayrıca yalnızca dil tercihinizi hatırlayan zorunlu bir
-        çerez kullanılır; bu çerez reklam veya takip amacıyla kullanılmaz.
+        Aşağıda saydığımız hizmet sağlayıcılar (Google/Firebase, RevenueCat, Apple) kendi
+        paylarına düşen veriyi ABD dahil Türkiye ve AB dışındaki ülkelerde işleyebilir. Bu
+        aktarım hizmetin çalışması için gereklidir ve bu sağlayıcılarla yalnızca kendi
+        işlevleri için gereken veriyi paylaşırız.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">4</span>
-        Üçüncü Taraf Hizmetleri
+        Paylaştığınızda başkaları neyi görür?
     </h2>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        Somine, aşağıdaki üçüncü taraf hizmetlerini kullanmaktadır:
-    </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Firebase:</strong> Kullanıcı kimlik doğrulama, veri saklama ve uygulama altyapı hizmetleri. Firebase, Google LLC tarafından sağlanmaktadır ve verileri güvenli sunucularda işler.
+                <strong class="text-gray-900">Kişiye paylaşım:</strong> Bir koleksiyonu birine
+                gönderdiğinizde o kişi görünen adınızı, kullanıcı adınızı ve koleksiyonun içeriğini görür.
+                Size kullanıcı adınızla paylaşım gönderilebilir.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Firebase Analytics:</strong> Uygulamanın nasıl kullanıldığını anlamak için kullanım verisi toplar (açılan ekranlar, kullanılan özellikler, oturum sıklığı gibi). Bu veriler ürünü geliştirmek için toplu halde incelenir. <strong class="text-gray-900">Reklam kimliği (IDFA) kullanılmaz ve reklam amaçlı takip yapılmaz.</strong>
+                <strong class="text-gray-900">Herkese açık bağlantı:</strong> Bağlantıya sahip olan herkes,
+                hesabı olmasa bile, koleksiyonu ve görünen adınızı görebilir. Bağlantıyı istediğiniz an
+                iptal edebilirsiniz; iptal edilen bağlantı hemen çalışmaz hâle gelir. Gizli Kasa&apos;daki
+                koleksiyonlar için herkese açık bağlantı oluşturulamaz.
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">Firebase Crashlytics:</strong> Uygulama beklenmedik şekilde kapandığında tanılama verisi (hata kaydı, cihaz modeli, işletim sistemi sürümü) toplar. Amaç yalnızca hataları tespit edip gidermektir.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">RevenueCat:</strong> Premium abonelik yönetimi, satın alma doğrulama ve faturalandırma işlemleri. RevenueCat, abonelik durumunuzu güvenli bir şekilde yönetir.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Apple Sign-In:</strong> Kullanıcı girişi için Apple kimlik doğrulama hizmeti. Apple, yalnızca adınızı ve e-posta adresinizi paylaşır.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Google Sign-In:</strong> Kullanıcı girişi için Google kimlik doğrulama hizmeti. Temel profil bilgileriniz Google üzerinden doğrulanır.
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Apple App Store / Google Play:</strong> Premium üyelik satın alma işlemleri. Ödeme işlemleri doğrudan Apple veya Google tarafından gerçekleştirilir.
+                <strong class="text-gray-900">Şikâyet ettiğinizde:</strong> Şikâyetiniz sunucumuzda saklanır
+                ve incelenmek üzere moderatöre e-postayla iletilir; 24 saat içinde değerlendirilir.
+                Şikâyet ettiğiniz kişi kimin şikâyet ettiğini görmez. Birini engellediğinizde de
+                kendisine bildirim gitmez.
             </div>
         </li>
     </ul>
-    <p class="text-gray-500 leading-relaxed mt-4">
-        Bu hizmetlerin kendi gizlilik politikaları geçerlidir ve Somine, üçüncü
-        taraf hizmetlerinin veri işleme uygulamalarından sorumlu değildir.
-    </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">5</span>
-        Veri Güvenliği
+        Kullandığımız hizmet sağlayıcılar
     </h2>
-    <p class="text-gray-500 leading-relaxed">
-        Kişisel verilerinizin güvenliğini sağlamak için endüstri standardı güvenlik
-        önlemleri uygulanmaktadır. Verileriniz SSL/TLS şifreleme ile aktarılır ve
-        güvenli sunucularda saklanır. Gizli Kasa özelliği, FaceID ve TouchID biyometrik
-        doğrulama ile korunmaktadır; bu koleksiyonlara yalnızca siz erişebilirsiniz.
-        Ancak, internet üzerinden hiçbir veri iletiminin %100 güvenli olduğu garanti edilemez.
+    <ul class="space-y-3 text-gray-500">
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Authentication (Google):</strong> Apple ve Google ile
+                girişi doğrular. Adınız, e-posta adresiniz ve bir kullanıcı kimliği burada tutulur.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Analytics (Google):</strong> Uygulamanın nasıl
+                kullanıldığını toplu olarak gösterir. <strong class="text-gray-900">Reklam kimliği (IDFA)
+                kullanılmaz, reklam amaçlı takip yapılmaz</strong> ve bu yüzden size takip izni
+                (App Tracking Transparency) sorulmaz.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Crashlytics (Google):</strong> Uygulama çöktüğünde
+                hata kaydı, cihaz modeli ve iOS sürümünü toplar. Amaç yalnızca hataları düzeltmektir.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Firebase Cloud Messaging (Google):</strong> Paylaşım istekleri
+                ve hatırlatıcılar gibi bildirimleri cihazınıza iletir. Bunun için cihazınızın bildirim
+                belirteci kullanılır.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">RevenueCat:</strong> App Store aboneliğinizi doğrular ve
+                Premium durumunuzu bize bildirir. RevenueCat&apos;e kullanıcı kimliğiniz ve satın alma
+                geçmişiniz gider; ödeme bilgileriniz gitmez.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Apple (App Store, Apple ile Giriş) ve Google (Google ile Giriş):</strong>
+                Giriş ve ödeme bu şirketler tarafından, kendi gizlilik politikalarına göre yapılır.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Hetzner:</strong> Sunucularımızın bulunduğu Almanya&apos;daki
+                veri merkezi. Verilerinize erişmez; yalnızca altyapıyı sağlar.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Hata izleme:</strong> Sunucu hatalarını izlemek için Sentry
+                kullanılabilir. Bu durumda Sentry&apos;ye hata ayrıntıları gider; kişisel veri gönderimi
+                kapalıdır.
+            </div>
+        </li>
+    </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        Bu sağlayıcıların dışında kimseyle veri paylaşmayız. Yasal bir zorunluluk olursa yalnızca
+        yetkili makamların hukuka uygun talebiyle sınırlı paylaşım yaparız.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">6</span>
-        Kullanıcı Hakları (KVKK)
+        Çerezler
     </h2>
     <p class="text-gray-500 leading-relaxed mb-4">
-        KVKK kapsamında aşağıdaki haklara sahipsiniz:
+        <strong class="text-gray-900">Uygulama çerez kullanmaz.</strong> Uygulamada bu yüzden çerez
+        ayarı da yoktur.
     </p>
-    <ul class="space-y-3 text-gray-500">
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Kişisel verilerinizin işlenip işlenmediğini öğrenme
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Kişisel verileriniz işlenmişse buna ilişkin bilgi talep etme
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Kişisel verilerinizin eksik veya yanlış işlenmiş olması halinde düzeltilmesini isteme
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            KVKK&apos;nın 7. maddesinde öngörülen şartlar çerçevesinde kişisel verilerinizin silinmesini isteme
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            İşlenen verilerin üçüncü kişilere bildirilmesini isteme
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Aleyhinize bir sonuç doğurması durumunda itiraz etme
-        </li>
-    </ul>
-    <p class="text-gray-500 leading-relaxed mt-4">
-        <strong class="text-gray-900">Verilerinizi uygulama içinden yönetebilirsiniz:</strong>
-        Profil ekranındaki <em>&quot;Verilerini dışa aktar&quot;</em> seçeneğiyle tüm
-        içeriklerinizi ve koleksiyonlarınızı JSON veya CSV biçiminde indirebilirsiniz.
-        Aynı ekrandaki <em>&quot;Hesabı Sil&quot;</em> seçeneği ise hesabınızı ve
-        tüm verilerinizi kalıcı olarak siler — bu işlem geri alınamaz ve talep
-        göndermenize gerek kalmaz.
-    </p>
-    <p class="text-gray-500 leading-relaxed mt-4">
-        Bu haklarınızı kullanmak için
-        <a href="mailto:support@somineapp.com" class="text-[#688E8B] hover:underline font-medium">
-            support@somineapp.com
-        </a>
-        adresine e-posta gönderebilirsiniz.
+    <p class="text-gray-500 leading-relaxed">
+        <strong class="text-gray-900">somineapp.com</strong> iki tür çerez kullanır: dil seçiminizi
+        bir yıl hatırlayan zorunlu bir çerez ve ziyaret istatistikleri için Google Analytics
+        çerezleri (adları <span class="font-mono text-xs">_ga</span> ile başlar). Google Analytics
+        çerezlerini tarayıcınızın ayarlarından silebilir veya engelleyebilirsiniz; site bunlar olmadan
+        da çalışır.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">7</span>
-        Veri Saklama Süresi
+        Ne kadar süre saklıyoruz?
     </h2>
-    <p class="text-gray-500 leading-relaxed">
-        Kişisel verileriniz, hesabınız aktif olduğu sürece saklanacaktır. Hesabınızı
-        sildiğinizde veya belirli bir süre boyunca kullanmadığınızda, verileriniz
-        yasal yükümlülükler dışında silinecektir. Yasal gereklilikler doğrultusunda
-        bazı veriler daha uzun süre saklanabilir.
-    </p>
+    <ul class="space-y-3 text-gray-500">
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Hesap bilgileri, kayıtlar, koleksiyonlar, paylaşımlar, hatırlatıcılar, bildirimler,
+            arama geçmişi, engellemeler ve şikâyetler: hesabınız açık olduğu sürece. Hesabınızı
+            sildiğinizde hemen silinir.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Sildiğiniz bir kayıt önce <em>Son Silinenler</em>&apos;e taşınır; oradan kalıcı olarak
+            sildiğinizde veya hesabınızı sildiğinizde tamamen silinir.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Bildirim belirteci: çıkış yaptığınızda veya hesabınızı sildiğinizde silinir.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Güvenlik ve hata kayıtları (IP adresi, user-agent): 30 gün.
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Firebase Analytics, Crashlytics ve RevenueCat&apos;teki veriler bu sağlayıcıların saklama
+            sürelerine tabidir.
+        </li>
+    </ul>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">8</span>
-        Çocukların Gizliliği
+        Güvenlik
     </h2>
     <p class="text-gray-500 leading-relaxed">
-        Somine, 13 yaşından küçük çocuklardan bilerek kişisel veri toplamaz.
-        13 yaşından küçük bir çocuğun kişisel verisi toplandığının farkına
-        varırsanız, lütfen bizimle iletişime geçiniz.
+        Uygulama ile sunucumuz arasındaki tüm trafik HTTPS (TLS) ile şifrelenir. Oturum anahtarlarınız
+        cihazınızda iOS Anahtar Zinciri&apos;nde tutulur. Gizli Kasa&apos;daki koleksiyonlar Face ID ile
+        açılmadan cihazınıza indirilmez; widget&apos;ta ve bildirimlerde görünmez. Yine de internet
+        üzerinden hiçbir aktarımın %100 güvenli olduğu garanti edilemez.
     </p>
 </div>
 
 <div>
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">9</span>
-        Politika Değişiklikleri
+        Haklarınız
+    </h2>
+    <p class="text-gray-500 leading-relaxed mb-4">
+        KVKK&apos;nın 11. maddesi ve GDPR kapsamında şu haklara sahipsiniz:
+    </p>
+    <ul class="space-y-3 text-gray-500">
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Erişim ve bilgi:</strong> Hangi verilerinizi işlediğimizi
+                öğrenme ve bir kopyasını isteme.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Dışa aktarma:</strong> Profil &gt; <em>Verilerini dışa aktar</em>
+                ile tüm kayıtlarınızı ve koleksiyonlarınızı JSON veya CSV olarak indirebilirsiniz (ücretsiz).
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Düzeltme:</strong> Adınızı, kullanıcı adınızı ve profil
+                fotoğrafınızı Profil &gt; <em>Hesap Bilgileri</em>&apos;nden değiştirebilirsiniz.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Silme:</strong> Profil &gt; <em>Hesap Bilgileri</em> &gt;
+                <em>Hesabı Sil</em> ile hesabınızı ve tüm verilerinizi anında, kalıcı olarak silebilirsiniz.
+                Sunucumuzdaki veriler, Firebase giriş hesabınız ve bildirim belirteciniz silinir; Apple ile
+                girdiyseniz Apple oturum yetkisi de iptal edilir. Ayrıntılar
+                <a href="/delete-account" class="text-[#688E8B] hover:underline font-medium">Hesap Silme</a>
+                sayfasında. Hesap silmek App Store aboneliğinizi iptal etmez; onu iPhone&apos;un
+                Ayarlar &gt; [adınız] &gt; Abonelikler bölümünden ayrıca iptal etmelisiniz.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">İtiraz ve kısıtlama:</strong> Meşru menfaate dayanan işlemelere
+                itiraz etme, verilerin aktarıldığı üçüncü kişileri öğrenme ve zararınıza doğan sonuçlara
+                itiraz etme.
+            </div>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            <div>
+                <strong class="text-gray-900">Şikâyet:</strong> Talebinize verdiğimiz cevaptan memnun
+                kalmazsanız Kişisel Verileri Koruma Kurulu&apos;na (kvkk.gov.tr) veya AB&apos;de yaşıyorsanız
+                kendi ülkenizin veri koruma otoritesine başvurabilirsiniz.
+            </div>
+        </li>
+    </ul>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        Taleplerinizi
+        <a href="mailto:destek@somineapp.com" class="text-[#688E8B] hover:underline font-medium">destek@somineapp.com</a>
+        adresine yazabilirsiniz. En geç 30 gün içinde cevap veririz.
+    </p>
+</div>
+
+<div>
+    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">10</span>
+        Yaş sınırı
     </h2>
     <p class="text-gray-500 leading-relaxed">
-        Bu gizlilik politikasını zaman zaman güncelleyebiliriz. Önemli değişiklikler
-        durumunda, uygulama içinde bildirim yapılacaktır. Bu sayfanın en üstündeki
-        &quot;Son güncelleme&quot; tarihini kontrol ederek politikanın ne zaman güncellendiğini
-        öğrenebilirsiniz.
+        Somine 13 yaş ve üzeri içindir; 13 yaşından küçük çocuklara yönelik değildir ve onlardan
+        bilerek veri toplamayız. 13 yaşından küçük bir çocuğun hesap açtığını fark ederseniz bize
+        yazın; hesabı ve verilerini sileriz.
+    </p>
+</div>
+
+<div>
+    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-[#688E8B]/10 text-[#688E8B] flex items-center justify-center text-sm font-bold">11</span>
+        Bu politikadaki değişiklikler
+    </h2>
+    <p class="text-gray-500 leading-relaxed">
+        Uygulama değiştikçe bu politikayı güncelleriz. Önemli bir değişiklik olursa uygulama içinde
+        haber veririz. Geçerli sürümün tarihi sayfanın üstündeki &quot;Son güncelleme&quot; satırındadır.
     </p>
 </div>
 
@@ -272,13 +440,12 @@
         İletişim
     </h3>
     <p class="text-gray-500 text-sm leading-relaxed">
-        Gizlilik politikamız hakkında sorularınız veya talepleriniz için bizimle
-        iletişime geçebilirsiniz:
+        Gizlilikle ilgili her soru ve talep için veri sorumlusu Gökmen Küçük (GSO Studio):
     </p>
-    <a href="mailto:support@somineapp.com" class="inline-flex items-center gap-2 mt-3 text-[#688E8B] hover:underline font-medium text-sm">
+    <a href="mailto:destek@somineapp.com" class="inline-flex items-center gap-2 mt-3 text-[#688E8B] hover:underline font-medium text-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
         </svg>
-        support@somineapp.com
+        destek@somineapp.com
     </a>
 </div>

@@ -1,8 +1,9 @@
 @*
     Terms of Use — English text. Counterpart of _TermsBody.tr.cshtml.
-    Substantive parity with the Turkish version is REQUIRED: the same ten sections,
-    the same subscription prices, the same auto-renewal and cancellation wording, and
-    the same governing law (Republic of Türkiye).
+    Substantive parity with the Turkish version is REQUIRED: the same ten sections plus the
+    shared-content box, the same plan limits (SubscriptionLimits.cs), no hard-coded prices
+    (App Store shows the local price), the same auto-renewal and cancellation wording,
+    the 13+ age requirement, and the same governing law (Republic of Türkiye).
 *@
 <p class="text-gray-500 leading-relaxed">
     Please read these Terms of Use carefully before using the Somine mobile application (the
@@ -17,8 +18,9 @@
     </h2>
     <p class="text-gray-500 leading-relaxed">
         Somine is a mobile application that lets users organise, store and share their digital
-        content (videos, links, images) in personal collections. The App is distributed for iOS
-        devices through the Apple App Store.
+        content (videos, links, images) in personal collections. The App is currently available
+        for iPhone only, through the Apple App Store. The service is provided by Gökmen Küçük
+        (GSO Studio).
     </p>
 </div>
 
@@ -28,8 +30,9 @@
         Creating an Account and Your Obligations
     </h2>
     <p class="text-gray-500 leading-relaxed mb-4">
-        You need an account to use the App. When you create one, you are expected to follow
-        these rules:
+        To use the App you need an account, created by signing in with Apple or Google. You must
+        be at least 13 years old to use Somine. When using your account, you are expected to
+        follow these rules:
     </p>
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
@@ -55,13 +58,24 @@
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Do not include insults, harassment, hate speech or sexual content in the collections
-            you share. You can
-            <a href="/support#icerik-bildirimi" class="text-[#688E8B] hover:underline">report such content to us</a>;
-            where a violation is confirmed the link is revoked, the content is taken down, and
-            repeat violations lead to the account being suspended.
+            Do not save or share unlawful content, insults, harassment, threats, hate speech,
+            sexual content, or content that infringes the rights of others
         </li>
     </ul>
+</div>
+
+<div class="bg-[#E8F1EF] rounded-2xl p-6 border border-[#688E8B]/10">
+    <h3 class="text-lg font-semibold text-gray-900 mb-3">
+        Shared content and reports
+    </h3>
+    <p class="text-gray-500 text-sm leading-relaxed">
+        You can report a collection shared with you in the app via &quot;…&quot; &gt; <em>Report
+        collection</em>; the same menu lets you block the person or remove the collection from your
+        library. Public links can be reported to abuse@somineapp.com
+        (<a href="/support#icerik-bildirimi" class="text-[#688E8B] hover:underline">details</a>). We review
+        reports within 24 hours. We may remove content that breaks these terms without prior notice,
+        revoke public links, and suspend or close accounts that violate the rules.
+    </p>
 </div>
 
 <div>
@@ -96,10 +110,13 @@
                     <span class="text-[#688E8B]">✓</span> 10 collections, 500 items in total
                 </li>
                 <li class="flex items-center gap-2">
-                    <span class="text-[#688E8B]">✓</span> Adding and editing content
+                    <span class="text-[#688E8B]">✓</span> 3 active reminders
                 </li>
                 <li class="flex items-center gap-2">
-                    <span class="text-[#688E8B]">✓</span> Basic search
+                    <span class="text-[#688E8B]">✓</span> 5 collection shares a month, public links
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-[#688E8B]">✓</span> Search, widget, automatic dark mode, data export
                 </li>
             </ul>
         </div>
@@ -107,43 +124,23 @@
             <h4 class="font-semibold text-gray-900 text-sm mb-2">Premium Membership</h4>
             <ul class="space-y-1.5 text-gray-500 text-sm">
                 <li class="flex items-center gap-2">
-                    <span class="text-[#688E8B]">✓</span> Unlimited collections
+                    <span class="text-[#688E8B]">✓</span> Unlimited collections, items, reminders and shares
                 </li>
                 <li class="flex items-center gap-2">
-                    <span class="text-[#688E8B]">✓</span> Hidden Vault (Face ID / Touch ID)
+                    <span class="text-[#688E8B]">✓</span> Hidden Vault (Face ID)
                 </li>
                 <li class="flex items-center gap-2">
-                    <span class="text-[#688E8B]">✓</span> Premium themes and icons
+                    <span class="text-[#688E8B]">✓</span> Midnight and Vibe themes, custom app icons
                 </li>
             </ul>
         </div>
     </div>
-    <p class="text-gray-500 leading-relaxed mb-4">
-        Premium membership is offered on the following plans:
-    </p>
-    <ul class="space-y-3 text-gray-500 mb-4">
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Weekly plan:</strong> $0.99 / week
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Monthly plan:</strong> $1.99 / month (Popular)
-            </div>
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <div>
-                <strong class="text-gray-900">Annual plan:</strong> $9.99 / year (Best value)
-            </div>
-        </li>
-    </ul>
-    <p class="text-gray-500 leading-relaxed text-sm">
-        Premium membership fees are collected through the Apple App Store, and Apple's
-        subscription management rules apply.
+    <p class="text-gray-500 leading-relaxed">
+        Premium is an auto-renewing App Store subscription offered weekly, monthly and yearly. The
+        current price is shown in the app and on the App Store, in your local currency, before you
+        buy. Payment is charged to your Apple account and Apple&apos;s subscription rules apply. If
+        Premium ends, your content is not deleted; you just can&apos;t add new collections or items
+        until you are back within the free limits.
     </p>
 </div>
 
@@ -182,7 +179,11 @@
     <ul class="space-y-2 text-gray-500 text-sm">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            <strong class="text-gray-900">iOS:</strong> Settings &gt; Apple ID &gt; Subscriptions &gt; Somine &gt; Cancel
+            <strong class="text-gray-900">iPhone:</strong> Settings &gt; [your name] &gt; Subscriptions &gt; Somine &gt; Cancel Subscription
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
+            Deleting your account does not cancel your subscription; cancel it separately.
         </li>
     </ul>
 </div>
@@ -195,7 +196,7 @@
     <p class="text-gray-500 leading-relaxed">
         Because Premium purchases are made through the Apple App Store, all refund requests are
         subject to Apple's refund policy. You can submit a request through Apple's &quot;Report a
-        Problem&quot; page, or from Settings &gt; Apple ID &gt; Purchases on your device. Somine
+        Problem&quot; page (reportaproblem.apple.com). Somine
         cannot issue refunds directly; refund decisions rest entirely with Apple.
     </p>
 </div>
@@ -212,15 +213,15 @@
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
-                <strong class="text-gray-900">From inside the app:</strong> Profile &gt; Account Details &gt; Delete Account
+                <strong class="text-gray-900">From inside the app:</strong> Profile &gt; Account Info &gt; Delete Account (immediate and permanent)
             </div>
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
             <div>
                 <strong class="text-gray-900">By email:</strong> send a deletion request to
-                <a href="mailto:support@somineapp.com" class="text-[#688E8B] hover:underline">
-                    support@somineapp.com
+                <a href="mailto:destek@somineapp.com" class="text-[#688E8B] hover:underline">
+                    destek@somineapp.com
                 </a>
             </div>
         </li>
@@ -230,6 +231,9 @@
         <a href="/delete-account" class="text-[#688E8B] hover:underline font-medium">
             Delete Account page
         </a>.
+    </p>
+    <p class="text-gray-500 leading-relaxed mt-4">
+        We may suspend or close accounts that seriously or repeatedly violate these terms.
     </p>
 </div>
 
@@ -241,7 +245,8 @@
     <ul class="space-y-3 text-gray-500">
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
-            Somine is not responsible for the content added by users.
+            Users are responsible for the content they save and share. Somine does not review that
+            content in advance, but it does review reported content and removes it where necessary.
         </li>
         <li class="flex items-start gap-3">
             <span class="w-1.5 h-1.5 rounded-full bg-[#688E8B] mt-2 shrink-0"></span>
@@ -291,10 +296,10 @@
     <p class="text-gray-500 text-sm leading-relaxed">
         If you have questions or concerns about these terms of use, you can get in touch with us:
     </p>
-    <a href="mailto:support@somineapp.com" class="inline-flex items-center gap-2 mt-3 text-[#688E8B] hover:underline font-medium text-sm">
+    <a href="mailto:destek@somineapp.com" class="inline-flex items-center gap-2 mt-3 text-[#688E8B] hover:underline font-medium text-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
         </svg>
-        support@somineapp.com
+        destek@somineapp.com
     </a>
 </div>
