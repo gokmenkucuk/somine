@@ -673,6 +673,8 @@ class AuthRepository {
     User firebaseUser,
     BackendIdentityProvider provider,
   ) async {
+    // Önceki hesaptan kalan hata sayacı yeni girişi bloklamasın.
+    _backendAuthService.resetFailureState();
     try {
       await _backendAuthService.ensureSession(
         firebaseUser,

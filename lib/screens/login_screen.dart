@@ -217,7 +217,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               // (Beyaz zemin üstünde beyaz buton olduğu için ince bir border ekledik)
                               _SocialButton(
                                 onPressed: _signInWithGoogle,
-                                icon: Icons.g_mobiledata,
+                                leading: Image.asset(
+                                  'assets/images/google_g.png',
+                                  width: 20,
+                                  height: 20,
+                                  excludeFromSemantics: true,
+                                ),
                                 label: l10n.loginGoogleContinue,
                                 backgroundColor: Colors.white,
                                 textColor: Colors.black87,
@@ -354,9 +359,13 @@ class _ShimmerSloganState extends State<_ShimmerSlogan>
 }
 
 // GÜNCELLENEN BUTON WIDGET'I
+/// İki giriş düğmesinin ortak yüksekliği. Apple düğmesi yazıyı yüksekliğin
+/// %43'ü yapar; Google düğmesi de aynı oranı kullanır.
+const double _kSignInButtonHeight = 50;
+
 class _SocialButton extends StatelessWidget {
   final VoidCallback onPressed;
-  final IconData icon;
+  final Widget leading;
   final String label;
   final Color backgroundColor;
   final Color textColor;
@@ -365,7 +374,7 @@ class _SocialButton extends StatelessWidget {
 
   const _SocialButton({
     required this.onPressed,
-    required this.icon,
+    required this.leading,
     required this.label,
     required this.backgroundColor,
     required this.textColor,
@@ -377,7 +386,7 @@ class _SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 56,
+      height: _kSignInButtonHeight,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
@@ -400,14 +409,22 @@ class _SocialButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: textColor, size: 28),
-                const SizedBox(width: DesignTokens.spacingMD),
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                leading,
+                const SizedBox(width: 8),
+                // Apple düğmesiyle aynı yazı: SF Pro, yüksekliğin %43'ü, -0.41 aralık
+                // (sign_in_with_apple'ın HIG'e göre kullandığı değerler).
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      inherit: false,
+                      fontFamily: '.SF Pro Text',
+                      fontSize: _kSignInButtonHeight * 0.43,
+                      letterSpacing: -0.41,
+                      color: textColor,
+                    ),
                   ),
                 ),
               ],
@@ -466,7 +483,7 @@ class _AppleSignInButton extends StatelessWidget {
     return SignInWithAppleButton(
       onPressed: onPressed,
       text: label,
-      height: 56,
+      height: _kSignInButtonHeight,
       style: SignInWithAppleButtonStyle.black,
       borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
     );

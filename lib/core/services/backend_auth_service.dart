@@ -112,6 +112,7 @@ class BackendAuthService {
   }
 
   Future<void> clearSession() async {
+    resetFailureState();
     final key = _sessionStorageKey;
     try {
       await _secureStorage.delete(key: key);
@@ -256,7 +257,12 @@ class BackendAuthService {
     _circuitOpenedAt = null;
   }
 
-  void _recordSuccess() {
+  void _recordSuccess() => resetFailureState();
+
+  /// Devre kesiciyi kapatır ve hata sayacını sıfırlar. Oturum temizlenince ve
+  /// yeni girişte çağrılır: önceki hesabın (ör. silinirken) biriktirdiği
+  /// hatalar yeni hesabın ilk isteklerini engellemesin.
+  void resetFailureState() {
     _consecutiveFailures = 0;
     _circuitOpenedAt = null;
     _currentCooldown = _circuitInitialCooldown;
