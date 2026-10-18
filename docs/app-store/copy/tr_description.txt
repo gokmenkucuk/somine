@@ -9,7 +9,7 @@ NELER YAPABİLİRSİN
 • "Sana geri geldi": İsteğe bağlı haftalık bildirim, henüz açmadığın kayıtları yeniden önüne getirir.
 • Günün Kaydı widget'ı: Ana ekrandaki widget her gün kayıtlarından birini gösterir.
 • Hızlı arama: Başlıklarda, notlarda ve linklerde arar; ufak yazım hatalarını dert etmez.
-• Arkadaşlarınla paylaş: Bir koleksiyonu kullanıcı adıyla arkadaşına gönder, kabul ettiğinde onun kitaplığında görünsün. İstersen tarayıcıda açılan, herkese açık bir link oluştur. (Premium)
+• Arkadaşlarınla paylaş: Bir koleksiyonu kullanıcı adıyla arkadaşına gönder, kabul ettiğinde onun kitaplığında görünsün. İstersen tarayıcıda açılan, herkese açık bir link oluştur.
 • Gizli Kasa: Yalnızca senin görmen gereken koleksiyonlar Face ID veya Touch ID ile kilitli kalır. (Premium)
 • Sana göre görünüm: Air, Midnight ve Vibe temaları, farklı uygulama ikonları.
 • Verin senin: Tüm kayıtlarını JSON veya CSV olarak dışa aktar, hesabını istediğin an uygulama içinden sil. Sildiğin içerikler 30 gün boyunca Son Silinenler'de bekler.
@@ -17,8 +17,8 @@ NELER YAPABİLİRSİN
 Apple ya da Google hesabınla giriş yap. somine Türkçe ve İngilizce kullanılabilir.
 
 ÜCRETSİZ VE PREMIUM
-Ücretsiz: 500 kayıt, 10 koleksiyon, 3 aktif hatırlatıcı, widget, arama, haftalık özet ve dışa aktarma.
-Premium: sınırsız kayıt, koleksiyon ve hatırlatıcı; arkadaşlarla koleksiyon paylaşımı ve herkese açık link; Gizli Kasa; Midnight ve Vibe temaları; özel uygulama ikonları.
+Ücretsiz: 500 kayıt, 10 koleksiyon, 3 aktif hatırlatıcı, ayda 5 koleksiyon paylaşımı, herkese açık link, widget, arama, haftalık özet, otomatik karanlık mod ve dışa aktarma.
+Premium: sınırsız kayıt, koleksiyon, hatırlatıcı ve paylaşım; Gizli Kasa; Midnight ve Vibe temaları; özel uygulama ikonları.
 
 ABONELİK BİLGİSİ
 somine Premium; haftalık, aylık veya yıllık, otomatik yenilenen abonelik olarak sunulur. Ödeme, satın almayı onayladığında Apple Hesabından alınır. Abonelik, mevcut dönemin bitiminden en az 24 saat önce iptal edilmezse otomatik olarak yenilenir; yenileme ücreti dönem bitmeden önceki 24 saat içinde tahsil edilir. Aboneliğini App Store hesap ayarlarından dilediğin zaman yönetebilir veya iptal edebilirsin.
