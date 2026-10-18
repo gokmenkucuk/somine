@@ -40,6 +40,13 @@ public sealed class SomineApiWebApplicationFactory : WebApplicationFactory<Progr
     {
         builder.UseEnvironment("Testing");
 
+        // Program.cs JWT ayarlarını host kurulurken okuyor; ConfigureAppConfiguration ise
+        // o noktada henüz uygulanmamış olur. UseSetting erken yüklenir, böylece testler
+        // geliştiricinin yerel appsettings.Local.json dosyasına bağlı kalmaz.
+        builder.UseSetting("Jwt:Secret", "SomineApi-SuperSecretKey-256Bits-MinimumLength-Required!!");
+        builder.UseSetting("Jwt:Issuer", "somine-api");
+        builder.UseSetting("Jwt:Audience", "somine-app");
+
         builder.ConfigureAppConfiguration((_, configurationBuilder) =>
         {
             configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
