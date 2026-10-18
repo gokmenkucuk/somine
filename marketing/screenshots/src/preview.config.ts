@@ -37,10 +37,11 @@ export const previewConfig = {
     en: 'Your saves, back when you need them',
   } as Record<Locale, string>,
   clips: [
-    { file: '01-save.mp4', start: 0, end: 5, speed: 1, caption: { tr: 'Her yerden kaydet', en: 'Save from anywhere' } },
-    { file: '02-reminder.mp4', start: 0, end: 5, speed: 1, caption: { tr: 'Hatırlatıcıyı kur', en: 'Set a reminder' } },
-    { file: '03-collections.mp4', start: 0, end: 5, speed: 1, caption: { tr: 'Hepsi düzenli', en: 'All in order' } },
-    { file: '04-search.mp4', start: 0, end: 4.5, speed: 1, caption: { tr: 'Aradığını hemen bul', en: 'Find it in seconds' } },
-    { file: '05-share.mp4', start: 0, end: 4.5, speed: 1, caption: { tr: 'Arkadaşınla paylaş', en: 'Share with friends' } },
+    // Kayıtlar: kullanıcının gsoreview hesabıyla oynadığı simülatör çekimleri (take-05, take-06).
+    // Arama klibi çıkarıldı: arama ekranındaki kaynak çipleri üçüncü taraf logoları gösteriyor.
+    { file: '01-save.mp4', start: 24, end: 36, speed: 2, caption: { tr: 'Her yerden kaydet', en: 'Save from anywhere' } },
+    { file: '02-reminder.mp4', start: 36, end: 42, speed: 1, caption: { tr: 'Hatırlatıcıyı kur', en: 'Set a reminder' } },
+    { file: '03-collections.mp4', start: 16, end: 22.5, speed: 1.2, caption: { tr: 'Hepsi düzenli', en: 'All in order' } },
+    { file: '05-share.mp4', start: 47.8, end: 59.5, speed: 2, caption: { tr: 'Arkadaşınla paylaş', en: 'Share with friends' } },
   ] as ClipConfig[],
 };
