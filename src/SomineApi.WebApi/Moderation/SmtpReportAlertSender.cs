@@ -6,7 +6,7 @@ using SomineApi.WebApi.Options;
 
 namespace SomineApi.WebApi.Moderation;
 
-/// <summary>Şikâyet uyarısını SMTP (STARTTLS ya da 465'te SSL) ile düz metin olarak gönderir.</summary>
+/// <summary>Şikâyet uyarısını SMTP (STARTTLS ya da 465'te SSL) ile HTML + düz metin olarak gönderir.</summary>
 public sealed class SmtpReportAlertSender : IReportAlertSender
 {
     private readonly IOptions<ModerationOptions> _options;
@@ -26,7 +26,18 @@ public sealed class SmtpReportAlertSender : IReportAlertSender
         message.From.Add(MailboxAddress.Parse(smtp.From));
         message.To.Add(MailboxAddress.Parse(email.To));
         message.Subject = email.Subject;
-        message.Body = new TextPart("plain") { Text = email.TextBody };
+        if (email.HtmlBody == null)
+        {
+            message.Body = new TextPart("plain") { Text = email.TextBody };
+        }
+        else
+        {
+            var body = new BodyBuilder { TextBody = email.TextBody };
+            var logo = body.LinkedResources.Add("somine-logo.png", ReportAlertEmailTemplate.Logo, new ContentType("image", "png"));
+            logo.ContentId = ReportAlertEmailTemplate.LogoContentId;
+            body.HtmlBody = email.HtmlBody;
+            message.Body = body.ToMessageBody();
+        }
 
         try
         {

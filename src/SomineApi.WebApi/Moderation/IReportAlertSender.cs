@@ -1,7 +1,7 @@
 namespace SomineApi.WebApi.Moderation;
 
-/// <summary>Moderatöre giden tek bir şikâyet uyarısı.</summary>
-public sealed record ReportAlertEmail(string To, string Subject, string TextBody);
+/// <summary>Moderatöre giden tek bir şikâyet uyarısı. HtmlBody varsa e-posta HTML + düz metin olarak gider.</summary>
+public sealed record ReportAlertEmail(string To, string Subject, string TextBody, string? HtmlBody = null);
 
 public interface IReportAlertSender
 {

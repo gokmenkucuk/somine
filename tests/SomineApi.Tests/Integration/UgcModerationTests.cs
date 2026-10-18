@@ -100,6 +100,11 @@ public class UgcModerationTests
         Assert.Contains("https://bad.example.com/page", email.TextBody);
         Assert.Contains(reportId.ToString(), email.TextBody);
         Assert.Contains($"WHERE id = '{share.Id}'", email.TextBody);
+        Assert.NotNull(email.HtmlBody);
+        Assert.Contains("cid:somine-logo", email.HtmlBody);
+        Assert.Contains("href=\"https://bad.example.com/page\"", email.HtmlBody);
+        Assert.Contains("rude", email.HtmlBody);
+        Assert.Contains(reportId.ToString(), email.HtmlBody);
 
         // Aynı paylaşım için tekrar şikâyet yeni e-posta göndermez.
         await client.PostAsJsonAsync($"/api/shares/{share.Id}/report", new { reason = "spam" });

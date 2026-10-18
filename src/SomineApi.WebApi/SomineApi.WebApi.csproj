@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Moderation\Assets\email-logo.png" LogicalName="SomineApi.ModerationEmailLogo" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SomineApi.Infrastructure\SomineApi.Infrastructure.csproj" />
   </ItemGroup>
 
