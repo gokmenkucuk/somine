@@ -31,7 +31,7 @@
 		</dict>
 	</dict>
 	<key>CFBundleDisplayName</key>
-	<string>Somine</string>
+	<string>somine</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>tr</string>
@@ -168,7 +168,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Somine</string>
+	<string>somine</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -203,13 +203,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Somine, Gizli Kasa'nızı Face ID ile açar; böylece oraya koyduğunuz içerikleri yalnızca siz görürsünüz.</string>
+	<string>somine, Gizli Kasa'nızı Face ID ile açar; böylece oraya koyduğunuz içerikleri yalnızca siz görürsünüz.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Somine konumunuzu takip etmez. Konum yalnızca kaydettiğiniz yerlerin harita önizlemesinde size göre nerede olduklarını göstermek için kullanılır.</string>
+	<string>somine konumunuzu takip etmez. Konum yalnızca kaydettiğiniz yerlerin harita önizlemesinde size göre nerede olduklarını göstermek için kullanılır.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Somine, içerik olarak kaydetmek veya profil fotoğrafı yapmak istediğiniz görseli seçebilmeniz için fotoğraflarınıza erişir.</string>
+	<string>somine, içerik olarak kaydetmek veya profil fotoğrafı yapmak istediğiniz görseli seçebilmeniz için fotoğraflarınıza erişir.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Somine, fotoğraf çekip doğrudan koleksiyonlarınıza kaydedebilmeniz için kamerayı kullanır.</string>
+	<string>somine, fotoğraf çekip doğrudan koleksiyonlarınıza kaydedebilmeniz için kamerayı kullanır.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

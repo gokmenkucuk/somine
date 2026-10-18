@@ -1,0 +1,1 @@
+saver,organizer,collection,folder,post,recipe,idea,inspiration,vault,note,wishlist,favorite,article

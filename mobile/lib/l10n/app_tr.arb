@@ -1428,7 +1428,7 @@
   "@inviteFriendShareHeadline": {
     "description": "Headline on the invite friend screen."
   },
-  "inviteFriendShareSubtitle": "Somine'ı sevdiğin kişilerle paylaş.\nOnlar da içeriklerini kolayca organize etsin!",
+  "inviteFriendShareSubtitle": "somine'ı sevdiğin kişilerle paylaş.\nOnlar da içeriklerini kolayca organize etsin!",
   "@inviteFriendShareSubtitle": {
     "description": "Subtitle on the invite friend screen."
   },
@@ -1444,7 +1444,7 @@
   "@inviteFriendShareButton": {
     "description": "Button label to share the invite message."
   },
-  "inviteFriendShareMessage": "Somine'ı dene! Tüm kaydettiğin içerikleri tek yerde topla. 📌✨ {link}",
+  "inviteFriendShareMessage": "somine'ı dene! Tüm kaydettiğin içerikleri tek yerde topla. 📌✨ {link}",
   "@inviteFriendShareMessage": {
     "description": "Message shared with friends when inviting them to the app.",
     "placeholders": {
@@ -1777,11 +1777,11 @@
   "@onboardingTourSaveTitle": {
     "description": "Feature tour card 1 title (save from any app via the share sheet)."
   },
-  "onboardingTourSaveBody": "Instagram, YouTube, Safari… Paylaş → SoMine. Gördüğün her şey tek bir yerde.",
+  "onboardingTourSaveBody": "Instagram, YouTube, Safari… Paylaş → somine. Gördüğün her şey tek bir yerde.",
   "@onboardingTourSaveBody": {
     "description": "Feature tour card 1 sentence."
   },
-  "onboardingTourSaveTip": "İpucu: Paylaş menüsünde SoMine'ı en başa taşı.",
+  "onboardingTourSaveTip": "İpucu: Paylaş menüsünde somine'ı en başa taşı.",
   "@onboardingTourSaveTip": {
     "description": "Feature tour card 1 tip line."
   },
@@ -2034,11 +2034,11 @@
   "@helpSupportAppVersion": {
     "description": "Label for the app version row in the help & support screen."
   },
-  "helpSupportFaqQ1": "Somine nasıl çalışır?",
+  "helpSupportFaqQ1": "somine nasıl çalışır?",
   "@helpSupportFaqQ1": {
     "description": "First FAQ question on the help & support screen."
   },
-  "helpSupportFaqA1": "Somine, Instagram, YouTube, X ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
+  "helpSupportFaqA1": "somine, Instagram, YouTube, X ve diğer platformlardan kaydettiğiniz linkleri tek bir yerde toplamanızı sağlar. Paylaş düğmesine basarak veya manuel olarak içerik ekleyebilirsiniz.",
   "@helpSupportFaqA1": {
     "description": "First FAQ answer on the help & support screen."
   },
@@ -2600,7 +2600,7 @@
       }
     }
   },
-  "helpSupportEmailSubject": "Somine Destek",
+  "helpSupportEmailSubject": "somine Destek",
   "a11yTabFeed": "Akış",
   "a11yTabSearch": "Ara",
   "a11yTabCatalog": "Koleksiyonlar",
@@ -2639,6 +2639,6 @@
   "addContentDuplicateSaveAnyway": "Yine de Kaydet",
   "feedEmptyAddButton": "İlk içeriğini ekle",
   "catalogEmptyAddButton": "İçerik ekle",
-  "emptyStateShareTip": "İpucu: Başka bir uygulamada Paylaş’a dokunup Somine’yi seçerek de kaydedebilirsin.",
+  "emptyStateShareTip": "İpucu: Başka bir uygulamada Paylaş’a dokunup somine’yi seçerek de kaydedebilirsin.",
   "catalogUnlockWithFaceId": "Face ID ile Aç"
 }

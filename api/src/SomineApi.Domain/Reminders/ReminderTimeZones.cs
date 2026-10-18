@@ -21,7 +21,7 @@ public static class ReminderTimeZones
     private static readonly TimeZoneInfo FallbackTimeZone = TimeZoneInfo.CreateCustomTimeZone(
         id: "SoMine/UTC+03",
         baseUtcOffset: TimeSpan.FromHours(3),
-        displayName: "(UTC+03:00) SoMine varsayılanı",
+        displayName: "(UTC+03:00) somine varsayılanı",
         standardDisplayName: "UTC+03:00");
 
     private static readonly ConcurrentDictionary<string, TimeZoneInfo> Cache = new(StringComparer.Ordinal);

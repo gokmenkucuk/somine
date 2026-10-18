@@ -72,16 +72,16 @@
     <value>Legal</value>
   </data>
   <data name="common.brand" xml:space="preserve">
-    <value>Somine</value>
+    <value>somine</value>
   </data>
   <data name="layout.defaultTitle" xml:space="preserve">
-    <value>Somine — Everything You Love, in One Place</value>
+    <value>somine — Everything You Love, in One Place</value>
   </data>
   <data name="layout.titleSuffix" xml:space="preserve">
-    <value>Somine</value>
+    <value>somine</value>
   </data>
   <data name="layout.defaultDescription" xml:space="preserve">
-    <value>Save what you love from Instagram, Pinterest, YouTube and any web link — all in one place with Somine. Save content, organise it into collections, share it with friends.</value>
+    <value>Save what you love from Instagram, Pinterest, YouTube and any web link — all in one place with somine. Save content, organise it into collections, share it with friends.</value>
   </data>
   <data name="layout.scrollToTop" xml:space="preserve">
     <value>Back to top</value>
@@ -129,7 +129,7 @@
     <value>English</value>
   </data>
   <data name="footer.tagline" xml:space="preserve">
-    <value>Save everything you love in one place. Whatever the platform, Somine brings it all together.</value>
+    <value>Save everything you love in one place. Whatever the platform, somine brings it all together.</value>
   </data>
   <data name="footer.appHeading" xml:space="preserve">
     <value>App</value>
@@ -162,7 +162,7 @@
     <value>Terms</value>
   </data>
   <data name="index.description" xml:space="preserve">
-    <value>Save what you love from Instagram, Pinterest, YouTube and any web link — all in one place with Somine. Save content, organise it into collections, share it with friends.</value>
+    <value>Save what you love from Instagram, Pinterest, YouTube and any web link — all in one place with somine. Save content, organise it into collections, share it with friends.</value>
   </data>
   <data name="index.jsonLdDescription" xml:space="preserve">
     <value>Organise content from the platforms you love, alongside any web link, in your own personal collections.</value>
@@ -189,7 +189,7 @@
     <value>Scroll</value>
   </data>
   <data name="index.heroPhoneAlt" xml:space="preserve">
-    <value>The Somine home screen</value>
+    <value>The somine home screen</value>
   </data>
   <data name="index.featuresEyebrow" xml:space="preserve">
     <value>Features</value>
@@ -198,7 +198,7 @@
     <value>Everything You Save, in One Place</value>
   </data>
   <data name="index.featuresSubtitle" xml:space="preserve">
-    <value>Somine does more than save. You categorise, annotate, protect and share.</value>
+    <value>somine does more than save. You categorise, annotate, protect and share.</value>
   </data>
   <data name="index.feature1Title" xml:space="preserve">
     <value>Content from Every Platform</value>
@@ -246,7 +246,7 @@
     <value>Everything you saved is always one tap away, in an interface that stays clean, calm and easy on the eye.</value>
   </data>
   <data name="index.screenAltFormat" xml:space="preserve">
-    <value>Somine screen {0}</value>
+    <value>somine screen {0}</value>
   </data>
   <data name="index.howEyebrow" xml:space="preserve">
     <value>How It Works</value>
@@ -255,7 +255,7 @@
     <value>Save to a Collection in One Tap</value>
   </data>
   <data name="index.howSubtitle" xml:space="preserve">
-    <value>Saving from any app into a Somine collection takes three steps. Nothing is copied — the content stays where it lives, on the original platform.</value>
+    <value>Saving from any app into a somine collection takes three steps. Nothing is copied — the content stays where it lives, on the original platform.</value>
   </data>
   <data name="index.step1Title" xml:space="preserve">
     <value>Share from the Platform</value>
@@ -264,10 +264,10 @@
     <value>Tap the share button in any platform we support.</value>
   </data>
   <data name="index.step2Title" xml:space="preserve">
-    <value>Tap Somine</value>
+    <value>Tap somine</value>
   </data>
   <data name="index.step2Desc" xml:space="preserve">
-    <value>Pick the Somine icon from the list of apps that appears.</value>
+    <value>Pick the somine icon from the list of apps that appears.</value>
   </data>
   <data name="index.step3Title" xml:space="preserve">
     <value>Add to a Collection</value>
@@ -453,10 +453,10 @@
     <value>Open link</value>
   </data>
   <data name="share.ctaTitle" xml:space="preserve">
-    <value>Open this collection in Somine</value>
+    <value>Open this collection in somine</value>
   </data>
   <data name="share.ctaBody" xml:space="preserve">
-    <value>Save everything you love in one place. Whatever the platform, Somine brings it all together.</value>
+    <value>Save everything you love in one place. Whatever the platform, somine brings it all together.</value>
   </data>
   <data name="share.reportLink" xml:space="preserve">
     <value>Report this content</value>
@@ -468,7 +468,7 @@
     <value>Details</value>
   </data>
   <data name="share.reportMailSubject" xml:space="preserve">
-    <value>Content report — Somine</value>
+    <value>Content report — somine</value>
   </data>
   <data name="share.reportMailBodyFormat" xml:space="preserve">
     <value>Reported page: {0}
@@ -477,22 +477,22 @@ What is the problem?
 </value>
   </data>
   <data name="share.ogTitleFormat" xml:space="preserve">
-    <value>{0} — Somine</value>
+    <value>{0} — somine</value>
   </data>
   <data name="share.ogDescriptionWithCountFormat" xml:space="preserve">
-    <value>A Somine collection with {0} items.</value>
+    <value>A somine collection with {0} items.</value>
   </data>
   <data name="share.ogDescriptionEmpty" xml:space="preserve">
-    <value>A collection shared on Somine.</value>
+    <value>A collection shared on somine.</value>
   </data>
   <data name="share.ogDescriptionNotFound" xml:space="preserve">
-    <value>Save everything you love in one place with Somine.</value>
+    <value>Save everything you love in one place with somine.</value>
   </data>
   <data name="support.title" xml:space="preserve">
     <value>Support</value>
   </data>
   <data name="support.description" xml:space="preserve">
-    <value>Frequently asked questions about the Somine app, and how to reach us for support.</value>
+    <value>Frequently asked questions about the somine app, and how to reach us for support.</value>
   </data>
   <data name="support.eyebrow" xml:space="preserve">
     <value>Support</value>
@@ -501,7 +501,7 @@ What is the problem?
     <value>How can we help?</value>
   </data>
   <data name="support.subheading" xml:space="preserve">
-    <value>Ask us anything about Somine.</value>
+    <value>Ask us anything about somine.</value>
   </data>
   <data name="support.emailLabel" xml:space="preserve">
     <value>Email</value>
@@ -522,10 +522,10 @@ What is the problem?
     <value>Frequently Asked Questions</value>
   </data>
   <data name="support.faq1Q" xml:space="preserve">
-    <value>How does Somine work?</value>
+    <value>How does somine work?</value>
   </data>
   <data name="support.faq1A" xml:space="preserve">
-    <value>Somine lets you gather everything you like on Instagram, YouTube, Pinterest and other platforms into one place. Just tap the share button in any app and choose Somine. You can save links, notes or images; links point back to the original platform, so nothing is copied.</value>
+    <value>somine lets you gather everything you like on Instagram, YouTube, Pinterest and other platforms into one place. Just tap the share button in any app and choose somine. You can save links, notes or images; links point back to the original platform, so nothing is copied.</value>
   </data>
   <data name="support.faq2Q" xml:space="preserve">
     <value>How do I create a collection?</value>
@@ -579,7 +579,7 @@ What is the problem?
     <value>How do I manage or cancel my subscription?</value>
   </data>
   <data name="support.faq10A" xml:space="preserve">
-    <value>Subscriptions are managed by Apple: on your iPhone go to Settings &gt; [your name] &gt; Subscriptions &gt; Somine. When you cancel, Premium stays on until the end of the period you paid for. To avoid renewal, cancel at least 24 hours before the period ends. Only Apple can issue refunds.</value>
+    <value>Subscriptions are managed by Apple: on your iPhone go to Settings &gt; [your name] &gt; Subscriptions &gt; somine. When you cancel, Premium stays on until the end of the period you paid for. To avoid renewal, cancel at least 24 hours before the period ends. Only Apple can issue refunds.</value>
   </data>
   <data name="support.contactHeading" xml:space="preserve">
     <value>Contact Us</value>
@@ -606,7 +606,7 @@ What is the problem?
     <value>Send Message</value>
   </data>
   <data name="support.mailSubject" xml:space="preserve">
-    <value>Somine Support</value>
+    <value>somine Support</value>
   </data>
   <data name="support.mailFieldName" xml:space="preserve">
     <value>Name</value>
@@ -618,7 +618,7 @@ What is the problem?
     <value>Privacy Policy</value>
   </data>
   <data name="privacy.description" xml:space="preserve">
-    <value>Read the Somine privacy policy and learn how we handle your data.</value>
+    <value>Read the somine privacy policy and learn how we handle your data.</value>
   </data>
   <data name="privacy.lastUpdated" xml:space="preserve">
     <value>Last updated: 18 October 2026</value>
@@ -627,7 +627,7 @@ What is the problem?
     <value>Terms of Use</value>
   </data>
   <data name="terms.description" xml:space="preserve">
-    <value>Read the terms and conditions that govern your use of the Somine app.</value>
+    <value>Read the terms and conditions that govern your use of the somine app.</value>
   </data>
   <data name="terms.lastUpdated" xml:space="preserve">
     <value>Last updated: 18 October 2026</value>
@@ -636,7 +636,7 @@ What is the problem?
     <value>Delete Account</value>
   </data>
   <data name="delete.description" xml:space="preserve">
-    <value>Everything you need to know about deleting your Somine account.</value>
+    <value>Everything you need to know about deleting your somine account.</value>
   </data>
   <data name="delete.eyebrow" xml:space="preserve">
     <value>Account</value>
@@ -651,7 +651,7 @@ What is the problem?
     <value>Step by step:</value>
   </data>
   <data name="delete.step1" xml:space="preserve">
-    <value>Open the Somine app</value>
+    <value>Open the somine app</value>
   </data>
   <data name="delete.step2" xml:space="preserve">
     <value>Go to the Profile tab in the bottom bar</value>

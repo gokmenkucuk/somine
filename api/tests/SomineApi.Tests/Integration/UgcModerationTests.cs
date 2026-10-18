@@ -92,7 +92,7 @@ public class UgcModerationTests
 
         var email = await factory.ReportAlertSender.WaitForEmailAsync(TimeSpan.FromSeconds(10));
         Assert.Equal("moderator@example.com", email.To);
-        Assert.StartsWith("[SoMine Şikayet] Taciz", email.Subject);
+        Assert.StartsWith("[somine Şikayet] Taciz", email.Subject);
         Assert.Contains("rude", email.TextBody);
         Assert.Contains(sender.Id.ToString(), email.TextBody);
         Assert.Contains(recipient.Id.ToString(), email.TextBody);

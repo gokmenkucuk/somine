@@ -21,7 +21,7 @@
         ? "_SupportReport.en"
         : "_SupportReport.tr";
 
-    var contactLink = "<a href=\"mailto:support@somineapp.com?subject=Somine%20Destek\" class=\"text-[#688E8B] hover:underline\">support@somineapp.com</a>";
+    var contactLink = "<a href=\"mailto:support@somineapp.com?subject=somine%20Destek\" class=\"text-[#688E8B] hover:underline\">support@somineapp.com</a>";
 }
 
 <main class="min-h-screen flex flex-col bg-white">
@@ -171,7 +171,7 @@
             var email = (form.querySelector('#email') || {}).value || '';
             var message = (form.querySelector('#message') || {}).value || '';
 
-            var subject = form.getAttribute('data-subject') || 'Somine';
+            var subject = form.getAttribute('data-subject') || 'somine';
             var labelName = form.getAttribute('data-label-name') || 'Name';
             var labelEmail = form.getAttribute('data-label-email') || 'Email';
 

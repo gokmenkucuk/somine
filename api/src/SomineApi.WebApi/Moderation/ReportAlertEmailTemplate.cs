@@ -42,7 +42,7 @@ public static class ReportAlertEmailTemplate
     private static readonly TimeZoneInfo Istanbul = FindIstanbul();
 
     public static string Subject(ReportAlertModel model) =>
-        $"[SoMine Şikayet] {ReasonLabel(model.Reason)}: {Handle(model.Reported)}";
+        $"[somine Şikayet] {ReasonLabel(model.Reason)}: {Handle(model.Reported)}";
 
     public static string Html(ReportAlertModel model)
     {
@@ -69,8 +69,8 @@ public static class ReportAlertEmailTemplate
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
 <tr><td style="padding:0 8px 20px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="vertical-align:middle;"><img src="cid:{LogoContentId}" width="44" height="44" alt="SoMine" style="display:block;border:0;width:44px;height:44px;border-radius:11px;"></td>
-<td style="vertical-align:middle;padding-left:12px;font-size:15px;line-height:20px;color:{Ink};"><strong>SoMine</strong><br><span style="color:{Muted};font-size:13px;">İçerik moderasyonu</span></td>
+<td style="vertical-align:middle;"><img src="cid:{LogoContentId}" width="44" height="44" alt="somine" style="display:block;border:0;width:44px;height:44px;border-radius:11px;"></td>
+<td style="vertical-align:middle;padding-left:12px;font-size:15px;line-height:20px;color:{Ink};"><strong>somine</strong><br><span style="color:{Muted};font-size:13px;">İçerik moderasyonu</span></td>
 </tr></table>
 </td></tr>
 <tr><td style="background:#FFFFFF;border-radius:20px;padding:32px 28px;border:1px solid {Line};">
@@ -153,8 +153,8 @@ public static class ReportAlertEmailTemplate
 </td></tr>
 <tr><td style="padding:20px 8px 0;font-size:12px;line-height:18px;color:{Muted};">
 Şikâyet kimliği: <span style="font-family:{Mono};">{model.ReportId}</span><br>
-Bu e-postayı SoMine API'si otomatik gönderdi; uygulamadaki şikâyetler 24 saat içinde incelenir.<br><br>
-<strong style="color:{Ink};">SoMine</strong> · <a href="https://www.somineapp.com" style="color:{Muted};">somineapp.com</a> · <a href="mailto:destek@somineapp.com" style="color:{Muted};">destek@somineapp.com</a>
+Bu e-postayı somine API'si otomatik gönderdi; uygulamadaki şikâyetler 24 saat içinde incelenir.<br><br>
+<strong style="color:{Ink};">somine</strong> · <a href="https://www.somineapp.com" style="color:{Muted};">somineapp.com</a> · <a href="mailto:destek@somineapp.com" style="color:{Muted};">destek@somineapp.com</a>
 </td></tr>
 </table>
 </td></tr>
@@ -191,7 +191,7 @@ Bu e-postayı SoMine API'si otomatik gönderdi; uygulamadaki şikâyetler 24 saa
     public static string Text(ReportAlertModel model)
     {
         var text = new StringBuilder();
-        text.AppendLine("SoMine'da yeni bir içerik şikâyeti var. App Store kuralı gereği 24 saat içinde incelenmeli.");
+        text.AppendLine("somine'da yeni bir içerik şikâyeti var. App Store kuralı gereği 24 saat içinde incelenmeli.");
         text.AppendLine();
         text.AppendLine($"Sebep:          {ReasonLabel(model.Reason)}");
         if (!string.IsNullOrWhiteSpace(model.Note))

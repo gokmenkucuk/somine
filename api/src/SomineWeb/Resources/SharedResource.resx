@@ -72,16 +72,16 @@
     <value>Yasal</value>
   </data>
   <data name="common.brand" xml:space="preserve">
-    <value>Somine</value>
+    <value>somine</value>
   </data>
   <data name="layout.defaultTitle" xml:space="preserve">
-    <value>Somine — Beğendiklerini Tek Bir Yerde Topla</value>
+    <value>somine — Beğendiklerini Tek Bir Yerde Topla</value>
   </data>
   <data name="layout.titleSuffix" xml:space="preserve">
-    <value>Somine</value>
+    <value>somine</value>
   </data>
   <data name="layout.defaultDescription" xml:space="preserve">
-    <value>Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.</value>
+    <value>Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.</value>
   </data>
   <data name="layout.scrollToTop" xml:space="preserve">
     <value>Yukarı çık</value>
@@ -129,7 +129,7 @@
     <value>İngilizce</value>
   </data>
   <data name="footer.tagline" xml:space="preserve">
-    <value>Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — Somine hepsini bir araya getirir.</value>
+    <value>Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — somine hepsini bir araya getirir.</value>
   </data>
   <data name="footer.appHeading" xml:space="preserve">
     <value>Uygulama</value>
@@ -162,7 +162,7 @@
     <value>Şartlar</value>
   </data>
   <data name="index.description" xml:space="preserve">
-    <value>Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri Somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.</value>
+    <value>Instagram, Pinterest, YouTube ve web linklerinden beğendiğin içerikleri somine ile tek bir yerde topla. İçerik kaydet, koleksiyonlarını düzenle, arkadaşlarınla paylaş.</value>
   </data>
   <data name="index.jsonLdDescription" xml:space="preserve">
     <value>Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize et.</value>
@@ -189,7 +189,7 @@
     <value>Keşfet</value>
   </data>
   <data name="index.heroPhoneAlt" xml:space="preserve">
-    <value>Somine Ana Sayfa</value>
+    <value>somine Ana Sayfa</value>
   </data>
   <data name="index.featuresEyebrow" xml:space="preserve">
     <value>Özellikler</value>
@@ -246,7 +246,7 @@
     <value>Beğendiğin içeriklere her zaman tek dokunuşla ulaş. Temiz, sade ve göze zevk veren bir deneyim.</value>
   </data>
   <data name="index.screenAltFormat" xml:space="preserve">
-    <value>Somine ekran {0}</value>
+    <value>somine ekran {0}</value>
   </data>
   <data name="index.howEyebrow" xml:space="preserve">
     <value>Nasıl Çalışır</value>
@@ -255,7 +255,7 @@
     <value>Tek Tıkla Koleksiyonuna Ekle</value>
   </data>
   <data name="index.howSubtitle" xml:space="preserve">
-    <value>Herhangi bir uygulamadan içeriklerini Somine koleksiyonlarına kaydetmek sadece 3 adım. İçerik kopyalanmaz — orijinal haliyle platforma bağlı kalır.</value>
+    <value>Herhangi bir uygulamadan içeriklerini somine koleksiyonlarına kaydetmek sadece 3 adım. İçerik kopyalanmaz — orijinal haliyle platforma bağlı kalır.</value>
   </data>
   <data name="index.step1Title" xml:space="preserve">
     <value>Platformdan Paylaş</value>
@@ -264,10 +264,10 @@
     <value>Desteklediğimiz platformlardan paylaş (share) seçimi yap.</value>
   </data>
   <data name="index.step2Title" xml:space="preserve">
-    <value>Somine'ye Tıkla</value>
+    <value>somine'ye Tıkla</value>
   </data>
   <data name="index.step2Desc" xml:space="preserve">
-    <value>Çıkan uygulama listesinden Somine logosuna tıkla.</value>
+    <value>Çıkan uygulama listesinden somine logosuna tıkla.</value>
   </data>
   <data name="index.step3Title" xml:space="preserve">
     <value>Koleksiyona Ekle</value>
@@ -453,10 +453,10 @@
     <value>Bağlantıyı aç</value>
   </data>
   <data name="share.ctaTitle" xml:space="preserve">
-    <value>Bu koleksiyonu Somine'de aç</value>
+    <value>Bu koleksiyonu somine'de aç</value>
   </data>
   <data name="share.ctaBody" xml:space="preserve">
-    <value>Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — Somine hepsini bir araya getirir.</value>
+    <value>Beğendiğin içerikleri tek bir yerde topla. Platform fark etmez — somine hepsini bir araya getirir.</value>
   </data>
   <data name="share.reportLink" xml:space="preserve">
     <value>Bu içeriği bildir</value>
@@ -468,7 +468,7 @@
     <value>Ayrıntılar</value>
   </data>
   <data name="share.reportMailSubject" xml:space="preserve">
-    <value>İçerik bildirimi — Somine</value>
+    <value>İçerik bildirimi — somine</value>
   </data>
   <data name="share.reportMailBodyFormat" xml:space="preserve">
     <value>Bildirilen sayfa: {0}
@@ -477,22 +477,22 @@ Sorun nedir?
 </value>
   </data>
   <data name="share.ogTitleFormat" xml:space="preserve">
-    <value>{0} — Somine</value>
+    <value>{0} — somine</value>
   </data>
   <data name="share.ogDescriptionWithCountFormat" xml:space="preserve">
-    <value>{0} içerik içeren bir Somine koleksiyonu.</value>
+    <value>{0} içerik içeren bir somine koleksiyonu.</value>
   </data>
   <data name="share.ogDescriptionEmpty" xml:space="preserve">
-    <value>Somine'de paylaşılan bir koleksiyon.</value>
+    <value>somine'de paylaşılan bir koleksiyon.</value>
   </data>
   <data name="share.ogDescriptionNotFound" xml:space="preserve">
-    <value>Beğendiğin içerikleri Somine ile tek bir yerde topla.</value>
+    <value>Beğendiğin içerikleri somine ile tek bir yerde topla.</value>
   </data>
   <data name="support.title" xml:space="preserve">
     <value>Destek</value>
   </data>
   <data name="support.description" xml:space="preserve">
-    <value>Somine uygulaması hakkında sık sorulan sorular ve destek talebi için bizimle iletişime geçin.</value>
+    <value>somine uygulaması hakkında sık sorulan sorular ve destek talebi için bizimle iletişime geçin.</value>
   </data>
   <data name="support.eyebrow" xml:space="preserve">
     <value>Destek</value>
@@ -501,7 +501,7 @@ Sorun nedir?
     <value>Nasıl yardımcı olabiliriz?</value>
   </data>
   <data name="support.subheading" xml:space="preserve">
-    <value>Somine hakkında aklına takılan her şeyi sor.</value>
+    <value>somine hakkında aklına takılan her şeyi sor.</value>
   </data>
   <data name="support.emailLabel" xml:space="preserve">
     <value>E-posta</value>
@@ -522,10 +522,10 @@ Sorun nedir?
     <value>Sıkça Sorulan Sorular</value>
   </data>
   <data name="support.faq1Q" xml:space="preserve">
-    <value>Somine nasıl çalışır?</value>
+    <value>somine nasıl çalışır?</value>
   </data>
   <data name="support.faq1A" xml:space="preserve">
-    <value>Somine, Instagram, YouTube, Pinterest ve diğer platformlarda beğendiğin içerikleri tek bir yerde toplamanı sağlar. Herhangi bir uygulamada paylaş düğmesine basıp Somine'yi seçmen yeterli. Link, not veya görsel kaydedebilirsin; linkler orijinal platformdaki içeriğe bağlı kalır, içerik kopyalanmaz.</value>
+    <value>somine, Instagram, YouTube, Pinterest ve diğer platformlarda beğendiğin içerikleri tek bir yerde toplamanı sağlar. Herhangi bir uygulamada paylaş düğmesine basıp somine'yi seçmen yeterli. Link, not veya görsel kaydedebilirsin; linkler orijinal platformdaki içeriğe bağlı kalır, içerik kopyalanmaz.</value>
   </data>
   <data name="support.faq2Q" xml:space="preserve">
     <value>Koleksiyonlar nasıl oluşturulur?</value>
@@ -579,7 +579,7 @@ Sorun nedir?
     <value>Aboneliğimi nasıl yönetir veya iptal ederim?</value>
   </data>
   <data name="support.faq10A" xml:space="preserve">
-    <value>Abonelikler Apple üzerinden yönetilir: iPhone'da Ayarlar &gt; [adın] &gt; Abonelikler &gt; Somine. İptal ettiğinde Premium, ödediğin dönemin sonuna kadar açık kalır. Yenilemeyi önlemek için dönem bitmeden en az 24 saat önce iptal etmelisin. İadeleri yalnızca Apple yapabilir.</value>
+    <value>Abonelikler Apple üzerinden yönetilir: iPhone'da Ayarlar &gt; [adın] &gt; Abonelikler &gt; somine. İptal ettiğinde Premium, ödediğin dönemin sonuna kadar açık kalır. Yenilemeyi önlemek için dönem bitmeden en az 24 saat önce iptal etmelisin. İadeleri yalnızca Apple yapabilir.</value>
   </data>
   <data name="support.contactHeading" xml:space="preserve">
     <value>Bize Ulaşın</value>
@@ -606,7 +606,7 @@ Sorun nedir?
     <value>Mesaj Gönder</value>
   </data>
   <data name="support.mailSubject" xml:space="preserve">
-    <value>Somine Destek</value>
+    <value>somine Destek</value>
   </data>
   <data name="support.mailFieldName" xml:space="preserve">
     <value>Ad</value>
@@ -618,7 +618,7 @@ Sorun nedir?
     <value>Gizlilik Politikası</value>
   </data>
   <data name="privacy.description" xml:space="preserve">
-    <value>Somine uygulamasının gizlilik politikası ve veri işleme uygulamaları hakkında bilgi edinin.</value>
+    <value>somine uygulamasının gizlilik politikası ve veri işleme uygulamaları hakkında bilgi edinin.</value>
   </data>
   <data name="privacy.lastUpdated" xml:space="preserve">
     <value>Son güncelleme: 18 Ekim 2026</value>
@@ -627,7 +627,7 @@ Sorun nedir?
     <value>Kullanım Şartları</value>
   </data>
   <data name="terms.description" xml:space="preserve">
-    <value>Somine uygulamasının kullanım şartları ve koşulları hakkında bilgi edinin.</value>
+    <value>somine uygulamasının kullanım şartları ve koşulları hakkında bilgi edinin.</value>
   </data>
   <data name="terms.lastUpdated" xml:space="preserve">
     <value>Son güncelleme: 18 Ekim 2026</value>
@@ -636,7 +636,7 @@ Sorun nedir?
     <value>Hesap Silme</value>
   </data>
   <data name="delete.description" xml:space="preserve">
-    <value>Somine uygulamasında hesap silme işlemi hakkında detaylı bilgi edinin.</value>
+    <value>somine uygulamasında hesap silme işlemi hakkında detaylı bilgi edinin.</value>
   </data>
   <data name="delete.eyebrow" xml:space="preserve">
     <value>Hesap</value>
@@ -651,7 +651,7 @@ Sorun nedir?
     <value>Adımlar:</value>
   </data>
   <data name="delete.step1" xml:space="preserve">
-    <value>Somine uygulamasını açın</value>
+    <value>somine uygulamasını açın</value>
   </data>
   <data name="delete.step2" xml:space="preserve">
     <value>Alt menüden Profil sekmesine gidin</value>

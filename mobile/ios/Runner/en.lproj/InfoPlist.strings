@@ -1,5 +1,5 @@
 /* Localized permission prompts (English). */
-"NSFaceIDUsageDescription" = "Somine uses Face ID to unlock your Secret Vault so only you can see the items you keep there.";
-"NSLocationWhenInUseUsageDescription" = "Somine doesn't track your location. It's only used to show your position next to the places you've saved on a map preview.";
-"NSPhotoLibraryUsageDescription" = "Somine needs access to your photos so you can choose an image to save as content or use as your profile photo.";
-"NSCameraUsageDescription" = "Somine uses the camera so you can take a photo and save it straight into your collections.";
+"NSFaceIDUsageDescription" = "somine uses Face ID to unlock your Secret Vault so only you can see the items you keep there.";
+"NSLocationWhenInUseUsageDescription" = "somine doesn't track your location. It's only used to show your position next to the places you've saved on a map preview.";
+"NSPhotoLibraryUsageDescription" = "somine needs access to your photos so you can choose an image to save as content or use as your profile photo.";
+"NSCameraUsageDescription" = "somine uses the camera so you can take a photo and save it straight into your collections.";

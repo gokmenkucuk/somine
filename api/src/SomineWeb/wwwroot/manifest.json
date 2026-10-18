@@ -1,6 +1,6 @@
 {
-  "name": "Somine",
-  "short_name": "Somine",
+  "name": "somine",
+  "short_name": "somine",
   "description": "Sevdiğin platformların içerikleri ile web linklerini kişisel koleksiyonlarında organize et.",
   "start_url": "/",
   "display": "standalone",
