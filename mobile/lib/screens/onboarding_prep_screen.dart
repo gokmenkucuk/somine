@@ -15,6 +15,7 @@ import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/core/utils/app_l10n.dart';
 import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/data/onboarding_demo_content.dart';
+import 'package:somine_app/core/repositories/onboarding_repository.dart';
 
 /// Onboarding screen that prepares demo content with a visual progress bar
 class OnboardingPrepScreen extends ConsumerStatefulWidget {
@@ -83,8 +84,12 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       final categoryRepository = CategoryRepository();
       final itemRepository = ItemRepository();
       
+      // Örnek içerik listesi önce API'den istenir (uygulama sürümü
+      // yayınlamadan güncellenebilsin); alınamazsa sabit listeye düşülür.
+      final demoItems = await OnboardingRepository().loadDemoItems();
+
       // Profil + kategoriler + her örnek içerik için birer adım.
-      final totalSteps = 2 + onboardingDemoItems.length;
+      final totalSteps = 2 + demoItems.length;
       int currentStep = 0;
 
       void incrementStep() {
@@ -140,18 +145,19 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       if (kDebugMode) {
         debugPrint(
           '[Onboarding] categories=${categories.map((c) => c.name).toList()} '
-          'demoItems=${onboardingDemoItems.length}',
+          'demoItems=${demoItems.length}',
         );
       }
 
       // 4. Create demo content (one step per item)
-      // Liste: lib/core/data/onboarding_demo_content.dart
+      // Liste: API (GET /api/onboarding/demo-content), yedeği
+      // lib/core/data/onboarding_demo_content.dart
       //
       // Önizlemeler hepsi birden paralel çekiliyor (16 sıralı istek ~15 sn
       // sürüyordu); öğeler yine liste sırasıyla kaydediliyor ki tarih
       // sıralaması ve ilerleme çubuğu bozulmasın.
       final metadataFutures = [
-        for (final demo in onboardingDemoItems)
+        for (final demo in demoItems)
           MetadataService.fetchMetadata(
             demo.url,
           ).catchError((Object _) => null),
@@ -160,8 +166,8 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       final now = DateTime.now();
       int hourOffset = 0;
       
-      for (var i = 0; i < onboardingDemoItems.length; i++) {
-        final demo = onboardingDemoItems[i];
+      for (var i = 0; i < demoItems.length; i++) {
+        final demo = demoItems[i];
         try {
           final url = demo.url;
           final categoryId =

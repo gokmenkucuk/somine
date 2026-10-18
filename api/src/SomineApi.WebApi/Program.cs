@@ -10,6 +10,7 @@ using SomineApi.Infrastructure.Services;
 using SomineApi.WebApi.Embeddings;
 using SomineApi.WebApi.Hubs;
 using SomineApi.WebApi.Moderation;
+using SomineApi.WebApi.Onboarding;
 using SomineApi.WebApi.Logging;
 using SomineApi.WebApi.Middleware;
 using SomineApi.WebApi.Options;
@@ -78,6 +79,9 @@ builder.Services.Configure<ReminderNotificationOptions>(
     builder.Configuration.GetSection(ReminderNotificationOptions.SectionName));
 builder.Services.Configure<ModerationOptions>(
     builder.Configuration.GetSection(ModerationOptions.SectionName));
+builder.Services.Configure<OnboardingOptions>(
+    builder.Configuration.GetSection(OnboardingOptions.SectionName));
+builder.Services.AddSingleton<OnboardingDemoContentProvider>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");

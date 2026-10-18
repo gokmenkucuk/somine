@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Moderation\Assets\email-logo.png" LogicalName="SomineApi.ModerationEmailLogo" />
+    <EmbeddedResource Include="Onboarding\onboarding-demo-content.json" LogicalName="SomineApi.OnboardingDemoContent" />
   </ItemGroup>
 
   <ItemGroup>
