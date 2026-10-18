@@ -9,10 +9,7 @@ import 'package:somine_app/core/repositories/share_repository.dart';
 import 'package:somine_app/core/repositories/notification_repository.dart';
 import 'package:somine_app/core/repositories/storage_repository.dart';
 import 'package:somine_app/core/models/backend_auth_session.dart';
-import 'package:somine_app/core/models/item_model.dart';
-import 'package:somine_app/core/models/category_model.dart';
 import 'package:somine_app/core/services/backend_auth_service.dart';
-import 'package:somine_app/core/services/metadata_service.dart';
 import 'package:somine_app/core/services/push_notification_service.dart';
 import 'package:somine_app/core/services/subscription_service.dart';
 
@@ -337,106 +334,6 @@ class AuthRepository {
       debugPrint('❌ [AuthRepository] Error handling user login: $e');
       // Don't throw - we don't want to block login if Firestore fails
       return false;
-    }
-  }
-
-  /// Create demo content for new users
-  // ignore: unused_element
-  Future<void> _createDemoContent(
-    String userId,
-    List<CategoryModel> categories,
-  ) async {
-    try {
-      debugPrint('🔵 [AuthRepository] Creating demo content for new user...');
-
-      // Find categories
-      final placesCategory = categories.firstWhere(
-        (c) => c.name == 'Gitmek İstediğim Yerler',
-        orElse: () => categories.first,
-      );
-
-      final musicCategory = categories.firstWhere(
-        (c) => c.name == 'Dinlemek İstediğim',
-        orElse: () => categories.first,
-      );
-
-      // Demo URLs with their categories
-      final demoUrls = [
-        {
-          'url': 'https://www.instagram.com/reel/C4BRE6vIFIX/',
-          'categoryId': placesCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=Sf9CaRfv-BM',
-          'categoryId': placesCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/shorts/Ah_2uDsoXQ8',
-          'categoryId': placesCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=i9UDD6zyCGs',
-          'categoryId': musicCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=Pclv31cDTTc',
-          'categoryId': musicCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=FkFB8f8bzbY',
-          'categoryId': musicCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=oD6fL4yyhDk',
-          'categoryId': musicCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=fR2JHaCDrMw',
-          'categoryId': musicCategory.id,
-        },
-        {
-          'url': 'https://www.youtube.com/watch?v=RP8REaM3WQ4',
-          'categoryId': musicCategory.id,
-        },
-      ];
-
-      final now = DateTime.now();
-      int hourOffset = 0;
-
-      for (final demo in demoUrls) {
-        try {
-          final url = demo['url'] as String;
-          final categoryId = demo['categoryId'] as String;
-
-          // Fetch metadata from URL
-          debugPrint('🔵 [AuthRepository] Fetching metadata for: $url');
-          final metadata = await MetadataService.fetchMetadata(url);
-
-          final item = ItemModel(
-            id: '',
-            userId: userId,
-            categoryId: categoryId,
-            type: ItemType.link,
-            url: url,
-            ogMetadata: metadata,
-            createdAt: now.subtract(Duration(hours: hourOffset)),
-            updatedAt: now.subtract(Duration(hours: hourOffset)),
-          );
-
-          await _itemRepository.createItem(item);
-          debugPrint(
-            '✅ [AuthRepository] Demo item created: ${metadata?.title ?? url}',
-          );
-          hourOffset++;
-        } catch (e) {
-          debugPrint('⚠️ [AuthRepository] Error creating demo item: $e');
-        }
-      }
-
-      debugPrint('✅ [AuthRepository] Demo content created');
-    } catch (e) {
-      debugPrint('⚠️ [AuthRepository] Error creating demo content: $e');
-      // Don't throw - demo content is optional
     }
   }
 

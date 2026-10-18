@@ -14,6 +14,7 @@ import 'package:somine_app/core/models/item_model.dart';
 import 'package:somine_app/screens/home_screen.dart';
 import 'package:somine_app/core/utils/app_l10n.dart';
 import 'package:somine_app/core/models/category_model.dart';
+import 'package:somine_app/core/data/onboarding_demo_content.dart';
 
 /// Onboarding screen that prepares demo content with a visual progress bar
 class OnboardingPrepScreen extends ConsumerStatefulWidget {
@@ -82,7 +83,8 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
       final categoryRepository = CategoryRepository();
       final itemRepository = ItemRepository();
       
-      int totalSteps = 2 + 9; // Profile + Categories + 9 Items
+      // Profil + kategoriler + her örnek içerik için birer adım.
+      final totalSteps = 2 + onboardingDemoItems.length;
       int currentStep = 0;
 
       void incrementStep() {
@@ -126,39 +128,46 @@ class _OnboardingPrepScreenState extends ConsumerState<OnboardingPrepScreen> wit
         orElse: () => categories.first,
       );
 
-      final placesCategory = categoryByName(l10n.defaultCategoryPlaces);
-      final musicCategory = categoryByName(l10n.defaultCategoryMusic);
+      // Dilden bağımsız koleksiyon anahtarı -> oluşturulan kategori.
+      final categoryIdByKey = {
+        DemoCollection.music: categoryByName(l10n.defaultCategoryMusic).id,
+        DemoCollection.places: categoryByName(l10n.defaultCategoryPlaces).id,
+        DemoCollection.recipes: categoryByName(l10n.defaultCategoryRecipes).id,
+        DemoCollection.inspiration:
+            categoryByName(l10n.defaultCategoryInspiration).id,
+      };
 
       if (kDebugMode) {
         debugPrint(
           '[Onboarding] categories=${categories.map((c) => c.name).toList()} '
-          'places=${placesCategory.name} music=${musicCategory.name}',
+          'demoItems=${onboardingDemoItems.length}',
         );
       }
-      
-      // 4. Create demo content (Steps 3-11)
-      final demoUrls = [
-        {'url': 'https://www.instagram.com/reel/C4BRE6vIFIX/', 'categoryId': placesCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=Sf9CaRfv-BM', 'categoryId': placesCategory.id},
-        {'url': 'https://www.youtube.com/shorts/Ah_2uDsoXQ8', 'categoryId': placesCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=i9UDD6zyCGs', 'categoryId': musicCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=Pclv31cDTTc', 'categoryId': musicCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=FkFB8f8bzbY', 'categoryId': musicCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=oD6fL4yyhDk', 'categoryId': musicCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=fR2JHaCDrMw', 'categoryId': musicCategory.id},
-        {'url': 'https://www.youtube.com/watch?v=RP8REaM3WQ4', 'categoryId': musicCategory.id},
+
+      // 4. Create demo content (one step per item)
+      // Liste: lib/core/data/onboarding_demo_content.dart
+      //
+      // Önizlemeler hepsi birden paralel çekiliyor (16 sıralı istek ~15 sn
+      // sürüyordu); öğeler yine liste sırasıyla kaydediliyor ki tarih
+      // sıralaması ve ilerleme çubuğu bozulmasın.
+      final metadataFutures = [
+        for (final demo in onboardingDemoItems)
+          MetadataService.fetchMetadata(
+            demo.url,
+          ).catchError((Object _) => null),
       ];
-      
+
       final now = DateTime.now();
       int hourOffset = 0;
       
-      for (final demo in demoUrls) {
+      for (var i = 0; i < onboardingDemoItems.length; i++) {
+        final demo = onboardingDemoItems[i];
         try {
-          final url = demo['url'] as String;
-          final categoryId = demo['categoryId'] as String;
+          final url = demo.url;
+          final categoryId =
+              categoryIdByKey[demo.collection] ?? categories.first.id;
           
-          // Fetch metadata
-          final metadata = await MetadataService.fetchMetadata(url);
+          final metadata = await metadataFutures[i];
           
           final item = ItemModel(
             id: '',
