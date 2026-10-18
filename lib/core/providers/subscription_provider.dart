@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -51,6 +52,24 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
 
   SubscriptionNotifier(this._service) : super(const SubscriptionState()) {
     _initialize();
+    // Giriş/çıkış sonrası servis yeniden hesaplar; ekran durumu eskide kalmasın.
+    _changesSubscription = _service.changes.listen((_) {
+      if (!mounted) return;
+      state = state.copyWith(
+        tier: _service.currentTier,
+        activePackageName: _service.activePackageName,
+        availablePackages: state.availablePackages,
+        isLoading: state.isLoading,
+      );
+    });
+  }
+
+  StreamSubscription<void>? _changesSubscription;
+
+  @override
+  void dispose() {
+    _changesSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _initialize() async {

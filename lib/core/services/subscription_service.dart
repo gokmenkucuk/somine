@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -48,6 +49,14 @@ class SubscriptionService {
   SubscriptionService._internal();
 
   bool _isInitialized = false;
+
+  /// Kimlik değişince (giriş, çıkış) abonelik durumu yeniden hesaplanır;
+  /// arayüzdeki SubscriptionNotifier bunu dinleyip kendini tazeler.
+  final StreamController<void> _changes = StreamController<void>.broadcast();
+  Stream<void> get changes => _changes.stream;
+  void _notifyChanged() {
+    if (!_changes.isClosed) _changes.add(null);
+  }
   Future<void>? _initializing;
   CustomerInfo? _customerInfo;
   final BackendAuthService _backendAuthService = BackendAuthService();
@@ -179,6 +188,7 @@ class SubscriptionService {
     } finally {
       // SDK tarafı patlasa da premium durumu sunucudan okunmalı.
       await _refreshBackendStatusSafely(platform: _platformName);
+      _notifyChanged();
     }
   }
 
@@ -377,6 +387,7 @@ class SubscriptionService {
     } finally {
       _customerInfo = null;
       _backendTier = SubscriptionTier.starter;
+      _notifyChanged();
     }
   }
 
@@ -465,7 +476,8 @@ class SubscriptionService {
 
   SubscriptionTier get currentTierFromRevenueCat {
     if (_customerInfo == null) return SubscriptionTier.starter;
-    return _customerInfo!.entitlements.active.containsKey('Premium')
+    final active = _customerInfo!.entitlements.active;
+    return active.containsKey('So Mine Premium') || active.containsKey('Premium')
         ? SubscriptionTier.curator
         : SubscriptionTier.starter;
   }
