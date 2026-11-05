@@ -209,6 +209,13 @@ App Check/App Attest (Firebase) · vault görsel disk-cache şifreleme · screen
 
 ---
 
+## 🔖 Kaldığımız Nokta (2026-11-05) — 4.0 RET → BUILD 42 YENİDEN GÖNDERİLDİ
+- 2026-10-18'de build 41 gönderildi; 2026-11-04 **Guideline 4 - Design** reddi: iPad Air 11" (M3), iPadOS 27.2. Uygulama yalnız iPhone; iPad'de uyumluluk modunda **375×667pt** pencerede çalışıyor → kısa ekran düzeni sıkışıktı.
+- Düzeltme (`4dd6a97`): akışta yükseklik < 740pt ise slogan gizli; kasa kilit görünümü alttaki menünün üstünde + kaydırılabilir; paywall kısa ekranda sıkıştırılmış başlık. Normal iPhone'larda görünüm aynı.
+- Doğrulama: `marketing/screenshots/scripts/capture.sh <iPad Air 11 M3 UDID>` ile iPad simülatöründe tüm ekranlar (capture.sh'de `dart pub add` artık `dev:` önekiyle).
+- Build 42 (1.0.0) yüklendi, sürüme bağlandı, Resolution Center'a cevap yazıldı, **2026-11-05 20:57 Waiting for Review** (3 abonelik dahil).
+- Kural: yeni ekran eklerken 375×667'de (iPhone SE / iPad uyumluluk) kontrol et.
+
 ## 🔖 Kaldığımız Nokta (2026-10-17) — YAYINA HAZIRLIK
 
 ### Uçtan uca durum (2026-10-17 denetimi)
