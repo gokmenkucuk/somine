@@ -24,7 +24,8 @@ import 'package:somine_app/widgets/error_state_widget.dart';
 import 'package:somine_app/core/providers/subscription_provider.dart';
 import 'package:somine_app/widgets/limit_reached_dialog.dart';
 import 'package:somine_app/core/exceptions/network_exceptions.dart';
-import 'package:somine_app/core/repositories/share_repository.dart' show ShareQuota;
+import 'package:somine_app/core/repositories/share_repository.dart'
+    show ShareQuota;
 import 'package:somine_app/widgets/success_notification_sheet.dart';
 import 'package:somine_app/core/services/vault_service.dart';
 import 'package:somine_app/core/providers/navigation_providers.dart';
@@ -385,7 +386,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error:
                     (err, stack) => ErrorStateWidget(
-                      message: FailureMapper.toUserMessage(err, AppLocalizations.of(context)),
+                      message: FailureMapper.toUserMessage(
+                        err,
+                        AppLocalizations.of(context),
+                      ),
                       onRetry: () => ref.invalidate(catalogItemsProvider),
                     ),
               ),
@@ -445,71 +449,85 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     if (selectedId != null &&
         !isVaultUnlocked &&
         vaultIds.contains(selectedId)) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              PhosphorIconsDuotone.lockKey,
-              size: 64,
-              color: context.colors.primary.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.catalogCollectionLockedTitle,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: context.colors.headline,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.catalogCollectionLockedMessage,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: context.colors.body,
+      // Gövde alttaki yüzen gezinme çubuğunun ALTINA uzanıyor; grid gibi
+      // burada da 100pt pay bırakılır, yoksa kısa ekranlarda (iPhone SE,
+      // iPad'deki iPhone uyumluluk penceresi) "Face ID ile Aç" düğmesi
+      // + düğmesinin arkasında kalıyordu (App Review 4.0, 2026-11-04).
+      return LayoutBuilder(
+        builder:
+            (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 116).clamp(
+                    0.0,
+                    double.infinity,
+                  ),
+                ),
+                child: Center(child: _buildLockedCollectionView(l10n)),
               ),
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _unlockVault,
-              icon: Icon(
-                PhosphorIconsBold.scan,
-                size: 18,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-              label: Text(
-                l10n.catalogUnlockWithFaceId,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: BrandGradient.ensureContrast(
-                  context.colors.primary,
-                  Theme.of(context).colorScheme.onPrimary,
-                  BrandGradient.textContrast,
-                ),
-                minimumSize: const Size(0, 48),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
-        ),
       );
     }
 
     return _buildItemGrid(filteredItems, categories);
+  }
+
+  Widget _buildLockedCollectionView(AppLocalizations l10n) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          PhosphorIconsDuotone.lockKey,
+          size: 64,
+          color: context.colors.primary.withValues(alpha: 0.5),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          l10n.catalogCollectionLockedTitle,
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: context.colors.headline,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.catalogCollectionLockedMessage,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(fontSize: 14, color: context.colors.body),
+        ),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          onPressed: _unlockVault,
+          icon: Icon(
+            PhosphorIconsBold.scan,
+            size: 18,
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
+          label: Text(
+            l10n.catalogUnlockWithFaceId,
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: BrandGradient.ensureContrast(
+              context.colors.primary,
+              Theme.of(context).colorScheme.onPrimary,
+              BrandGradient.textContrast,
+            ),
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   // --- CATALOG SHELF ---
@@ -1657,7 +1675,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                               ),
                             ),
                             FutureBuilder<ShareQuota?>(
-                              future: ref.read(shareRepositoryProvider).getShareQuota(),
+                              future:
+                                  ref
+                                      .read(shareRepositoryProvider)
+                                      .getShareQuota(),
                               builder: (context, snapshot) {
                                 final quota = snapshot.data;
                                 if (quota == null || quota.unlimited) {
@@ -1666,12 +1687,16 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 6),
                                   child: Text(
-                                    l10n.shareQuotaRemaining(quota.remaining, quota.limit),
+                                    l10n.shareQuotaRemaining(
+                                      quota.remaining,
+                                      quota.limit,
+                                    ),
                                     style: GoogleFonts.outfit(
                                       fontSize: 13,
-                                      color: quota.remaining > 0
-                                          ? context.colors.body
-                                          : context.colors.danger,
+                                      color:
+                                          quota.remaining > 0
+                                              ? context.colors.body
+                                              : context.colors.danger,
                                     ),
                                   ),
                                 );
@@ -2032,7 +2057,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       if (dialogContext.mounted) Navigator.pop(dialogContext);
                       if (mounted) {
                         LimitReachedDialog.show(
-                          context: this.context, // ignore: use_build_context_synchronously, unnecessary_this
+                          context:
+                              this.context, // ignore: use_build_context_synchronously, unnecessary_this
                           ref: ref,
                           title: l10n.premiumFeature,
                           message: l10n.shareMonthlyLimitReached(5),

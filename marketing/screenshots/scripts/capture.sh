@@ -28,8 +28,8 @@ rsync -a --delete --exclude build --exclude .dart_tool \
 cd "$WORK"
 # Düzenek paketleri yalnız bu geçici kopyaya eklenir; repodaki pubspec'te yoklar,
 # böylece integration_test eklentisi mağaza build'ine girmez.
-dart pub add --dev 'integration_test:{"sdk":"flutter"}' 'flutter_driver:{"sdk":"flutter"}' \
-  firebase_core_platform_interface:6.0.2 firebase_auth_platform_interface:7.7.3 >/dev/null
+dart pub add 'dev:integration_test:{"sdk":"flutter"}' 'dev:flutter_driver:{"sdk":"flutter"}' \
+  dev:firebase_core_platform_interface:6.0.2 dev:firebase_auth_platform_interface:7.7.3 >/dev/null
 flutter pub get >/dev/null
 LOG="$WORK/drive.log"; : > "$LOG"
 flutter drive -d "$UDID" \

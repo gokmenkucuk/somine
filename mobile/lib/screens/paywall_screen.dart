@@ -31,6 +31,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Widget build(BuildContext context) {
     final subscriptionState = ref.watch(subscriptionProvider);
     final l10n = AppLocalizations.of(context)!;
+    // Kısa ekranlarda (iPhone SE, iPad'deki iPhone uyumluluk penceresi ~667pt)
+    // planlar ve fiyatlar ilk bakışta görünsün diye üst kısım sıkıştırılır.
+    final compact = MediaQuery.sizeOf(context).height < 740;
 
     return Scaffold(
       backgroundColor: context.colors.backgroundTop,
@@ -39,7 +42,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(compact ? 4 : 16),
               child: Row(
                 children: [
                   IconButton(
@@ -56,34 +59,34 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    const SizedBox(height: 20),
+                    SizedBox(height: compact ? 0 : 20),
 
                     // Crown Icon
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: compact ? 56 : 80,
+                      height: compact ? 56 : 80,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [context.colors.primary, context.colors.secondary],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(compact ? 18 : 24),
                       ),
                       child: Icon(
                         PhosphorIconsBold.crown,
-                        size: 40,
+                        size: compact ? 28 : 40,
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: compact ? 12 : 24),
 
                     // Title
                     Text(
                       "PREMIUM",
                       style: GoogleFonts.outfit(
-                        fontSize: 32,
+                        fontSize: compact ? 26 : 32,
                         fontWeight: FontWeight.w800,
                         color: context.colors.headline,
                         letterSpacing: 2,
@@ -101,7 +104,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: compact ? 16 : 32),
 
                     // Features List
                     _buildFeatureItem(context, PhosphorIconsRegular.infinity, l10n.paywallFeatureUnlimited),
@@ -113,7 +116,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     // widget herkese açık). Ödenen şeyle verilen şey eşleşmeli.
                     // Gerçekten premium'a kilitlenirlerse geri eklenebilir.
 
-                    const SizedBox(height: 40),
+                    SizedBox(height: compact ? 16 : 40),
 
                     // Packages
                     if (subscriptionState.isLoading)
@@ -283,13 +286,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 
   Widget _buildFeatureItem(BuildContext context, IconData icon, String text) {
+    final compact = MediaQuery.sizeOf(context).height < 740;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: compact ? 8 : 16),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: compact ? 34 : 40,
+            height: compact ? 34 : 40,
             decoration: BoxDecoration(
               color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),

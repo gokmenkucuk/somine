@@ -156,6 +156,7 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
         }).toList();
 
     final items = feedState.items;
+    final isCompactHeight = MediaQuery.sizeOf(context).height < 740;
 
     // Ensure content is visible if items already loaded (e.g., after theme change)
     if (_contentOpacity == 0.0 && !feedState.isLoading) {
@@ -304,65 +305,69 @@ class _ItemFeedScreenState extends ConsumerState<ItemFeedScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            // Slogan — kısa ekranlarda (iPhone SE, iPad'deki iPhone uyumluluk
+            // penceresi ~667pt) slogan ekranın yarısını yiyip içeriği birkaç
+            // şeride sıkıştırıyordu (App Review 4.0, 2026-11-04); orada gizlenir.
+            if (!isCompactHeight) ...[
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: FadeInLeft(
+                  delay: const Duration(milliseconds: 400),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          final colors =
+                              Theme.of(context).brightness == Brightness.light
+                                  ? [
+                                    context.colors.primary,
+                                    const Color(0xFF6FBFAC),
+                                  ]
+                                  : [
+                                    context.colors.primary,
+                                    context.colors.secondary,
+                                  ];
 
-            // Slogan
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: FadeInLeft(
-                delay: const Duration(milliseconds: 400),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Builder(
-                      builder: (context) {
-                        final colors =
-                            Theme.of(context).brightness == Brightness.light
-                                ? [
-                                  context.colors.primary,
-                                  const Color(0xFF6FBFAC),
-                                ]
-                                : [
-                                  context.colors.primary,
-                                  context.colors.secondary,
-                                ];
-
-                        return Text(
-                          l10n.feedSloganTitle,
-                          style: GoogleFonts.outfit(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.0,
-                            height: 1.1,
-                            foreground:
-                                Paint()
-                                  ..shader = LinearGradient(
-                                    colors: colors,
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ).createShader(
-                                    const Rect.fromLTWH(0, 0, 300, 80),
-                                  ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.feedSloganSubtitle,
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: context.colors.headline,
-                        letterSpacing: 0.5,
+                          return Text(
+                            l10n.feedSloganTitle,
+                            style: GoogleFonts.outfit(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.0,
+                              height: 1.1,
+                              foreground:
+                                  Paint()
+                                    ..shader = LinearGradient(
+                                      colors: colors,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(
+                                      const Rect.fromLTWH(0, 0, 300, 80),
+                                    ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.feedSloganSubtitle,
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: context.colors.headline,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
+            ] else
+              const SizedBox(height: 8),
 
             // Categories List
             FadeInUp(
