@@ -209,6 +209,15 @@ App Check/App Attest (Firebase) · vault görsel disk-cache şifreleme · screen
 
 ---
 
+## 🔖 Kaldığımız Nokta (2026-11-23) — İKİNCİ RET → BUILD 43
+
+Build 42, 2026-11-23'te iPad Air 11 (M3) üzerinde iki sebeple reddedildi:
+- **Guideline 4 (Sign in with Apple):** Apple ile girişten sonra `OnboardingNameScreen` ad istiyordu. Düzeltme `de91a29`: Apple kullanıcısı formu görmez; ad Apple'dan (yoksa kullanıcı adından), kullanıcı adı `generateUniqueUsername` ile otomatik; ağ hatasında ön dolu forma düşer.
+- **Guideline 5.1.2(i) (çerez/ATT):** Uygulama içi tarayıcıda açılan somineapp.com'da Google Analytics + çerez banner'ı vardı. GA ve banner kaldırıldı, eski `_ga*`/onay çerezleri temizleniyor, gizlilik metni "izleme çerezi yok" oldu. Canlı: `somine-share:v12` (container `somineweb`, ağ `internet_agi`; yedek `somineweb-v11` durdurulmuş).
+- Build 43 yüklendi (uygulama + iki eklenti 1.0.0 (43)); Resolution Center cevabı yazıldı; güncellenen Paid Apps Agreement kullanıcı izniyle onaylandı (gönderimi engelliyordu); 2026-11-23 ~21:25 **Waiting for Review** (sürüm + 3 abonelik).
+- **Nisan 2027 öncesi:** ITMS-90725 uyarısı — yüklemeler Xcode 27 / iOS 27 SDK ister. Nisan'dan önce Xcode güncellenip derlenmeli.
+- Not: `web/` (Next.js) klasöründe hâlâ GA kodu var ama canlı site SomineWeb'den sunuluyor; `web/` emekli.
+
 ## 🔖 Kaldığımız Nokta (2026-11-05) — 4.0 RET → BUILD 42 YENİDEN GÖNDERİLDİ
 - 2026-10-18'de build 41 gönderildi; 2026-11-04 **Guideline 4 - Design** reddi: iPad Air 11" (M3), iPadOS 27.2. Uygulama yalnız iPhone; iPad'de uyumluluk modunda **375×667pt** pencerede çalışıyor → kısa ekran düzeni sıkışıktı.
 - Düzeltme (`4dd6a97`): akışta yükseklik < 740pt ise slogan gizli; kasa kilit görünümü alttaki menünün üstünde + kaydırılabilir; paywall kısa ekranda sıkıştırılmış başlık. Normal iPhone'larda görünüm aynı.
