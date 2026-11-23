@@ -34,14 +34,72 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
   String? _suggestedUsername;
   bool _isSigningOut = false;
 
+  /// Apple ile girişte form gösterilmez (App Review 4 / HIG): ad ve e-posta
+  /// Apple'dan gelir, kullanıcıdan yeniden istenemez. Kullanıcı adı otomatik
+  /// üretilir; ikisi de sonradan Hesap Bilgileri'nden değiştirilebilir.
+  bool _autoCompleting = false;
+
   @override
   void initState() {
     super.initState();
+    if (_isAppleUser()) {
+      _autoCompleting = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _autoCompleteApple());
+      return;
+    }
+    _prefillFromProvider();
+  }
+
+  void _prefillFromProvider() {
     // Apple/Google'dan gelen adı önceden doldur; kullanıcı yeniden yazmasın.
     final prefilled = _providerDisplayName();
     if (prefilled != null) {
       _nameController.text = prefilled;
       unawaited(_onNameChanged(prefilled));
+    }
+  }
+
+  bool _isAppleUser() {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      return user?.providerData.any((p) => p.providerId == 'apple.com') ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _autoCompleteApple() async {
+    try {
+      final existing = await _userRepository.getUser(widget.userId);
+      final provided = _providerDisplayName();
+      final existingUsername = existing?.username?.trim() ?? '';
+      final username = existingUsername.isNotEmpty
+          ? existingUsername
+          : await _userRepository.generateUniqueUsername(provided ?? 'somine');
+      final existingName = existing?.displayName?.trim() ?? '';
+      final displayName = existingName.isNotEmpty
+          ? existingName
+          : (provided ?? username);
+
+      if (existingUsername.isEmpty) {
+        await _userRepository.updateUsername(widget.userId, username);
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => OnboardingPrepScreen(
+            userId: widget.userId,
+            displayName: displayName,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('⚠️ [Onboarding] Apple auto-complete failed: $e');
+      if (!mounted) return;
+      // Ağ hatası vb.: formu ön dolu göster ki kullanıcı takılmasın.
+      setState(() => _autoCompleting = false);
+      _prefillFromProvider();
     }
   }
 
@@ -201,6 +259,14 @@ class _OnboardingNameScreenState extends State<OnboardingNameScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    if (_autoCompleting) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
